@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.3 2004-09-11 22:47:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -310,8 +310,10 @@ SOCKFUNC(cierra_ircd)
 		fecho(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
 		timer("rircd", NULL, 1, conf_set->reconectar->intervalo, abre_sock_ircd, NULL, 0);
 	}
+#ifdef _WIN32
 	else /* es local */
 		ChkBtCon(0, 0);
+#endif
 	SockIrcd = NULL;
 	if (!EscuchaIrcd)
 		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
