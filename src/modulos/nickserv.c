@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.6 2004-09-17 19:09:46 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.7 2004-09-17 23:46:42 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1194,8 +1194,9 @@ IRCFUNC(nickserv_quit)
 }
 IRCFUNC(nickserv_nick)
 {
-	char *nick = (parc < 4 ? parv[1] : parv[0]), *motivo = NULL;
+	char *nick = (parc < 4 ? parv[1] : parv[0]);
 #ifndef UDB
+	char *motivo = NULL;
 	if ((motivo = _mysql_get_registro(NS_FORBIDS, nick, "motivo")))
 	{
 		response(cl, nickserv->nick, "Este nick está prohibido: %s", motivo);
