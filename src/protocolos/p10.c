@@ -646,7 +646,11 @@ void inicia()
 	//sendto_serv(":%s PROTOCTL REQ :TOKEN", me.nombre);
 	ircstrdup(&me.trio, buf);
 	sendto_serv("PASS :%s", conf_server->password->local);
+#ifdef HUB
 	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
+#else
+	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +s :%s", me.nombre, iniciado, time(0), me.trio, me.info);
+#endif
 }
 SOCKFUNC(parsea)
 {
@@ -1075,11 +1079,18 @@ IRCFUNC(m_server)
 		sockclose(sck, LOCAL);
 		return 1;
 	}
-	al = nuevo_cliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);
-	al->protocol = atoi(parv[5] + 1);
 	numeric[0] = *parv[6];
 	numeric[1] = *(parv[6] + 1);
 	numeric[2] = '\0';
+#ifdef HUB
+	if (cl)
+	{
+		sendto_serv(":%s %s %s", me.nombre, TOK_SQUIT, numeric);
+		return 1;
+	}
+#endif
+	al = nuevo_cliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);
+	al->protocol = atoi(parv[5] + 1);
 	al->numeric = b642int(numeric);
 	al->tipo = ES_SERVER;
 	al->trio = strdup(numeric);

@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.1 2005-02-18 22:14:12 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.2 2005-02-19 17:46:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -33,14 +33,28 @@ struct in_addr *resolv(char *host)
 }
 int sockblock(int pres)
 {
-#ifdef _WIN32
-	int bl = 1;
-	return ioctlsocket(pres, FIONBIO, &bl);
-#else
 	int res, nonb = 0;
-	if ((res = fcntl(pres, F_GETFL, 0)) >= 0)
-		return fcntl(pres, F_SETFL, res | nonb);
-	return -1;
+#ifdef	NBLOCK_POSIX
+	nonb |= O_NONBLOCK;
+#endif
+#ifdef	NBLOCK_BSD
+	nonb |= O_NDELAY;
+#endif
+#ifdef	NBLOCK_SYSV
+	res = 1;
+	if (ioctl(fd, FIONBIO, &res) < 0)
+		return -1;
+#else
+  #if !defined(_WIN32)
+	if ((res = fcntl(fd, F_GETFL, 0)) == -1)
+		return -1;
+	else if (fcntl(fd, F_SETFL, res | nonb) == -1)
+		return -2;
+  #else
+	nonb = 1;
+	if (ioctlsocket(fd, FIONBIO, &nonb) < 0)
+		return -1;
+  #endif
 #endif
 }
 void inserta_sock(Sock *sck)
@@ -155,7 +169,7 @@ Sock *socklisten(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
 	sck->closefunc = closefunc;
-	listen(sck->pres, 5);
+	listen(sck->pres, LISTEN_SIZE);
 	listens[listenS++] = puerto;
 	inserta_sock(sck);
 	return sck;
@@ -165,7 +179,6 @@ Sock *sockaccept(Sock *list, int pres)
 	Sock *sck;
 	struct sockaddr_in addr;
 	struct in_addr *res;
-	char *host;
 	int len = sizeof(struct sockaddr);
 	if (getpeername(pres, (struct sockaddr *)&addr, &len) == -1)
 	{
@@ -176,10 +189,8 @@ Sock *sockaccept(Sock *list, int pres)
 	sck->pres = pres;
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_port = list->server.sin_port;
-	host = inet_ntoa(addr.sin_addr);
-	if ((res = resolv(host)))
-		sck->server.sin_addr = *res;
-	sck->host = strdup(host);
+	memcpy(&sck->server.sin_addr, &addr.sin_addr, sizeof(struct sockaddr_in));
+	sck->host = strdup(inet_ntoa(addr.sin_addr));
 	sck->puerto = list->puerto;
 	if (sockblock(sck->pres) == -1)
 		return NULL;

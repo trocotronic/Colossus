@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.3 2004-12-31 12:27:52 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.4 2005-02-19 17:46:13 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -108,5 +108,18 @@
 #define u_int unsigned int
 #define u_short unsigned short
 #define BadPtr(x) (!(x) || (*(x) == '\0'))
+#ifdef NEED_BZERO
 #define bzero(x,y) memset(x,0,y)
+#endif
 #define abs(x) (x < 0) ? -x : x
+#ifdef NEED_INET_NTOA
+#define inet_ntoa(x) inetntoa(&x)
+#endif
+#define VOIDSIG void
+#define CPATH "colossus.conf"
+#ifndef LISTEN_SIZE
+#define LISTEN_SIZE 5
+#endif
+#ifndef MAXCONNECTIONS
+#define MAXCONNECTIONS	4096
+#endif

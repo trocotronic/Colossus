@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.29 2005-02-19 16:09:06 Trocotronic Exp $ 
+ * $Id: main.c,v 1.30 2005-02-19 17:46:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -164,16 +164,23 @@ void cierra_todo()
 	WSACleanup();
 #endif
 }
-void refresca()
+#ifndef _WIN32
+static VOIDSIG refresca()
+#else
+VOIDSIG refresca()
+#endif
 {
 	Conf config;
+#ifdef	POSIX_SIGNALS
+	struct sigaction act;
+#endif
 	descarga_modulos();
 	if (protocolo)
 	{
 		libera_protocolo(protocolo);
 		protocolo = NULL;
 	}
-	parseconf("colossus.conf", &config, 1);
+	parseconf(CPATH, &config, 1);
 	distribuye_conf(&config);
 	carga_modulos();
 #ifdef UDB
@@ -186,19 +193,26 @@ void refresca()
 	}
 	else
 		distribuye_me(&me, &SockIrcd);
+#ifdef	POSIX_SIGNALS
+	act.sa_handler = refresca;
+	act.sa_flags = 0;
+	(void)sigemptyset(&act.sa_mask);
+	(void)sigaddset(&act.sa_mask, SIGHUP);
+	(void)sigaction(SIGHUP, &act, NULL);
+#else
+  #ifndef _WIN32
+	(void)signal(SIGHUP, s_rehash);
+  #endif
+#endif
 	return;
 }
-void reinicia()
+VOIDSIG reinicia()
 {
 	cierra_todo();
-#ifdef _WIN32
-	execv(margv[0], margv);
-#else
-	execv(".", margv);
-#endif
+	execv(SPATH, margv);
 	exit(-1);
 }
-void cierra_colossus(int excode)
+VOIDSIG cierra_colossus(int excode)
 {
 	cierra_todo();
 	exit(excode);
@@ -212,7 +226,9 @@ int main(int argc, char *argv[])
 	Conf config;
 	int val, i;
 #ifndef _WIN32
+#ifdef FORCE_CORE
 	struct rlimit corelim;
+#endif
 	for (i = 0; logo[i] != 0; i++)
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
@@ -239,15 +255,18 @@ int main(int argc, char *argv[])
 #else
 	mkdir("tmp", 0744);
 #endif	
-#ifndef _WIN32
+#if !defined(_WIN32) && defined(FORCE_CORE)
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
 	if (setrlimit(RLIMIT_CORE, &corelim))
 		printf("unlimit core size failed; errno = %d\n", errno);
 #endif
+#if !defined(_WIN32) && defined(DEFAULT_PERMISSIONS)
+	chmod(CPATH, DEFAULT_PERMISSIONS);
+#endif
 	/* las primeras señales deben ser del núcleo */
 	inserta_senyal(SIGN_SYNCH, mete_bots);
 	inserta_senyal(SIGN_EOS, mete_residentes);
-	if (parseconf("colossus.conf", &config, 1) < 0)
+	if (parseconf(CPATH, &config, 1) < 0)
 		return 1;
 	distribuye_conf(&config);
 	carga_modulos();
@@ -324,9 +343,23 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
 #else
+  #ifdef POSIX_SIGNALS
+  	struct sigaction act;
+	act.sa_handler = refresca;
+	(void)sigemptyset(&act.sa_mask);
+	(void)sigaddset(&act.sa_mask, SIGHUP);
+	(void)sigaction(SIGHUP, &act, NULL);
+	act.sa_handler = reinicia;
+	(void)sigaddset(&act.sa_mask, SIGINT);
+	(void)sigaction(SIGINT, &act, NULL);
+	act.sa_handler = cierra_colossus;
+	(void)sigaddset(&act.sa_mask, SIGTERM);
+	(void)sigaction(SIGTERM, &act, NULL);
+  #elif BSD_RELIABLE_SIGNALS
 	signal(SIGHUP, refresca);
 	signal(SIGTERM, cierra_colossus);
 	signal(SIGINT, reinicia);
+  #endif
 #endif
 #ifndef _WIN32
 	if (fork())
@@ -920,94 +953,6 @@ int dropacache(Proc *proc)
 	}
 	_mysql_query("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
 	return 0;
-}
-
-/* funciones extraidas del unreal */
-time_t getfilemodtime(char *filename)
-{
-#ifdef _WIN32
-	FILETIME cTime;
-	SYSTEMTIME sTime, lTime;
-	ULARGE_INTEGER fullTime;
-	HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return 0;
-	if (!GetFileTime(hFile, NULL, NULL, &cTime))
-		return 0;
-	CloseHandle(hFile);
-	FileTimeToSystemTime(&cTime, &sTime);
-	SystemTimeToTzSpecificLocalTime(NULL, &sTime, &lTime);
-	SystemTimeToFileTime(&sTime, &cTime);
-	fullTime.LowPart = cTime.dwLowDateTime;
-	fullTime.HighPart = cTime.dwHighDateTime;
-	fullTime.QuadPart -= 116444736000000000;
-	fullTime.QuadPart /= 10000000;
-	return fullTime.LowPart;
-#else
-	struct stat sb;
-	if (stat(filename, &sb))
-		return 0;
-	return sb.st_mtime;
-#endif
-}
-void setfilemodtime(char *filename, time_t mtime)
-{
-#ifdef _WIN32
-	FILETIME mTime;
-	LONGLONG llValue;
-	HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return;
-	llValue = Int32x32To64(mtime, 10000000) + 116444736000000000;
-	mTime.dwLowDateTime = (long)llValue;
-	mTime.dwHighDateTime = (DWORD)llValue >> 32;
-	SetFileTime(hFile, &mTime, &mTime, &mTime);
-	CloseHandle(hFile);
-#else
-	struct utimbuf utb;
-	utb.actime = utb.modtime = mtime;
-	utime(filename, &utb);
-#endif
-}
-int copyfile(char *src, char *dest)
-{
-	char buf[2048];
-	time_t mtime = getfilemodtime(src);
-#ifdef _WIN32
-	int srcfd = open(src, _O_RDONLY|_O_BINARY);
-#else
-	int srcfd = open(src, O_RDONLY);
-#endif
-	int destfd;
-	int len;
-	if (srcfd < 0)
-		return 0;
-#ifdef _WIN32
-	destfd = open(dest, _O_BINARY|_O_WRONLY|_O_CREAT, _S_IWRITE);
-#else
-	destfd  = open(dest, O_WRONLY|O_CREAT, 0644);
-#endif
-	if (destfd < 0)
-	{
-		fecho(FADV, "No se puede crear el archivo '%s'", dest);
-		return 0;
-	}
-
-	while ((len = read(srcfd, buf, 1023)) > 0)
-	{
-		if (write(destfd, buf, len) != len)
-		{
-			fecho(FADV, "No se puede escribir en el archivo '%s'. Quizás por falta de espacio en su HD.", dest);
-			close(srcfd);
-			close(destfd);
-			unlink(dest); /* make sure our corrupt file isn't used */
-			return 0;
-		}
-	}
-	close(srcfd);
-	close(destfd);
-	setfilemodtime(dest, mtime);
-	return 1;	
 }
 #ifdef USA_CONSOLA
 #define MyErrorExit(x) { fecho(FERR, x); exit(-1); }

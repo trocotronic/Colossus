@@ -1399,6 +1399,13 @@ IRCFUNC(m_server)
 	Cliente *al;
 	LinkCliente *aux;
 	char *protocol, *opts, *numeric, *inf;
+#ifdef HUB
+	if (cl)
+	{
+		sendto_serv(":%s %s %s", me.nombre, TOK_SQUIT, parv[1]);
+		return 1;
+	}
+#endif
 	protocol = opts = numeric = inf = NULL;
 	strcpy(tokbuf, parv[parc - 1]);
 	protocol = strtok(tokbuf, "-");

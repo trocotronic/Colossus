@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.21 2005-02-19 15:58:05 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.22 2005-02-19 17:46:13 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -17,14 +17,21 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#ifdef UNISTDH
 #include <unistd.h>
+#endif
 #include <sys/time.h>
 #include <pthread.h>
-#endif
+#endif /* _WIN32 */
 #include <stdio.h>
+#ifdef STDLIBH
 #include <stdlib.h>
+#endif
 #include <time.h>
+#ifdef STRINGH
 #include <string.h>
+#endif
+#include "setup.h"
 #include "sistema.h" /* portabilidades */
 
 #ifdef USA_SSL
@@ -45,7 +52,9 @@
 #include "parseconf.h"
 
 extern void carga_socks(void);
+#ifdef NEED_STRCASECMP
 extern int strcasecmp(const char *, const char *);
+#endif
 extern void ircstrdup(char **, const char *);
 #ifdef DEBUG
 #define Free(x) free(x); Debug("Liberando %X", x)
@@ -53,7 +62,7 @@ extern void ircstrdup(char **, const char *);
 #define Free free
 #endif
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data)
-#define MAXSOCKS 1024
+#define MAXSOCKS MAXCONNECTIONS
 #define BUFSIZE 1024
 #define BUF_SOCK 8192
 #define DBUF 2032
@@ -335,7 +344,9 @@ extern void tea(u_int *, u_int *, u_int *);
 extern char *cifranick(char *, char *);
 extern u_long our_crc32(const u_char *, u_int);
 extern char *chrcat(char *, char);
+#ifdef NEED_STRNCASECMP
 extern int strncasecmp(const char *, const char *, int);
+#endif
 /* definiciones de cache */
 extern char *coge_cache(char *, char *);
 extern void inserta_cache(char *, char *, int, char *, ...);

@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.4 2005-02-18 22:12:25 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.5 2005-02-19 17:46:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -171,7 +171,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					GetCursorPos(&p);
 					DestroyMenu(hConfig);
 					hConfig = CreatePopupMenu();
-					AppendMenu(hConfig, MF_STRING, IDM_CONF, "colossus.conf");
+					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
 					for (ex = modulos; ex; ex = ex->sig)
 					{
@@ -222,7 +222,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					GetCursorPos(&p);
 					DestroyMenu(hConfig);
 					hConfig = CreatePopupMenu();
-					AppendMenu(hConfig, MF_STRING, IDM_CONF, "colossus.conf");
+					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
 					for (ex = modulos; ex; ex = ex->sig)
 					{
