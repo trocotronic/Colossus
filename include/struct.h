@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.29 2005-02-20 17:13:05 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.30 2005-03-03 12:13:40 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -158,6 +158,7 @@ struct mysql_t
 };
 extern MODVAR struct mysql_t mysql_tablas;
 extern char *_mysql_escapa(char *);
+extern char *_mysql_fetch_array(MYSQL_RES *, const char *);
 
 typedef struct _smtpData SmtpData;
 struct _smtpData

@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.7 2005-02-20 16:43:10 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.8 2005-03-03 12:13:42 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -46,7 +46,7 @@ void libera_zlib(Sock *sck)
  * Comprime un mensaje de cola
  * Devuelve el mensaje comprimido y guarda en len su longitud
  */
-char *comprime(Sock *sck, char *mensaje, int *len)
+char *comprime(Sock *sck, char *mensaje, int *len, int flush)
 {
 	z_stream *zout = sck->zlib->out;
 	int e;
@@ -56,6 +56,8 @@ char *comprime(Sock *sck, char *mensaje, int *len)
 		sck->zlib->outcount += *len;
 	}
 	*len = 0;
+	if (!flush && (sck->zlib->outcount < ZIP_MINIMUM))
+		return NULL;
 	zout->next_in = (Bytef *) sck->zlib->outbuf;
 	zout->avail_in = sck->zlib->outcount;
 	zout->next_out = (Bytef *) zipbuf;

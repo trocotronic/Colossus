@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.7 2005-02-18 22:12:17 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.8 2005-03-03 12:13:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,6 +12,11 @@ int carga_mysql()
 		return 0;
 	if (!mysql_real_connect(mysql, conf_db->host, conf_db->login, conf_db->pass, NULL, conf_db->puerto, NULL, CLIENT_COMPRESS))
 		return 0;
+	if (mysql_get_server_version(mysql) < 40100)
+	{
+		fecho(FERR, "Versión incorrecta de MySQL. Use almenos la versión 4.1.0");
+		return -4;
+	}
 	if (mysql_select_db(mysql, conf_db->bd))
 	{
 #ifdef _WIN32
@@ -165,7 +170,7 @@ int _mysql_backup()
 	MYSQL_FIELD *fi;
 	FILE *fp;
 	int i, j;
-	char buf[BUFSIZE], buf2[BUFSIZE], *tabla;
+	char buf[BUFSIZE], buf2[BUFSIZE], *tabla, *field;
 	if (!(fp = fopen("backup.sql", "wb")))
 		return 1;
 	for (i = 0; i < mysql_tablas.tablas; i++)
@@ -174,12 +179,12 @@ int _mysql_backup()
 			continue;
 		bzero(buf, BUFSIZE);
 		tabla = mysql_tablas.tabla[i];
-		sprintf_irc(buf, "CREATE TABLE %s ( ", tabla);
+		sprintf_irc(buf, "CREATE TABLE %s ( \n", tabla);
 		res = _mysql_query("SHOW FIELDS FROM %s", tabla);
 		while ((row = mysql_fetch_row(res)))
 		{
 			bzero(buf2, BUFSIZE);
-			sprintf_irc(buf2, "`%s` %s%s%s%s%s%s%s, ",
+			sprintf_irc(buf2, "\t`%s` %s%s%s%s%s%s%s, \n",
 				row[0], 
 				row[1], 
 				BadPtr(row[2]) ? " NOT NULL" : "",
@@ -196,23 +201,33 @@ int _mysql_backup()
 		while ((row = mysql_fetch_row(res)))
 		{
 			bzero(buf2, BUFSIZE);
-			sprintf_irc(buf2, "KEY `%s` (`%s`),",
+			sprintf_irc(buf2, "\tKEY `%s` (`%s`), \n",
 				row[2],
 				row[4]);
 			strcat(buf, buf2);
 		}
 		mysql_free_result(res);
-		buf[strlen(buf)-1] = '\0'; /* quitamos la ultima coma */
-		strcat(buf, ") ");
+		buf[strlen(buf)-3] = '\0'; /* quitamos la ultima coma */
+		strcat(buf, "\n) ");
 		res = _mysql_query("SHOW TABLE STATUS FROM %s LIKE '%s'", conf_db->bd, tabla);
-		row = mysql_fetch_row(res);
+		sprintf_irc(buf2, "ENGINE=%s", _mysql_fetch_array(res, "Engine"));
+		if ((field = _mysql_fetch_array(res, "Collation")))
+		{
+			strcat(buf2, " DEFAULT CHARSET=");
+			strcat(buf2, field);
+		}
+		if ((field = _mysql_fetch_array(res, "Comment")))
+		{
+			strcat(buf2, " COMMENT='");
+			strcat(buf2, field);
+			strcat(buf2, "'");
+		}
+		if ((field = _mysql_fetch_array(res, "Auto_increment")) && *field != '0')
+		{
+			strcat(buf2, " AUTO_INCREMENT=");
+			strcat(buf2, field);
+		}
 		mysql_free_result(res);
-		bzero(buf2, BUFSIZE);
-		sprintf_irc(buf2, "TYPE=%s%s%s%s",
-			row[1],
-			BadPtr(row[14]) ? "" : " COMMENT='",
-			BadPtr(row[14]) ? "" : row[14],
-			BadPtr(row[14]) ? "" : "'");
 		strcat(buf, buf2);
 		fprintf(fp, "%s;\n", buf);
 		if ((res = _mysql_query("SELECT * from %s", tabla)))
@@ -225,7 +240,7 @@ int _mysql_backup()
 					pthread_mutex_unlock(&mutex);
 					break;
 				}
-				pthread_mutex_lock(&mutex);
+				pthread_mutex_unlock(&mutex);
 				bzero(buf, BUFSIZE);
 				sprintf_irc(buf, "INSERT INTO `%s` VALUES (", tabla);
 				for (j = 0; (fi = mysql_fetch_field(resf)); j++)
@@ -312,4 +327,46 @@ char *_mysql_escapa(char *item)
 	mysql_real_escape_string(mysql, tmp, item, strlen(item));
 	pthread_mutex_unlock(&mutex);
 	return tmp;
+}
+char *_mysql_fetch_array(MYSQL_RES *res, const char *campo)
+{
+	static MYSQL_RES *rest = NULL;
+	static const char *campot = NULL;
+	static int i = 0, campos = 0;
+	static MYSQL_ROW row = NULL;
+	static MYSQL_FIELD *field = NULL;
+	if (!res)
+		return NULL;
+	if (rest != res)
+	{
+		field = mysql_fetch_fields(res);
+		campos = mysql_num_fields(res);
+		for (i = 0; i < campos; i++)
+		{
+			if (!strcasecmp(field[i].name, campo))
+				break;
+		}
+		if (!(row = mysql_fetch_row(res))) /* solicitamos el siguiente registro */
+			return NULL;
+	}
+	else
+	{
+		if (!strcasecmp(campo, campot))
+		{
+			if (!(row = mysql_fetch_row(res))) /* solicitamos el siguiente registro */
+				return NULL;
+		}
+		else
+		{
+			for (i = 0; i < campos; i++)
+			{
+				if (!strcasecmp(field[i].name, campo))
+					break;
+			}
+			campot = campo;
+		}
+	}
+	rest = res;
+	campot = campo;
+	return row[i]; /* devolvemos según su campo */
 }

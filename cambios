@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.14 2005-02-18 22:12:09 Trocotronic Exp $
+ * $Id: cambios,v 1.15 2005-03-03 12:13:40 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -237,3 +237,6 @@
 280105195 - Se da soporte integrado a threads.
 310105196 - Arreglado un fallo estético en los modos de ChanServ.
 310105197 - Arreglado un fallo en el SET MODOS de ChanServ.
+260205198 - Arreglado un fallo en el info de ChanServ, aviso de thunderz (#0000007)
+280205199 - Cuando se dropa un nick que es fundador de algún canal, éste pasa a manos de ChanServ hasta que alguien lo reclama.
+280205200 - Arreglado un fallo al quitar y recuperar op.

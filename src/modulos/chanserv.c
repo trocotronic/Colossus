@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.14 2005-02-18 22:12:19 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.15 2005-03-03 12:13:42 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1004,7 +1004,7 @@ BOTFUNC(chanserv_info)
 	MYSQL_ROW row;
 	time_t reg;
 	int opts;
-	char *forb, *susp;
+	char *forb, *susp, *modos;
 	if (params < 2)
 	{
 		response(cl, CLI(chanserv), CS_ERR_PARA, "INFO #canal");
@@ -1037,7 +1037,11 @@ BOTFUNC(chanserv_info)
 		response(cl, CLI(chanserv), "URL: \00312%s", row[5]);
 	if (!BadPtr(row[6]))
 		response(cl, CLI(chanserv), "Email: \00312%s", row[6]);
-	response(cl, CLI(chanserv), "Modos: \00312%s\003 Candado de modos: \00312%s", row[7], opts & CS_OPT_RMOD ? "ON" : "OFF");
+	if (tiene_nivel(cl->nombre, param[1], CS_LEV_SET))
+		modos = row[7];
+	else
+		modos = strtok(row[7], " ");
+	response(cl, CLI(chanserv), "Modos: \00312%s\003 Candado de modos: \00312%s", modos, opts & CS_OPT_RMOD ? "ON" : "OFF");
 	response(cl, CLI(chanserv), "Topic: \00312%s\003 puesto por: \00312%s", row[8], row[9]);
 	response(cl, CLI(chanserv), "Candado de topic: \00312%s\003 Retención de topic: \00312%s", opts & CS_OPT_KTOP ? "ON" : "OFF", opts & CS_OPT_RTOP ? "ON" : "OFF");
 	if (opts & CS_OPT_SOP)
@@ -2949,6 +2953,8 @@ int chanserv_dropanick(char *nick)
 			char tmp[512];
 			strncpy(tmp, regs->sub[0]->canal, 512);
 			borra_acceso(nick, tmp);
+			if (!strcasecmp(_mysql_get_registro(CS_MYSQL, tmp, "founder"), nick))
+				_mysql_add(CS_MYSQL, tmp, "founder", CLI(chanserv)->nombre);
 			subs--;
 		}
 	}
@@ -3025,7 +3031,7 @@ int chanserv_dropachans(Proc *proc)
 	MYSQL_ROW row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = _mysql_query("SELECT item from %s%s where ultimo < %i AND ultimo !='0' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, proc->proc)) || !mysql_num_rows(res))
+		if (!(res = _mysql_query("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) ? CLI(chanserv)->nombre : "", proc->proc)) || !mysql_num_rows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.20 2005-02-18 22:12:16 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.21 2005-03-03 12:13:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -508,7 +508,7 @@ int borra_exc_de_canal(Canal *cn, char *exc)
 void inserta_modo_cliente_en_canal(LinkCliente **link, Cliente *cl)
 {
 	LinkCliente *lk;
-	if (!cl)
+	if (!cl || es_link(*link, cl))
 		return;
 	lk = (LinkCliente *)Malloc(sizeof(LinkCliente));
 	lk->user = cl;
@@ -518,7 +518,7 @@ void inserta_modo_cliente_en_canal(LinkCliente **link, Cliente *cl)
 int borra_modo_cliente_de_canal(LinkCliente **link, Cliente *cl)
 {
 	LinkCliente *aux, *prev = NULL;
-	if (!cl)
+	if (!cl || !es_link(*link, cl))
 		return 0;
 	for (aux = *link; aux; aux = aux->sig)
 	{

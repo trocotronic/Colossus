@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.5 2005-02-20 17:48:14 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.6 2005-03-03 12:13:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -248,7 +248,7 @@ void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
 	len = strlen(buf);
 #ifdef ZLIB
 	if (EsZlib(sck))
-		msg = comprime(sck, msg, &len);
+		msg = comprime(sck, msg, &len, 0);
 	if (len)
 #endif
 	encola(sck->sendQ, msg, 0); /* de momento siempre son cadenas */
@@ -457,15 +457,29 @@ void envia_cola(Sock *sck)
 {
 	char buf[BUFSIZE], *msg;
 	int len = 0;
+#ifdef USA_ZLIB
+	int mas = 0;
+	if (EsZlib(sck) && sck->zlib->outcount)
+	{
+		if (sck->sendQ && sck->sendQ->len > 0)
+			mas = 1;
+		else
+		{
+			msg = comprime(sck, NULL, &len, 1);
+			if (len == -1)
+			{
+				Info("No puede hacer comprime() (1)");
+				return;
+			}
+			encola(sck->sendQ, msg, len);
+		}
+	}
+#endif
 	if (sck->sendQ && sck->sendQ->len > 0)
 	{
 		while ((len = desencola(sck->sendQ, &buf[0], sizeof(buf))) > 0) /* hemos copiado una línea entera */
 		{
 			msg = &buf[0];
-#ifdef USA_ZLIB
-			if (EsZlib(sck))
-				msg = comprime(sck, msg, &len);
-#endif
 #ifdef USA_SSL
 			if (EsSSL(sck))
 				ircd_SSL_write(sck, msg, len);
@@ -475,6 +489,19 @@ void envia_cola(Sock *sck)
 			if (sck->writefunc)
 				sck->writefunc(sck, msg);
 		}
+#ifdef USA_ZLIB
+		if (!sck->sendQ->len && mas)
+		{
+			mas = 0;
+			msg = comprime(sck, NULL, &len, 1);
+			if (len == -1)
+			{
+				Info("No puede hacer comprime() (2)");
+				return;
+			}
+			encola(sck->sendQ, msg, len);
+		}
+#endif
 	}
 }
 int lee_mensaje(Sock *sck)
@@ -499,14 +526,6 @@ int lee_mensaje(Sock *sck)
 void crea_mensaje(Sock *sck, char *msg, int len)
 {
 	char *p = msg, *c;
-#ifdef USA_ZLIB
-	if (EsZlib(sck))
-	{
-		sck->zlib->incount = 0;
-		sck->zlib->inbuf[0] = '\0';
-		p = descomprime(sck, msg, &len);
-	}
-#endif
 	if ((c = strchr(p, '\r')))
 		*c = '\0';
 	if ((c = strchr(p, '\n')))

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.14 2005-02-20 17:13:05 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.15 2005-03-03 12:13:42 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -296,6 +296,8 @@ BOTFUNC(nickserv_help)
 			response(cl, CLI(nickserv), "\00312LIBERAR\003 Libera un nick de su suspenso.");
 			response(cl, CLI(nickserv), "\00312RENAME\003 Cambia el nick a un usuario.");
 		}
+		if (IsAdmin(cl))
+			response(cl, CLI(nickserv), "\00312FORBID\003 Prohibe o permite un determinado nick.");
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Para más información, \00312/msg %s %s comando", nickserv.hmod->nick, strtoupper(param[0]));
 	}
