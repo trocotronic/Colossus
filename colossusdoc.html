@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.3 2004-10-01 18:55:19 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.4 2004-10-10 09:56:15 Trocotronic Exp $ -->
 
 <body>
 
@@ -56,21 +56,34 @@
 <p>&nbsp;</p>
   <p><b><font size="6"><a name="instalacion"></a>2.0 Instalaci&oacute;n</font></b></p>
 <p>Sistemas operativos soportados:</p>
-  <ul><li>Windows XP Home  
-  <li>Windows XP Professional  
-  <li>Windows 2000  
-  <li>Windows 2003  
-  <li>Windows Me  
-  <li>Windows 98</ul><br>
-    Para	instalar	el	programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente C:\Colossus.
+  <ul>
+  <li><b>Versiones *NIX:</b>
+  <ul>
+  <li>Linux 2.2.x
+  <li>Linux 2.4.x
+  <li>FreeBSD 4.6-STABLE
+  <li>FreeBSD 4.5-STABLE
+  <li>Solaris 2.x
+  </ul>
+  <li><b>Versiones Windows:</b>
+  <ul> 
+  <li>WindowsXP Home
+  <li>WindowsXP Pro
+  <li>Windows 2000 Pro
+  <li>Windows 2000 Server
+  <li>Windows 2000 Advanced Server
+  <li>Windows 98
+  <li>Windows Me
+  </ul></ul><br>
+    Para	instalar	el	programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix, o C:\Colossus si usas Windows.
 
     <p>Una vez descomprimido, crea el archivo colossus.conf y config&uacute;relo a sus necesidades.</p>
     <p>&nbsp;</p>
   <p><b><font size="6"><a name="caracteristicas"></a>3.0 Caracter&iacute;sticas</font></b></p>
   <p>Estos servicios para IRC est&aacute;n programados en C. </p>
-  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals, la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's. Junto al n&uacute;cleo se une la base para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones. A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos. La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
+  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals, la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones. A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos. La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
   <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro. Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
-  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll. Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
+  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll, en Windows, o archivo .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
   <ul>
     <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.     
     <li><b>ChanServ:</b> administra los canales y todo lo que les englobe.  
@@ -116,7 +129,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
   <p>Adem&aacute;s, los comentarios pueden hacerse anteponiendo // para comentar toda esta l&iacute;nea o con /* */ para comentar varias l&iacute;neas.</p>
   <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una s&oacute;la l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
   <p><b><font size="5"><a name="principal"></a>8.1 Archivo principal </font></b></p>
-  <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa, generalmente en C:\Colossus.</p>
+  <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa.</p>
   <p>El archivo se compone de varios bloques:</p>
   <p><b><font size="4"><a name="server"></a>8.1.1 Bloque server { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>server {
@@ -168,8 +181,10 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="4"><a name="modulos"></a>8.1.5 Directriz modulo <font color="#0000FF">(opcional)</font></font></b></p>
-  <pre>modulo &quot;ruta/archivo.dll&quot;;</pre>
-  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL. As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen. Es conveniente que todos los m&oacute;dulos est&eacute;n en C:\Colossus\modulos. </p>
+  <pre>modulo &quot;ruta/archivo.dll&quot;; // en Windows<br>modulo &quot;ruta/archivo.so&quot;; // en *nix</pre>
+  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix. As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen. Es conveniente que todos los m&oacute;dulos est&eacute;n en la carpeta /modulos.</p>
+  <p>Ejemplo:</p>
+  <pre>modulo &quot;modulos/chanserv.dll&quot;; // en Windows<br>modulo &quot;modulos/chanserv.so&quot;; // en *nix</pre>
   <p>&nbsp;</p>
   <p><a name="log"></a><font size="4"><b>8.1.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>log archivo {
@@ -223,13 +238,13 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	egd;<br>	clave &quot;server.key.pem&quot;;<br>	opciones {<br>		certificado-cliente;<br>	};<br>};</pre>
   <p>&nbsp;</p>
   <p><br>
-    Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta modulos\ (o donde se ubique la .dll que lo carga) dentro de la carpeta principal, generalmente C:\Colossus\modulos.
+    Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.
     </pre>
   </p>
   <p>Algunos  requieren que est&eacute;n cargados otros m&oacute;dulos antes.</p>
   <p><b><font size="5"><a name="nickserv"></a>8.2 NickServ</font></b></p>
-  <p>Nombre del archivo <b>NickServ.inc</b>.</p>
-  <p>Requiere: <b>chanserv.dll</b>. </p>
+  <p>Nombre del archivo <b>nickserv.inc</b>.</p>
+  <p>Requiere: <b>chanserv</b>. </p>
   <pre>NickServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sid;  //opcional<br>	secure;  //opcional<br>	automigrar;  //opcional<br>	prot KILL|NICK;<br>	recovernick formato-%s;<br>	securepass formato;<br>	min_reg n&ordm;;<br>	autodrop n&ordm;;  //opcional<br>	nicks n&ordm;;  //opcional<br>	intentos n&ordm;;<br>	maxlist n&ordm;;<br>	forbmails {<br>		dominio1;
 		dominio2;
 		...<br>	};  //opcional<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
@@ -241,7 +256,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 <pre>NickServ {<br>	nick NickServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n de nicks&quot;;<br>	modos owhraAOkNCqBvd;<br>	sid;<br>	secure;<br>	automigrar;<br>	prot kill;<br>	recovernick inv-%s-????;<br>	securepass *******;<br>	min_reg 24;<br>	autodrop 15;<br>	nicks 3;<br>	intentos 3;<br>	maxlist 30;<br>	forbmails {<br>		hotmail.com;<br>	};<br>	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="chanserv"></a>8.3 ChanServ</font></b></p>
-<p>Nombre del archivo <b>ChanServ.inc</b>.</p>
+<p>Nombre del archivo <b>chanserv.inc</b>.</p>
 <pre>ChanServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sid;  //opcional<br>	autodrop n&ordm;;<br>	maxlist n&ordm;;<br>	bantype n&ordm;;
 	automigrar;  //opcional<br>	tokens {<br>		formato format;<br>		vigencia n&ordm;;<br>		necesarios n&ordm;;<br>		antig n&ordm;;<br>	};<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
 		funci&oacute;n2;
@@ -254,8 +269,8 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="operserv"></a>8.4 OperServ</font></b></p>
-<p>Nombre del archivo <b>OperServ.inc</b>.</p>
-<p>Requiere: <b>chanserv.dll</b>, <b>memoserv.dll</b>. </p>
+<p>Nombre del archivo <b>operserv.inc</b>.</p>
+<p>Requiere: <b>chanserv</b>, <b>memoserv</b>. </p>
 <pre>OperServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	bline &quot;mensaje: %s&quot;;<br>	autoop;
 	clones n&ordm;; //si no tiene soporte UDB<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		...<br>	};<br>};<br>
 </pre>
@@ -267,8 +282,8 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 		funci&oacute;nN;<br>	};<br>};<br>
 </pre>
 <p><b><font size="5"><a name="memoserv"></a>8.5 MemoServ</font></b></p>
-<p>Nombre del archivo <b>MemoServ.inc</b>.</p>
-<p>Requiere: <b>chanserv.dll</b>. </p>
+<p>Nombre del archivo <b>memoserv.inc</b>.</p>
+<p>Requiere: <b>chanserv</b>. </p>
 <pre>MemoServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	defecto n&ordm;;<br>	cada n&ordm;;<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		...<br>	};<br>};<br>
 </pre>
 <p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. El <b>defecto</b> es el n&uacute;mero del l&iacute;mite de mensajes por defecto que acepta un usuario. El <b>cada</b> indica cu&aacute;ntos segundos deben transcurrir antes de poder enviar otro mensaje. La directriz <b>residente</b> se utiliza para especificar los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales.  El bloque <b>funciones { }</b> tambi&eacute;n es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. Tiene las funciones de MemoServ en su <a href="#fmemo">sección</a>.</p>
@@ -277,7 +292,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 </pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="ipserv"></a>8.6 IpServ</font></b></p>
-<p>&nbsp;Nombre del archivo <b>IpServ.inc</b>.</p>
+<p>&nbsp;Nombre del archivo <b>ipserv.inc</b>.</p>
 <pre>IpServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sufijo sufijo;<br>	cambio n&ordm;;<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
 		funci&oacute;n2;
 		...
