@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.4 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.5 2004-10-23 22:39:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -95,7 +95,7 @@ int crea_modulo(char *archivo)
 		mod->config = strdup(buf);
 		mod->sig = modulos;
 		modulos = mod;
-		id *= 2;
+		id <<= 1;
 	}
 	else
 	{
