@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.3 2004-10-23 22:39:43 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.4 2004-10-31 17:14:08 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -79,7 +79,7 @@ int b64_decode(char const *src, unsigned char *target, size_t targsize)
 	tarindex = 0;
 
 	while ((ch = *src++) != '\0') {
-		if (isspace(ch))	/* Skip whitespace anywhere. */
+		if (ch == 32)	/* Skip whitespace anywhere. */
 			continue;
 
 		if (ch == Pad64)
@@ -149,7 +149,7 @@ int b64_decode(char const *src, unsigned char *target, size_t targsize)
 		case 2:		/* Valid, means one byte of info */
 			/* Skip any number of spaces. */
 			for ((void)NULL; ch != '\0'; ch = *src++)
-				if (!isspace(ch))
+				if (ch != 32)
 					break;
 			/* Make sure there is another trailing = sign. */
 			if (ch != Pad64)
@@ -164,7 +164,7 @@ int b64_decode(char const *src, unsigned char *target, size_t targsize)
 			 * whitespace after it?
 			 */
 			for ((void)NULL; ch != '\0'; ch = *src++)
-				if (!isspace(ch))
+				if (ch != 32)
 					return (-1);
 
 			/*
