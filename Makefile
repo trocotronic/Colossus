@@ -1,9 +1,9 @@
-## $Id: Makefile,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $
+## $Id: Makefile,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
 IRCDLIBS=-ldl -lmysqlclient
-XCFLAGS=-pipe -g -O2 -funsigned-char -export-dynamic
+XCFLAGS=-pipe -g -O3 -fexpensive-optimization -funsigned-char -export-dynamic
 CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS)
 SUBDIRS=src
 LDFLAGS=

@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.2 2004-09-11 16:08:05 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -91,7 +91,8 @@ DLLFUNC int carga(Modulo *mod)
 	Conf modulo;
 	int errores = 0;
 	char *file, *k;
-	file = strdup(mod->archivo);
+	file = (char *)Malloc(sizeof(char) * (strlen(mod->archivo) + 5));
+	strcpy(file, mod->archivo);
 	k = strrchr(file, '.') + 1;
 	*k = '\0';
 	strcat(file, "inc");
@@ -1017,12 +1018,12 @@ BOTFUNC(operserv_modos)
 			}
 		}
 		envia_registro_bdd("N::%s::modos %s", param[1], param[2]);
-		response(cl, operserv->nick, OS_ERR_EMPT, "Los modos de operador para \00312%s\003 se han puesto a \00312", param[1], param[2]);
+		response(cl, operserv->nick, "Los modos de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
 	}
 	else
 	{
 		envia_registro_bdd("N::%s::modos", param[1]);
-		response(cl, operserv->nick, OS_ERR_EMPT, "Se han eliminado los modos de operador para \00312%s", param[1]);
+		response(cl, operserv->nick, "Se han eliminado los modos de operador para \00312%s", param[1]);
 	}
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.2 2004-09-11 16:08:05 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -50,7 +50,8 @@ DLLFUNC int carga(Modulo *mod)
 	Conf modulo;
 	int errores = 0;
 	char *file, *k;
-	file = strdup(mod->archivo);
+	file = (char *)Malloc(sizeof(char) * (strlen(mod->archivo) + 5));
+	strcpy(file, mod->archivo);
 	k = strrchr(file, '.') + 1;
 	*k = '\0';
 	strcat(file, "inc");
