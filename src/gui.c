@@ -1,9 +1,10 @@
 /*
- * $Id: gui.c,v 1.5 2004-09-17 22:11:12 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.6 2004-09-23 17:02:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
+#include "modulos.h"
 #include "resource.h"
 #include <commctrl.h>
 
@@ -116,7 +117,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 }
 LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static HMENU hTray;
+	static HMENU hTray, hConfig;
 	POINT p;
 	if (message == WM_TASKBARCREATED)
 	{
@@ -165,16 +166,37 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					SetForegroundWindow(hDlg);
 					break;
 				case WM_RBUTTONUP:
+				{
+					unsigned long i = 60001;
+					Modulo *ex;
 					GetCursorPos(&p);
+					DestroyMenu(hConfig);
+					hConfig = CreatePopupMenu();
+					AppendMenu(hConfig, MF_STRING, IDM_CONF, "colossus.conf");
+					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
+					for (ex = modulos; ex; ex = ex->sig)
+					{
+						if (ex->cargado) /* está en conf */
+							AppendMenu(hConfig, MF_STRING, i++, ex->config);
+					}
+					ModifyMenu(hTray, IDM_CONFIG, MF_BYCOMMAND|MF_POPUP|MF_STRING, (UINT)hConfig, "&Configuración");
 					TrackPopupMenu(hTray, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
 					/* Kludge for a win bug */
 					SendMessage(hDlg, WM_NULL, 0, 0);
 					break;
+				}
 			}
 			return 0;
 		}
 		case WM_COMMAND:
 		{
+			if (LOWORD(wParam) >= 60000 && HIWORD(wParam) == 0 && !lParam) 
+			{
+				unsigned char path[MAX_PATH];
+				GetMenuString(hConfig, LOWORD(wParam), path, MAX_PATH, MF_BYCOMMAND);
+				ShellExecute(NULL, "open", path, NULL, NULL, SW_MAXIMIZE);
+				break;
+			}
 			switch(LOWORD(wParam))
 			{
 				case BT_CON:
@@ -192,10 +214,25 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 					break;
 				}
-				case IDM_CONF:
 				case BT_CONF:
-					ShellExecute(NULL, "open", "colossus.conf", NULL, NULL, SW_MAXIMIZE);
+				{
+					unsigned long i = 60001;
+					Modulo *ex;
+					GetCursorPos(&p);
+					DestroyMenu(hConfig);
+					hConfig = CreatePopupMenu();
+					AppendMenu(hConfig, MF_STRING, IDM_CONF, "colossus.conf");
+					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
+					for (ex = modulos; ex; ex = ex->sig)
+					{
+						if (ex->cargado) /* está en conf */
+							AppendMenu(hConfig, MF_STRING, i++, ex->config);
+					}
+					TrackPopupMenu(hConfig, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
+					/* Kludge for a win bug */
+					SendMessage(hDlg, WM_NULL, 0, 0);
 					break;
+				}
 				case IDM_AYUDA:
 				case BT_AYUDA:
 					ShellExecute(NULL, "open", "colossusdoc.html", NULL, NULL, SW_MAXIMIZE);
