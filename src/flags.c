@@ -1,5 +1,5 @@
 /*
- * $Id: flags.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ * $Id: flags.c,v 1.3 2004-09-17 18:15:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -128,10 +128,8 @@ u_long flags2modes(u_long *modos, char *flags, mTab tabla[])
 }
 char *modes2flags(Canal *cn, u_long modes, mTab tabla[])
 {
-	char f = ADD;
 	mTab *aux = &tabla[0];
 	char *flags;
-	int i = 0;
 	flags = buf;
 	while (aux->flag != 0x0)
 	{

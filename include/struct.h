@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.4 2004-09-17 18:15:06 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -245,20 +245,7 @@ extern char **margv;
 #define FSQL 4
 extern void fecho(char , char *, ...);
 extern void Debug(char *, ...);
-static char *StsMalloc(size_t size, char *file, long line)
-{
-	void *x;
-	x = malloc(size);
-#ifdef DEBUG
-	Debug("Dando direccion %X", x);
-#endif
-	if (!x)
-	{
-		fecho(FERR,  "[%s:%i] Te has quedado sin memoria", file, line);
-		exit(-1);
-	}
-	return x;
-}
+extern char *StsMalloc(size_t, char *, long);
 #define ADD 1
 #define DEL 2
 extern struct in_addr *resolv(char *);

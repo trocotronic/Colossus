@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.5 2004-09-17 16:02:52 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.6 2004-09-17 18:15:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -290,7 +290,7 @@ SOCKFUNC(cierra_ircd)
 	canales = NULL;
 	if (reset)
 	{
-		execv(margv[0], margv);
+		(void)execv(margv[0], margv);
 		cierra_colossus(0);
 	}
 	if (!data) /* es remoto */
@@ -433,7 +433,7 @@ IRCFUNC(m_nick)
 {
 	if (parc > 3)
 	{
-		Cliente *cl;
+		Cliente *cl = NULL;
 		if (parc == 7) /* NICKv1 */
 			cl = nuevo_cliente(parv[0], parv[3], parv[4], parv[5], parv[4], NULL, parv[6]);
 		else if (parc == 8) /* nickv1 también (¿?) */
@@ -524,7 +524,7 @@ IRCFUNC(m_join)
 	strcpy(tokbuf, parv[1]);
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 	{
-		Canal *cn;
+		Canal *cn = NULL;
 		if (conf_set->debug && cn->miembros == 1 && !IsAdmin(cl) && !strcmp(canal, conf_set->debug))
 		{
 			sendto_serv(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
@@ -950,7 +950,7 @@ IRCFUNC(m_away)
 IRCFUNC(m_rehash)
 {
 	if (!strcasecmp(parv[1], me.nombre))
-		refresca();
+		(int)refresca();
 	return 0;
 }
 IRCFUNC(m_module)
@@ -1014,7 +1014,6 @@ Canal *busca_canal(char *canal, Canal *lugar)
 Cliente *nuevo_cliente(char *nombre, char *ident, char *host, char *server, char *vhost, char *umodos, char *info)
 {
 	Cliente *cl;
-	char *oct;
 	cl = (Cliente *)Malloc(sizeof(Cliente));
 	cl->nombre = nombre ? strdup(nombre) : NULL;
 	cl->ident = ident ? strdup(ident) : NULL;
@@ -1465,7 +1464,6 @@ void genera_mask(Cliente *cl)
 }
 IRCFUNC(sincroniza)
 {
-	Modulo *ex;
 	tburst = microtime();
 #ifdef UDB
 	sendto_serv(":%s DB %s INF N %s", me.nombre, cl->nombre, nicks->data_char);
@@ -1510,7 +1508,6 @@ IRCFUNC(m_sajoin)
 }
 IRCFUNC(m_sapart)
 {
-	Cliente *bl;
 	if (busca_cliente(parv[1], NULL))
 		sendto_serv(":%s %s %s", parv[1], TOK_PART, parv[2]);
 	return 0;

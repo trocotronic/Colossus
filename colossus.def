@@ -86,3 +86,5 @@ EXPORTS
 	tea
 	base64toint
 	cierra_colossus
+	StsMalloc
+	
