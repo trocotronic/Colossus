@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.12 2004-09-18 09:10:13 Trocotronic Exp $ 
+ * $Id: main.c,v 1.13 2004-09-18 09:10:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -847,7 +847,7 @@ int main(int argc, char *argv[])
 	struct rlimit corelim;
 	for (i = 0; logo[i] != 0; i++)
 		fprintf(stderr, "%c", logo[i]);
-	fprintf(stderr, "\n\t\t\n\n" COLOSSUS_VERSION);
+	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n\n");
 #ifdef UDB
 	fprintf(stderr, "\t\t+UDB 3.0\n\n");
 #endif
