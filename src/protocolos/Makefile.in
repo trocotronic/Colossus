@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.1 2005-02-18 23:08:45 Trocotronic Exp $
+## $Id: Makefile.in,v 1.2 2005-02-19 00:20:52 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
@@ -6,7 +6,7 @@ INCLUDES = ../include/ircd.h ../include/md5.h \
 R_MODULES=unreal.so p10.so
 COMMANDS=unreal.o p10.o
 MODULES=$(R_MODULES)
-MODULEFLAGS=-fPIC -DPIC -shared
+MODULEFLAGS=@MODULEFLAGS@
 all: build
 build: $(MODULES)
 custommodule: $(MODULEFILE).c
