@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.16 2005-03-14 18:55:57 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.17 2005-03-18 21:26:53 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -47,6 +47,7 @@ static int chanserv_proteger	(Cliente *, char *[], int, char *[], int);
 int chanserv_sig_mysql	();
 int chanserv_sig_eos	();
 int chanserv_sig_synch	();
+int chanserv_sig_prenick (Cliente *);
 
 int chanserv_dropachans(Proc *);
 int chanserv_dropanick(char *);
@@ -185,6 +186,8 @@ int descarga()
 	borra_senyal(NS_SIGN_DROP, chanserv_dropanick);
 	borra_senyal(SIGN_EOS, chanserv_sig_eos);
 	borra_senyal(SIGN_SYNCH, chanserv_sig_synch);
+	borra_senyal(SIGN_PRE_NICK, chanserv_sig_prenick);
+	borra_senyal(SIGN_QUIT, chanserv_sig_prenick);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -255,6 +258,8 @@ void set(Conf *config, Modulo *mod)
 	inserta_senyal(NS_SIGN_DROP, chanserv_dropanick);
 	inserta_senyal(SIGN_EOS, chanserv_sig_eos);
 	inserta_senyal(SIGN_SYNCH, chanserv_sig_synch);
+	inserta_senyal(SIGN_PRE_NICK, chanserv_sig_prenick);
+	inserta_senyal(SIGN_QUIT, chanserv_sig_prenick);
 	proc(chanserv_dropachans);
 	bot_set(chanserv);
 }
@@ -268,6 +273,17 @@ int es_fundador(Cliente *al, char *canal)
 	if (!strcasecmp(fun, al->nombre))
 		return 1;
 	return 0;
+}
+char *es_fundador_cache(Cliente *al, char *canal)
+{
+	char *cache;
+	if ((cache = coge_cache(CACHE_FUNDADORES, al->nombre, chanserv.hmod->id)))
+	{
+		sprintf(buf, "%s ", canal);
+		if (strstr(cache, buf))
+			return cache;
+	}
+	return NULL;
 }
 int es_residente(Modulo *mod, char *canal)
 {
@@ -335,12 +351,12 @@ void inserta_akick_bd(char *nick, char *canal, char *emisor, char *motivo)
 	int i;
 	aux = inserta_akick(nick, canal, emisor, motivo);
 	buf[0] = '\0';
-	sprintf_irc(buf, "%s\1%s\1%s", aux->akick[0]->nick, aux->akick[0]->motivo, aux->akick[0]->puesto);
+	sprintf_irc(buf, "%s\1%s\1%s", aux->akick[0].nick, aux->akick[0].motivo, aux->akick[0].puesto);
 	for (i = 1; i < aux->akicks; i++)
 	{
 		char *tmp;
-		tmp = (char *)Malloc(sizeof(char) * (strlen(aux->akick[i]->nick) + strlen(aux->akick[i]->motivo) + strlen(aux->akick[i]->puesto) + 4));
-		sprintf_irc(tmp, "\t%s\1%s\1%s", aux->akick[i]->nick, aux->akick[i]->motivo, aux->akick[i]->puesto);
+		tmp = (char *)Malloc(sizeof(char) * (strlen(aux->akick[i].nick) + strlen(aux->akick[i].motivo) + strlen(aux->akick[i].puesto) + 4));
+		sprintf_irc(tmp, "\t%s\1%s\1%s", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
 		strcat(buf, tmp);
 		Free(tmp);
 	}
@@ -354,7 +370,7 @@ int es_akick(char *nick, char *canal)
 	{
 		for (i = 0; i < aux->akicks; i++)
 		{
-			if (!strcasecmp(aux->akick[i]->nick, nick))
+			if (!strcasecmp(aux->akick[i].nick, nick))
 				return 1;
 		}
 	}
@@ -368,7 +384,7 @@ int es_cregistro(char *nick, char *canal)
 	{
 		for (i = 0; i < aux->subs; i++)
 		{
-			if (!strcasecmp(aux->sub[i]->canal, canal))
+			if (!strcasecmp(aux->sub[i].canal, canal))
 				return 1;
 		}
 	}
@@ -403,7 +419,7 @@ Cliente **empaqueta_clientes(Canal *cn, LinkCliente *lista, u_char opers)
 	u_int i, j = 0;
 	al = (Cliente **)Malloc(sizeof(Cliente *) * (cn->miembros + 1)); /* como máximo */
 	lk = (lista ? lista : cn->miembro);
-	for (i = 0; i < cn->miembros; i++)
+	for (i = 0; i < cn->miembros && lk; i++)
 	{
 		if (!EsBot(lk->user) && (!IsOper(lk->user) || opers))
 			al[j++] = lk->user;
@@ -552,13 +568,13 @@ BOTFUNC(chanserv_help)
 			response(cl, CLI(chanserv), "\00312HALFS\003 Quita todos los +h del canal.");
 		response(cl, CLI(chanserv), "\00312VOICES\003 Quita todos los +v del canal.");
 		response(cl, CLI(chanserv), "\00312BANS\003 Quita todos los +b del canal.");
-		response(cl, CLI(chanserv), "\00312USERS\003 Expulsa a todos los usuarios del canal.");
+		response(cl, CLI(chanserv), "\00312USERS\003 Expulsa a todos los usuarios del canal. Puede especificar un motivo.");
 		response(cl, CLI(chanserv), "\00312ACCESOS\003 Borra todos los accesos del canal.");
 		response(cl, CLI(chanserv), "\00312MODOS\003 Quita todos los modos del canal y lo deja en +nt.");
 		if (IsOper(cl))
 		{
-			response(cl, CLI(chanserv), "\00312KILL\003 Desconecta a todos los usuarios del canal.");
-			response(cl, CLI(chanserv), "\00312GLINE\003 Pone una GLine a todos los usuarios del canal.");
+			response(cl, CLI(chanserv), "\00312KILL\003 Desconecta a todos los usuarios del canal. Puede especificar un motivo.");
+			response(cl, CLI(chanserv), "\00312GLINE\003 Pone una GLine a todos los usuarios del canal. Puede especificar un motivo.");
 		}
 		else
 			response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+c\003.");
@@ -916,22 +932,6 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
-BOTFUNC(chanserv_deauth)
-{
-	if (params < 2)
-	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "DEAUTH #canal");
-		return 1;
-	}
-	if (!IsChanReg(param[1]))
-	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
-		return 1;
-	}
-	response(cl, CLI(chanserv), CS_ERR_EMPT, "No te has identificado como fundador.");
-	return 1;
-	
-}
 BOTFUNC(chanserv_drop)
 {
 	if (params < 2)
@@ -957,6 +957,7 @@ BOTFUNC(chanserv_drop)
 }
 BOTFUNC(chanserv_identify)
 {
+	char *cache;
 	if (params < 3)
 	{
 		response(cl, CLI(chanserv), CS_ERR_PARA, "IDENTIFY #canal pass");
@@ -983,20 +984,61 @@ BOTFUNC(chanserv_identify)
 		response(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	/*if (cl->fundadores == MAX_FUN)
+	if (es_fundador(cl, param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "No se aceptan más identificaciones.");
+		response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya eres fundador de este canal.");
+		return 1;
+	}
+	sprintf_irc(buf, "%s ", param[1]);
+	if ((cache = coge_cache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id)))
+	{
+		if (strstr(cache, buf))
+		{
+			response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya te has identificado como fundador de este canal.");
+			return 1;
+		}
+		strcat(buf, cache);
+	}
+	inserta_cache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
+	response(cl, CLI(chanserv), "Ahora eres reconocido como founder de \00312%s\003.", param[1]);
+	return 0;
+}
+BOTFUNC(chanserv_deauth)
+{
+	char *cache, *tok;
+	if (params < 2)
+	{
+		response(cl, CLI(chanserv), CS_ERR_PARA, "DEAUTH #canal");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (es_fundador(cl, param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya te has identificado como fundador de este canal.");
+		response(cl, CLI(chanserv), CS_ERR_EMPT, "Eres fundador de este canal. No puedes quitarte este estado.");
 		return 1;
 	}
-	ircstrdup(&cl->fundador[cl->fundadores], param[1]);
-	cl->fundadores++;*/
-	response(cl, CLI(chanserv), "Ahora eres reconocido como founder de \00312%s\003.", param[1]);
-	return 0;
+	if (!(cache = es_fundador_cache(cl, param[1])))
+	{
+		response(cl, CLI(chanserv), CS_ERR_EMPT, "No te has identificado como fundador.");
+		return 1;
+	}
+	buf[0] = '\0';
+	for (tok = strtok(cache, " "); tok; tok = strtok(NULL, " "))
+	{
+		if (strcasecmp(tok, param[1]))
+		{
+			strcat(buf, tok);
+			strcat(buf, " ");
+		}
+	}
+	if (buf[0])
+		inserta_cache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
+	response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya no estás identificado como fundador de \00312%s", param[1]);
+	return 1;
 }
 BOTFUNC(chanserv_info)
 {
@@ -1252,9 +1294,12 @@ BOTFUNC(chanserv_clear)
 	}
 	if (!strcasecmp(param[2], "USERS"))
 	{
+		char *motivo = "CLEAR USERS";
 		al = empaqueta_clientes(cn, NULL, !ADD);
+		if (params > 3)
+			motivo = implode(param, params, 3, -1);
 		for (i = 0; al[i]; i++)
-			port_func(P_KICK)(al[i], CLI(chanserv), cn, "CLEAR USERS");
+			port_func(P_KICK)(al[i], CLI(chanserv), cn, motivo);
 	}
 	else if (!strcasecmp(param[2], "ADMINS") && MODE_ADM)
 	{
@@ -1310,19 +1355,23 @@ BOTFUNC(chanserv_clear)
 	}
 	else if (!strcasecmp(param[2], "KILL"))
 	{
+		char *motivo = "KILL USERS";
 		if (!IsOper(cl))
 		{
 			response(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
+		if (params > 3)
+			motivo = implode(param, params, 3, -1);
 		al = empaqueta_clientes(cn, NULL, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_QUIT_USUARIO_REMOTO)(al[i], CLI(chanserv), "KILL USERS");
+			port_func(P_QUIT_USUARIO_REMOTO)(al[i], CLI(chanserv), motivo);
 		response(cl, CLI(chanserv), "Usuarios de \00312%s\003 desconectados.", param[1]);
 	}
 	else if (!strcasecmp(param[2], "GLINE"))
 	{
 		LinkCliente *aux;
+		char *motivo = "GLINE USERS";
 		if (!IsOper(cl))
 		{
 			response(cl, CLI(chanserv), CS_ERR_FORB, "");
@@ -1338,10 +1387,12 @@ BOTFUNC(chanserv_clear)
 			response(cl, CLI(chanserv), CS_ERR_SNTX, "El tiempo debe ser superior a 1 segundo.");
 			return 1;
 		}
+		if (params > 4)
+			motivo = implode(param, params, 4, -1);
 		for (aux = cn->miembro; aux; aux = aux->sig)
 		{
 			if (!EsBot(aux->user) && !IsOper(aux->user))
-				port_func(P_GLINE)(CLI(chanserv), ADD, aux->user->ident, aux->user->host, atoi(param[3]), "GLINE USERS");
+				port_func(P_GLINE)(CLI(chanserv), ADD, aux->user->ident, aux->user->host, atoi(param[3]), motivo);
 		}
 		response(cl, CLI(chanserv), "Usuarios de \00312%s\003 con gline durante \00312%s\003 segundos.", param[1], param[3]);
 	}
@@ -1350,6 +1401,8 @@ BOTFUNC(chanserv_clear)
 		response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 		return 1;
 	}
+	if (IsChanDebug(param[1]))
+		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace CLEAR %s", parv[0], strtoupper(param[2]));
 	ircfree(al);
 	return 0;
 }
@@ -1647,7 +1700,7 @@ BOTFUNC(chanserv_akick)
 			return 1;
 		}
 		for (i = 0; i < aux->akicks; i++)
-			response(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", aux->akick[i]->nick, aux->akick[i]->motivo, aux->akick[i]->puesto);
+			response(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
 	}
 	else
 	{
@@ -2582,11 +2635,11 @@ int chanserv_join(Cliente *cl, Canal *cn)
 			int i;
 			for (i = 0; i < akicks->akicks; i++)
 			{
-				if (!match(ircdmask(akicks->akick[i]->nick), cl->mask))
+				if (!match(ircdmask(akicks->akick[i].nick), cl->mask))
 				{
 					find = 1;
 					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", mascara(cl->mask, chanserv.bantype));
-					port_func(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", akicks->akick[i]->motivo, akicks->akick[i]->puesto);
+					port_func(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", akicks->akick[i].motivo, akicks->akick[i].puesto);
 					break;
 				}
 			}
@@ -2595,11 +2648,14 @@ int chanserv_join(Cliente *cl, Canal *cn)
 			return 0;
 		nivel = IsId(cl) ? tiene_nivel(cl->nombre, cn->nombre, 0L) : 0L;
 		buf[0] = tokbuf[0] = '\0';
-		if (es_fundador(cl, cn->nombre) && IsId(cl) && MODE_OWNER)
+		if (MODE_OWNER && IsId(cl))
 		{
-			chrcat(buf, MODEF_OWNER);
-			strcat(tokbuf, TRIO(cl));
-			strcat(tokbuf, " ");
+			if (es_fundador(cl, cn->nombre) || es_fundador_cache(cl, cn->nombre))
+			{
+				chrcat(buf, MODEF_OWNER);
+				strcat(tokbuf, TRIO(cl));
+				strcat(tokbuf, " ");
+			}
 		}
 		if (nivel & CS_LEV_AAD && MODE_ADM)
 		{
@@ -2738,6 +2794,11 @@ int chanserv_sig_eos()
 	}
 	return 0;
 }
+int chanserv_sig_prenick(Cliente *cl)
+{
+	borra_cache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id);
+	return 0;
+}
 int chanserv_baja(char *canal, char opt)
 {
 	Canal *an;
@@ -2765,7 +2826,7 @@ int chanserv_baja(char *canal, char opt)
 		int akicks = akick->akicks;
 		while (akicks)
 		{
-			borra_akick(akick->akick[0]->nick, canal);
+			borra_akick(akick->akick[0].nick, canal);
 			akicks--;
 		}
 	}
@@ -2804,7 +2865,6 @@ Akick *busca_akicks(char *canal)
 void inserta_cregistro(char *nick, char *canal, u_long flag)
 {
 	CsRegistros *creg;
-	struct _subc *sub;
 	u_int hash = 0;
 	if (!(creg = busca_cregistro(nick)))
 	{
@@ -2813,10 +2873,9 @@ void inserta_cregistro(char *nick, char *canal, u_long flag)
 		creg->nick = strdup(nick);
 	}
 	hash = hash_cliente(nick);
-	sub = (struct _subc *)Malloc(sizeof(struct _subc));
-	sub->canal = strdup(canal);
-	sub->flags = flag;
-	creg->sub[creg->subs++] = sub;
+	creg->sub[creg->subs].canal = strdup(canal);
+	creg->sub[creg->subs].flags = flag;
+	creg->subs++;
 	if (!busca_cregistro(nick))
 	{
 		creg->sig = csregs[hash].item;
@@ -2827,7 +2886,6 @@ void inserta_cregistro(char *nick, char *canal, u_long flag)
 Akick *inserta_akick(char *nick, char *canal, char *emisor, char *motivo)
 {
 	Akick *akick;
-	struct _akc *akc;
 	u_int hash = 0;
 	if (!(akick = busca_akicks(canal)))
 	{
@@ -2836,11 +2894,10 @@ Akick *inserta_akick(char *nick, char *canal, char *emisor, char *motivo)
 		akick->canal = strdup(canal);
 	}
 	hash = hash_canal(canal);
-	akc = (struct _akc *)Malloc(sizeof(struct _akc));
-	akc->nick = strdup(nick);
-	akc->motivo = strdup(motivo);
-	akc->puesto = strdup(emisor);
-	akick->akick[akick->akicks++] = akc;
+	akick->akick[akick->akicks].nick = strdup(nick);
+	akick->akick[akick->akicks].motivo = strdup(motivo);
+	akick->akick[akick->akicks].puesto = strdup(emisor);
+	akick->akicks++;
 	if (!busca_akicks(canal))
 	{
 		akick->sig = akicks[hash].item;
@@ -2877,11 +2934,10 @@ void borra_cregistro(char *nick, char *canal)
 		return;
 	for (i = 0; i < creg->subs; i++)
 	{
-		if (!strcasecmp(creg->sub[i]->canal, canal))
+		if (!strcasecmp(creg->sub[i].canal, canal))
 		{
 			/* liberamos el canal en cuestión */
-			Free(creg->sub[i]->canal);
-			Free(creg->sub[i]);
+			Free(creg->sub[i].canal);
 			/* ahora tenemos vía libre para desplazar la lista para abajo */
 			for (; i < creg->subs; i++)
 				creg->sub[i] = creg->sub[i+1];
@@ -2923,12 +2979,11 @@ void borra_akick(char *nick, char *canal)
 		return;
 	for (i = 0; i < akick->akicks; i++)
 	{
-		if (!strcasecmp(akick->akick[i]->nick, nick))
+		if (!strcasecmp(akick->akick[i].nick, nick))
 		{
-			Free(akick->akick[i]->motivo);
-			Free(akick->akick[i]->puesto);
-			Free(akick->akick[i]->nick);
-			Free(akick->akick[i]);
+			Free(akick->akick[i].motivo);
+			Free(akick->akick[i].puesto);
+			Free(akick->akick[i].nick);
 			for (; i < akick->akicks; i++)
 				akick->akick[i] = akick->akick[i+1];
 			if (!(--akick->akicks))
@@ -2951,7 +3006,7 @@ int chanserv_dropanick(char *nick)
 		while(subs)
 		{
 			char tmp[512];
-			strncpy(tmp, regs->sub[0]->canal, 512);
+			strncpy(tmp, regs->sub[0].canal, 512);
 			borra_acceso(nick, tmp);
 			if (!strcasecmp(_mysql_get_registro(CS_MYSQL, tmp, "founder"), nick))
 				_mysql_add(CS_MYSQL, tmp, "founder", CLI(chanserv)->nombre);
@@ -3002,22 +3057,22 @@ u_long tiene_nivel(char *nick, char *canal, u_long flag)
 	al = busca_cliente(nick, NULL);
 	if ((!IsOper(al) && IsChanSuspend(canal)) || !IsId(al))
 		return 0L;
-	if (es_fundador(al, canal))
+	if (es_fundador(al, canal) || es_fundador_cache(al, canal))
 		return CS_LEV_ALL;
 	if ((aux = busca_cregistro(nick)))
 	{
 		for (i = 0; i < aux->subs; i++)
 		{
-			if (!strcasecmp(aux->sub[i]->canal, canal))
+			if (!strcasecmp(aux->sub[i].canal, canal))
 			{
 				u_long nivel = 0L;
 				if (IsPreo(al))
 					nivel |= (CS_LEV_ALL & ~CS_LEV_MOD);
-				nivel |= aux->sub[i]->flags;		
+				nivel |= aux->sub[i].flags;		
 				if (flag)
 					return (nivel & flag);
 				else
-					return aux->sub[i]->flags;
+					return aux->sub[i].flags;
 			}
 		}
 	}

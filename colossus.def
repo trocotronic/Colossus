@@ -1,6 +1,16 @@
-; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
 	vsprintf_irc
+
+	BDD_IPS
+
+	BDD_NICKS
+
+	BDD_SET
+
+	BDD_TOTAL
+
+	ChkBtCon
 
 	CleanUp
 
@@ -78,6 +88,14 @@ EXPORTS
 
 	abre_sock_ircd
 
+	actualiza_gmt
+
+	actualiza_hash
+
+	alta_bloque
+
+	alta_hash
+
 	atoi_tab
 
 	b64_decode
@@ -91,6 +109,10 @@ EXPORTS
 	base64_encode
 
 	base64toint
+
+	bdd_init
+
+	bloques
 
 	borra_ban_de_canal
 
@@ -112,6 +134,10 @@ EXPORTS
 
 	borra_modo_cliente_de_canal
 
+	borra_registro
+
+	borra_registro_de_hash
+
 	borra_senyal
 
 	borra_sock
@@ -119,6 +145,8 @@ EXPORTS
 	botnick
 
 	buf
+
+	busca_bloque
 
 	busca_canal
 
@@ -134,6 +162,10 @@ EXPORTS
 
 	busca_modulo
 
+	busca_registro
+
+	busca_udb_en_hash
+
 	cTab
 
 	cambia_nick
@@ -141,6 +173,10 @@ EXPORTS
 	canal_debug
 
 	canales
+
+	carga_bloque
+
+	carga_bloques
 
 	carga_cache
 
@@ -151,6 +187,8 @@ EXPORTS
 	carga_programa
 
 	carga_protocolo
+
+	chans
 
 	chrcat
 
@@ -164,6 +202,10 @@ EXPORTS
 
 	cierra_todo
 
+	cifra_ip
+
+	cifrado_str
+
 	cifranick
 
 	clientes
@@ -171,6 +213,12 @@ EXPORTS
 	cmd
 
 	coge_cache
+
+	coge_de_char
+
+	coge_de_id
+
+	coge_de_tipo
 
 	coge_mx
 
@@ -208,11 +256,17 @@ EXPORTS
 
 	crea_modulo
 
+	crea_registro
+
 	ctx_client
 
 	ctx_server
 
+	da_formato
+
 	decode_ip
+
+	descarga_bloque
 
 	descarga_conf
 
@@ -250,6 +304,8 @@ EXPORTS
 
 	envia_email
 
+	envia_registro_bdd
+
 	es_link
 
 	es_linkcanal
@@ -272,9 +328,17 @@ EXPORTS
 
 	gettok
 
+	gmts
+
+	guarda_en_archivo
+
+	guarda_en_archivo_ex
+
 	hInst
 
 	hThreadPrincipal
+
+	hash
 
 	hash_canal
 
@@ -320,6 +384,10 @@ EXPORTS
 
 	inserta_modo_cliente_en_canal
 
+	inserta_registro
+
+	inserta_registro_en_hash
+
 	inserta_senyal
 
 	inserta_sock
@@ -329,6 +397,8 @@ EXPORTS
 	intentos
 
 	inttobase64
+
+	ips
 
 	ircd_SSL_accept
 
@@ -350,9 +420,15 @@ EXPORTS
 
 	killbot
 
+	lee_gmt
+
+	lee_hash
+
 	lee_mensaje
 
 	lee_socks
+
+	level_oper_bdd
 
 	libera_canal_de_memoria
 
@@ -363,6 +439,8 @@ EXPORTS
 	libera_db
 
 	libera_log
+
+	libera_memoria_udb
 
 	libera_protocolo
 
@@ -414,7 +492,13 @@ EXPORTS
 
 	mysql_tablas
 
+	nicks
+
 	nuevo_cliente
+
+	obtiene_hash
+
+	optimiza
 
 	our_crc32
 
@@ -423,6 +507,8 @@ EXPORTS
 	parabuf
 
 	parse_smtp
+
+	parsea_linea
 
 	parseconf
 
@@ -472,6 +558,8 @@ EXPORTS
 
 	setfilemodtime
 
+	sets
+
 	sockaccept
 
 	sockblock
@@ -518,9 +606,13 @@ EXPORTS
 
 	totalcola
 
+	trunca_bloque
+
 	uTab
+
+	ultimo
 
 	untea
 
-	ChkBtCon
+	BDD_CHANS
 

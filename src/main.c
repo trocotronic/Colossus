@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.36 2005-03-14 15:13:02 Trocotronic Exp $ 
+ * $Id: main.c,v 1.37 2005-03-18 21:26:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -160,7 +160,6 @@ void cierra_todo()
 	destruye_temporales();
 #ifdef _WIN32
 	DestroyWindow(hwMain);
-	WSACleanup();
 #endif
 }
 VOIDSIG refresca()
@@ -201,12 +200,18 @@ VOIDSIG refresca()
 VOIDSIG reinicia()
 {
 	cierra_todo();
+#ifdef _WIN32
+	CleanUp();
+#endif
 	execv(SPATH, margv);
 	exit(-1);
 }
 VOIDSIG cierra_colossus(int excode)
 {
 	cierra_todo();
+#ifdef _WIN32
+	CleanUp();
+#endif
 	exit(excode);
 }
 #ifdef _WIN32
@@ -401,7 +406,7 @@ void dominum(Host *aux)
 	if ((he = gethostbyaddr((char *)&addr, 4, AF_INET)))
 	{
 		ircstrdup(aux->destino, he->h_name);
-		inserta_cache(CACHE_HOST, aux->ip, 86400, he->h_name);
+		inserta_cache(CACHE_HOST, aux->ip, 86400, 0, he->h_name);
 	}
 	else
 		ircfree(*aux->destino);
@@ -414,7 +419,7 @@ void resuelve_host(char **destino, char *ip)
 	char *cache;
 	if (EsIp(ip))
 	{
-		if ((cache = coge_cache(CACHE_HOST, ip)))
+		if ((cache = coge_cache(CACHE_HOST, ip, 0)))
 			*destino = strdup(cache);
 		else
 		{
@@ -840,36 +845,46 @@ int carga_cache()
   			"`item` varchar(255) default NULL, "
   			"`valor` varchar(255) default NULL, "
   			"`hora` int(11) NOT NULL default '0', "
+  			"`owner` int(11) NOT NULL default '0', "
   			"`tipo` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla caché';", PREFIJO, MYSQL_CACHE))
 				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MYSQL_CACHE);
 	}
 	else
-		_mysql_query("ALTER TABLE `%s%s` ADD `tipo` VARCHAR(255) default NULL;", PREFIJO, MYSQL_CACHE);
+	{
+		_mysql_query("ALTER TABLE `%s%s` ADD `owner` int(11) NOT NULL default '0' AFTER `hora`;", PREFIJO, MYSQL_CACHE);
+		_mysql_query("ALTER TABLE `%s%s` ADD `tipo` VARCHAR(255) default NULL AFTER `owner`;", PREFIJO, MYSQL_CACHE);
+	}
 	_mysql_carga_tablas();
 	proc(dropacache);
 	return 1;
 }
-char *coge_cache(char *tipo, char *item)
+char *coge_cache(char *tipo, char *item, int id)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char *tipo_c, *item_c;
 	tipo_c = _mysql_escapa(tipo);
 	item_c = _mysql_escapa(item);
-	res = _mysql_query("SELECT `valor` FROM %s%s WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, item_c, tipo_c);
+	res = _mysql_query("SELECT `valor`,`hora` FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	if (res)
 	{
 		row = mysql_fetch_row(res);
 		mysql_free_result(res);
-		return BadPtr(row[0]) ? NULL : row[0];
+		if ((time_t)atoul(row[1]) < time(0))
+		{
+			borra_cache(tipo, item, id);
+			return NULL;
+		}
+		else
+			return BadPtr(row[0]) ? NULL : row[0];
 	}
 	return NULL;
 }
-void inserta_cache(char *tipo, char *item, int off, char *valor, ...)
+void inserta_cache(char *tipo, char *item, int off, int id, char *valor, ...)
 {
 	char *tipo_c, *item_c, *valor_c = NULL, buf[BUFSIZE];
 	va_list vl;
@@ -883,10 +898,10 @@ void inserta_cache(char *tipo, char *item, int off, char *valor, ...)
 	}
 	tipo_c = _mysql_escapa(tipo);
 	item_c = _mysql_escapa(item);
-	if (coge_cache(tipo, item))
-		_mysql_query("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c);
+	if (coge_cache(tipo, item, 0))
+		_mysql_query("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
 	else
-		_mysql_query("INSERT INTO %s%s (item,valor,hora,tipo) values ('%s','%s',%lu,'%s')", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c);
+		_mysql_query("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	ircfree(valor_c);
@@ -903,12 +918,12 @@ int dropacache(Proc *proc)
 	_mysql_query("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
 	return 0;
 }
-void borra_cache(char *tipo, char *item)
+void borra_cache(char *tipo, char *item, int id)
 {
 	char *tipo_c, *item_c;
 	tipo_c = _mysql_escapa(tipo);
 	item_c = _mysql_escapa(item);
-	_mysql_query("DELETE FROM %s%s WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, item_c, tipo_c);
+	_mysql_query("DELETE FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 }

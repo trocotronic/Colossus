@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.8 2005-03-14 14:18:10 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.9 2005-03-18 21:26:53 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -214,7 +214,7 @@ char *coge_mx(char *dominio)
 	char *cache;
 	if (!dominio)
 		return NULL;
-	if ((cache = coge_cache(CACHE_MX, dominio)))
+	if ((cache = coge_cache(CACHE_MX, dominio, 0)))
 		return cache;
 	if (VerInfo.dwMajorVersion == 5)
 	{
@@ -228,7 +228,7 @@ char *coge_mx(char *dominio)
 				if (host)
 				{
 					FreeLibrary(api);
-					inserta_cache(CACHE_MX, dominio, 86400, host);
+					inserta_cache(CACHE_MX, dominio, 86400, 0, host);
 					return host;
 				}
 			}

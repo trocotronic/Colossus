@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.14 2005-03-14 20:05:58 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.15 2005-03-18 21:26:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -20,13 +20,14 @@
 OperServ operserv;
 Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
+char *confirm = NULL;
 
 static int operserv_help		(Cliente *, char *[], int, char *[], int);
-static int operserv_raw		(Cliente *, char *[], int, char *[], int);
+static int operserv_raw			(Cliente *, char *[], int, char *[], int);
 static int operserv_restart		(Cliente *, char *[], int, char *[], int);
 static int operserv_rehash		(Cliente *, char *[], int, char *[], int);
 static int operserv_backup		(Cliente *, char *[], int, char *[], int);
-static int operserv_restaura	(Cliente *, char *[], int, char *[], int);
+static int operserv_restaura		(Cliente *, char *[], int, char *[], int);
 static int operserv_gline		(Cliente *, char *[], int, char *[], int);
 static int operserv_opers		(Cliente *, char *[], int, char *[], int);
 static int operserv_sajoin		(Cliente *, char *[], int, char *[], int);
@@ -34,8 +35,9 @@ static int operserv_sapart		(Cliente *, char *[], int, char *[], int);
 static int operserv_rejoin		(Cliente *, char *[], int, char *[], int);
 static int operserv_kill		(Cliente *, char *[], int, char *[], int);
 static int operserv_global		(Cliente *, char *[], int, char *[], int);
-static int operserv_noticias	(Cliente *, char *[], int, char *[], int);
+static int operserv_noticias		(Cliente *, char *[], int, char *[], int);
 static int operserv_close		(Cliente *, char *[], int, char *[], int);
+static int operserv_vaciar		(Cliente *, char *[], int, char *[], int);
 #ifdef UDB
 static int operserv_modos		(Cliente *, char *[], int, char *[], int);
 static int operserv_snomask		(Cliente *, char *[], int, char *[], int);
@@ -57,6 +59,7 @@ static bCom operserv_coms[] = {
 	{ "kill" , operserv_kill , OPERS } ,
 	{ "global" , operserv_global , OPERS } ,
 	{ "noticias" , operserv_noticias , OPERS } ,
+	{ "vaciar" , operserv_vaciar , ROOTS } ,
 #ifdef UDB
 	{ "modos" , operserv_modos , ADMINS } ,
 	{ "snomask" , operserv_snomask , ADMINS } ,
@@ -310,6 +313,7 @@ BOTFUNC(operserv_help)
 			response(cl, CLI(operserv), "\00312BACKUP\003 Crea una copia de seguridad de la base de datos.");
 			response(cl, CLI(operserv), "\00312RESTAURA\003 Restaura la base de datos.");
 			response(cl, CLI(operserv), "\00312CLOSE\003 Cierra el programa.");
+			response(cl, CLI(operserv), "\00312VACIAR\003 Elimina todos los registros de la base de datos.");
 		}
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Para más información, \00312/msg %s %s comando", operserv.hmod->nick, strtoupper(param[0]));
@@ -487,6 +491,15 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Una vez cerrado no se podrá volver ejecutar si no es manualmente.");
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312CLOSE");
+	}
+	else if (!strcasecmp(param[1], "VACIAR") && IsRoot(cl))
+	{
+		response(cl, CLI(operserv), "\00312VACIAR");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Elimina todos los registros de la base de datos.");
+		response(cl, CLI(operserv), "Requiere confirmación.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312VACIAR");
 	}
 	else
 		response(cl, CLI(operserv), OS_ERR_EMPT, "Opción desconocida.");
@@ -980,6 +993,37 @@ BOTFUNC(operserv_snomask)
 	return 0;
 }
 #endif
+BOTFUNC(operserv_vaciar)
+{
+	if (params < 2)
+	{
+		confirm = random_ex("********");
+		response(cl, CLI(operserv), "Para mayor seguridad, ejecute el comando \00312VACIAR %s", confirm);
+	}
+	else
+	{
+		int i;
+		if (!confirm)
+		{
+			response(cl, CLI(operserv), OS_ERR_EMPT, "No ha solicitado confirmación. Ejecute el comando nuevamente sin parámetros.");
+			return 1;
+		}
+		if (strcmp(confirm, param[1]))
+		{
+			response(cl, CLI(operserv), OS_ERR_EMPT, "La confirmación no se corresponde con la dada. Ejecut el comando nuevamente sin parámetros.");
+			return 1;
+		}
+		confirm = NULL;
+		for (i = 0; i < mysql_tablas.tablas; i++)
+		{
+			if (!strncmp(PREFIJO, mysql_tablas.tabla[i], strlen(PREFIJO)))
+				_mysql_query("TRUNCATE %s", mysql_tablas.tabla[i]);
+		}
+		response(cl, CLI(operserv), "Se ha vaciado toda la base de datos. Se procederá a reiniciar el programa en 5 segundos...");
+		timer("reinicia", NULL, 1, 5, os_reinicia, NULL, 0);
+	}
+	return 0;
+}
 int operserv_nick(Cliente *cl, int nuevo)
 {
 	if (!nuevo)

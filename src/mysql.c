@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.8 2005-03-03 12:13:41 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.9 2005-03-18 21:26:53 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -170,7 +170,7 @@ int _mysql_backup()
 	MYSQL_FIELD *fi;
 	FILE *fp;
 	int i, j;
-	char buf[BUFSIZE], buf2[BUFSIZE], *tabla, *field;
+	char buf[4096], buf2[4096], *tabla, *field;
 	if (!(fp = fopen("backup.sql", "wb")))
 		return 1;
 	for (i = 0; i < mysql_tablas.tablas; i++)
@@ -210,19 +210,20 @@ int _mysql_backup()
 		buf[strlen(buf)-3] = '\0'; /* quitamos la ultima coma */
 		strcat(buf, "\n) ");
 		res = _mysql_query("SHOW TABLE STATUS FROM %s LIKE '%s'", conf_db->bd, tabla);
-		sprintf_irc(buf2, "ENGINE=%s", _mysql_fetch_array(res, "Engine"));
-		if ((field = _mysql_fetch_array(res, "Collation")))
+		row = mysql_fetch_row(res);
+		sprintf_irc(buf2, "ENGINE=%s", _mysql_fetch_array(res, "Engine", row));
+		/*if ((field = _mysql_fetch_array(res, "Collation", row)))
 		{
 			strcat(buf2, " DEFAULT CHARSET=");
 			strcat(buf2, field);
-		}
-		if ((field = _mysql_fetch_array(res, "Comment")))
+		}*/
+		if ((field = _mysql_fetch_array(res, "Comment", row)))
 		{
 			strcat(buf2, " COMMENT='");
 			strcat(buf2, field);
 			strcat(buf2, "'");
 		}
-		if ((field = _mysql_fetch_array(res, "Auto_increment")) && *field != '0')
+		if ((field = _mysql_fetch_array(res, "Auto_increment", row)) && *field != '0')
 		{
 			strcat(buf2, " AUTO_INCREMENT=");
 			strcat(buf2, field);
@@ -269,20 +270,27 @@ int _mysql_backup()
 int _mysql_restaura()
 {
 	FILE *fp;
-	char *linea, buf[BUFSIZE];
+	char *linea, buf[BUFSIZE], buf2[2048];
 	int i;
 	if (!(fp = fopen("backup.sql", "r")))
 		return 1;
 	for (i = 0; i < mysql_tablas.tablas; i++)
 	{
-		_mysql_query("DROP table `%s`", mysql_tablas.tabla[i]);
+		if (!strncmp(PREFIJO, mysql_tablas.tabla[i], strlen(PREFIJO)))
+			_mysql_query("DROP table `%s`", mysql_tablas.tabla[i]);
 		Free(mysql_tablas.tabla[i]);
 	}
 	mysql_tablas.tablas = 0;
+	buf2[0] = '\0';
 	while ((linea = fgets(buf, BUFSIZE, fp)))
 	{
 		linea[strlen(linea)-1] = '\0';
-		_mysql_query(linea);
+		strcat(buf2, linea);
+		if (linea[strlen(linea)-1] == ';')
+		{
+			_mysql_query(buf2);
+			buf2[0] = '\0';
+		}
 	}
 	fclose(fp);
 	_mysql_carga_tablas();
@@ -328,45 +336,21 @@ char *_mysql_escapa(char *item)
 	pthread_mutex_unlock(&mutex);
 	return tmp;
 }
-char *_mysql_fetch_array(MYSQL_RES *res, const char *campo)
+char *_mysql_fetch_array(MYSQL_RES *res, const char *campo, MYSQL_ROW row)
 {
-	static MYSQL_RES *rest = NULL;
-	static const char *campot = NULL;
-	static int i = 0, campos = 0;
-	static MYSQL_ROW row = NULL;
-	static MYSQL_FIELD *field = NULL;
-	if (!res)
+	MYSQL_FIELD *field;
+	int i;
+	if (!res || !row || !campo)
 		return NULL;
-	if (rest != res)
+	pthread_mutex_lock(&mutex);
+	mysql_field_seek(res, 0);
+	for (i = 0; (field = mysql_fetch_field(res)); i++)
 	{
-		field = mysql_fetch_fields(res);
-		campos = mysql_num_fields(res);
-		for (i = 0; i < campos; i++)
-		{
-			if (!strcasecmp(field[i].name, campo))
-				break;
-		}
-		if (!(row = mysql_fetch_row(res))) /* solicitamos el siguiente registro */
-			return NULL;
+		if (!strcasecmp(field->name, campo))
+			break;
 	}
-	else
-	{
-		if (!strcasecmp(campo, campot))
-		{
-			if (!(row = mysql_fetch_row(res))) /* solicitamos el siguiente registro */
-				return NULL;
-		}
-		else
-		{
-			for (i = 0; i < campos; i++)
-			{
-				if (!strcasecmp(field[i].name, campo))
-					break;
-			}
-			campot = campo;
-		}
-	}
-	rest = res;
-	campot = campo;
-	return row[i]; /* devolvemos según su campo */
+	pthread_mutex_unlock(&mutex);
+	if (!field)
+		return NULL;
+	return row[i]; 
 }

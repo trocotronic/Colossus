@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.16 2005-03-14 14:18:04 Trocotronic Exp $
+ * $Id: cambios,v 1.17 2005-03-18 21:26:50 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -249,3 +249,10 @@
 100305207 - Se suprime el subbloque cloak { }, puesto que varía según el protocolo.
 100305208 - Se añade la directriz clave_cifrado en el bloque set { }, que se usará para cualquier cifrado que requiera clave.
 110305209 - Actualizada la documentación.
+160305210 - La identificación de fundadores de canales se procesa vía cache.
+160305211 - NickServ también lista los canales en los que se es fundador.
+170305212 - Los comandos CLEAR de ChanServ se muestran si el canal está en debug.
+170305213 - Se puede especificar un motivo en el CLEAR USERS, KILL y GLINE de ChanServ.
+180305214 - Se mejora el sistema de reseteo.
+180305215 - Arreglados varios fallos en los backups i restauraciones de la base de datos.
+180305216 - Se crea el comando VACIAR en OperServ.

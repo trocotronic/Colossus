@@ -1,4 +1,4 @@
-## $Id: make,v 1.14 2005-03-14 14:26:45 Trocotronic Exp $
+## $Id: make,v 1.15 2005-03-18 21:26:51 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -11,7 +11,7 @@ ZLIB=1
 ###### FIN ZLIB ######
 
 #### SOPORTE UDB ####
-#UDB=1
+UDB=1
 #
 ###### FIN UDB ######
 
@@ -117,7 +117,7 @@ CLEAN:
 SETUP: 
 	-@copy src\win32\setup.h include\setup.h >NUL
 
-./COLOSSUS.EXE: $(OBJ_FILES) DEF
+./COLOSSUS.EXE: $(OBJ_FILES)
         $(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
 	
 !IFNDEF DEBUG

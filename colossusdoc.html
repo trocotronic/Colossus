@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.8 2005-03-14 18:55:55 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.9 2005-03-18 21:26:51 Trocotronic Exp $ -->
 
 <body>
 
@@ -42,7 +42,6 @@
   <font size="+1">10.- <a href="#protos">Configuraci&oacute;n de protocolos</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.1 <a href="#unreal">UnrealIRCD [UDB]</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.2 <a href="#p10">P10</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.3 <a href="#redhispana">RedHispana</a></font><br>
   <font size="+1">11.- <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
   <p><br>
     <b><font size="6"><a name="intro"></a>1.0 Introducci&oacute;n </font></b><br>
@@ -608,6 +607,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		noticias;
 		modos; // S&oacute;lo en soporte UDB
 		snomask; // S&oacute;lo en soporte UDB
+		vaciar;
 	};
 };</pre>
 <p><b>autoop</b><br>Los operadores de red obtienen @ al entrar en un canal autom&aacute;ticamente no registrado (en un registrado deber&aacute; tener su correspondiente acceso). </p>
@@ -633,6 +633,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		close;
 		modos;
 		snomask;
+		vaciar;
 	};
 };</pre>
 <p>&nbsp;</p>
@@ -758,9 +759,6 @@ Este protocolo corresponde al P10 nativo. IRCu de <a href="http://www.undernet.o
 		canales +S;
 	};
 };</pre>
-<p>&nbsp;</p>
-<p><b><font size="5"><a name="redhispana"></a>10.3 Redhispana</font></b></p>
-<p>Id&eacute;ntico al <a href="#p10">P10</a>.</p>
 <p>&nbsp;</p>
 <p><b><font size="6"><a name="patrones"></a>11.0 Par&aacute;metros de patr&oacute;n</font></b></p>
 <p>Algunos campos requieren un patr&oacute;n a seguir que contenga comodines que sean intercambiados por valores aleatorios. Estos son:</p>

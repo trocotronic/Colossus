@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.31 2005-03-14 14:18:06 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.32 2005-03-18 21:26:52 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -160,7 +160,7 @@ struct mysql_t
 };
 extern MODVAR struct mysql_t mysql_tablas;
 extern char *_mysql_escapa(char *);
-extern char *_mysql_fetch_array(MYSQL_RES *, const char *);
+extern char *_mysql_fetch_array(MYSQL_RES *, const char *, MYSQL_ROW);
 
 typedef struct _smtpData SmtpData;
 struct _smtpData
@@ -240,7 +240,7 @@ extern u_int hash_canal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
 #define COLOSSUS_VERNUM "1.1"
-#define COLOSSUS_VERSION "Colossus v" COLOSSUS_VERNUM
+#define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 extern char **margv;
 #define Malloc(x) StsMalloc(x, __FILE__, __LINE__)
 #define da_Malloc(p,s) do { p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s)); }while(0)
@@ -355,9 +355,9 @@ extern char *chrcat(char *, char);
 extern int strncasecmp(const char *, const char *, int);
 #endif
 /* definiciones de cache */
-extern char *coge_cache(char *, char *);
-extern void inserta_cache(char *, char *, int, char *, ...);
-extern void borra_cache(char *, char *);
+extern char *coge_cache(char *, char *, int);
+extern void inserta_cache(char *, char *, int, int, char *, ...);
+extern void borra_cache(char *, char *, int);
 #define CACHE_HOST "hosts" /* cache para hosts */
 #define CACHE_MX "mx" /* cache para registros mx */
 

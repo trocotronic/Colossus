@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.3 2005-03-18 21:26:52 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -28,7 +28,7 @@ struct _csregistros
 	{
 		char *canal;
 		u_long flags;
-	}*sub[CS_MAX_REGS];
+	}sub[CS_MAX_REGS];
 	int subs;
 	struct _csregistros *sig;
 };
@@ -41,7 +41,7 @@ struct _akick
 		char *nick;
 		char *motivo;
 		char *puesto;
-	}*akick[CS_MAX_AKICK];
+	}akick[CS_MAX_AKICK];
 	int akicks;
 	struct _akick *sig;
 };
@@ -86,6 +86,7 @@ extern ChanServ chanserv;
 #ifndef UDB
 #define CS_FORBIDS "cforbids"
 #endif
+#define CACHE_FUNDADORES "fundadores"
 
 #define CS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
 #define CS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"

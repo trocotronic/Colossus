@@ -2136,6 +2136,8 @@ int comprueba_opts(Proc *proc)
 	time_t hora = time(0);
 	u_int i;
 	Udb *aux;
+	if (!SockIrcd)
+		return 1;
 	if (!proc || proc->time + 1800 < hora)
 	{
 		for (i = 0; i < BDD_TOTAL; i++)

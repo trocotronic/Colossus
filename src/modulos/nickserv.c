@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.17 2005-03-14 20:04:51 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.18 2005-03-18 21:26:54 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -545,7 +545,7 @@ BOTFUNC(nickserv_reg)
 			response(cl, CLI(nickserv), NS_ERR_PARA, "REGISTER tupass tu@email");
 		return 1;
 	}
-	if ((cache = coge_cache(CACHE_ULTIMO_REG, usermask)))
+	if ((cache = coge_cache(CACHE_ULTIMO_REG, usermask, nickserv.hmod->id)))
 	{
 		ultimo = atoul(cache);
 		if ((ultimo + (3600 * nickserv.min_reg)) > (u_long)time(0))
@@ -556,7 +556,7 @@ BOTFUNC(nickserv_reg)
 			return 1;
 		}
 		else
-			borra_cache(CACHE_ULTIMO_REG, usermask);
+			borra_cache(CACHE_ULTIMO_REG, usermask, nickserv.hmod->id);
 	}
 	/* comprobamos que no esté registrado */
 	if (IsReg(cl->nombre))
@@ -614,7 +614,7 @@ BOTFUNC(nickserv_reg)
 		envia_clave(parv[0]);
 	else if (UMODE_REGNICK)
 		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
-	inserta_cache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, "%lu", time(0));
+	inserta_cache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, nickserv.hmod->id, "%lu", time(0));
 	response(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
 #ifdef UDB
 	if (nickserv.opts & NS_AUTOMIGRAR)
@@ -669,18 +669,18 @@ BOTFUNC(nickserv_identify)
 	{
 		int intentos = 0;
 		char *cache;
-		if ((cache = coge_cache(CACHE_INTENTOS_ID, cl->nombre)))
+		if ((cache = coge_cache(CACHE_INTENTOS_ID, cl->nombre, nickserv.hmod->id)))
 			intentos = atoi(cache);
 		if (++intentos == nickserv.intentos)
 		{
 			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
-			borra_cache(CACHE_INTENTOS_ID, cl->nombre);
+			borra_cache(CACHE_INTENTOS_ID, cl->nombre, nickserv.hmod->id);
 		}
 		else
 		{
 			sprintf_irc(buf, "Contraseña incorrecta. Tienes %i intentos más.", nickserv.intentos - intentos);
 			response(cl, CLI(nickserv), buf);
-			inserta_cache(CACHE_INTENTOS_ID, cl->nombre, 86400, "%i", intentos);
+			inserta_cache(CACHE_INTENTOS_ID, cl->nombre, 86400, nickserv.hmod->id, "%i", intentos);
 		}
 	}
 	return 0;
@@ -928,9 +928,16 @@ BOTFUNC(nickserv_info)
 		{
 			response(cl, CLI(nickserv), "*** Niveles de acceso ***");
 			for (i = 0; i < regs->subs; i++)
-				response(cl, CLI(nickserv), "Canal: \00312%s\003 flags:\00312+%s\003 (\00312%lu\003)", regs->sub[i]->canal, 
-				modes2flags(regs->sub[i]->flags, cFlags_dl, NULL),
-				regs->sub[i]->flags);
+				response(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s\003 (\00312%lu\003)", regs->sub[i].canal, 
+					modes2flags(regs->sub[i].flags, cFlags_dl, NULL),
+					regs->sub[i].flags);
+		}
+		if ((res = _mysql_query("SELECT item from %s%s where founder='%s'", PREFIJO, CS_MYSQL, param[1])))
+		{
+			while ((row = mysql_fetch_row(res)))
+				response(cl, CLI(nickserv), "Canal: \00312%s flags: \00312+%s\003 (\00312FUNDADOR\003)", row[0], 
+					modes2flags(CS_LEV_ALL, cFlags_dl, NULL));
+			mysql_free_result(res);
 		}
 	}
 	return 0;

@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.7 2005-03-14 14:18:10 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.8 2005-03-18 21:26:53 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -307,8 +307,18 @@ void sockclose(Sock *sck, char closef)
 void cierra_socks()
 {
 	int i;
-	for (i = 0; i < ListaSocks.tope; i++)
-		sockclose(ListaSocks.socket[i], LOCAL);
+	for (i = ListaSocks.tope; i >= 0; i--)
+	{
+		if (ListaSocks.socket[i] && ListaSocks.socket[i]->pres >= 0)
+		{
+			CLOSE_SOCK(ListaSocks.socket[i]->pres);
+			ListaSocks.socket[i]->pres = -2;
+		}
+	}
+	ListaSocks.tope = -1;
+#ifdef _WIN32
+	WSACleanup();
+#endif
 }
 void encola(DBuf *bufc, char *str, int bytes)
 {

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.10 2005-02-18 22:12:22 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.11 2005-03-18 21:26:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -258,7 +258,7 @@ int proxyserv_nick(Cliente *cl, int nuevo)
 			host = cl->ip;
 		else
 			host = cl->host;
-		if (coge_cache(CACHE_PROXY, host) || _mysql_get_registro(XS_MYSQL, host, NULL))
+		if (coge_cache(CACHE_PROXY, host, proxyserv.hmod->id) || _mysql_get_registro(XS_MYSQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
 		{
@@ -328,7 +328,7 @@ SOCKFUNC(proxy_fin)
 			port_func(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv.tiempo, motivo);
 		}
 		else
-			inserta_cache(CACHE_PROXY, px->host, 86400, px->host);
+			inserta_cache(CACHE_PROXY, px->host, 86400, proxyserv.hmod->id, px->host);
 		for (aux = proxys; aux; aux = aux->sig)
 		{
 			if (aux == px)
