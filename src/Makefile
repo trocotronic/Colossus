@@ -1,10 +1,12 @@
-## $Id: Makefile,v 1.10 2005-02-19 20:08:51 Trocotronic Exp $
+## $Id: Makefile,v 1.11 2005-02-20 16:39:17 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o main.o match.o md5.o modulos.o mysql.o \
 	parseconf.o protocolos.o smtp.o socks.o soporte.o sprintf_irc.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
-		'INCLUDEDIR=${INCLUDEDIR}' 'RM=${RM}'
+		'LDFLAGS=${LDFLAGS}' 'BINDIR=${BINDIR}' 'INSTALL=${INSTALL}' \
+		'INCLUDEDIR=${INCLUDEDIR}' 'CRYPTOLIB=${CRYPTOLIB}' \
+		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
 MAKE = make $(MAKEARGS)
 INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
@@ -12,7 +14,7 @@ INCLUDES = ../include/ircd.h ../include/md5.h \
 all: build
 build: ircd mods prots
 ircd: $(OBJS)
-	$(CC) $(CFLAGS) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS)
+	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
 mods:
 	@if [ ! -r include ] ; then \
 		ln -s ../include include; \
