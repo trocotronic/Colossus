@@ -170,7 +170,7 @@ mTab cmodos[] = {
 };
 
 void entra_usuario(Cliente *, char *);
-int p_kick(Cliente *, Cliente *, Canal *, char *);
+void p_kick_vl(Cliente *, Cliente *, Canal *, char *, va_list *);
 
 /* Para no tocar la variable ->hsig, se crea otra estructura para guardar los trios y se indexa por el numeric */
 typedef struct _trio
@@ -311,15 +311,13 @@ int p_svspart(Cliente *cl, Canal *cn, char *motivo, ...)
 {
 	if (motivo)
 	{
-		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
-		vsprintf_irc(buf, motivo, vl);
+		p_kick_vl(cl, &me, cn, motivo, &vl);
 		va_end(vl);
-		p_kick(cl, &me, cn, buf);
 	}
 	else
-		p_kick(cl, &me, cn, NULL);
+		p_kick_vl(cl, &me, cn, motivo, NULL);
 	return 0;
 }
 int p_quit(Cliente *bl, char *motivo, ...)
@@ -401,7 +399,19 @@ int p_gline(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *m
 		sendto_serv("%s %s * -%s@%s", me.trio, TOK_GLINE, ident, host);
 	return 0;
 }
-int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo)
+int p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
+{
+	if (motivo)
+	{
+		char buf[BUFSIZE];
+		vsprintf_irc(buf, motivo, *vl);
+		sendto_serv("%s %s %s %s :%s", bl->trio, TOK_KICK, cn->nombre, cl->trio, buf);
+	}
+	else
+		sendto_serv("%s %s %s %s :Usuario expulsado", bl->trio, TOK_KICK, cn->nombre, cl->trio);
+	return 0;
+}
+int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
 	if (!cl || !cn)
 		return 1;
@@ -409,15 +419,13 @@ int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo)
 		return 1;
 	if (motivo)
 	{
-		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
-		vsprintf_irc(buf, motivo, vl);
+		p_kick_vl(cl, bl, cn, motivo, &vl);
 		va_end(vl);
-		sendto_serv("%s %s %s %s :%s", bl->trio, TOK_KICK, cn->nombre, cl->trio, buf);
 	}
 	else
-		sendto_serv("%s %s %s %s :Usuario expulsado", bl->trio, TOK_KICK, cn->nombre, cl->trio);
+		p_kick_vl(cl, bl, cn, motivo, NULL);
 	borra_canal_de_usuario(cl, cn);
 	borra_cliente_de_canal(cn, cl);
 	return 0;

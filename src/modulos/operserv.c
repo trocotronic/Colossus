@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.9 2004-12-31 12:28:01 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.10 2005-01-01 20:43:27 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -189,32 +189,33 @@ void set(Conf *config, Modulo *mod)
 	inserta_senyal(SIGN_SYNCH, operserv_sig_synch);
 	bot_set(operserv);
 }
-int es_bot_noticia(char *botname)
+Noticia *es_bot_noticia(char *botname)
 {
 	int i;
 	for (i = 0; i < gnoticias; i++)
 	{
 		if (!strcasecmp(gnoticia[i]->botname, botname))
-			return 1;
+			return gnoticia[i];
 	}
-	return 0;
+	return NULL;
 }
-int inserta_noticia(char *botname, char *noticia, time_t fecha, int n)
+int inserta_noticia(char *botname, char *noticia, time_t fecha, int id)
 {
 	Noticia *not;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
-	Cliente *cl;
+	Cliente *cl = NULL;
+	Noticia *gn;
 	if (gnoticias == MAXNOT)
 		return 0;
-	if (!n && !es_bot_noticia(botname))
+	if (!id && !(gn = es_bot_noticia(botname)))
 		cl = botnick(botname, operserv.hmod->ident, operserv.hmod->host, me.nombre, "kdBq", operserv.hmod->realname);
 	not = (Noticia *)Malloc(sizeof(Noticia));
 	not->botname = strdup(botname);
 	not->noticia = strdup(noticia);
 	not->fecha = fecha ? fecha : time(0);
-	not->cl = cl;
-	if (!n)
+	not->cl = cl ? cl = gn->cl;
+	if (!id)
 	{
 		_mysql_query("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, not->fecha);
 		res = _mysql_query("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, noticia, botname);
@@ -223,7 +224,7 @@ int inserta_noticia(char *botname, char *noticia, time_t fecha, int n)
 		mysql_free_result(res);
 	}
 	else
-		not->id = n;
+		not->id = id;
 	gnoticia[gnoticias++] = not;
 	return 1;
 }
