@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.10 2004-09-18 09:08:31 Trocotronic Exp $ 
+ * $Id: main.c,v 1.11 2004-09-18 09:08:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -845,7 +845,6 @@ int main(int argc, char *argv[])
 	int val, i;
 #ifndef _WIN32
 	struct rlimit corelim;
-	int i;
 	for (i = 0; logo[i] != 0; i++)
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION);
