@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.14 2004-09-18 09:12:12 Trocotronic Exp $ 
+ * $Id: main.c,v 1.15 2004-09-18 09:12:59 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -848,11 +848,11 @@ int main(int argc, char *argv[])
 	for (i = 0; logo[i] != 0; i++)
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
-	fprintf(stderr, "\t\tTrocotronic - http://www.rallados.net\n");
-	fprintf(stderr, "\t\t(C)2004\n");
 #ifdef UDB
 	fprintf(stderr, "\t\t+UDB 3.0\n");
 #endif
+	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
+	fprintf(stderr, "\t\t(C)2004\n");
 	fprintf(stderr, "\n");
 #endif
 	ListaSocks.abiertos = 0;
