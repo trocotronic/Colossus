@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.3 2005-02-20 15:34:10 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.4 2005-02-20 17:38:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -499,7 +499,7 @@ int lee_mensaje(Sock *sck)
 void crea_mensaje(Sock *sck, char *msg, int len)
 {
 	char *p = msg, *c;
-#ifdef ZIP_LINKS
+#ifdef USA_ZLIB
 	if (EsZip(sck))
 	{
 		zip = len;
