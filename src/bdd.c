@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.22 2005-03-14 14:18:09 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.23 2005-03-14 15:13:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -31,7 +31,7 @@ Udb *ultimo = NULL;
 #define da_Udb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 #define atoul(x) strtoul(x, NULL, 10)
 char bloques[128];
-static u_long gmts[128];
+u_long gmts[128];
 u_int BDD_TOTAL = 0;
 void alta_bloque(char letra, char *ruta, Udb **reg, u_int *id)
 {

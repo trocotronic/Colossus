@@ -14,7 +14,7 @@ if [ "$1" = "start" ] ; then
 		echo "====================================================="
 		echo "Comprueba todos los errores primero "
 		echo "====================================================="
-		tail -n 5 @IRCDDIR@/colossus.log
+		tail -n 5 @IRCDDIR@/servicios.log
 		if [ -r $PID_BACKUP ] ; then
 			mv -f $PID_BACKUP $PID_FILE
 		fi

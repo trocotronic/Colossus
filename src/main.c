@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.35 2005-03-14 14:18:09 Trocotronic Exp $ 
+ * $Id: main.c,v 1.36 2005-03-14 15:13:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
 #ifdef UDB
-	fprintf(stderr, "\t\t+UDB 3.0.1\n");
+	fprintf(stderr, "\t\t+UDB 3.1\n");
 #endif
 #ifdef USA_ZLIB
 	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
