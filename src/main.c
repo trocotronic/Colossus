@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.16 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: main.c,v 1.17 2004-09-24 23:07:01 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -543,7 +543,7 @@ void crea_mensaje(Sock *sck, int leng)
 				*ul = '\0';
 				if (*(ul - 1) == '\r')
 					*(ul - 1) = '\0';
-#ifndef DEBUG
+#ifdef DEBUG
 				Debug("[Parseando: %s]", ini);
 #endif
 				if (sck->readfunc)
@@ -762,8 +762,11 @@ int main(int argc, char *argv[])
 #ifdef UDB
 	fprintf(stderr, "\t\t+UDB 3.0\n");
 #endif
+#ifdef USA_ZLIB
+	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
+#endif
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
-	fprintf(stderr, "\t\t(C)2004\n");
+	fprintf(stderr, "\t\t(c)2004\n");
 	fprintf(stderr, "\n");
 #endif
 	ListaSocks.abiertos = 0;
