@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.8 2005-02-18 22:12:12 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.9 2005-03-14 18:55:57 Trocotronic Exp $ 
  */
 
 #ifdef UDB
@@ -26,7 +26,7 @@ MODFUNC extern MODVAR u_int BDD_NICKS;
 MODFUNC extern MODVAR u_int BDD_CHANS;
 MODFUNC extern MODVAR u_int BDD_IPS;
 MODFUNC extern MODVAR u_int BDD_SET;
-MODFUNC extern MODVAR u_long gmts[128];
+MODFUNC extern MODVAR time_t gmts[128];
 
 DLLFUNC extern Udb *busca_registro(int, char *);
 DLLFUNC extern Udb *busca_bloque(char *, Udb *);
@@ -48,7 +48,7 @@ DLLFUNC extern void descarga_bloque(int);
 DLLFUNC extern int parsea_linea(int, char *, int);
 DLLFUNC extern int actualiza_hash(Udb *);
 DLLFUNC extern int optimiza(Udb *);
-DLLFUNC extern int actualiza_gmt(Udb *, u_long);
+DLLFUNC extern int actualiza_gmt(Udb *, time_t);
 extern void carga_bloques();
 extern void bdd_init();
 DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);

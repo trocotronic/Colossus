@@ -229,6 +229,8 @@ ProtInfo info = {
 #define TOK_KILL "."
 #define MSG_PING "PING"
 #define TOK_PING "8"
+#define MSG_PONG "PONG"
+#define TOK_PONG "9"
 #define MSG_PASS "PASS"
 #define TOK_PASS "<"
 #define MSG_NOTICE "NOTICE"
@@ -432,7 +434,10 @@ mTab cmodos[] = {
 void procesa_modos(Canal *, char *);
 void procesa_umodos(Cliente *, char *);
 void entra_usuario(Cliente *, char *);
+#ifdef UDB
 void dale_cosas(Cliente *);
+int comprueba_opts(Proc *);
+#endif
 int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 
 char *p_trio(Cliente *cl)
@@ -819,6 +824,7 @@ void set(Conf *config)
 			}
 		}
 	}
+	proc(comprueba_opts);
 }
 int carga(Conf *config)
 {
@@ -1209,7 +1215,7 @@ IRCFUNC(m_kill)
 }
 IRCFUNC(m_ping)
 {
-	sendto_serv("PONG :%s", parv[1]);
+	sendto_serv("%s :%s", TOK_PONG, parv[1]);
 	return 0;
 }
 IRCFUNC(m_pass)
@@ -1566,7 +1572,7 @@ IRCFUNC(m_db)
 		bloq = coge_de_id(*parv[3]);
 		if (atoul(parv[5]) != gmts[bloq->id >> 8]) /* se ha efectuado un OPT en algún momento */
 		{
-			if (atoul(parv[5]) > gmts[bloq->id >> 8])
+			if ((time_t)atoul(parv[5]) > gmts[bloq->id >> 8])
 			{
 				trunca_bloque(cl, bloq, 0);
 				sendto_serv(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
@@ -1752,24 +1758,10 @@ IRCFUNC(m_eos)
 {
 	if (cl == linkado)
 	{
-#ifdef UDB
-		u_int i;
-		Udb *aux;
-		u_long hora = time(0);
-#endif
 		sendto_serv(":%s %s", me.nombre, TOK_VERSION);
 		sendto_serv(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
 #ifdef UDB
-		for (i = 0; i < BDD_TOTAL; i++)
-		{
-			aux = coge_de_id(i);
-			if (gmts[i] + 86400 < hora)
-			{
-				sendto_serv(":%s DB * OPT %c %lu", me.nombre, coge_de_tipo(i), hora);
-				optimiza(aux);
-				actualiza_gmt(aux, hora);
-			}
-		}
+		comprueba_opts(NULL);
 #endif
 		intentos = 0;
 		senyal(SIGN_EOS);
@@ -2138,5 +2130,27 @@ void dale_cosas(Cliente *cl)
 	}
 	else
 		procesa_umodos(cl, "+S");
+}
+int comprueba_opts(Proc *proc)
+{
+	time_t hora = time(0);
+	u_int i;
+	Udb *aux;
+	if (!proc || proc->time + 1800 < hora)
+	{
+		for (i = 0; i < BDD_TOTAL; i++)
+		{
+			aux = coge_de_id(i);
+			if (gmts[i] + 86400 < hora)
+			{
+				sendto_serv(":%s DB * OPT %c %lu", me.nombre, coge_de_tipo(i), hora);
+				optimiza(aux);
+				actualiza_gmt(aux, hora);
+			}
+		}
+		proc->proc = 0;
+		proc->time = hora;
+	}
+	return 0;
 }
 #endif

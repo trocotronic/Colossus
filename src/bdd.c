@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.23 2005-03-14 15:13:02 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.24 2005-03-14 18:55:56 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -31,7 +31,7 @@ Udb *ultimo = NULL;
 #define da_Udb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 #define atoul(x) strtoul(x, NULL, 10)
 char bloques[128];
-u_long gmts[128];
+time_t gmts[128];
 u_int BDD_TOTAL = 0;
 void alta_bloque(char letra, char *ruta, Udb **reg, u_int *id)
 {
@@ -132,7 +132,7 @@ u_long lee_hash(int id)
 		return 0L;
 	return (u_long)hash;
 }
-u_long lee_gmt(int id)
+time_t lee_gmt(int id)
 {
 	FILE *fp;
 	char lee[11];
@@ -144,11 +144,11 @@ u_long lee_gmt(int id)
 	fclose(fp);
 	return atoul(lee);
 }
-DLLFUNC int actualiza_gmt(Udb *bloque, u_long gm)
+DLLFUNC int actualiza_gmt(Udb *bloque, time_t gm)
 {
 	char lee[11];
 	FILE *fh;
-	u_long hora = gm ? gm : time(0);
+	time_t hora = gm ? gm : time(0);
 	bzero(lee, 11);
 	if (!(fh = fopen(DB_DIR "crcs", "r+")))
 		return -1;
