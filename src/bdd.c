@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.9 2004-10-01 19:32:10 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.10 2004-10-01 19:47:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -396,7 +396,7 @@ u_long lee_hash(int id)
 	bzero(lee, 9);
 	fread(lee, 1, 8, fp);
 	fclose(fp);
-	if (!sscanf(lee, "%Xl", &hash))
+	if (!sscanf(lee, "%X", (u_int *)&hash))
 		return 0L;
 	return hash;
 }
