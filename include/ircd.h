@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.6 2004-09-17 19:05:31 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.7 2004-10-01 18:55:20 Trocotronic Exp $ 
  */
 
 #include "flags.h"
@@ -181,3 +181,4 @@ extern void saca_bot_de_canal(Cliente *, char *, char *);
 extern void conecta_bots(void);
 extern void killbot(char *, char *);
 extern int tokeniza_irc(char *, char **, char **, char *);
+void escucha_ircd();

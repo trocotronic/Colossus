@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.8 2004-09-27 21:14:16 Trocotronic Exp $
+ * $Id: cambios,v 1.9 2004-10-01 18:55:19 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -176,3 +176,10 @@
 270904134 - Arreglados varios mensajes de ChanServ.
 270904135 - Arreglado un fallo de opciones de ChanServ.
 270904136 - Arreglado un fallo en el linkaje de servidores.
+290904137 - Cambiado el GUI.
+290904138 - Añadido soporte SSL.
+290904139 - Cambiado el sistema de parseo de opciones de configuración.
+300904140 - Arreglados varios fallos de lectura de conexiones.
+300904141 - Cambiado por completo el sistema de procesado de conexiones.
+011004142 - Actualizada la documentación para SSL y ZLib.
+011004143 - Actualizado instalador para SSL y ZLib.

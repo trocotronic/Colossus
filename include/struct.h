@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.12 2004-09-26 21:07:59 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.13 2004-10-01 18:55:20 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -43,10 +43,76 @@
 #define irc_dlerror dlerror
 #define DLLFUNC 
 #endif
+#ifdef USA_SSL
+#include <openssl/rsa.h>       /* SSL stuff */
+#include <openssl/crypto.h>
+#include <openssl/x509.h>
+#include <openssl/pem.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>    
+#include <openssl/evp.h>
+#include <openssl/rand.h>
+#include <openssl/md5.h>
+#include <openssl/ripemd.h>
+#include "ssl.h"
+#endif
 
 #include "sprintf_irc.h"
 #include "parseconf.h"
-#include "md5.h"
+
+/* 
+ * Macros de portabilidad
+ */
+#ifndef _WIN32
+#define SET_ERRNO(x) errno = x
+#define READ_SOCK(fd, buf, len) read((fd), (buf), (len))
+#define WRITE_SOCK(fd, buf, len) write((fd), (buf), (len))
+#define CLOSE_SOCK(fd) close(fd)
+#define IOCTL(x, y, z) ioctl((x), (y), (z))
+#define ERRNO errno
+#define STRERROR(x) strerror(x)
+
+#define P_EMFILE EMFILE
+#define P_ENOBUFS ENOBUFS
+#define P_EWOULDBLOCK EWOULDBLOCK
+#define P_EAGAIN EAGAIN
+#define P_EINPROGRESS EINPROGRESS
+#define P_EWORKING EINPROGRESS
+#define P_EINTR EINTR
+#define P_ETIMEDOUT ETIMEDOUT
+#define P_ENOTSOCK ENOTSOCK
+#define P_EIO	EIO
+#define P_ECONNABORTED ECONNABORTED
+#define P_ECONNRESET	ECONNRESET
+#define P_ENOTCONN ENOTCONN
+#define P_EMSGSIZE EMSGSIZE
+#else
+#define NETDB_INTERNAL -1
+#define NETDB_SUCCESS 0 
+
+#define READ_SOCK(fd, buf, len) recv((fd), (buf), (len), 0)
+#define WRITE_SOCK(fd, buf, len) send((fd), (buf), (len), 0)
+#define CLOSE_SOCK(fd) closesocket(fd)
+#define IOCTL(x, y, z) ioctlsocket((x), (y), (z))
+#define ERRNO WSAGetLastError()
+#define STRERROR(x) sock_strerror(x)
+#define SET_ERRNO(x) WSASetLastError(x)
+
+#define P_EMFILE WSAEMFILE
+#define P_ENOBUFS WSAENOBUFS
+#define P_EWOULDBLOCK WSAEWOULDBLOCK
+#define P_EAGAIN WSAEWOULDBLOCK
+#define P_EINPROGRESS WSAEINPROGRESS
+#define P_EWORKING WSAEWOULDBLOCK
+#define P_EINTR WSAEINTR
+#define P_ETIMEDOUT WSAETIMEDOUT
+#define P_ENOTSOCK WSAENOTSOCK
+#define P_EIO	EIO
+#define P_ECONNABORTED WSAECONNABORTED
+#define P_ECONNRESET	WSAECONNRESET
+#define P_ENOTCONN WSAENOTCONN
+#define P_EMSGSIZE WSAEMSGSIZE
+#endif
 
 extern void carga_socks(void);
 extern int strcasecmp(const char *, const char *);
@@ -97,8 +163,12 @@ struct _sock
 	DBuf *sendQ;
 	char estado;
 	int opts;
+	int slot;
 #ifdef USA_ZLIB
 	struct _zlib *zlib;
+#endif
+#ifdef USA_SSL
+	SSL *ssl;
 #endif
 };
 extern Sock *sockopen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
@@ -225,6 +295,8 @@ extern char **margv;
 #define EST_LIST 2
 #define EST_OK   3
 #define EST_CERR 4
+#define STAT_SSL_CONNECT_HANDSHAKE 5
+#define STAT_SSL_ACCEPT_HANDSHAKE 6
 #define EsDesc(x) (x->estado == EST_DESC)
 #define EsConn(x) (x->estado == EST_CONN)
 #define EsList(x) (x->estado == EST_LIST)
@@ -235,6 +307,13 @@ extern char **margv;
 #define SockList(x) x->estado = EST_LIST
 #define SockOk(x)   x->estado = EST_OK
 #define SockCerr(x) x->estado = EST_CERR
+#ifdef USA_SSL
+#define IsSSLAcceptHandshake(x)	((x)->estado == STAT_SSL_ACCEPT_HANDSHAKE)
+#define IsSSLConnectHandshake(x)	((x)->estado == STAT_SSL_CONNECT_HANDSHAKE)
+#define IsSSLHandshake(x) (IsSSLAcceptHandshake(x) || IsSSLConnectHandshake(x))
+#define SetSSLAcceptHandshake(x)	((x)->estado = STAT_SSL_ACCEPT_HANDSHAKE)
+#define SetSSLConnectHandshake(x)	((x)->estado = STAT_SSL_CONNECT_HANDSHAKE)
+#endif
 #define FERR 1
 #define FADV 2
 #define FOK  3
@@ -256,8 +335,12 @@ extern int is_file(char *);
 #define OPT_LF 0x2
 #define OPT_CRLF (OPT_CR | OPT_LF)
 #ifdef USA_ZLIB
-#define OPT_ZLIB 0x2
+#define OPT_ZLIB 0x1
 #define EsZlib(x) (x->opts & OPT_ZLIB)
+#endif
+#ifdef USA_SSL
+#define OPT_SSL 0x2
+#define EsSSL(x) (x->opts & OPT_SSL)
 #endif
 extern void programa_loop_principal(void *);
 extern char reth;
@@ -285,3 +368,9 @@ extern void reinicia();
 extern int pregunta(char *);
 extern void refresca();
 extern int copyfile(char *, char *);
+#ifdef USA_SSL
+#define SSLFLAG_FAILIFNOCERT 	0x1
+#define SSLFLAG_VERIFYCERT 	0x2
+#define SSLFLAG_DONOTACCEPTSELFSIGNED 0x4
+#endif
+extern char *my_itoa(int);

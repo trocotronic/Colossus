@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.13 2004-09-27 21:14:16 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.14 2004-10-01 18:55:20 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -163,7 +163,7 @@ int borra_comando(char *cmd, IRCFUNC(*func))
 }
 int abre_sock_ircd()
 {
-	if (!(SockIrcd = sockopen(conf_server->addr, conf_server->puerto, inicia_ircd, procesa_ircd, NULL, cierra_ircd, ADD)))
+	if (!(SockIrcd = sockopen(conf_server->addr, (conf_ssl ? -1 : 1) * conf_server->puerto, inicia_ircd, procesa_ircd, NULL, cierra_ircd, ADD)))
 	{
 		fecho(FERR, "No puede conectar");
 		cierra_ircd(NULL, NULL);
@@ -175,6 +175,17 @@ int abre_sock_ircd()
 		EscuchaIrcd = NULL;
 	}
 	return 1;
+}
+void escucha_ircd()
+{
+	if (!EscuchaIrcd)
+	{
+		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
+#ifdef USA_SSL
+		if (EscuchaIrcd && conf_ssl)
+			EscuchaIrcd->opts |= OPT_SSL;
+#endif
+	}
 }
 void carga_comandos()
 {
@@ -317,8 +328,7 @@ SOCKFUNC(cierra_ircd)
 		ChkBtCon(0, 0);
 #endif
 	SockIrcd = NULL;
-	if (!EscuchaIrcd)
-		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
+	escucha_ircd();
 	return 0;
 }
 SOCKFUNC(escucha_abre) /* nos aceptan el sock, lo renombramos */

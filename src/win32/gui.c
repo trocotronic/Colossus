@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.7 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,6 +7,7 @@
 #include "modulos.h"
 #include "resource.h"
 #include <commctrl.h>
+#include <windows.h>
 
 extern void InitDebug(void);
 extern int carga_programa(int, char **);

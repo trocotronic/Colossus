@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.7 2004-09-17 23:46:42 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.8 2004-10-01 18:55:20 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -11,6 +11,7 @@
 #include "struct.h"
 #include "ircd.h"
 #include <sys/stat.h>
+#include "md5.h"
 
 /* The implementation here was originally done by Gary S. Brown.  I have
    borrowed the tables directly, and made some minor changes to the

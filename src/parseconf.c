@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.8 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.9 2004-10-01 18:55:21 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -12,12 +12,16 @@
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "md5.h"
 
 struct Conf_server *conf_server = NULL;
 struct Conf_db *conf_db = NULL;
 struct Conf_smtp *conf_smtp = NULL;
 struct Conf_set *conf_set = NULL;
 struct Conf_log *conf_log = NULL;
+#ifdef USA_SSL
+struct Conf_ssl *conf_ssl = NULL;
+#endif
 
 static int _test_server		(Conf *, int *);
 static int _test_db 			(Conf *, int *);
@@ -25,6 +29,9 @@ static int _test_smtp		(Conf *, int *);
 static int _test_set			(Conf *, int *);
 static int _test_modulos		(Conf *, int *);
 static int _test_log			(Conf *, int *);
+#ifdef USA_SSL
+static int _test_ssl			(Conf *, int *);
+#endif
 
 static void _conf_server		(Conf *);
 static void _conf_db 		(Conf *);
@@ -32,23 +39,29 @@ static void _conf_smtp		(Conf *);
 static void _conf_set		(Conf *);
 static void _conf_modulos		(Conf *);
 static void _conf_log		(Conf *);
+#ifdef USA_SSL
+static void _conf_ssl		(Conf *);
+#endif
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
    Si es OPC, significa que es opcional a partir de la versión dada (incluida)
    */
 static cComConf cComs[] = {
-	{ "server" , _test_server, _conf_server , OBL , 1 },
-	{ "db" , _test_db, _conf_db , OBL ,  1 },
+	{ "server" , _test_server, _conf_server , OBL , 1 } ,
+	{ "db" , _test_db, _conf_db , OBL ,  1 } ,
 #ifdef _WIN32
-	{ "smtp" , _test_smtp, _conf_smtp , OPC , 5 }, /* es opcional a partir de la version 5 */
+	{ "smtp" , _test_smtp, _conf_smtp , OPC , 5 } , /* es opcional a partir de la version 5 */
 #else
-	{ "smtp" , _test_smtp, _conf_smtp , OBL , 1 },
+	{ "smtp" , _test_smtp, _conf_smtp , OBL , 1 } ,
 #endif
-	{ "set" , _test_set, _conf_set , OBL , 1 },
-	{ "modulo" , _test_modulos, _conf_modulos , OPC , 1 },
+	{ "set" , _test_set, _conf_set , OBL , 1 } ,
+	{ "modulo" , _test_modulos, _conf_modulos , OPC , 1 } ,
 	{ "log" , _test_log , _conf_log , OPC , 1 } ,
-	{0x0,0x0,0x0}
+#ifdef USA_SSL
+	{ "ssl" , _test_ssl , _conf_ssl , OPC , 1 } ,
+#endif
+	{ 0x0 , 0x0 , 0x0 }
 };
 struct bArchivos
 {
@@ -58,7 +71,20 @@ struct bArchivos
 	void (*set)(Conf *modulo, int id);
 	int id;
 };
-;
+#ifdef USA_SSL
+static Opts Opts_SSL[] = {
+	{ SSLFLAG_FAILIFNOCERT , "certificado-cliente" } ,
+	{ SSLFLAG_DONOTACCEPTSELFSIGNED , "solo-oficiales" } ,
+	{ SSLFLAG_VERIFYCERT , "verificar-certificado" } ,
+	{ 0x0 , 0x0 }
+};
+#endif
+static Opts Opts_Log[] = {
+	{ LOG_ERROR , "errores" } ,
+	{ LOG_SERVER , "servidores" } ,
+	{ LOG_CONN , "conexiones" } ,
+	{ 0x0 , 0x0 }
+};
 void libera_conf(Conf *seccion)
 {
 	int i;
@@ -510,6 +536,16 @@ int _test_server(Conf *config, int *errores)
 		}
 	}
 #endif
+#ifdef USA_SSL
+	if ((eval = busca_entrada(config, "cifrados")))
+	{
+		if (!eval->data)
+		{
+			conferror("[%s:%s::%s::%i] La directriz cifrados esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+#endif
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -522,9 +558,9 @@ void _conf_server(Conf *config)
 	{
 		if (!strcmp(config->seccion[i]->item, "addr"))
 			ircstrdup(&conf_server->addr, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "puerto"))
+		else if (!strcmp(config->seccion[i]->item, "puerto"))
 			conf_server->puerto = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "password"))
+		else if (!strcmp(config->seccion[i]->item, "password"))
 		{
 			if (!conf_server->password)
 				da_Malloc(conf_server->password, struct Conf_server_password);
@@ -537,17 +573,21 @@ void _conf_server(Conf *config)
 					ircstrdup(&conf_server->password->remoto, config->seccion[i]->seccion[p]->data);
 			}
 		}
-		if (!strcmp(config->seccion[i]->item, "host"))
+		else if (!strcmp(config->seccion[i]->item, "host"))
 			ircstrdup(&conf_server->host, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "info"))
+		else if (!strcmp(config->seccion[i]->item, "info"))
 			ircstrdup(&conf_server->info, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "numeric"))
+		else if (!strcmp(config->seccion[i]->item, "numeric"))
 			conf_server->numeric = atoi(config->seccion[i]->data);
 #ifdef USA_ZLIB
-		if (!strcmp(config->seccion[i]->item, "compresion"))
+		else if (!strcmp(config->seccion[i]->item, "compresion"))
 			conf_server->compresion = atoi(config->seccion[i]->data);
 #endif
-		if (!strcmp(config->seccion[i]->item, "puerto_escucha"))
+#ifdef USA_SSL
+		else if (!strcmp(config->seccion[i]->item, "cifrados"))
+			ircstrdup(&conf_server->cifrados, config->seccion[i]->data);
+#endif
+		else if (!strcmp(config->seccion[i]->item, "puerto_escucha"))
 			conf_server->escucha = atoi(config->seccion[i]->data);
 	}
 	if (!conf_server->escucha)
@@ -653,15 +693,15 @@ void _conf_db(Conf *config)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
 			ircstrdup(&conf_db->host, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "login"))
+		else if (!strcmp(config->seccion[i]->item, "login"))
 			ircstrdup(&conf_db->login, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "pass"))
+		else if (!strcmp(config->seccion[i]->item, "pass"))
 			ircstrdup(&conf_db->pass, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "nombre"))
+		else if (!strcmp(config->seccion[i]->item, "nombre"))
 			ircstrdup(&conf_db->bd, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "prefijo"))
+		else if (!strcmp(config->seccion[i]->item, "prefijo"))
 			ircstrdup(&PREFIJO, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item ,"puerto"))
+		else if (!strcmp(config->seccion[i]->item ,"puerto"))
 			conf_db->puerto = atoi(config->seccion[i]->data);
 	}
 }
@@ -721,9 +761,9 @@ void _conf_smtp(Conf *config)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
 			ircstrdup(&(conf_smtp->host), config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "login"))
+		else if (!strcmp(config->seccion[i]->item, "login"))
 			ircstrdup(&(conf_smtp->login), config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "pass"))
+		else if (!strcmp(config->seccion[i]->item, "pass"))
 			ircstrdup(&(conf_smtp->pass), config->seccion[i]->data);
 	}
 }
@@ -914,22 +954,22 @@ void _conf_set(Conf *config)
 	{
 		if (!strcmp(config->seccion[i]->item, "autobop"))
 			conf_set->opts |= AUTOBOP;
-		if (!strcmp(config->seccion[i]->item, "rekill"))
+		else if (!strcmp(config->seccion[i]->item, "rekill"))
 			conf_set->opts |= REKILL;
-		if (!strcmp(config->seccion[i]->item, "no_server_deop"))
+		else if (!strcmp(config->seccion[i]->item, "no_server_deop"))
 			conf_set->opts |= NOSERVDEOP;
-		if (!strcmp(config->seccion[i]->item, "rejoin"))
+		else if (!strcmp(config->seccion[i]->item, "rejoin"))
 			conf_set->opts |= REJOIN;
-		if (!strcmp(config->seccion[i]->item, "respuesta"))
+		else if (!strcmp(config->seccion[i]->item, "respuesta"))
 		{
 			if (!strcasecmp(config->seccion[i]->data, "PRIVMSG"))
 				conf_set->opts |= RESP_PRIVMSG;
-			if (!strcasecmp(config->seccion[i]->data, "NOTICE"))
-			conf_set->opts |= RESP_NOTICE;
+			else if (!strcasecmp(config->seccion[i]->data, "NOTICE"))
+				conf_set->opts |= RESP_NOTICE;
 		}
-		if (!strcmp(config->seccion[i]->item, "root"))
+		else if (!strcmp(config->seccion[i]->item, "root"))
 			ircstrdup(&conf_set->root, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "autojoin"))
+		else if (!strcmp(config->seccion[i]->item, "autojoin"))
 		{
 			if (!conf_set->autojoin)
 				da_Malloc(conf_set->autojoin, struct Conf_set_autojoin);
@@ -941,7 +981,7 @@ void _conf_set(Conf *config)
 					ircstrdup(&conf_set->autojoin->operadores, config->seccion[i]->seccion[p]->data);
 			}
 		}
-		if (!strcmp(config->seccion[i]->item, "modos"))
+		else if (!strcmp(config->seccion[i]->item, "modos"))
 		{
 			if (!conf_set->modos)
 				da_Malloc(conf_set->modos, struct Conf_set_modos);
@@ -953,7 +993,7 @@ void _conf_set(Conf *config)
 					ircstrdup(&conf_set->modos->canales, config->seccion[i]->seccion[p]->data);
 			}
 		}
-		/*if (!strcmp(config->seccion[i]->item, "blocks"))
+		/*else if (!strcmp(config->seccion[i]->item, "blocks"))
 		{
 			if (!conf_set->blocks)
 				da_Malloc(conf_set->blocks, struct Conf_set_blocks);
@@ -963,7 +1003,7 @@ void _conf_set(Conf *config)
 					ircstrdup(&conf_set->blocks->bline, config->seccion[i]->seccion[p]->data);
 			}
 		}*/
-		if (!strcmp(config->seccion[i]->item, "cloak"))
+		else if (!strcmp(config->seccion[i]->item, "cloak"))
 		{
 			char tmp[512], result[16];
 			MD5_CTX hash;
@@ -973,9 +1013,9 @@ void _conf_set(Conf *config)
 			ircstrdup(&conf_set->cloak->clave2, config->seccion[i]->seccion[1]->item);
 			ircstrdup(&conf_set->cloak->clave3, config->seccion[i]->seccion[2]->item);
 			sprintf_irc(tmp, "%s:%s:%s", conf_set->cloak->clave1, conf_set->cloak->clave2, conf_set->cloak->clave3);
-			MD5Init(&hash);
-			MD5Update(&hash, tmp, strlen(tmp));
-			MD5Final(result, &hash);
+			MDInit(&hash);
+			MDUpdate(&hash, tmp, strlen(tmp));
+			MDFinal(result, &hash);
 			sprintf_irc(conf_set->cloak->crc, "MD5:%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
 				(u_int)(result[0] & 0xf), (u_int)(result[0] >> 4),
 				(u_int)(result[1] & 0xf), (u_int)(result[1] >> 4),
@@ -994,9 +1034,9 @@ void _conf_set(Conf *config)
 				(u_int)(result[14] & 0xf), (u_int)(result[14] >> 4),
 				(u_int)(result[15] & 0xf), (u_int)(result[15] >> 4));
 		}
-		if (!strcmp(config->seccion[i]->item, "admin"))
+		else if (!strcmp(config->seccion[i]->item, "admin"))
 			ircstrdup(&conf_set->admin, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "reconectar"))
+		else if (!strcmp(config->seccion[i]->item, "reconectar"))
 		{
 			if (!conf_set->reconectar)
 				da_Malloc(conf_set->reconectar, struct Conf_set_reconectar);
@@ -1008,7 +1048,7 @@ void _conf_set(Conf *config)
 					conf_set->reconectar->intervalo = atoi(config->seccion[i]->seccion[p]->data);
 			}
 		}
-		if (!strcmp(config->seccion[i]->item, "debug"))
+		else if (!strcmp(config->seccion[i]->item, "debug"))
 			ircstrdup(&conf_set->debug, config->seccion[i]->data);
 	}
 }
@@ -1024,7 +1064,9 @@ void _conf_modulos(Conf *config)
 int _test_log(Conf *config, int *errores)
 {
 	short error_parcial = 0;
-	Conf *eval;
+	Conf *eval, *aux;
+	int i;
+	Opts *ofl = NULL;
 	if ((eval = busca_entrada(config, "tamaño")))
 	{
 		if (atoi(eval->data) < 0)
@@ -1050,16 +1092,19 @@ int _test_log(Conf *config, int *errores)
 	}
 	else
 	{
-		int i;
 		for (i = 0; i < eval->secciones; i++)
 		{
-			if (strcmp(eval->seccion[i]->item, "conexiones") &&
-				strcmp(eval->seccion[i]->item, "errores") &&
-				strcmp(eval->seccion[i]->item, "servidores"))
-				{
-					conferror("[%s:%s::%s::%i] No es una opción válida %s.", config->archivo, config->item, eval->item, eval->seccion[i]->item, eval->seccion[i]->linea);
-					error_parcial++;
-				}
+			aux = eval->seccion[i];
+			for (ofl = Opts_Log; ofl && ofl->item; ofl++)
+			{
+				if (!strcmp(aux->item, ofl->item))
+					break;
+			}
+			if (!ofl || !ofl->item)
+			{
+				conferror("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
+				error_parcial++;
+			}
 		}
 	}
 	*errores += error_parcial;
@@ -1068,6 +1113,7 @@ int _test_log(Conf *config, int *errores)
 void _conf_log(Conf *config)
 {
 	int i, p;
+	Opts *ofl = NULL;
 	if (!conf_log)
 		da_Malloc(conf_log, struct Conf_log);
 	ircstrdup(&conf_log->archivo, config->data);
@@ -1075,20 +1121,110 @@ void _conf_log(Conf *config)
 	{
 		if (!strcmp(config->seccion[i]->item, "tamaño"))
 			conf_log->size = atoi(config->seccion[i]->data) * 1024;
-		if (!strcmp(config->seccion[i]->item, "opciones"))
+		else if (!strcmp(config->seccion[i]->item, "opciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "conexiones"))
-					conf_log->opts |= LOG_CONN;
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "errores"))
-					conf_log->opts |= LOG_ERROR;
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "servidores"))
-					conf_log->opts |= LOG_SERVER;
+				for (ofl = Opts_Log; ofl && ofl->item; ofl++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, ofl->item))
+					{
+						conf_log->opts |= ofl->opt;
+						break;
+					}
+				}
 			}
 		}
 	}
 }
+#ifdef USA_SSL
+int _test_ssl(Conf *config, int *errores)
+{
+	short error_parcial = 0;
+	Conf *eval, *aux;
+	int i;
+	Opts *ofl = NULL;
+	if ((eval = busca_entrada(config, "certificado")))
+	{
+		if (!eval->data)
+		{
+			conferror("[%s:%s::%s::%i] La directriz certificado esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if ((eval = busca_entrada(config, "clave")))
+	{
+		if (!eval->data)
+		{
+			conferror("[%s:%s::%s::%i] La directriz clave esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if ((eval = busca_entrada(config, "certificados-seguros")))
+	{
+		if (!eval->data)
+		{
+			conferror("[%s:%s::%s::%i] La directriz certificado esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if ((eval = busca_entrada(config, "opciones")))
+	{
+		for (i = 0; i < eval->secciones; i++)
+		{
+			aux = eval->seccion[i];
+			for (ofl = Opts_SSL; ofl && ofl->item; ofl++)
+			{
+				if (!strcmp(aux->item, ofl->item))
+					break;
+			}
+			if (!ofl || !ofl->item)
+			{
+				conferror("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
+				error_parcial++;
+			}
+		}
+	}
+	*errores += error_parcial;
+	return error_parcial;
+}
+void _conf_ssl(Conf *config)
+{
+	int i, p;
+	Opts *ofl = NULL;
+	if (!conf_ssl)
+		da_Malloc(conf_ssl, struct Conf_ssl);
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "egd"))
+		{
+			conf_ssl->usa_egd = 1;
+			if (config->seccion[i]->data)
+				ircstrdup(&conf_ssl->egd_path, config->seccion[i]->data);
+		}
+		else if (!strcmp(config->seccion[i]->item, "certificado"))	
+			ircstrdup(&conf_ssl->x_server_cert_pem, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "clave"))
+			ircstrdup(&conf_ssl->x_server_key_pem, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "certificados-seguros"))
+			ircstrdup(&conf_ssl->trusted_ca_file, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "opciones"))
+		{
+			for (p = 0; p < config->seccion[i]->secciones; p++)
+			{
+				for (ofl = Opts_Log; ofl && ofl->item; ofl++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, ofl->item))
+					{
+						conf_ssl->opts |= ofl->opt;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+#endif
 #ifndef _WIN32
 void conferror(char *formato, ...)
 {

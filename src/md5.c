@@ -1,36 +1,10 @@
 /*
- * $Id: md5.c,v 1.3 2004-09-17 19:09:46 Trocotronic Exp $ 
- */
-
-/* MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
- */
-
-/* Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
-rights reserved.
-
-License to copy and use this software is granted provided that it
-is identified as the "RSA Data Security, Inc. MD5 Message-Digest
-Algorithm" in all material mentioning or referencing this software
-or this function.
-
-License is also granted to make and use derivative works provided
-that such works are identified as "derived from the RSA Data
-Security, Inc. MD5 Message-Digest Algorithm" in all material
-mentioning or referencing the derived work.
-
-RSA Data Security, Inc. makes no representations concerning either
-the merchantability of this software or the suitability of this
-software for any particular purpose. It is provided "as is"
-without express or implied warranty of any kind.
-
-These notices must be retained in any copies of any part of this
-documentation and/or software.
+ * $Id: md5.c,v 1.4 2004-10-01 18:55:21 Trocotronic Exp $ 
  */
 #include "struct.h"
-
-/* Constants for MD5Transform routine.
- */
-
+#include "md5.h"
+#ifndef USA_SSL
+#include <string.h>
 
 #define S11 7
 #define S12 12
@@ -49,11 +23,6 @@ documentation and/or software.
 #define S43 15
 #define S44 21
 
-#define MD5_CTX MD5_CTX
-#define MDInit MD5Init
-#define MDUpdate MD5Update
-#define MDFinal MD5Final
-
 static void MD5Transform PROTO_LIST ((UINT4 [4], unsigned char [64]));
 static void Encode PROTO_LIST
   ((unsigned char *, UINT4 *, unsigned int));
@@ -61,6 +30,7 @@ static void Decode PROTO_LIST
   ((UINT4 *, unsigned char *, unsigned int));
 static void MD5_memcpy PROTO_LIST ((POINTER, POINTER, unsigned int));
 static void MD5_memset PROTO_LIST ((POINTER, int, unsigned int));
+static void MDPrint PROTO_LIST ((unsigned char [16]));
 
 static unsigned char PADDING[64] = {
   0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -105,7 +75,7 @@ Rotation is separate from addition to prevent recomputation.
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
-void MD5Init (context)
+void MD5_Init (context)
 MD5_CTX *context;                                        /* context */
 {
   context->count[0] = context->count[1] = 0;
@@ -121,7 +91,7 @@ MD5_CTX *context;                                        /* context */
   operation, processing another message block, and updating the
   context.
  */
-void MD5Update (context, input, inputLen)
+void MD5_Update (context, input, inputLen)
 MD5_CTX *context;                                        /* context */
 unsigned char *input;                                /* input block */
 unsigned int inputLen;                     /* length of input block */
@@ -163,7 +133,7 @@ unsigned int inputLen;                     /* length of input block */
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
   the message digest and zeroizing the context.
  */
-void MD5Final (digest, context)
+void MD5_Final (digest, context)
 unsigned char digest[16];                         /* message digest */
 MD5_CTX *context;                                       /* context */
 {
@@ -177,10 +147,10 @@ MD5_CTX *context;                                       /* context */
 */
   index = (unsigned int)((context->count[0] >> 3) & 0x3f);
   padLen = (index < 56) ? (56 - index) : (120 - index);
-  MD5Update (context, PADDING, padLen);
+  MD5_Update (context, PADDING, padLen);
 
   /* Append length (before padding) */
-  MD5Update (context, bits, 8);
+  MD5_Update (context, bits, 8);
 
   /* Store state in digest */
   Encode (digest, context->state, 16);
@@ -341,6 +311,7 @@ unsigned int len;
   for (i = 0; i < len; i++)
  ((char *)output)[i] = (char)value;
 }
+#endif
 char* MDString (string)
 char *string;
 {

@@ -1,9 +1,9 @@
-## $Id: Makefile,v 1.15 2004-09-24 22:50:30 Trocotronic Exp $
+## $Id: Makefile,v 1.16 2004-10-01 18:55:20 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
 IRCDLIBS=-ldl -lmysqlclient
-XCFLAGS=-pipe -g -O3 -fexpensive-optimizations -Wall -funsigned-char -export-dynamic -DUDB -DUSA_ZLIB
+XCFLAGS=-pipe -g -O3 -fexpensive-optimizations -Wall -funsigned-char -export-dynamic -DUDB -DUSA_ZLIB -DUSA_SSL
 CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS)
 SUBDIRS=src
 LDFLAGS=
@@ -25,7 +25,7 @@ build:
 clean:
 	$(RM) -f *~ \#* core *.orig include/*.orig
 	@for i in $(SUBDIRS); do \
-		echo "Cleaning $$i";\
+		echo "Limpiando $$i";\
 		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
 	done
 install: all

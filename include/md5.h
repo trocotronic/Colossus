@@ -1,36 +1,14 @@
 /*
- * $Id: md5.h,v 1.3 2004-09-11 15:54:07 Trocotronic Exp $ 
+ * $Id: md5.h,v 1.4 2004-10-01 18:55:20 Trocotronic Exp $ 
  */
-
-/* MD5.H - header file for MD5C.C
- */
-
-/* Copyright (C) 1991-2, RSA Data Security, Inc. Created 1991. All
-rights reserved.
-
-License to copy and use this software is granted provided that it
-is identified as the "RSA Data Security, Inc. MD5 Message-Digest
-Algorithm" in all material mentioning or referencing this software
-or this function.
-
-License is also granted to make and use derivative works provided
-that such works are identified as "derived from the RSA Data
-Security, Inc. MD5 Message-Digest Algorithm" in all material
-mentioning or referencing the derived work.
-
-RSA Data Security, Inc. makes no representations concerning either
-the merchantability of this software or the suitability of this
-software for any particular purpose. It is provided "as is"
-without express or implied warranty of any kind.
-
-These notices must be retained in any copies of any part of this
-documentation and/or software.
- */
-/* PROTOTYPES should be set to one if and only if the compiler supports
-  function argument prototyping.
-  The following makes PROTOTYPES default to 0 if it has not already
-  been defined with C compiler flags.
- */
+ 
+#define MDInit MD5_Init
+#define MDUpdate MD5_Update
+#define MDFinal MD5_Final
+#ifdef USA_SSL
+#include <openssl/md5.h>
+#elif !defined(_MD5_H)
+#define _MD5_H
 
 #ifndef PROTOTYPES
 #define PROTOTYPES 0
@@ -62,9 +40,11 @@ typedef struct {
   unsigned char buffer[64];                         /* input buffer */
 } MD5_CTX;
 
-void MD5Init PROTO_LIST ((MD5_CTX *));
-void MD5Update PROTO_LIST
+void MD5_Init PROTO_LIST ((MD5_CTX *));
+void MD5_Update PROTO_LIST
   ((MD5_CTX *, unsigned char *, unsigned int));
-void MD5Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
+void MD5_Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
 
-extern char *MDString (char *);
+#endif
+
+extern char *MDString(char *);

@@ -1,10 +1,15 @@
-; $Id: colossusinst.iss,v 1.2 2004-09-11 16:08:55 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $
 
 ; Instalador de Colossus
 
+; Definiciones de soporte
+; #define USA_SSL
+; Uncomment the above line to package an SSL build
+; #define USA_ZLIB
+
 [Setup]
 AppName=Colossus
-AppVerName=Colossus v0.9.1
+AppVerName=Colossus v1.0a
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.rallados.net
 AppSupportURL=http://www.rallados.net
@@ -20,17 +25,31 @@ OutputDir=../../
 [Tasks]
 Name: "desktopicon"; Description: "Crear un icono en el &escriptorio"; GroupDescription: "Iconos adicionales:"
 Name: "quicklaunchicon"; Description: "Crear un icono en el &menú rápido"; GroupDescription: "Iconos adicionales:"; Flags: unchecked
+#ifdef USA_SSL
+Name: "makecert"; Description: "&Crear certificado"; GroupDescription: "Opciones SSL:";
+Name: "enccert"; Description: "&Encriptar certificado"; GroupDescription: "Opciones SSL:"; Flags: unchecked;
+#endif
 
 [Files]
-Source: "Colossus.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "Colossus.pdb"; DestDir: "{app}"; Flags: ignoreversion
-Source: "cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignoreversion
-Source: "libmysql.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "pthreadVC.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "mx.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
-Source: "mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
-Source: "modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\Colossus.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\Colossus.pdb"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignoreversion
+Source: "..\..\libmysql.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\mx.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
+Source: "..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+#ifdef USA_SSL
+Source: "c:\openssl\bin\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\openssl\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\openssl\bin\libeay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\makecert.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: ".\encpem.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\ssl.cnf"; DestDir: "{app}"; Flags: ignoreversion
+#endif
+#ifdef USA_ZLIB
+Source: "..\..\zlib1.dll"; DestDir: "{app}"; Flags: ignoreversion
+#endif
 Source: isxdl.dll; DestDir: {tmp}; Flags: dontcopy
 
 [Dirs]
@@ -140,10 +159,18 @@ Name: "{group}\Desinstalar Colossus"; Filename: "{uninstallexe}"; WorkingDir: "{
 Name: "{group}\Documentación"; Filename: "{app}\colossusdoc.html"; WorkingDir: "{app}"
 Name: "{userdesktop}\Colossus"; Filename: "{app}\colossus.exe"; WorkingDir: "{app}"; Tasks: desktopicon
 Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\Colossus"; Filename: "{app}\colossus.exe"; WorkingDir: "{app}"; Tasks: quicklaunchicon
+#ifdef USA_SSL
+Name: "{group}\Hacer Certificado"; Filename: "{app}\makecert.bat"; WorkingDir: "{app}"
+Name: "{group}\Cifrar Certificado"; Filename: "{app}\encpem.bat"; WorkingDir: "{app}"
+#endif
 
 [Run]
 Filename: "{app}\colossusdoc.html"; Description: "Ver documentación"; Parameters: ""; Flags: postinstall skipifsilent shellexec runmaximized
 Filename: "notepad"; Description: "Ver cambios"; Parameters: "{app}\cambios.txt"; Flags: postinstall skipifsilent shellexec runmaximized
+#ifdef USA_SSL
+Filename: "{app}\makecert.bat"; Tasks: makecert
+Filename: "{app}\encpem.bat"; WorkingDir: "{app}"; Tasks: enccert
+#endif
 
 [UninstallRun]
 

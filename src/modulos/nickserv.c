@@ -1,11 +1,12 @@
 /*
- * $Id: nickserv.c,v 1.8 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.9 2004-10-01 18:55:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "md5.h"
 #ifdef UDB
 #include "bdd.h"
 #endif
@@ -1077,7 +1078,12 @@ BOTFUNC(nickserv_swhois)
 	}
 	else
 	{
-		envia_registro_bdd("N::%s::swhois", param[1]);
+#ifdef UDB
+		if (IsNickUDB(param[1]))
+			envia_registro_bdd("N::%s::swhois", param[1]);
+		else
+#endif		
+		_mysql_add(NS_MYSQL, param[1], "swhois", NULL);
 		response(cl, nickserv->nick, "Se ha eliminado el swhois de \00312%s", param[1]);
 	}
 	return 0;
@@ -1296,7 +1302,11 @@ int nickserv_sig_idok(Cliente *cl)
 		_mysql_add(NS_MYSQL, cl->nombre, "gecos", cl->info);
 		timer_off(cl->nombre, cl->sck);
 		cl->intentos = 0;
-		if (!IsNickUDB(cl->nombre) && (swhois = _mysql_get_registro(NS_MYSQL, cl->nombre, "swhois")))
+		if (
+#ifdef UDB
+		!IsNickUDB(cl->nombre) && 
+#endif
+		(swhois = _mysql_get_registro(NS_MYSQL, cl->nombre, "swhois")))
 			sendto_serv_us(&me, MSG_SWHOIS, TOK_SWHOIS, "%s :%s", cl->nombre, swhois);
 		cl->nivel |= USER;
 	}

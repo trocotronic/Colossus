@@ -1,10 +1,11 @@
 /*
- * $Id: main.c,v 1.18 2004-09-26 21:07:05 Trocotronic Exp $ 
+ * $Id: main.c,v 1.19 2004-10-01 18:55:20 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "md5.h"
 #ifdef UDB
 #include "bdd.h"
 #endif
@@ -36,6 +37,7 @@ struct Sockets
 {
 	Sock *socket[MAXSOCKS];
 	int abiertos;
+	int tope;
 }ListaSocks;
 
 Sock *SockActual;
@@ -58,6 +60,7 @@ int desencola(DBuf *, char *, int, int *);
 void envia_cola(Sock *);
 char *lee_cola(Sock *);
 int carga_cache(void);
+int completa_conexion(Sock *);
 
 #ifdef USA_CONSOLA
 void *consola_loop_principal(void *);
@@ -147,6 +150,16 @@ void ircstrdup(char **dest, const char *orig)
 	else
 		*dest = strdup(orig);
 }
+char *my_itoa(int i)
+{
+	static char buf[128];
+#ifndef _WIN32	
+	sprintf_irc(buf, "%d", i);
+#else
+	_itoa(i, buf, 10);
+#endif
+	return (buf);
+}
 /* 
  * print_r
  * Imprime una estructura de forma legible
@@ -172,6 +185,7 @@ void print_r(Conf *conf, int escapes)
 		conferror("%s};", tabs);
 	}
 }
+
 /*
  * resolv
  * Resvuelve el host dado
@@ -201,12 +215,25 @@ int sockblock(int pres)
 }
 void inserta_sock(Sock *sck)
 {
-	ListaSocks.socket[ListaSocks.abiertos] = sck;
+	int i;
+	for (i = 0; ListaSocks.socket[i]; i++);
+	sck->slot = i;
+	ListaSocks.socket[i] = sck;
 #ifdef DEBUG
 	Debug("Insertando sock %X %i en %i ", sck, sck->pres, ListaSocks.abiertos);
 #endif
 	ListaSocks.abiertos++;
-}	
+	if (i > ListaSocks.tope)
+		ListaSocks.tope = i;
+}
+void borra_sock(Sock *sck)
+{
+	ListaSocks.socket[sck->slot] = NULL;
+	sck->slot = -1;
+	while (!ListaSocks.socket[ListaSocks.tope])
+		ListaSocks.tope--;
+	ListaSocks.abiertos--;
+}
 /*
  * sockopen
  * Abre una conexión
@@ -220,6 +247,13 @@ Sock *sockopen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 		return NULL;
 	da_Malloc(sck, Sock);
 	SockDesc(sck);
+#ifdef USA_SSL
+	if (puerto < 0) /* es un puerto ssl */
+	{
+		puerto = puerto * -1;
+		sck->opts |= OPT_SSL;
+	}
+#endif
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		return NULL;
 	sck->server.sin_family = AF_INET;
@@ -321,7 +355,6 @@ Sock *sockaccept(Sock *list, int pres)
 		sck->server.sin_addr = *res;
 	sck->host = strdup(host);
 	sck->puerto = list->puerto;
-	SockOk(sck);
 	if (sockblock(sck->pres) == -1)
 		return NULL;
 	da_Malloc(sck->recvQ, DBuf);
@@ -331,9 +364,30 @@ Sock *sockaccept(Sock *list, int pres)
 	sck->writefunc = list->writefunc;
 	sck->closefunc = list->closefunc;
 	inserta_sock(sck);
-	if (sck->openfunc)
-		sck->openfunc(sck, NULL);
-	ircd_log(LOG_CONN, "Conexión establecida con %s:%i", sck->host, sck->puerto);
+#ifdef USA_SSL
+	if (EsSSL(list))
+	{
+		SetSSLAcceptHandshake(sck);
+		if (!(sck->ssl = SSL_new(ctx_server)))
+		{
+			sockclose(sck, LOCAL);
+			return NULL;
+		}
+		sck->opts |= OPT_SSL;
+		SSL_set_fd(sck->ssl, pres);
+		SSL_set_nonblocking(sck->ssl);
+		if (!ircd_SSL_accept(sck, pres)) 
+		{
+			SSL_set_shutdown(sck->ssl, SSL_RECEIVED_SHUTDOWN);
+			SSL_smart_shutdown(sck->ssl);
+			SSL_free(sck->ssl);
+			sockclose(sck, LOCAL);
+			return NULL;
+		}
+	}
+	else
+#endif
+	completa_conexion(sck);
 	return sck;
 }
 void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
@@ -361,10 +415,10 @@ void sockwrite(Sock *sck, int opts, char *formato, ...)
 }
 void sockclose(Sock *sck, char closef)
 {
-	int i;
 	if (!sck)
 		return;
-	envia_cola(sck); /* enviamos toda su cola */
+	if (closef == LOCAL)
+		envia_cola(sck); /* enviamos toda su cola */
 	if (EsList(sck))
 	{
 		int i;
@@ -381,26 +435,26 @@ void sockclose(Sock *sck, char closef)
 	}
 	SockCerr(sck);
 #ifdef DEBUG
-	Debug("Cerrando conexion con %s:%i (%i)", sck->host, sck->puerto, sck->pres);
+	Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
 #endif
-	if (sck->closefunc)
-		sck->closefunc(sck, closef ? NULL : "LOCAL");
 #ifdef _WIN32
 	closesocket(sck->pres);
 #else
 	close(sck->pres);
 #endif
-	for (i = 0; i < ListaSocks.abiertos; i++)
+#ifdef USA_SSL
+	if (EsSSL(sck) && sck->ssl) 
 	{
-		if (ListaSocks.socket[i] == sck)
-		{
-			for (; i < ListaSocks.abiertos; i++)
-				ListaSocks.socket[i] = ListaSocks.socket[i+1];
-			ListaSocks.abiertos--;
-			break;
-		}
+		SSL_set_shutdown((SSL *)sck->ssl, SSL_RECEIVED_SHUTDOWN);
+		SSL_smart_shutdown((SSL *)sck->ssl);
+		SSL_free((SSL *)sck->ssl);
+		sck->ssl = NULL;
 	}
+#endif
+	if (sck->closefunc)
+		sck->closefunc(sck, closef ? NULL : "LOCAL");
 	bzero(bufr, BUFSIZE+1);
+	borra_sock(sck);
 	ircfree(sck->recvQ);
 	ircfree(sck->sendQ);
 	ircfree(sck->host);
@@ -408,8 +462,9 @@ void sockclose(Sock *sck, char closef)
 }
 void cierra_socks()
 {
-	while (ListaSocks.abiertos)
-		sockclose(ListaSocks.socket[0], LOCAL);
+	int i;
+	for (i = 0; i < ListaSocks.tope; i++)
+		sockclose(ListaSocks.socket[i], LOCAL);
 }
 void encola(DBuf *bufc, char *str, int bytes)
 {
@@ -490,7 +545,7 @@ void envia_cola(Sock *sck)
 {
 	char *msg;
 	int len = 0;
-	if (sck->sendQ->len > 0)
+	if (sck->sendQ && sck->sendQ->len > 0)
 	{
 		int quedan;
 		msg = bufr;
@@ -505,6 +560,11 @@ void envia_cola(Sock *sck)
 			if (EsZlib(sck))
 				msg = comprime(sck, msg, &len);
 #endif
+#ifdef USA_SSL
+			if (EsSSL(sck))
+				ircd_SSL_write(sck, msg, len);
+			else
+#endif
 			send(sck->pres, msg, len, 0);
 			len = 0;
 			if (sck->writefunc)
@@ -516,10 +576,20 @@ void envia_cola(Sock *sck)
 int lee_mensaje(Sock *sck)
 {
 	char lee[BUFSIZE], *msg;
-	int len;
+	int len = 0;
+	if (EsCerr(sck))
+		return -3;
+	SET_ERRNO(0);
 	msg = lee;
 	bzero(lee, BUFSIZE);
+#ifdef USA_SSL
+	if (EsSSL(sck))
+		len = ircd_SSL_read(sck, lee, BUFSIZE);
+	else
+#endif
 	len = recv(sck->pres, lee, BUFSIZE, 0);
+	if (len < 0 && ERRNO == P_EWOULDBLOCK)
+		return 1;
 #ifdef USA_ZLIB
 	if (EsZlib(sck))
 		msg = descomprime(sck, msg, &len);
@@ -571,6 +641,17 @@ void crea_mensaje(Sock *sck, int leng)
 		bzero(recv + off, sizeof(bufr) - off);
 	}while (quedan);
 }
+int completa_conexion(Sock *sck)
+{
+	SockOk(sck);
+#ifdef DEBUG
+	Debug("Conexion establecida con %s:%i (%i)", sck->host, sck->puerto, sck->pres);
+#endif
+	if (sck->openfunc)
+		sck->openfunc(sck, NULL);
+	ircd_log(LOG_CONN, "Conexión establecida con %s:%i", sck->host, sck->puerto);
+	return 0;
+}
 int lee_socks() /* devuelve los bytes leídos */
 {
 	int i, len, sels, lee = 0;
@@ -586,65 +667,96 @@ int lee_socks() /* devuelve los bytes leídos */
 	FD_ZERO(&read_set);
 	FD_ZERO(&write_set);
 	FD_ZERO(&excpt_set);
-	for (i = 0; i < ListaSocks.abiertos; i++)
+	for (i = ListaSocks.tope; i >= 0; i--)
 	{
-		sck = ListaSocks.socket[i];
+		if (!(sck = ListaSocks.socket[i]))
+			continue;
 		if (sck->pres >= 0 && !EsCerr(sck))
 		{
 			FD_SET(sck->pres, &read_set);
 			FD_SET(sck->pres, &excpt_set);
-			if (sck->sendQ->len || EsConn(sck))
+			
+			if (sck->sendQ->len || EsConn(sck)
+#ifdef USA_ZLIB
+			|| (EsZlib(sck) && sck->zlib->outcount > 0)
+#endif
+			)
 				FD_SET(sck->pres, &write_set);
 		}
 	}
 	wait.tv_sec = 1;
 	wait.tv_usec = 0;
 	sels = select(MAXSOCKS + 1, &read_set, &write_set, &excpt_set, &wait);
-	for (i = 0; i < ListaSocks.abiertos; i++)
+	for (i = ListaSocks.tope; i >= 0; i--)
+	{
+		if ((SockActual = ListaSocks.socket[i]) && FD_ISSET(SockActual->pres, &read_set) && EsList(SockActual))
+		{
+			int pres;
+			FD_CLR(SockActual->pres, &read_set);
+			sels--;
+			if ((pres = accept(SockActual->pres, NULL, NULL)) >= 0)
+				sockaccept(SockActual, pres);
+		}
+	}
+	for (i = ListaSocks.tope; i >= 0; i--)
 	{
 		if (!sels)
 			break;
-		SockActual = ListaSocks.socket[i];
-		if (EsCerr(SockActual))
-		{
-			sels--;
+		if (!(SockActual = ListaSocks.socket[i]))
 			continue;
-		}
 		if (FD_ISSET(SockActual->pres, &write_set))
 		{
+			int err = 0;
 			if (EsConn(SockActual))
 			{
-				SockOk(SockActual);
-				if (SockActual->openfunc)
-					SockActual->openfunc(SockActual, NULL);
-				ircd_log(LOG_CONN, "Conexión establecida con %s:%i", SockActual->host, SockActual->puerto);
+#ifdef USA_SSL
+				if (EsSSL(SockActual))
+					err = ircd_SSL_client_handshake(SockActual);
+				else
+#endif
+					err = completa_conexion(SockActual);
+
 			}
 			else
 				envia_cola(SockActual);
-			sels--;
+			if (EsCerr(SockActual) || err)
+			{
+				if (FD_ISSET(SockActual->pres, &read_set))
+				{
+					sels--;
+					FD_CLR(SockActual->pres, &read_set);
+				}
+				sockclose(SockActual, REMOTO);
+				continue;
+			}
 		}
 		if (FD_ISSET(SockActual->pres, &read_set))
 		{
-			if (EsConn(SockActual))
-			{
-				SockOk(SockActual);
-				if (SockActual->openfunc)
-					SockActual->openfunc(SockActual, NULL);
-				ircd_log(LOG_CONN, "Conexión establecida con %s:%i", SockActual->host, SockActual->puerto);
-			}
-			else if (EsList(SockActual))
-			{
-				int pres;
-				if ((pres = accept(SockActual->pres, NULL, NULL)) >= 0)
-					sockaccept(SockActual, pres);
-				sels--;
-				continue;
-			}
+			len = 1;
+#ifdef USA_SSL
+			if (!(IsSSLAcceptHandshake(SockActual) || IsSSLConnectHandshake(SockActual)))
+#endif
 			len = lee_mensaje(SockActual); /* leemos el mensaje */
+#ifdef USA_SSL
+			if (SockActual->ssl && (IsSSLAcceptHandshake(SockActual) || IsSSLConnectHandshake(SockActual)))
+			{
+				if (!SSL_is_init_finished(SockActual->ssl))
+				{
+					if (EsCerr(SockActual) || IsSSLAcceptHandshake(SockActual) ? !ircd_SSL_accept(SockActual, SockActual->pres) : ircd_SSL_connect(SockActual) < 0)
+						len = -2;
+				}
+				else
+					completa_conexion(SockActual);
+			}
+#endif
 			if (len <= 0)
 			{
+				sels--;
 				FD_CLR(SockActual->pres, &read_set);
-				sockclose(SockActual, REMOTO);
+				if (!EsCerr(SockActual))
+				{
+					sockclose(SockActual, REMOTO);
+				}
 				continue;
 			}
 			lee += len;
@@ -653,7 +765,9 @@ int lee_socks() /* devuelve los bytes leídos */
 		}
 		if (FD_ISSET(SockActual->pres, &excpt_set))
 		{
-			sockclose(SockActual, REMOTO);
+			sels--;
+			FD_CLR(SockActual->pres, &excpt_set);
+			SockCerr(SockActual);
 			continue;
 		}
 	}
@@ -772,7 +886,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "\t\t(c)2004\n");
 	fprintf(stderr, "\n");
 #endif
-	ListaSocks.abiertos = 0;
+	ListaSocks.abiertos = ListaSocks.tope = 0;
 	for (i = 0; i < MAXSOCKS; i++)
 		ListaSocks.socket[i] = NULL;
 	memset(senyals, (int)NULL, sizeof(senyals));
@@ -829,6 +943,9 @@ int main(int argc, char *argv[])
 #ifdef UDB
 	bdd_init();
 #endif
+#ifdef USA_SSL
+	init_ssl();
+#endif
 	distribuye_me(&me, &SockIrcd);
 	for (i = 0; i < UMAX; i++)
 	{
@@ -856,8 +973,7 @@ int main(int argc, char *argv[])
 		exit(0);
 	programa_loop_principal(NULL);
 #endif
-	if (!EscuchaIrcd)
-		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
+	escucha_ircd();
 	return 0;
 }
 void programa_loop_principal(void *args)

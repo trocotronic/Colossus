@@ -1,11 +1,12 @@
 /*
- * $Id: chanserv.c,v 1.8 2004-09-27 21:14:16 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.9 2004-10-01 18:55:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "md5.h"
 #ifdef UDB
 #include "bdd.h"
 #endif

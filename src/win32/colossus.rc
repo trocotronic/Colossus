@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.3 2004-09-23 17:01:49 Trocotronic Exp $
+// $Id: colossus.rc,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -11,7 +11,11 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "afxres.h"
+#define APSTUDIO_HIDDEN_SYMBOLS
+#include "windows.h"
+#undef APSTUDIO_HIDDEN_SYMBOLS
+#include "resource.h"
+#include "winver.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -24,6 +28,14 @@
 LANGUAGE LANG_SPANISH, SUBLANG_SPANISH_MODERN
 #pragma code_page(1252)
 #endif //_WIN32
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// 24
+//
+
+1                       24      MOVEABLE PURE   "colossus.manifest"
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -38,7 +50,11 @@ END
 
 2 TEXTINCLUDE DISCARDABLE 
 BEGIN
-    "#include ""afxres.h""\r\n"
+    "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""windows.h""\r\n"
+    "#undef APSTUDIO_HIDDEN_SYMBOLS\r\n"
+    "#include ""resource.h""\r\n"
+    "#include ""winver.h""\r\n"
     "\0"
 END
 
@@ -57,9 +73,9 @@ END
 // Version
 //
 
-VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+VER_COLOSSUS VERSIONINFO
+ FILEVERSION 1,0,0,0
+ PRODUCTVERSION 1,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -105,16 +121,15 @@ END
 COLOSSUS DIALOG DISCARDABLE  0, 0, 205, 65
 STYLE DS_MODALFRAME | DS_3DLOOK | DS_NOFAILCREATE | DS_CENTER | 
     WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Colossus"
 FONT 8, "Verdana"
 BEGIN
-    LTEXT           "",-1,1,1,204,59,NOT WS_GROUP
     GROUPBOX        "Opciones disponibles:",-1,5,5,195,55,BS_LEFT
     CONTROL         "Conectar",BT_CON,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE,
                     10,15,90,15
     PUSHBUTTON      "Refrescar",BT_REHASH,105,15,90,15,NOT WS_TABSTOP
     PUSHBUTTON      "Configuración",BT_CONF,10,35,90,15,NOT WS_TABSTOP
     PUSHBUTTON      "Ayuda",BT_AYUDA,105,35,90,15,NOT WS_TABSTOP
+    //LTEXT           "Trocotronic",-1,160,56,37,10,NOT WS_GROUP
 END
 
 CONFERROR DIALOG DISCARDABLE  0, 0, 331, 178
@@ -127,6 +142,17 @@ BEGIN
                     ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | 
                     WS_VSCROLL
 END
+
+SSLPASS DIALOG DISCARDABLE  0, 0, 174, 57
+STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "SSL Contraseña "
+FONT 8, "Verdana"
+BEGIN
+    DEFPUSHBUTTON   "Aceptar",IDOK,33,35,50,14
+    PUSHBUTTON      "Cancelar",IDCANCEL,89,35,50,14
+    EDITTEXT        IDC_PASS,11,12,152,14,ES_PASSWORD | ES_AUTOHSCROLL
+END
+
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -177,3 +203,26 @@ ICO_MAIN               ICON    DISCARDABLE     "icon1.ico"
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO DISCARDABLE 
+BEGIN
+    "COLOSSUS", DIALOG
+    BEGIN
+        BOTTOMMARGIN, 126
+    END
+
+    "SSLPASS", DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 167
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 50
+    END
+END
+#endif    // APSTUDIO_INVOKED

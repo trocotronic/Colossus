@@ -5,14 +5,14 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.2 2004-09-11 15:47:08 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.3 2004-10-01 18:55:19 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.rallados.net" target="_blank"><font size="3">http://www.rallados.net</font></a><font size="3"><br>
     <b>Versi&oacute;n actual:</b> 1.0a <br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 09/09/2004</font><br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 01/10/2004</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
     <b>Tester:</b> MaD</font><br>
@@ -24,28 +24,30 @@
   <font size="+1">4.- <a href="#udb">UDB</a></font><br>
   <font size="+1">5.- <a href="#mysql">MySQL</a></font><br>
   <font size="+1">6.- <a href="#remoto">Conexi&oacute;n remota</a> </font><br>
-    <font size="+1">7.- <a href="#configuracion">Configuración</a></font><br>
-<font size="+1"> &nbsp; 7.1 <a href="#principal">Archivo principal</a></font><br>
-<font size="+1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7.1.1 <a href="#server">Bloque server { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7.1.2 <a href="#smtp">Bloque smtp { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7.1.3 <a href="#db">Bloque db { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7.1.4 <a href="#set">Bloque set { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7.1.5 <a href="#modulos">Directriz modulo</a></font><br>
-    <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 7.1.6 <a href="#log">Bloque log { }</a></font><br>
-  <font size="+1">&nbsp;	7.2 <a href="#nickserv">NickServ</a></font><br>
-    <font size="+1"> &nbsp; 7.3 <a href="#chanserv">ChanServ</a></font><br>
-    <font size="+1"> &nbsp; 7.4 <a href="#operserv">OperServ</a></font><br>
-    <font size="+1"> &nbsp; 7.5 <a href="#memoserv">MemoServ</a></font><br>
-    <font size="+1"> &nbsp; 7.6 <a href="#ipserv">IpServ</a></font><br>
+  <font size="+1">7.- <a href="#zlib">SSL y ZLib</a></font><br>
+  <font size="+1">8.- <a href="#configuracion">Configuración</a></font><br>
+<font size="+1"> &nbsp; 8.1 <a href="#principal">Archivo principal</a></font><br>
+<font size="+1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.1 <a href="#server">Bloque server { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.2 <a href="#smtp">Bloque smtp { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.3 <a href="#db">Bloque db { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.4 <a href="#set">Bloque set { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.5 <a href="#modulos">Directriz modulo</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.6 <a href="#log">Bloque log { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.1.7 <a href="#ssl">Bloque ssl { }</a></font><br>
+  <font size="+1">&nbsp;	8.2 <a href="#nickserv">NickServ</a></font><br>
+    <font size="+1"> &nbsp; 8.3 <a href="#chanserv">ChanServ</a></font><br>
+    <font size="+1"> &nbsp; 8.4 <a href="#operserv">OperServ</a></font><br>
+    <font size="+1"> &nbsp; 8.5 <a href="#memoserv">MemoServ</a></font><br>
+    <font size="+1"> &nbsp; 8.6 <a href="#ipserv">IpServ</a></font><br>
      
-    <font size="+1">8.- <a href="#funciones">Comandos disponibles</a></font><br>
-    <font size="+1">&nbsp; 8.1 <a href="#fnick">NickServ</a></font><br>
-    <font size="+1"> &nbsp; 8.2 <a href="#fchan">ChanServ</a></font><br>
-    <font size="+1"> &nbsp; 8.3 <a href="#foper">OperServ</a></font><br>
-    <font size="+1"> &nbsp; 8.4 <a href="#fmemo">MemoServ</a></font><br>
-    <font size="+1"> &nbsp; 8.5 <a href="#fip">IpServ</a></font><br>
+    <font size="+1">9.- <a href="#funciones">Comandos disponibles</a></font><br>
+    <font size="+1">&nbsp; 9.1 <a href="#fnick">NickServ</a></font><br>
+    <font size="+1"> &nbsp; 9.2 <a href="#fchan">ChanServ</a></font><br>
+    <font size="+1"> &nbsp; 9.3 <a href="#foper">OperServ</a></font><br>
+    <font size="+1"> &nbsp; 9.4 <a href="#fmemo">MemoServ</a></font><br>
+    <font size="+1"> &nbsp; 9.5 <a href="#fip">IpServ</a></font><br>
      
-    <font size="+1">9.- <a href="#patrones">Parámetros de patrón</a></font></p>
+    <font size="+1">10.- <a href="#patrones">Parámetros de patrón</a></font></p>
   <p><br>
     <b><font size="6"><a name="intro"></a>1.0 Introducci&oacute;n </font></b><br>
     Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
@@ -94,7 +96,12 @@
 Para poder utilizar este comando, debes especificar la ip en el bloque link { } de UnrealIRCd (no sirve '*'). </p>
   <p><b>Nota</b>: cabe poner una especial atenci&oacute;n en m&aacute;quinas donde se est&eacute; ejecutando el ircd y los servicios a la misma vez. En estas situaciones s&oacute;lo puede haber un mismo puerto en escucha. As&iacute;, el ircd y los servicios no pueden utilizar el mismo puerto de escucha. Por esta raz&oacute;n, existe la directriz opcional en el bloque server, puerto_escucha, para especificar otro puerto de escucha que no est&eacute; utilizando el ircd. Esta directriz es &uacute;til cuando los dos programas est&aacute;n bajo la misma m&aacute;quina y conectan entre s&iacute;. </p>
   <p>&nbsp;</p>
-  <p><b><font size="6"><a name="configuracion"></a>7.0 Configuraci&oacute;n</font></b></p>
+  <p><b><font size="6"><a name="zlib"></a>7.0 SSL y ZLib</font></b></p>
+  <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro considerable del ancho de banda. Ambos servidores (servicios e ircd) tienen que estar configurados con la misma compresi&oacute;n: 1 a 9. </p>
+  <p>Tambi&eacute;n se incluye la caracter&iacute;stica SSL para trabajar con conexiones seguras y evitar el robo de informaci&oacute;n. Esta caracter&iacute;stica se define con su propio bloque, cuya presencia indica su suporte.</p>
+  <p>Ambas caracter&iacute;sticas son opcionales, siendo en conexiones &quot;localhost&quot; triviales.</p>
+  <p>&nbsp; </p>
+  <p><b><font size="6"><a name="configuracion"></a>8.0 Configuraci&oacute;n</font></b></p>
   <p>El archivo de configuraci&oacute;n tiene gran similitud con el archivo de configuraci&oacute;n del UnrealIRCd. La estructura es la siguiente:</p>
   <pre>bloque valor {
 	directriz valor;
@@ -108,10 +115,10 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
   As&iacute; pues, por ejemplo canal &quot;#canal&quot;; ser&iacute;a correcto; pero canal #canal; ser&iacute;a incorrecto. </p>
   <p>Adem&aacute;s, los comentarios pueden hacerse anteponiendo // para comentar toda esta l&iacute;nea o con /* */ para comentar varias l&iacute;neas.</p>
   <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una s&oacute;la l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
-  <p><b><font size="5"><a name="principal"></a>7.1 Archivo principal </font></b></p>
+  <p><b><font size="5"><a name="principal"></a>8.1 Archivo principal </font></b></p>
   <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa, generalmente en C:\Colossus.</p>
   <p>El archivo se compone de varios bloques:</p>
-  <p><b><font size="4"><a name="server"></a>7.1.1 Bloque server { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <p><b><font size="4"><a name="server"></a>8.1.1 Bloque server { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>server {
 	addr ip.a.conectar;
 	puerto puerto;
@@ -122,12 +129,16 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	host nombre.del.servidor;
 	info &quot;informaci&oacute;n adicional&quot;;
 	numeric numerico del servidor;<br>	puerto_escucha puerto;
+  compresion nivel;
+  cifrados metodos;
 };</pre>
-  <p>Los valores se deducen f&aacute;cilmente. La directriz <b>addr</b> indica a qu&eacute; ip debe conectar, siendo<b> puerto</b> a qu&eacute; puerto debe hacerlo. El bloque <b>password { }</b> indica cu&aacute;les son las contrase&ntilde;as de conexi&oacute;n remota y local, especificadas en el bloque <b>link { }</b> de la m&aacute;quina a la que se va a conectar. El <b>host</b> es el servidor visible, el que ver&aacute;n los usuarios y en el que estar&aacute;n albergados los robots de servicio. El <b>numeric</b> indica la identificaci&oacute;n del servidor. Debe ser un n&uacute;mero entre 0 y 255 (ambos inclu&iacute;dos) y <b>NO</b> debe estar repetido en la red. Es decir, ning&uacute;n otro servidor de la red deber&aacute; tener el mismo numeric. El <b>puerto_escucha</b> es opcional y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>.</p>
+  <p>Los valores se deducen f&aacute;cilmente. La directriz <b>addr</b> indica a qu&eacute; ip debe conectar, siendo<b> puerto</b> a qu&eacute; puerto debe hacerlo. El bloque <b>password { }</b> indica cu&aacute;les son las contrase&ntilde;as de conexi&oacute;n remota y local, especificadas en el bloque <b>link { }</b> de la m&aacute;quina a la que se va a conectar. El <b>host</b> es el servidor visible, el que ver&aacute;n los usuarios y en el que estar&aacute;n albergados los robots de servicio. El <b>numeric</b> indica la identificaci&oacute;n del servidor. Debe ser un n&uacute;mero entre 0 y 255 (ambos inclu&iacute;dos) y <b>NO</b> debe estar repetido en la red. Es decir, ning&uacute;n otro servidor de la red deber&aacute; tener el mismo numeric. El <b>puerto_escucha</b> es opcional y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. La <b>compresion</b> es opcional e indica que el flujo de datos entre servidores debe hacerse con compresi&oacute;n de nivel especificado. Ambos extremos deben disponer de soporte ZLib y tener la misma compresi&oacute;n. Los <b>cifrados</b> es opcional y se&ntilde;alan qu&eacute; cifrados se disponen. Para tener una lista use 'openssl ciphers'. &Uacute;sese ':' para separar varios m&eacute;todos.</p>
   <p>Ejemplo:</p>
-  <pre>server {<br>	addr 127.0.0.1;<br>	puerto 6667;<br>	password {<br>		local openaccess;<br>		remoto openaccess;<br>	};<br>	host Servicios.Colossus;<br>	info &quot;Servidor en C&quot;;<br>	numeric 1;<br>	puerto_escucha 6666;<br>};</pre>
+  <pre>server {<br>	addr 127.0.0.1;<br>	puerto 6667;<br>	password {<br>		local openaccess;<br>		remoto openaccess;<br>	};<br>	host Servicios.Colossus;<br>	info &quot;Servidor en C&quot;;<br>	numeric 1;<br>	puerto_escucha 6666;
+  compresion 9;
+	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;<br>};</pre>
 <p>&nbsp;</p>
-  <p><b><font size="4"><a name="smtp"></a>7.1.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>
+  <p><b><font size="4"><a name="smtp"></a>8.1.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>
   <pre>smtp {<br>	host host.del.servidor.smtp;<br>	login &quot;milogin&quot;;<br>	pass &quot;mipass&quot;;<br>};</pre>
   <p><br>
   Este bloque configura los par&aacute;metros para enviar emails desde el programa. La directriz <b>host</b> indica la direcci&oacute;n de la m&aacute;quina smtp. Puede ser ip o host. El <b>login</b> es <i>opcional</i>. Si se especifica, indica que el servidor SMTP no es libre y requiere autentificaci&oacute;n. Si no se especifica, esta directriz, se asume que no es necesaria ninguna identificaci&oacute;n y procede al env&iacute;o an&oacute;nimo. El <b>pass</b> es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
@@ -137,15 +148,15 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
   <pre>smtp {<br>	host smtp.telefonica.net;<br>	login milogin$telefonica.net;<br>	pass mipass;<br>};
 </pre>
   <p>&nbsp;</p>
-  <p><b><font size="4"><a name="db"></a>7.1.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <p><b><font size="4"><a name="db"></a>8.1.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>db {<br>	host host;<br>	login login;<br>	pass pass;<br>	nombre db;<br>	prefijo prefijo_;
 	puerto puerto;<br>};</pre>
   <p>Establece la configuraci&oacute;n para utilizar MySQL. El <b>host</b> indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>. El <b>login</b> es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios. Si el <b>login</b> requiere una contrase&ntilde;a, puedes especificarla en <b>pass</b> (<i>opcional</i>). El <b>nombre</b> es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. El <b>prefijo</b> se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
   <p>Ejemplo:</p>
   <pre>db {<br>	host localhost;<br>	login milogin;<br>	pass mipass;<br>	nombre rallados;<br>	prefijo colossus_;<br>};</pre>
   <p>&nbsp;</p>
-  <p><b><font size="4"><a name="set"></a>7.1.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
-<pre>set {<br>	autobop;  //opcional<br>	respuesta PRIVMSG;<br>	rekill;  //opcional
+  <p><b><font size="4"><a name="set"></a>8.1.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <pre>set {<br>	autobop;  //opcional<br>	respuesta PRIVMSG;<br>	rekill;  //opcional
 	rejoin;  //opcional<br>	no_server_deop;  //opcional<br>	admin mail@admin.com;<br>	autojoin {<br>		usuarios &quot;#canal1,#canal2...&quot;;<br>		opers &quot;#canal1,#canal2...&quot;;<br>	};  //opcional<br>	modos {<br>		usuarios +modos-modos;<br>		canales +modos-modos;<br>	};  //opcional<br>	root nickdelroot;<br>	cloak {<br>		llave1;<br>		llave2;<br>		llave3;<br>	};<br>	reconectar {<br>		intentos &quot;n&ordm; intentos&quot;;<br>		intervalo &quot;n&ordm; intervalo&quot;;<br>	};
 	debug &quot;#canal&quot;; //opcional
 };</pre>
@@ -156,11 +167,11 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	debug &quot;#debug&quot;;
 };</pre>
   <p>&nbsp;</p>
-  <p><b><font size="4"><a name="modulos"></a>7.1.5 Directriz modulo <font color="#0000FF">(opcional)</font></font></b></p>
+  <p><b><font size="4"><a name="modulos"></a>8.1.5 Directriz modulo <font color="#0000FF">(opcional)</font></font></b></p>
   <pre>modulo &quot;ruta/archivo.dll&quot;;</pre>
   <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL. As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen. Es conveniente que todos los m&oacute;dulos est&eacute;n en C:\Colossus\modulos. </p>
   <p>&nbsp;</p>
-  <p><a name="log"></a><font size="4"><b>7.1.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><a name="log"></a><font size="4"><b>8.1.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>log archivo {
 	tama&ntilde;o kbytes; // opcional
 	opciones {
@@ -185,11 +196,38 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 		servidores;
 	};
 };</pre>
-  <br>
+  <p>&nbsp;</p>
+  <p><a name="ssl"></a><font size="4"><b>8.1.7 Bloque ssl { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <pre>ssl {
+	egd archivo;
+	certificado archivo;
+	clave archivo;
+	certificados-seguros archivo;
+	opciones {
+		certificado-cliente;
+		solo-oficiales;
+		verificar-certificado;
+	};
+};</pre>
+  </p>
+  <p>Este bloque define que todas las conexiones relacionadas con el ircd ser&aacute;n SSL. El <b>egd</b> especifica que el soporte EGD 
+  (Entropy Gathering Daemon)
+  est&aacute; activo. Si usa OpenSSL 0.9.7 o mayor se busca el archivo por defecto y no es necesario especificarlo. Si no es el caso, deber&aacute; especificar la ruta (recuerde en usar / en vez de \). El <b>certificado</b> indica el archivo donde el certificado SSL est&aacute; localizado. La <b>clave</b> indica el archivo donde se encuentra la clave privada SSL. Los <b>certificados-seguros</b> indican en qu&eacute; archivo se encuentran. Las <b>opciones</b> definen as&iacute;:</p>
+  <ul>
+    <li>  <b>certificado-cliente</b>: s&oacute;lo autoriza conexiones con certificado.</li>
+    <li><b>solo-oficiales</b>: s&oacute;lo autoriza certificados oficiales (no self-signed).</li>
+    <li><b>verificar-certificado</b>: se verifica el certificado antes de permitir la conexi&oacute;n </li>
+  </ul>
+  <p>Ejemplo:</p>
+  <pre>ssl {
+	egd;<br>	clave &quot;server.key.pem&quot;;<br>	opciones {<br>		certificado-cliente;<br>	};<br>};</pre>
+  <p>&nbsp;</p>
   <p><br>
-  Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta modulos\ (o donde se ubique la .dll que lo carga) dentro de la carpeta principal, generalmente C:\Colossus\modulos.</p>
+    Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta modulos\ (o donde se ubique la .dll que lo carga) dentro de la carpeta principal, generalmente C:\Colossus\modulos.
+    </pre>
+  </p>
   <p>Algunos  requieren que est&eacute;n cargados otros m&oacute;dulos antes.</p>
-  <p><b><font size="5"><a name="nickserv"></a>7.2 NickServ</font></b></p>
+  <p><b><font size="5"><a name="nickserv"></a>8.2 NickServ</font></b></p>
   <p>Nombre del archivo <b>NickServ.inc</b>.</p>
   <p>Requiere: <b>chanserv.dll</b>. </p>
   <pre>NickServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sid;  //opcional<br>	secure;  //opcional<br>	automigrar;  //opcional<br>	prot KILL|NICK;<br>	recovernick formato-%s;<br>	securepass formato;<br>	min_reg n&ordm;;<br>	autodrop n&ordm;;  //opcional<br>	nicks n&ordm;;  //opcional<br>	intentos n&ordm;;<br>	maxlist n&ordm;;<br>	forbmails {<br>		dominio1;
@@ -202,7 +240,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 <p>Ejemplo:</p>
 <pre>NickServ {<br>	nick NickServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n de nicks&quot;;<br>	modos owhraAOkNCqBvd;<br>	sid;<br>	secure;<br>	automigrar;<br>	prot kill;<br>	recovernick inv-%s-????;<br>	securepass *******;<br>	min_reg 24;<br>	autodrop 15;<br>	nicks 3;<br>	intentos 3;<br>	maxlist 30;<br>	forbmails {<br>		hotmail.com;<br>	};<br>	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="chanserv"></a>7.3 ChanServ</font></b></p>
+<p><b><font size="5"><a name="chanserv"></a>8.3 ChanServ</font></b></p>
 <p>Nombre del archivo <b>ChanServ.inc</b>.</p>
 <pre>ChanServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sid;  //opcional<br>	autodrop n&ordm;;<br>	maxlist n&ordm;;<br>	bantype n&ordm;;
 	automigrar;  //opcional<br>	tokens {<br>		formato format;<br>		vigencia n&ordm;;<br>		necesarios n&ordm;;<br>		antig n&ordm;;<br>	};<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
@@ -215,7 +253,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 <pre>ChanServ {<br>	nick ChanServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n de canales&quot;;<br>	modos owhraAOkNCqBvd;<br>	sid;<br>	autodrop 15;<br>	maxlist 30;<br>	bantype 9;<br>	tokens {<br>		formato &quot;############&quot;;<br>		vigencia 24; /* en horas */<br>		necesarios 1;<br>		antig 15; /* en d&iacute;as */<br>	};
 	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="operserv"></a>7.4 OperServ</font></b></p>
+<p><b><font size="5"><a name="operserv"></a>8.4 OperServ</font></b></p>
 <p>Nombre del archivo <b>OperServ.inc</b>.</p>
 <p>Requiere: <b>chanserv.dll</b>, <b>memoserv.dll</b>. </p>
 <pre>OperServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	bline &quot;mensaje: %s&quot;;<br>	autoop;
@@ -228,7 +266,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 		...
 		funci&oacute;nN;<br>	};<br>};<br>
 </pre>
-<p><b><font size="5"><a name="memoserv"></a>7.5 MemoServ</font></b></p>
+<p><b><font size="5"><a name="memoserv"></a>8.5 MemoServ</font></b></p>
 <p>Nombre del archivo <b>MemoServ.inc</b>.</p>
 <p>Requiere: <b>chanserv.dll</b>. </p>
 <pre>MemoServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	defecto n&ordm;;<br>	cada n&ordm;;<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		...<br>	};<br>};<br>
@@ -238,7 +276,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 <pre>MemoServ {<br>	nick MemoServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de mensajer&iacute;a&quot;;<br>	modos owhraAOkNCqBvd;<br>	defecto 5;<br>	cada 60;<br>	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};
 </pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="ipserv"></a>7.6 IpServ</font></b></p>
+<p><b><font size="5"><a name="ipserv"></a>8.6 IpServ</font></b></p>
 <p>&nbsp;Nombre del archivo <b>IpServ.inc</b>.</p>
 <pre>IpServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sufijo sufijo;<br>	cambio n&ordm;;<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
 		funci&oacute;n2;
@@ -251,10 +289,9 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 </pre>
 <p>&nbsp;</p>
 
-<p>&nbsp;</p>
-<p><b><font size="6"><a name="funciones"></a>8.0 Comandos disponibles</font></b></p>
+<p><b><font size="6"><a name="funciones"></a>9.0 Comandos disponibles</font></b></p>
 <p>Cada robot dispone de varios comandos que pueden cargarse o descargarse de la configuraci&oacute;n. Estos comandos son los que deben incluirse en el bloque <b>funciones { }</b> en la configuraci&oacute;n de cada robot.</p>
-<p><b><font size="5"><a name="fnick"></a>8.1 Nickserv</font></b></p>
+<p><b><font size="5"><a name="fnick"></a>9.1 Nickserv</font></b></p>
 <pre>help
 register
 identify
@@ -266,13 +303,12 @@ list
 ghost
 suspender
 liberar
-addwhois
-delwhois
+swhois
 rename
 migrar  //s&oacute;lo en soporte UDB
 demigrar  //s&oacute;lo en soporte UDB</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="fchan"></a>8.2 Chanserv</font></b></p>
+<p><b><font size="5"><a name="fchan"></a>9.2 Chanserv</font></b></p>
 <pre>help
 deauth
 drop
@@ -306,12 +342,12 @@ migrar  //s&oacute;lo en soporte UDB
 demigrar  //s&oacute;lo en soporte UDB
 proteger  //s&oacute;lo en soporte UDB</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="foper"></a>8.3 OperServ</font></b></p>
+<p><b><font size="5"><a name="foper"></a>9.3 OperServ</font></b></p>
 <pre>help
 raw
 restart
-backup
 rehash
+backup
 restaura
 blocks
 opers
@@ -323,9 +359,10 @@ global
 noticias
 clones
 close
-modos //s&oacute;lo en soporte UDB</pre>
+modos //s&oacute;lo en soporte UDB
+snomask //s&oacute;lo en soporte UDB</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="fmemo"></a>8.4 MemoServ</font></b></p>
+<p><b><font size="5"><a name="fmemo"></a>9.4 MemoServ</font></b></p>
 <pre>help
 send
 read
@@ -336,15 +373,14 @@ info
 cancelar
 </pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="fip"></a>8.5 IpServ</font></b></p>
+<p><b><font size="5"><a name="fip"></a>9.5 IpServ</font></b></p>
 <pre>help
 setipv
 setipv2
 temphost
 </pre>
 <p>&nbsp;</p>
-<p>&nbsp;</p>
-<p><b><font size="6"><a name="patrones"></a>9.0 Par&aacute;metros de patr&oacute;n</font></b></p>
+<p><b><font size="6"><a name="patrones"></a>10.0 Par&aacute;metros de patr&oacute;n</font></b></p>
 <p>Algunos campos requieren un patr&oacute;n a seguir que contenga comodines que sean intercambiados por valores aleatorios. Estos son:</p>
 <ul>
   <li>? una cifra</li>
