@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.8 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.9 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -47,11 +47,9 @@
 #include "sprintf_irc.h"
 #include "parseconf.h"
 #include "md5.h"
-
-#ifdef ZIP_LINKS
-#include "zip.h"
+#ifdef USA_ZLIB
+#include "zlib.h"
 #endif
-
 
 extern void carga_socks(void);
 extern int strcasecmp(const char *, const char *);
@@ -72,9 +70,7 @@ extern void ircstrdup(char **, const char *);
 #define u_short unsigned short
 #define BadPtr(x) (!(x) || (*(x) == '\0'))
 typedef struct _dbuf DBuf;
-#ifdef ZIP_LINKS
-typedef struct Zdata Zip;
-#endif
+
 struct _dbuf
 {
 	u_int len; /* para datos binarios */
@@ -89,6 +85,20 @@ struct _dbufdata
 	u_int len;
 	struct _dbufdata *sig, *prev;
 };
+#ifdef USA_ZLIB
+#define ZIP_MINIMUM     4096
+#define ZIP_MAXIMUM     8192
+typedef struct _zlib Zlib;
+struct _zlib
+{
+	z_stream *in;
+	z_stream *out;
+	char inbuf[ZIP_MAXIMUM];
+	char outbuf[ZIP_MAXIMUM];
+	int incount;
+	int outcount;
+};
+#endif
 typedef struct _sock Sock;
 struct _sock
 {
@@ -104,8 +114,8 @@ struct _sock
 	DBuf *sendQ;
 	char estado;
 	int opts;
-#ifdef ZIP_LINKS
-	Zip *zip;
+#ifdef USA_ZLIB
+	Zlib *zlib;
 #endif
 };
 extern Sock *sockopen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
@@ -254,12 +264,6 @@ extern char *StsMalloc(size_t, char *, long);
 extern struct in_addr *resolv(char *);
 #define MYSQL_CACHE "cache"
 extern MODVAR char tokbuf[BUFSIZE];
-#ifdef ZIP_LINKS
-#define READBUF_SIZE 8192
-#define OPT_ZIP 0x1
-#define IsZip(x) (x->opts & OPT_ZIP)
-#define IsZipStart(x) ((x->opts & OPT_ZIP) && (x->zip->first == 1))
-#endif
 #define MAX_LISTN 256
 extern Sock *socklisten(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
 extern char *dominum(char *);
@@ -268,6 +272,10 @@ extern int is_file(char *);
 #define OPT_CR 0x1
 #define OPT_LF 0x2
 #define OPT_CRLF (OPT_CR | OPT_LF)
+#ifdef USA_ZLIB
+#define OPT_ZLIB 0x2
+#define EsZlib(x) (x->opts & OPT_ZLIB)
+#endif
 extern void programa_loop_principal(void *);
 extern char reth;
 #ifdef _WIN32
@@ -294,3 +302,9 @@ extern void reinicia();
 extern int pregunta(char *);
 extern void refresca();
 extern int copyfile(char *, char *);
+#ifdef USA_ZLIB
+extern char *descomprime(Sock *, char *, int *);
+extern char *comprime(Sock *, char *, int *);
+extern void libera_zlib(Sock *);
+extern int inicia_zlib(Sock *, int);
+#endif

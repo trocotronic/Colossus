@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.6 2004-09-23 17:02:03 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.7 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -28,7 +28,7 @@ void CleanUp(void)
 }
 void TaskBarCreated() 
 {
-	HICON hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(ICO_MAIN), IMAGE_ICON,16, 16, 0);
+	HICON hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(ICO_MAIN), IMAGE_ICON, 16, 16, 0);
 	SysTray.cbSize = sizeof(NOTIFYICONDATA);
 	SysTray.hIcon = hIcon;
 	SysTray.hWnd = hwMain;
@@ -105,7 +105,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	ShowWindow(hWnd, SW_SHOW);
 	if ((hThreadPrincipal = (HANDLE)_beginthread(programa_loop_principal, 0, NULL)) < 0)
 	{
-		MessageBox(hWnd, "Ha sido imposible crear el thread.", "Eerror", MB_OK|MB_ICONERROR);
+		MessageBox(hWnd, "Ha sido imposible crear el thread.", "Error", MB_OK|MB_ICONERROR);
 		exit(-1);
 	}
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -148,9 +148,8 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_SIZE: 
 		{
-			if (wParam & SIZE_MINIMIZED) {
+			if (wParam & SIZE_MINIMIZED)
 				ShowWindow(hDlg, SW_HIDE);
-			}
 			return 0;
 		}
 		case WM_DESTROY:

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.15 2004-09-18 09:12:59 Trocotronic Exp $ 
+ * $Id: main.c,v 1.16 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -51,7 +51,7 @@ char reth = 0;
 MODVAR char **margv;
 
 void encola(DBuf *, char *, int);
-int desencola(DBuf *, char *, int);
+int desencola(DBuf *, char *, int, int *);
 void envia_cola(Sock *);
 char *lee_cola(Sock *);
 int carga_cache(void);
@@ -336,9 +336,6 @@ Sock *sockaccept(Sock *list, int pres)
 void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
 {
 	char buf[BUFSIZE], *msg;
-#ifdef ZIP_LINKS	
-	int len;
-#endif
 	if (!sck)
 		return;
 	msg = buf;
@@ -350,12 +347,6 @@ void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
 		strcat(buf, "\r");
 	if (opts & OPT_LF)
 		strcat(buf, "\n");
-#ifdef ZIP_LINKS
-	len = strlen(buf);
-	if (IsZip(sck))
-		msg = zip_buffer(sck, msg, &len, 0);
-	if (len)
-#endif
 	encola(sck->sendQ, msg, 0); /* de momento siempre son cadenas */
 }
 void sockwrite(Sock *sck, int opts, char *formato, ...)
@@ -370,6 +361,7 @@ void sockclose(Sock *sck, char closef)
 	int i;
 	if (!sck)
 		return;
+	envia_cola(sck); /* enviamos toda su cola */
 	if (EsList(sck))
 	{
 		int i;
@@ -409,10 +401,6 @@ void sockclose(Sock *sck, char closef)
 	ircfree(sck->recvQ);
 	ircfree(sck->sendQ);
 	ircfree(sck->host);
-#ifdef ZIP_LINKS
-	if (sck->zip)
-		zip_free(sck);
-#endif
 	Free(sck);
 }
 void cierra_socks()
@@ -456,7 +444,7 @@ void encola(DBuf *bufc, char *str, int bytes)
 		}
 	}while (len > 0);
 }	
-int desencola(DBuf *bufc, char *buf, int bytes)
+int desencola(DBuf *bufc, char *buf, int bytes, int *len)
 {
 	/* bytes contiene el máximo que podemos copiar */
 	DbufData *aux;
@@ -492,36 +480,28 @@ int desencola(DBuf *bufc, char *buf, int bytes)
 		bufc->slots = 0;
 	}
 	//Debug("Liberando %i %i",bufc->len,curpos);
+	*len = (curpos > bytes ? bytes : curpos);
 	return bufc->len;
 }
 void envia_cola(Sock *sck)
 {
 	char *msg;
 	int len = 0;
-#ifdef ZIP_LINKS
- 	int mas = 0;
- 	if (IsZip(sck) && sck->zip->outcount)
-	{
-		if (sck->sendQ->len > 0)
-			mas = 1;
-		else
-		{
-			msg = zip_buffer(sck, NULL, &len, 1);
-			encola(sck->sendQ, msg, len);
-		}
-	}
-#endif
 	if (sck->sendQ->len > 0)
 	{
 		int quedan;
 		msg = bufr;
 		do 
 		{
-			quedan = desencola(sck->sendQ, msg, sizeof(bufr));
+			quedan = desencola(sck->sendQ, msg, sizeof(bufr), &len);
 			if (BadPtr(msg))
 				return;
 			if (!len)
 				len = strlen(msg);
+#ifdef USA_ZLIB
+			if (EsZlib(sck))
+				msg = comprime(sck, msg, &len);
+#endif
 			send(sck->pres, msg, len, 0);
 			len = 0;
 			if (sck->writefunc)
@@ -529,15 +509,6 @@ void envia_cola(Sock *sck)
 			bzero(msg, sizeof(bufr)); /* hay que vaciarlo!! */
 		}while(quedan);
 	}
-#ifdef ZIP_LINKS
-	if (sck->sendQ->len == 0 && mas)
-	{
-		mas = 0;
-		msg = zip_buffer(sck, NULL, &len, 1);
-		//Debug("Encolando 3 %s",msg ? msg : "(NULL)");
-		encola(sck->sendQ, msg, len);
-	}
-#endif
 }
 int lee_mensaje(Sock *sck)
 {
@@ -546,50 +517,25 @@ int lee_mensaje(Sock *sck)
 	msg = lee;
 	bzero(lee, BUFSIZE);
 	len = recv(sck->pres, lee, BUFSIZE, 0);
+#ifdef USA_ZLIB
+	if (EsZlib(sck))
+		msg = descomprime(sck, msg, &len);
+#endif
 	if (len > 0)
-		encola(sck->recvQ, lee, len);
+		encola(sck->recvQ, msg, len);
 	return len;
 }
-void crea_mensaje(Sock *sck, int len)
+void crea_mensaje(Sock *sck, int leng)
 {
 	char *recv, *ini, *ul;
-	int quedan, off;
-#ifdef ZIP_LINKS
-	int done_unzip = 0, zipped = 0;
-#endif
+	int quedan, off, len = 0;
 	recv = bufr;
 	off = 0;
 	do
 	{
-		quedan = desencola(sck->recvQ, recv + off, BUFSIZE - off);
-		recv[BUFSIZE] = '\0';
-		//Debug("*** recv %i %i",quedan,strlen(recv));
-#ifdef ZIP_LINKS
-		if (IsZipStart(sck))
-		{
-			if (*recv == '\n' || *recv == '\r')
-			{
-				recv++;
-		 		len--;
-			}
-			sck->zip->first = 0;
-		}
-		else
-			done_unzip = 1;
-		if (IsZip(sck))
-		{
-			zipped = len;
-			sck->zip->inbuf[0] = '\0';    /* unnecessary but nicer for debugging */
-			sck->zip->incount = 0;
-			recv = unzip_packet(sck, recv, &zipped);
-			len = zipped;
-			zipped = 1;
-			if (len <= 0)
-				Debug("ARG");
-		}
-		do
-		{
-#endif		
+		quedan = desencola(sck->recvQ, recv + off, BUFSIZE - off, &len);
+		recv[len] = '\0';
+		//Debug("*** recv %i %i",quedan,len);
 		for (ini = ul = recv; !BadPtr(ul); ul++)
 		{
 			if (*ul == '\n')
@@ -597,24 +543,7 @@ void crea_mensaje(Sock *sck, int len)
 				*ul = '\0';
 				if (*(ul - 1) == '\r')
 					*(ul - 1) = '\0';
-#ifdef ZIP_LINKS
-				if (IsZip(sck) && (zipped == 0) && (len > 0))
-				{
-					zipped = len;
-					if (zipped > 0 && (*recv == '\n' || *recv == '\r'))
-					{
-						recv++;
-						zipped--;
-					}
-					sck->zip->first = 0;
-					recv = unzip_packet(sck, recv, &zipped);
-					len = zipped;
-					zipped = 1;
-					if (len == -1)
-						Debug("ARG 2");
-				}
-#endif
-#ifdef DEBUG
+#ifndef DEBUG
 				Debug("[Parseando: %s]", ini);
 #endif
 				if (sck->readfunc)
@@ -624,20 +553,6 @@ void crea_mensaje(Sock *sck, int len)
 				ini = ul + 1;
 			}
 		}
-#ifdef ZIP_LINKS
-		if (IsZip(sck) && sck->zip->incount)
-		{
-			recv = unzip_packet(sck, (char *)NULL, &zipped);
-			len = zipped;
-			zipped = 1;
-			if (len == -1)
-				Debug("ARG 3");
-			done_unzip = 0;
-		} 
-		else 
-			done_unzip = 1;
-		} while(!done_unzip);
-#endif
 		off = 0;
 		if (!BadPtr(ini))
 		{
@@ -675,11 +590,7 @@ int lee_socks() /* devuelve los bytes leídos */
 		{
 			FD_SET(sck->pres, &read_set);
 			FD_SET(sck->pres, &excpt_set);
-			if (sck->sendQ->len
-#ifdef ZIP_LINKS
-			|| (IsZip(sck) && sck->zip->outcount)
-#endif
-			|| EsConn(sck))
+			if (sck->sendQ->len || EsConn(sck))
 				FD_SET(sck->pres, &write_set);
 		}
 	}

@@ -1,7 +1,7 @@
-## $Id: Makefile,v 1.3 2004-09-17 23:33:52 Trocotronic Exp $
+## $Id: Makefile,v 1.4 2004-09-24 22:41:11 Trocotronic Exp $
 
 OBJS=bdd.o flags.o hash.o ircd.o main.o match.o \
-	md5.o modulos.o mysql.o parseconf.o smtp.o sprintf_irc.o 
+	md5.o modulos.o mysql.o parseconf.o smtp.o sprintf_irc.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'RM=${RM}'
@@ -43,6 +43,8 @@ smtp.o: smtp.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c smtp.c
 sprintf_irc.o: sprintf_irc.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c sprintf_irc.c
+zlib.o: zlib.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c zlib.c
 clean:
 	$(RM) -f *.o *.so *~ core colossus; \
 	cd modulos; make clean

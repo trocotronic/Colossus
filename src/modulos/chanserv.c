@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.6 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.7 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -2156,6 +2156,7 @@ BOTFUNC(chanserv_register)
 				envia_cmodos(cn, chanserv->nick, "+r");
 			if (cn)
 				irctopic(chanserv->nick, cn, "El canal ha sido registrado.");
+			senyal1(CS_SIGN_REG, param[1]);
 		}
 		response(cl, chanserv->nick, "El canal \00312%s\003 ha sido registrado.", param[1]);
 	}
@@ -2691,6 +2692,7 @@ DLLFUNC int chanserv_baja(char *canal)
 	if (IsChanUDB(canal))
 		envia_registro_bdd("C::%s", canal);
 #endif
+	senyal1(CS_SIGN_DROP, canal);
 	_mysql_del(CS_MYSQL, canal);
 	return 0;
 }

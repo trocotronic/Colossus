@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.10 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.11 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -217,7 +217,7 @@ SOCKFUNC(inicia_ircd)
 	inicio = time(0);
 	timer_off("rircd", NULL);
 	canales = NULL;
-#ifdef ZIP_LINKS
+#ifdef USA_ZLIB
 	if (conf_server->compresion)
 		sendto_serv("PROTOCTL UDB3 NICKv2 VHP VL TOKEN UMODE2 ZIP");
 	else
@@ -374,7 +374,7 @@ IRCFUNC(m_msg)
 		response(cl, parv[1], "\00312Colossus v%s - Trocotronic ©2004", COLOSSUS_VERSION);
 		response(cl, parv[1], " ");
 		response(cl, parv[1], "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");
-		response(cl, parv[1], "Si no es perfecto, ¿qué más da? Mi intención es que disfrutes tanto como yo lo he hecho programándolos.");
+		response(cl, parv[1], "Si no es perfecto, ¿qué más da?");
 		response(cl, parv[1], "Sé feliz. Paz.");
 		response(cl, parv[1], " ");
 		response(cl, parv[1], "Puedes descargar este programa de forma gratuita en %c\00312http://www.rallados.net", 31);
@@ -892,18 +892,17 @@ IRCFUNC(m_server)
 	al->opts = strdup(opts);
 	if (!cl) /* primer link */
 	{
-#ifdef ZIP_LINKS
+#ifdef USA_ZLIB
 		if (conf_server->compresion)
 		{
-			if (zip_init(sck, conf_server->compresion) == -1)
+			if (inicia_zlib(sck, conf_server->compresion) < 0)
 			{
-				fecho(FERR, "No puede hacer zip_init");
-				zip_free(sck);
+				fecho(FERR, "No puede hacer inicia_zlib");
+				libera_zlib(sck);
 				cierra_ircd(NULL, NULL);
 				return 0;
 			}
-			sck->opts |= OPT_ZIP;
-			sck->zip->first = 1;
+			sck->opts |= OPT_ZLIB;
 		}
 #endif
 		linkado = al;

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.7 2004-09-23 19:27:58 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.8 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -499,7 +499,7 @@ int _test_server(Conf *config, int *errores)
 			}
 		}
 	}
-#ifdef ZIP_LINKS
+#ifdef USA_ZLIB
 	if ((eval = busca_entrada(config, "compresion")))
 	{
 		puerto = atoi(eval->data);
@@ -543,7 +543,7 @@ void _conf_server(Conf *config)
 			ircstrdup(&conf_server->info, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "numeric"))
 			conf_server->numeric = atoi(config->seccion[i]->data);
-#ifdef ZIP_LINKS
+#ifdef USA_ZLIB
 		if (!strcmp(config->seccion[i]->item, "compresion"))
 			conf_server->compresion = atoi(config->seccion[i]->data);
 #endif

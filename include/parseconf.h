@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.3 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -38,8 +38,8 @@ struct Conf_server
 		char *remoto;
 	}*password;
 	int numeric;
-#ifdef ZIP_LINKS
-	u_char compresion;
+#ifdef USA_ZLIB
+	int compresion;
 #endif
 	int escucha;
 };

@@ -1,27 +1,16 @@
-## $Id: make,v 1.3 2004-09-17 22:09:13 Trocotronic Exp $
+## $Id: make,v 1.4 2004-09-24 22:41:10 Trocotronic Exp $
 
 CC=cl
 LINK=link
 RC=rc
 DEBUG=1
 
-#### ZIPLINKS SUPPORT ####
-#To enable ziplinks support you must have zlib installed on your system
-#you can get a pre-built zlib library from http://www.winimage.com/zLibDll/
+#### SOPORTE ZLIB ####
+ZLIB=1
 #
-#
-#To enable ziplinks uncomment the next line:
-#USE_ZIPLINKS=1
-#
-#If your zlib library and include files are not in your compiler's
-#default locations, specify the locations here:
-#ZLIB_INC_DIR="c:\dev\zlib"
-#ZLIB_LIB_DIR="c:\dev\zlib\dll32"
-#
-#
-###### END ZIPLINKS ######
+###### FIN ZLIB ######
 
-#### ZIPLINKS SUPPORT ####
+#### SOPORTE UDB ####
 #Soporte UDB
 UDB=1
 #
@@ -40,24 +29,18 @@ MODDBGCFLAG=/LD /MD
 UDBFLAGS=/D UDB
 !ENDIF 
 
-!IFDEF USE_ZIPLINKS
-ZIPCFLAGS=/D ZIP_LINKS
-ZIPOBJ=SRC/ZIP.OBJ
-ZIPLIB=zlibwapi.lib
-!IFDEF ZLIB_INC_DIR
-ZLIB_INC=/I "$(ZLIB_INC_DIR)"
-!ENDIF
-!IFDEF ZLIB_LIB_DIR
-ZLIB_LIB=/LIBPATH:"$(ZLIB_LIB_DIR)"
-!ENDIF
+!IFDEF ZLIB
+ZLIBCFLAGS=/D USA_ZLIB
+ZLIBOBJ=SRC/ZLIB.OBJ
+ZLIBLIB=src/zdll.lib
 !ENDIF
 
-CFLAGS=$(DBGCFLAG) /I ./INCLUDE /J $(ZLIB_INC) /Fosrc/ /nologo $(ZIPCFLAGS) $(UDBFLAGS) /D _WIN32 /c 
-LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIB_LIB) $(ZIPLIB) Dbghelp.lib \
+CFLAGS=$(DBGCFLAG) /I ./INCLUDE /J $(ZLIB_INC) /Fosrc/ /nologo $(ZLIBCFLAGS) $(UDBFLAGS) /D _WIN32 /c 
+LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIB_LIB) $(ZLIBLIB) Dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:colossus.def /implib:colossus.lib
 OBJ_FILES=SRC/BDD.OBJ SRC/DEBUG.OBJ SRC/FLAGS.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/SMTP.OBJ \
-	SRC/SPRINTF_IRC.OBJ $(ZIPOBJ) SRC/COLOSSUS.RES SRC/GUI.OBJ
+	SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) SRC/COLOSSUS.RES SRC/GUI.OBJ
 BOT_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL SRC/MODULOS/OPERSERV.DLL \
 	SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL \
 	SRC/MODULOS/MX.DLL
@@ -134,8 +117,8 @@ src/smtp.obj: src/smtp.c $(INCLUDES)
 src/sprintf_irc.obj: src/sprintf_irc.c $(INCLUDES)
         $(CC) $(CFLAGS) src/sprintf_irc.c        
 		
-src/zip.obj: src/zip.c $(INCLUDES)
-	$(CC) $(CFLAGS) src/zip.c
+src/zlib.obj: src/zlib.c $(INCLUDES)
+	$(CC) $(CFLAGS) src/zlib.c
 	
 src/colossus.res: src/colossus.rc $(INCLUDES)
         $(RC) /l 0x409 /fosrc/colossus.res /i ./include /i ./src \

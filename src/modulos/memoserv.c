@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.7 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.8 2004-09-24 22:41:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -451,18 +451,14 @@ BOTFUNC(memoserv_memo)
 		if ((res = _mysql_query("SELECT MAX(fecha) from %s%s where de='%s'", PREFIJO, MS_MYSQL, cl->nombre)))
 		{
 			row = mysql_fetch_row(res);
-			if (!row[0])
-				goto sig;
-			if ((atol(row[0]) + memoserv->cada) > time(0))
+			if (row[0] && (atol(row[0]) + memoserv->cada) > time(0))
 			{
-				buf[0] = '\0';
 				sprintf_irc(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv->cada);
 				response(cl, memoserv->nick, MS_ERR_EMPT, buf);
 				return 1;
 			}
 		}
 	}
-	sig:
 	memoserv_send(param[1], cl->nombre, implode(param, params, 2, -1));
 	response(cl, memoserv->nick, "Mensaje enviado a \00312%s\003.", param[1]);
 	return 0;
