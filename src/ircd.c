@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.21 2005-03-03 12:13:41 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.22 2005-03-14 14:18:09 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -125,7 +125,7 @@ int abre_sock_ircd()
 	if (!(SockIrcd = sockopen(conf_server->addr, conf_server->puerto, inicia_ircd, procesa_ircd, NULL, cierra_ircd, ADD)))
 #endif
 	{
-		fecho(FERR, "No puede conectar");
+		Info("No puede conectar");
 		cierra_ircd(NULL, NULL);
 		return 0;
 	}
@@ -151,6 +151,7 @@ void escucha_ircd()
 SOCKFUNC(inicia_ircd)
 {
 	inicio = time(0);
+	ChkBtCon(1, 1);
 	timer_off("rircd", NULL);
 	canales = NULL;
 	protocolo->inicia();
@@ -226,9 +227,9 @@ SOCKFUNC(cierra_ircd)
 		ChkBtCon(0, 1);
 #endif		
 		intentos++;
-		if (intentos > conf_set->reconectar->intentos)
+		if (intentos > conf_set->reconectar.intentos)
 		{
-			fecho(FERR, "Se han realizado %i intentos y ha sido imposible conectar", intentos - 1);
+			Info("Se han realizado %i intentos y ha sido imposible conectar", intentos - 1);
 #ifdef _WIN32			
 			ChkBtCon(0, 0);
 #endif
@@ -237,7 +238,7 @@ SOCKFUNC(cierra_ircd)
 			return 1;
 		}
 		//fecho(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
-		timer("rircd", NULL, 1, conf_set->reconectar->intervalo, abre_sock_ircd, NULL, 0);
+		timer("rircd", NULL, 1, conf_set->reconectar.intervalo, abre_sock_ircd, NULL, 0);
 	}
 #ifdef _WIN32
 	else /* es local */
@@ -579,8 +580,10 @@ void distribuye_me(Cliente *me, Sock **sck)
 	me->sck = *sck;
 	me->sig = me->prev = NULL;
 	if (!clientes)
+	{
 		clientes = me;
-	inserta_cliente_en_hash(me, conf_server->host, uTab);
+		inserta_cliente_en_hash(me, conf_server->host, uTab);
+	}
 }
 char *ircdmask(char *mascara)
 {

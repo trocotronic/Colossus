@@ -116,6 +116,8 @@ EXPORTS
 
 	borra_ban_de_canal
 
+	borra_cache
+
 	borra_canal_de_hash
 
 	borra_canal_de_usuario
@@ -208,8 +210,6 @@ EXPORTS
 
 	clientes
 
-	cloak_crc
-
 	cmd
 
 	coge_cache
@@ -267,6 +267,8 @@ EXPORTS
 	decode_ip
 
 	descarga_bloque
+
+	descarga_conf
 
 	descarga_modulo
 
@@ -434,9 +436,21 @@ EXPORTS
 
 	libera_conf
 
+	libera_db
+
+	libera_log
+
 	libera_memoria_udb
 
 	libera_protocolo
+
+	libera_server
+
+	libera_set
+
+	libera_smtp
+
+	libera_ssl
 
 	libera_zlib
 

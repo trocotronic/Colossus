@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.30 2005-03-03 12:13:40 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.31 2005-03-14 14:18:06 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -103,6 +103,8 @@ struct _sock
 	char estado;
 	int opts;
 	int slot;
+	char buffer[BUFSIZE]; /* buffer de parseo */
+	int pos; /* posicion de escritura del buffer */
 #ifdef USA_ZLIB
 	struct _zlib *zlib;
 #endif
@@ -293,6 +295,7 @@ extern int is_file(char *);
 #define OPT_SSL 0x2
 #define EsSSL(x) (x->opts & OPT_SSL)
 #endif
+#define OPT_EOS 0x4
 #ifdef _WIN32
 extern void ChkBtCon(int, int);
 extern OSVERSIONINFO VerInfo;
@@ -304,13 +307,13 @@ extern void programa_loop_principal(void *);
 extern void _mysql_carga_tablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
 extern void conferror(char *, ...);
-extern void Info(char *, ...);
+extern int Info(char *, ...);
 extern void sockwritev(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1
 extern VOIDSIG cierra_colossus(int);
 extern void ircd_log(int, char *, ...);
-#define ircfree(x) if (x) Free(x); x = NULL
+#define ircfree(x) do { if (x) Free(x); x = NULL; }while(0)
 #define PID "colossus.pid"
 #ifdef _WIN32
 extern void CleanUpSegv(int);
@@ -354,6 +357,7 @@ extern int strncasecmp(const char *, const char *, int);
 /* definiciones de cache */
 extern char *coge_cache(char *, char *);
 extern void inserta_cache(char *, char *, int, char *, ...);
+extern void borra_cache(char *, char *);
 #define CACHE_HOST "hosts" /* cache para hosts */
 #define CACHE_MX "mx" /* cache para registros mx */
 

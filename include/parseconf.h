@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.7 2005-02-18 22:12:13 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.8 2005-03-14 14:18:06 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -16,6 +16,7 @@ extern int parseconf(char *, Conf *, char);
 extern void libera_conf(Conf *);
 extern void distribuye_conf(Conf *);
 extern Conf *busca_entrada(Conf *, char *);
+extern void descarga_conf();
 
 struct _conf
 {
@@ -37,13 +38,10 @@ struct Conf_server
 	{
 		char *local;
 		char *remoto;
-	}*password;
+	}password;
 	int numeric;
 #ifdef USA_ZLIB
 	int compresion;
-#endif
-#ifdef USA_SSL
-	char *cifrados;
 #endif
 	int escucha;
 };
@@ -67,20 +65,14 @@ struct Conf_set
 	int opts;
 	char *root;
 	int nicklen;
-	struct Conf_set_cloak
-	{
-		char *clave1;
-		char *clave2;
-		char *clave3;
-		u_char crc[64];
-	}*cloak;
+	char clave_cifrado[33];
 	char *admin;
 	char *red;
 	struct Conf_set_reconectar
 	{
 		int intentos;
 		int intervalo;
-	}*reconectar;
+	}reconectar;
 	char *debug;
 };
 struct Conf_log
@@ -98,6 +90,7 @@ struct Conf_ssl
 	char *x_server_cert_pem;
 	char *x_server_key_pem;
 	char *trusted_ca_file;
+	char *cifrados;
 };
 #endif
 typedef struct _opts Opts;

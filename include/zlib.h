@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.h,v 1.4 2005-03-03 12:13:41 Trocotronic Exp $ 
+ * $Id: zlib.h,v 1.5 2005-03-14 14:18:07 Trocotronic Exp $ 
  */
  
 #include "libzlib.h"
@@ -16,6 +16,7 @@ struct _zlib
 	char outbuf[ZIP_MAXIMUM];
 	int incount;
 	int outcount;
+	int primero;
 };
 
 extern char *descomprime(Sock *, char *, int *);

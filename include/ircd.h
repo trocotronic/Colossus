@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.10 2005-02-18 22:12:12 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.11 2005-03-14 14:18:06 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(inicia_ircd);
@@ -43,8 +43,6 @@ struct _cliente
 	char *trio; /* representación alfanumérica del numeric del cliente (en b64 o lo que sea) */
 	char *info;
 	u_int nivel;
-	//u_int intentos;
-	//u_long ultimo_reg;
 	/* stop, estas medidas de prevencion no sirven si el usuario reconecta, porque se borran.
 	   aun asi, si un usuario quiere registarr 3 nicks en 5 minutos, tampoco se lo prohibiremos.
 	   para restricciones ya esta el limite de nicks por cabeza. */

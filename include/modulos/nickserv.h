@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.3 2005-02-18 22:12:14 Trocotronic Exp $ 
+ * $Id: nickserv.h,v 1.4 2005-03-14 14:18:08 Trocotronic Exp $ 
  */
 
 #define NS_SID 0x1
@@ -18,13 +18,13 @@ struct _ns
 	int opts;
 	char *recovernick; /* nick de RECOVER */
 	char *securepass; /* pass segura para VALIDAR */
-	//int min_reg; /* en horas */
-	int autodrop; /* en dias */
-	int nicks; /* maximo de nicks por cuenta */
-	int intentos; /* maximo intentos antes de hacer KILL */
-	int maxlist; /* maximo de entradas por LIST */
+	u_int min_reg; /* en horas */
+	u_int autodrop; /* en dias */
+	u_int nicks; /* maximo de nicks por cuenta */
+	u_int intentos; /* maximo intentos antes de hacer KILL */
+	u_int maxlist; /* maximo de entradas por LIST */
 	char *forbmail[NS_MAX_FBMAIL]; /* emails prohibidos */
-	int forbmails;
+	u_int forbmails;
 	Modulo *hmod;
 };
 
@@ -59,3 +59,4 @@ extern NickServ nickserv;
 #define IsSusp(x) (_mysql_get_registro(NS_MYSQL, x, "suspend"))
 
 #define CACHE_INTENTOS_ID "intentos_id"
+#define CACHE_ULTIMO_REG "ultimo_reg"

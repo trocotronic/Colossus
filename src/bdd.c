@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.21 2005-02-20 15:34:09 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.22 2005-03-14 14:18:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -433,7 +433,7 @@ char *cifra_ip(char *ipreal)
 	if ((bloq = busca_registro(BDD_SET, "clave_cifrado")))
 		clavec = bloq->data_char;
 	else
-		clavec = conf_set->cloak->crc;
+		clavec = conf_set->clave_cifrado;
 	strncpy(clave, clavec, 12);
 	clave[12] = '\0';
 	p = cifrada;
@@ -516,7 +516,7 @@ DLLFUNC void carga_bloque(int tipo)
 	root = coge_de_id(tipo);
 	if ((lee = lee_hash(tipo)) != (obtiene = obtiene_hash(root)))
 	{
-		fecho(FADV, "El bloque %c está corrupto (%lu != %lu)", bloque, lee, obtiene);
+		Info("El bloque %c está corrupto (%lu != %lu)", bloque, lee, obtiene);
 		if ((fp = fopen(root->item, "wb")))
 		{
 			fclose(fp);

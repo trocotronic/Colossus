@@ -1,4 +1,4 @@
-## $Id: make,v 1.12 2005-02-20 15:34:08 Trocotronic Exp $
+## $Id: make,v 1.13 2005-03-14 14:18:05 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -75,7 +75,7 @@ PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL SRC/PROTOCOLOS/REDHISP
 INCLUDES = ./include/ircd.h ./include/md5.h \
 	./include/modulos.h ./include/mysql.h ./include/parseconf.h ./include/protocolos.h \
 	./include/sprintf_irc.h ./include/struct.h ./include/ssl.h ./include/zlib.h  \
-	./include/sistema.h make colossus.def
+	./include/sistema.h make
 MODCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
 PROTCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
@@ -117,7 +117,7 @@ CLEAN:
 SETUP: 
 	-@copy src\win32\setup.h include\setup.h >NUL
 
-./COLOSSUS.EXE: $(OBJ_FILES)
+./COLOSSUS.EXE: $(OBJ_FILES) DEF
         $(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
 	
 !IFNDEF DEBUG
