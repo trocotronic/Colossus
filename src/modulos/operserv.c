@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.13 2005-03-14 20:04:52 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.14 2005-03-14 20:05:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -209,7 +209,7 @@ int inserta_noticia(char *botname, char *noticia, time_t fecha, int id)
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	Cliente *cl = NULL;
-	Noticia *gn;
+	Noticia *gn = NULL;
 	time_t aux;
 	if (gnoticias == MAXNOT)
 		return 0;
