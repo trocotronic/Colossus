@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.h,v 1.2 2004-10-01 19:05:36 Trocotronic Exp $ 
+ * $Id: ssl.h,v 1.3 2004-10-01 19:06:11 Trocotronic Exp $ 
  */
 
 /*
