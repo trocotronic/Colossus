@@ -1,12 +1,12 @@
 #undef BSD_RELIABLE_SIGNALS
 #undef DEFAULT_PERMISSIONS
 #undef DPATH
-#undef DYNAMIC_LINKING
 #undef FORCE_CORE
 #undef GETTIMEOFDAY
 #undef GOT_STRCASECMP
 #undef HUB
 #undef INET6
+#undef LINK_DINAMICO
 #undef LISTEN_SIZE
 #undef LONG_LONG_RLIM_T
 #undef LRADN48
@@ -24,7 +24,6 @@
 #undef PARAMH
 #undef POSIX_SIGNALS
 #undef SPATH
-#undef STATIC_LINKING
 #undef STDLIBH
 #undef STRINGH
 #undef STRINGSH

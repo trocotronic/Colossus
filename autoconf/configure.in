@@ -40,7 +40,10 @@ AC_SUBST(LIBS)
 dnl module checking based on Hyb7's module checking code
 AC_DEFUN(AC_LINK_DINAMICO,
 [
-AC_CHECK_FUNC(dlopen,, AC_CHECK_LIB(dl, dlopen,IRCDLIBS="$IRCDLIBS -ldl",
+AC_CHECK_FUNC(dlopen,, AC_CHECK_LIB(dl, dlopen,[
+IRCDLIBS="$IRCDLIBS -ldl"
+AC_DEFINE(LINK_DINAMICO)
+],
 [
 AC_MSG_WARN(El linkaje dinamico no esta activo porque no se encuentra dlopen) 
 ]))
