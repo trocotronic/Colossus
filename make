@@ -1,7 +1,7 @@
-## $Id: make,v 1.5 2004-10-01 18:55:20 Trocotronic Exp $
+## $Id: make,v 1.6 2004-10-10 09:55:50 Trocotronic Exp $
 
-CC=cl
-LINK=link
+CC=icl
+LINK=xilink
 RC=rc
 DEBUG=1
 
@@ -25,9 +25,9 @@ OPENSSL_LIB_DIR="c:\openssl\lib"
 ###### FIN SSL ######
 
 !IFDEF DEBUG
-DBGCFLAG=/MD /Zi /W3
+DBGCFLAG=/MD /G5 /Zi /W3 /D _USE_INTEL_COMPILER
 DBGLFLAG=/debug
-MODDBGCFLAG=/LDd /MD /Zi /W3
+MODDBGCFLAG=/LDd $(DBGCFLAG)
 !ELSE
 DBGCFLAG=/MD /O2 /G5
 MODDBGCFLAG=/LD /MD
@@ -67,7 +67,8 @@ BOT_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.D
 INCLUDES = ./include/bdd.h ./include/comandos.h \
 	./include/flags.h ./include/ircd.h ./include/md5.h \
 	./include/modulos.h ./include/mysql.h ./include/parseconf.h \
-	./include/sprintf_irc.h ./include/struct.h
+	./include/sprintf_irc.h ./include/struct.h ./include/ssl.h ./include/zlib.h  \
+	./include/sistema.h
 MODCFLAGS=$(MODDBGCFLAG) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
 
