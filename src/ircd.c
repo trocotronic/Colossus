@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.17 2004-10-23 22:41:52 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.18 2004-10-31 18:07:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -163,7 +163,11 @@ int borra_comando(char *cmd, IRCFUNC(*func))
 }
 int abre_sock_ircd()
 {
+#ifdef USA_SSL
 	if (!(SockIrcd = sockopen(conf_server->addr, (conf_ssl ? -1 : 1) * conf_server->puerto, inicia_ircd, procesa_ircd, NULL, cierra_ircd, ADD)))
+#else
+	if (!(SockIrcd = sockopen(conf_server->addr, conf_server->puerto, inicia_ircd, procesa_ircd, NULL, cierra_ircd, ADD)))
+#endif
 	{
 		fecho(FERR, "No puede conectar");
 		cierra_ircd(NULL, NULL);
