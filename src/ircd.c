@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.5 2004-09-17 16:02:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -307,7 +307,7 @@ SOCKFUNC(cierra_ircd)
 #endif
 			return 1;
 		}
-		fecho(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
+		//fecho(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
 		timer("rircd", NULL, 1, conf_set->reconectar->intervalo, abre_sock_ircd, NULL, 0);
 	}
 #ifdef _WIN32
@@ -786,6 +786,40 @@ IRCFUNC(m_db)
 }
 IRCFUNC(m_dbq)
 {
+	char *cur, *pos, *ds;
+	Udb *bloq;
+	pos = cur = strdup(parv[2]);
+	if (!(bloq = coge_de_id(*pos)))
+	{
+		sendto_serv(":%s NOTICE %s :La base de datos %c no existe.", me.nombre, cl->nombre, *pos);
+		return 0;
+	}
+	cur += 3;
+	while ((ds = strchr(cur, ':')))
+	{
+		if (*(ds + 1) == ':')
+		{
+			*ds++ = '\0';
+			if (!(bloq = busca_bloque(cur, bloq)))
+				goto nobloq;
+		}
+		else
+			break;
+		cur = ++ds;
+	}
+	if (!(bloq = busca_bloque(cur, bloq)))
+	{
+		nobloq:
+		sendto_serv(":%s NOTICE %s :No se encuentra el bloque %s.", me.nombre, cl->nombre, cur);
+	}
+	else
+	{
+		if (bloq->data_long)
+			sendto_serv(":%s NOTICE %s :DBQ %s %lu", me.nombre, cl->nombre, parv[2], bloq->data_long);
+		else
+			sendto_serv(":%s NOTICE %s :DBQ %s %s", me.nombre, cl->nombre, parv[2], bloq->data_char);
+	}
+	Free(pos);
 	return 0;
 }
 #endif

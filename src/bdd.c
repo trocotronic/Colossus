@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.3 2004-09-11 16:50:30 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.4 2004-09-17 16:02:52 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -536,7 +536,7 @@ Udb *da_formato(char *form, Udb *reg)
 		else if (reg->data_long)
 		{
 			char tmp[32];
-			sprintf_irc(tmp, "%c%lu", CHAR_NUM, reg->data_long);
+			sprintf(tmp, "%c%lu", CHAR_NUM, reg->data_long);
 			strcat(form, " ");
 			strcat(form, tmp);
 		}
