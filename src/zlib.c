@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.2 2004-09-26 21:11:44 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.3 2004-10-02 22:47:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,8 +8,8 @@
 #define ZIP_BUFFER_SIZE	ZIP_MAXIMUM + BUFSIZE
 #define UNZIP_BUFFER_SIZE	6 * ZIP_BUFFER_SIZE
 
-static  char    unzipbuf[UNZIP_BUFFER_SIZE];
-static  char    zipbuf[ZIP_BUFFER_SIZE];
+static char unzipbuf[UNZIP_BUFFER_SIZE];
+static char zipbuf[ZIP_BUFFER_SIZE];
 
 int inicia_zlib(Sock *sck, int nivel)
 {

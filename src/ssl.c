@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.2 2004-10-02 22:47:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -434,7 +434,7 @@ static int fatal_ssl_error(int ssl_error, int where, Sock *sck)
 		default:
 			ssl_errstr = "Error OpenSSL desconocido";
 	}
-#ifndef DEBUG
+#ifdef DEBUG
     	Debug("Falla usando %s: %s", ssl_func, ssl_errstr);
 #endif
 	if (errtmp)
