@@ -1,0 +1,4 @@
+Para cargar los servicios:
+	./servicios start
+Para parar los servicios:
+	./servicios stop
