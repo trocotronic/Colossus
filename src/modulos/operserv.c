@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.6 2004-09-17 22:09:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,6 +12,7 @@
 #include "operserv.h"
 #include "nickserv.h"
 #include "chanserv.h"
+#include "memoserv.h"
 
 OperServ *operserv = NULL;
 Noticia *gnoticia[MAXNOT];

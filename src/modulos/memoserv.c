@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.6 2004-09-17 22:09:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -706,7 +706,7 @@ BOTFUNC(memoserv_info)
 		}
 		if ((res = _mysql_query("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, param[1])))
 		{
-			memos = mysql_num_rows(res);
+			memos = (int)mysql_num_rows(res);
 			mysql_free_result(res);
 		}
 		opts = atoi(_mysql_get_registro(MS_SET, param[1], "opts"));
@@ -719,12 +719,12 @@ BOTFUNC(memoserv_info)
 		int noleid = 0;
 		if ((res = _mysql_query("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, cl->nombre)))
 		{
-			memos = mysql_num_rows(res);
+			memos = (int)mysql_num_rows(res);
 			mysql_free_result(res);
 		}
 		if ((res = _mysql_query("SELECT * from %s%s where para='%s' AND leido='0'", PREFIJO, MS_MYSQL, cl->nombre)))
 		{
-			noleid = mysql_num_rows(res);
+			noleid = (int)mysql_num_rows(res);
 			mysql_free_result(res);
 		}
 		opts = atoi(_mysql_get_registro(MS_SET, cl->nombre, "opts"));

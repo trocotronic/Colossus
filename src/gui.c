@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.4 2004-09-17 22:09:13 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.5 2004-09-17 22:11:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -95,10 +95,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
 	InitDebug();
-	{
-		Cliente *blo = NULL;
-		blo->nombre = "ble";
-	}
 	carga_programa(__argc, __argv);
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{
