@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.4 2004-09-17 19:09:46 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.5 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
  
 extern u_int base64toint(const char *);
@@ -30,6 +30,7 @@ extern MODVAR Udb *nicks, *chans, *ips, *sets;
 #define BDD_SET 3
 
 DLLFUNC extern Udb *busca_registro(int, char *), *busca_bloque(char *, Udb *);
+DLLFUNC int level_oper_bdd(char *);
 
 #define BDD_PREO 0x1
 #define BDD_OPER 0x2
@@ -41,6 +42,10 @@ extern Udb *coge_de_id(int);
 extern int coge_de_char(char);
 extern void carga_bloque(int);
 extern void descarga_bloque(int);
+extern int parsea_linea(int, char *, int);
+extern int actualiza_hash(Udb *);
+extern void carga_bloques();
+extern void bdd_init();
 #define E_UDB_NODB 1
 #define E_UDB_LEN 2
 #define E_UDB_NOHUB 3

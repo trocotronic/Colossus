@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.5 2004-09-17 18:34:20 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.6 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -303,7 +303,6 @@ Udb *sets = NULL;
 Udb *hash[4][2048];
 #define da_Udb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 #define atoul(x) strtoul(x, NULL, 10)
-void carga_bloques(void);
 static char buf[BUFSIZE];
 void bdd_init()
 {
@@ -799,7 +798,6 @@ void descarga_bloque(int tipo)
 void carga_bloques()
 {
 	int i;
-	Udb *aux, *sig, *bloq;
 	for (i = 0; i < 4; i++)
 		descarga_bloque(i);
 	for (i = 0; i < 4; i++)

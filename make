@@ -1,4 +1,4 @@
-## $Id: make,v 1.2 2004-09-11 15:49:00 Trocotronic Exp $
+## $Id: make,v 1.3 2004-09-17 22:09:13 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -28,9 +28,9 @@ UDB=1
 ###### FIN UDB ######
 
 !IFDEF DEBUG
-DBGCFLAG=/MD /Zi
+DBGCFLAG=/MD /Zi /W3
 DBGLFLAG=/debug
-MODDBGCFLAG=/LDd /MD /Zi
+MODDBGCFLAG=/LDd /MD /Zi /W3
 !ELSE
 DBGCFLAG=/MD /O2 /G5
 MODDBGCFLAG=/LD /MD
@@ -152,31 +152,31 @@ CUSTOMMODULE: src/modulos/$(MODULEFILE).c
        
 MODULES: $(BOT_DLL)
         
-src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES)
+src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES) ./include/chanserv.h
         $(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)
         
-src/modulos/nickserv.dll: src/modulos/nickserv.c $(INCLUDES)
+src/modulos/nickserv.dll: src/modulos/nickserv.c $(INCLUDES) ./include/chanserv.h ./include/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/nickserv.c $(MODLFLAGS) ws2_32.lib src/modulos/chanserv.lib  
         
-src/modulos/operserv.dll: src/modulos/operserv.c $(INCLUDES)
+src/modulos/operserv.dll: src/modulos/operserv.c $(INCLUDES) ./include/chanserv.h ./include/memoserv.h ./include/operserv.h
         $(CC) $(MODCFLAGS) src/modulos/operserv.c $(MODLFLAGS) src/modulos/memoserv.lib src/modulos/chanserv.lib
         
-src/modulos/memoserv.dll: src/modulos/memoserv.c $(INCLUDES)
+src/modulos/memoserv.dll: src/modulos/memoserv.c $(INCLUDES) ./include/chanserv.h ./include/memoserv.h
 	$(CC) $(MODCFLAGS) src/modulos/memoserv.c $(MODLFLAGS) src/modulos/chanserv.lib
 	
-src/modulos/ipserv.dll: src/modulos/ipserv.c $(INCLUDES)
+src/modulos/ipserv.dll: src/modulos/ipserv.c $(INCLUDES) ./include/ipserv.h
 	$(CC) $(MODCFLAGS) src/modulos/ipserv.c $(MODLFLAGS)	
 		      
-src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES)
+src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES) ./include/proxyserv.h
 	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS)
 
-src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES)
+src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
 	
 src/modulos/mx.dll: src/modulos/mx.c $(INCLUDES)
 	$(CC) $(MODDBGCFLAG) /Fesrc/modulos/ /Fosrc/modulos/ /nologo src/modulos/mx.c /link dnsapi.lib
 	-@copy src\modulos\mx.dll mx.dll
 	
-src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES)
+src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES) ./include/chanserv.h ./include/linkserv.h
 	$(CC) $(MODCFLAGS) src/modulos/linkserv.c $(MODLFLAGS) src/modulos/chanserv.lib
 	

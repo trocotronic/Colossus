@@ -1,5 +1,5 @@
 /*
- * $Id: sprintf_irc.c,v 1.3 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: sprintf_irc.c,v 1.4 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 /*
@@ -312,7 +312,7 @@ char *vsprintf_irc(register char *str, register const char *format, register va_
 				{
 					v2 = v1 / 1000000000;
 					v1 -= v2 * 1000000000;
-					*str++ = '0' + v2;
+					*str++ = '0' + (u_char)v2;
 				}
 				v2 = v1 / 1000000;
 				v1 -= v2 * 1000000;
@@ -334,12 +334,13 @@ char *vsprintf_irc(register char *str, register const char *format, register va_
 			}
 			if (c == 'd')
 			{
-				register unsigned int v1, v2;
+				register int v1;
+				register unsigned int v2;
 				register const char *ap;
 				register char *s =
 				    &scratch_buffer[sizeof(scratch_buffer) - 2];
 				v1 = va_arg(vl, int);
-				if ((int)v1 <= 0)
+				if (v1 <= 0)
 				{
 					if (v1 == 0)
 					{

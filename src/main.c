@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.8 2004-09-17 18:39:54 Trocotronic Exp $ 
+ * $Id: main.c,v 1.9 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,12 +11,19 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <sys/io.h>
+#endif
+#include <fcntl.h>
 #undef USA_CONSOLA
 #ifndef _WIN32
 #include <errno.h>
 #include <utime.h>
 #include <sys/resource.h>
 #endif
+
 #define BadPtr(x) (!(x) || (*(x) == '\0'))
 
 static char buf[BUFSIZE];
@@ -379,7 +386,7 @@ void sockclose(Sock *sck, char closef)
 	}
 	SockCerr(sck);
 #ifdef DEBUG
-	Debug("Cerrando conexion con %s:%i (%i)", sck->host, sck->puerto, sck-pres);
+	Debug("Cerrando conexion con %s:%i (%i)", sck->host, sck->puerto, sck->pres);
 #endif
 	if (sck->closefunc)
 		sck->closefunc(sck, closef ? NULL : "LOCAL");
@@ -922,10 +929,9 @@ int main(int argc, char *argv[])
 	if (fork())
 		exit(0);
 	programa_loop_principal(NULL);
-#else
+#endif
 	if (!EscuchaIrcd)
 		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
-#endif
 	return 0;
 }
 void programa_loop_principal(void *args)
@@ -1410,7 +1416,6 @@ time_t getfilemodtime(char *filename)
 	FILETIME cTime;
 	SYSTEMTIME sTime, lTime;
 	ULARGE_INTEGER fullTime;
-	time_t result;
 	HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING,
 				  FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -1444,7 +1449,7 @@ void setfilemodtime(char *filename, time_t mtime)
 		return;
 	llValue = Int32x32To64(mtime, 10000000) + 116444736000000000;
 	mTime.dwLowDateTime = (long)llValue;
-	mTime.dwHighDateTime = llValue >> 32;
+	mTime.dwHighDateTime = (DWORD)llValue >> 32;
 	
 	SetFileTime(hFile, &mTime, &mTime, &mTime);
 	CloseHandle(hFile);

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.7 2004-09-17 19:05:31 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.8 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -7,6 +7,7 @@
 #include <direct.h>
 #include "mysql.h"
 #include <sys/timeb.h>
+#include <process.h>
 #else
 #define DWORD int
 #include <mysql.h>
@@ -274,6 +275,7 @@ extern void ChkBtCon(int, int);
 extern OSVERSIONINFO VerInfo;
 extern char SO[256];
 extern HWND hwMain;
+extern void CleanUp(void);
 #endif
 extern void _mysql_carga_tablas(void);
 #define atoul(x) strtoul(x, NULL, 10)

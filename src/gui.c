@@ -1,12 +1,15 @@
 /*
- * $Id: gui.c,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.4 2004-09-17 22:09:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "resource.h"
 #include <commctrl.h>
-#include <process.h>
+
+extern void InitDebug(void);
+extern int carga_programa(int, char **);
+
 NOTIFYICONDATA SysTray;
 HINSTANCE hInst;
 HWND hwMain = NULL, hwConfError = NULL;
@@ -92,6 +95,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
 	InitDebug();
+	{
+		Cliente *blo = NULL;
+		blo->nombre = "ble";
+	}
 	carga_programa(__argc, __argv);
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{

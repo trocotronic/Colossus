@@ -1,12 +1,11 @@
 /*
- * $Id: debug.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.3 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include <dbghelp.h>
 #include <Winbase.h>
-#include <process.h>
 
 #define BUFFERSIZE   0x200
 
@@ -27,7 +26,6 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e) {
 		hProcess = (HANDLE)GetCurrentProcessId();
 	else
 		hProcess = GetCurrentProcess();	
-
 	SymInitialize(hProcess, NULL, TRUE);
 	SymSetOptions(SYMOPT_LOAD_LINES|SYMOPT_UNDNAME);
 	bzero(pSym, sizeof(IMAGEHLP_SYMBOL)+500);

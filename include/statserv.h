@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ * $Id: statserv.h,v 1.3 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 #define SS_MAX_COMS 256
@@ -70,7 +70,7 @@ extern StatServ *statserv;
 #define SS_MYSQL "stats"
 
 #define actualiza(x,y) _mysql_add(SS_MYSQL, x, "valor", "%lu", y)
-#define coge(x) atoi(_mysql_get_registro(SS_MYSQL, x, "valor"))
+#define coge(x) (u_int)atoi(_mysql_get_registro(SS_MYSQL, x, "valor"))
 
 #define STSUSERS 1
 #define STSCHANS 2

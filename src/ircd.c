@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.9 2004-09-17 18:35:55 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.10 2004-09-17 22:09:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -524,12 +524,12 @@ IRCFUNC(m_join)
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 	{
 		Canal *cn = NULL;
+		cn = info_canal(canal, !0);
 		if (conf_set->debug && cn->miembros == 1 && !IsAdmin(cl) && !strcmp(canal, conf_set->debug))
 		{
 			sendto_serv(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
 			continue;
 		}
-		cn = info_canal(canal, !0);
 		inserta_canal_en_usuario(cl, cn);
 		inserta_usuario_en_canal(cn, cl);
 		if (conf_set->debug && IsAdmin(cl) && cn->miembros == 1 && !strcmp(canal, conf_set->debug))
