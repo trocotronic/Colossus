@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.21 2004-10-01 19:59:28 Trocotronic Exp $ 
+ * $Id: main.c,v 1.22 2004-10-02 22:47:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -28,8 +28,6 @@
 #include <sys/resource.h>
 #endif
 
-#define BadPtr(x) (!(x) || (*(x) == '\0'))
-
 static char buf[BUFSIZE];
 static char bufr[BUFSIZE+1];
 
@@ -52,7 +50,6 @@ HANDLE hStdin;
 #endif
 int listens[MAX_LISTN];
 int listenS = 0;
-char reth = 0;
 MODVAR char **margv;
 
 void encola(DBuf *, char *, int);
@@ -66,7 +63,9 @@ int completa_conexion(Sock *);
 void *consola_loop_principal(void *);
 void parsea_comando(char *);
 #endif
+#ifdef _WIN32
 void programa_loop_principal(void *);
+#endif
 
 const char NTL_tolower_tab[] = {
        /* x00-x07 */ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
@@ -131,8 +130,8 @@ char *StsMalloc(size_t size, char *file, long line)
 }
 int strcasecmp(const char *a, const char *b)
 {
-	const char* ra = a;
-	const char* rb = b;
+	const char *ra = a;
+	const char *rb = b;
 	while (ToLower(*ra) == ToLower(*rb)) 
 	{
 		if (!*ra++)
@@ -280,7 +279,7 @@ Sock *sockopen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 	sck->closefunc = closefunc;
 	sck->puerto = puerto;
 #ifdef DEBUG
-	Debug("Abriendo conexion con %s:%i (%i)", host, puerto, sck->pres);
+	Debug("Abriendo conexion con %s:%i (%i) %s", host, puerto, sck->pres, EsSSL(sck) ? "[SSL]" : "");
 #endif
 	if (add)
 		inserta_sock(sck);
@@ -746,9 +745,7 @@ int lee_socks() /* devuelve los bytes leídos */
 				sels--;
 				FD_CLR(SockActual->pres, &read_set);
 				if (!EsCerr(SockActual))
-				{
 					sockclose(SockActual, REMOTO);
-				}
 				continue;
 			}
 			lee += len;
@@ -779,8 +776,6 @@ void inicia_procesos()
 		lee_socks();
 		comprueba_timers();
 		procesos_auxiliares();
-		if (reth)
-			break;
 	}
 	/* si llegamos aquí estamos saliendo del programa */
 	cierra_socks();
@@ -796,7 +791,7 @@ void escribe_pid()
 	if ((fd = open(PID, O_CREAT | O_WRONLY, 0600)) >= 0)
 	{
 		bzero(buff, sizeof(buff));
-		sprintf_irc(buff, "%5d\n", (int)getpid());
+		sprintf(buff, "%5i\n", (int)getpid());
 		if (write(fd, buff, strlen(buff)) == -1)
 			Debug("No se puede escribir el archivo pid %s", PID);
 		close(fd);
@@ -890,6 +885,11 @@ int main(int argc, char *argv[])
 #else
 	mkdir("tmp", 0744);
 #endif	
+#ifndef _WIN32
+	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
+	if (setrlimit(RLIMIT_CORE, &corelim))
+		printf("unlimit core size failed; errno = %d\n", errno);
+#endif
 	if (parseconf("colossus.conf", &config, 1) < 0)
 		return 1;
 	distribuye_conf(&config);
@@ -952,7 +952,6 @@ int main(int argc, char *argv[])
 		cTab[i].item = NULL;
 		cTab[i].items = 0;
 	}
-	escribe_pid();
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
 #else
@@ -961,20 +960,22 @@ int main(int argc, char *argv[])
 	signal(SIGINT, reinicia);
 #endif
 #ifndef _WIN32
-	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
-	if (setrlimit(RLIMIT_CORE, &corelim))
-		printf("unlimit core size failed; errno = %d\n", errno);
 	if (fork())
 		exit(0);
-	programa_loop_principal(NULL);
-#endif
+	escribe_pid();
+	abre_sock_ircd();
+#else
 	escucha_ircd();
 	return 0;
 }
 void programa_loop_principal(void *args)
 {
+#endif
 	intentos = 0;
 	inicia_procesos();
+#ifndef _WIN32
+	return 0;
+#endif
 }
 int is_file(char *archivo)
 {

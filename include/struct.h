@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.14 2004-10-01 19:25:34 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.15 2004-10-02 22:47:13 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -271,14 +271,13 @@ extern int is_file(char *);
 #define OPT_SSL 0x2
 #define EsSSL(x) (x->opts & OPT_SSL)
 #endif
-extern void programa_loop_principal(void *);
-extern char reth;
 #ifdef _WIN32
 extern void ChkBtCon(int, int);
 extern OSVERSIONINFO VerInfo;
 extern char SO[256];
 extern HWND hwMain;
 extern void CleanUp(void);
+extern void programa_loop_principal(void *);
 #endif
 extern void _mysql_carga_tablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
