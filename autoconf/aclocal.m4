@@ -81,9 +81,9 @@ AC_MSG_CHECKING(para zlib)
 	    AC_MSG_RESULT(encontrado en $zlibdir)
             found_zlib="yes";
 	    if test "$zlibdir" = "/usr" ; then
-		CFLAGS="$CFLAGS -DZIP_LINKS";
+		CFLAGS="$CFLAGS -DUSA_ZLIB";
 	    else
-	        CFLAGS="$CFLAGS -I$zlibdir/include -DZIP_LINKS";
+	        CFLAGS="$CFLAGS -I$zlibdir/include -DUSA_ZLIB";
 	    fi
             break;
         fi
