@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.22 2004-10-02 22:47:13 Trocotronic Exp $ 
+ * $Id: main.c,v 1.23 2004-10-10 09:56:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -316,7 +316,7 @@ Sock *socklisten(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(
 	if (sockblock(sck->pres) == -1)
 		return NULL;
 #ifdef DEBUG
-	Debug("Escuchando puerto %i", puerto);
+	Debug("Escuchando puerto %i (%i)", puerto, sck->pres);
 #endif
 	da_Malloc(sck->recvQ, DBuf);
 	da_Malloc(sck->sendQ, DBuf);
@@ -649,12 +649,6 @@ int lee_socks() /* devuelve los bytes leídos */
 	fd_set read_set, write_set, excpt_set;
 	struct timeval wait;
 	Sock *sck;
-	if (ListaSocks.abiertos <= 0)
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
 	FD_ZERO(&read_set);
 	FD_ZERO(&write_set);
 	FD_ZERO(&excpt_set);
@@ -678,6 +672,16 @@ int lee_socks() /* devuelve los bytes leídos */
 	wait.tv_sec = 1;
 	wait.tv_usec = 0;
 	sels = select(MAXSOCKS + 1, &read_set, &write_set, &excpt_set, &wait);
+	if (sels == -1)
+	{
+		if ((ERRNO == P_EINTR) || (ERRNO == P_ENOTSOCK))
+			return -1;
+#ifdef _WIN32
+		Sleep(1000);
+#else
+		sleep(1);
+#endif
+	}
 	for (i = ListaSocks.tope; i >= 0; i--)
 	{
 		if ((SockActual = ListaSocks.socket[i]) && FD_ISSET(SockActual->pres, &read_set) && EsList(SockActual))
@@ -756,7 +760,7 @@ int lee_socks() /* devuelve los bytes leídos */
 		{
 			sels--;
 			FD_CLR(SockActual->pres, &excpt_set);
-			SockCerr(SockActual);
+			sockclose(SockActual, REMOTO);
 			continue;
 		}
 	}
