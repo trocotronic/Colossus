@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.5 2004-09-17 18:31:22 Trocotronic Exp $ 
+ * $Id: main.c,v 1.6 2004-09-17 18:35:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -811,7 +811,7 @@ void refresca()
 #endif
 	if (SockIrcd)
 		conecta_bots();
-	return 0;
+	return;
 }
 void reinicia()
 {

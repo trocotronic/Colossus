@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.8 2004-09-17 18:34:20 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.9 2004-09-17 18:35:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -949,7 +949,7 @@ IRCFUNC(m_away)
 IRCFUNC(m_rehash)
 {
 	if (!strcasecmp(parv[1], me.nombre))
-		(int)refresca();
+		refresca();
 	return 0;
 }
 IRCFUNC(m_module)
