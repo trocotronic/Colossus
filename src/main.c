@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.17 2004-09-24 23:07:01 Trocotronic Exp $ 
+ * $Id: main.c,v 1.18 2004-09-26 21:07:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,6 +7,9 @@
 #include "modulos.h"
 #ifdef UDB
 #include "bdd.h"
+#endif
+#ifdef USA_ZLIB
+#include "zlib.h"
 #endif
 #include <fcntl.h>
 #include <signal.h>

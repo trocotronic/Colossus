@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.11 2004-09-26 21:07:05 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.12 2004-09-26 21:07:59 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -98,7 +98,7 @@ struct _sock
 	char estado;
 	int opts;
 #ifdef USA_ZLIB
-	Zlib *zlib;
+	struct _zlib *zlib;
 #endif
 };
 extern Sock *sockopen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
