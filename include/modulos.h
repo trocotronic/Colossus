@@ -1,6 +1,10 @@
 /*
- * $Id: modulos.h,v 1.3 2004-09-17 18:31:22 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.4 2004-09-17 19:05:31 Trocotronic Exp $ 
  */
+
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
    El ultimo bit se reserva al uso de tener el nick registrado.
@@ -78,3 +82,4 @@ extern void response(Cliente *, char *, char *, ...);
 #define ERR_NOID "\00304ERROR: No estás identificado."
 #define ERR_FORB "\00304ERROR: Acceso denegado."
 extern void descarga_modulos(void);
+extern int crea_modulo(char *);

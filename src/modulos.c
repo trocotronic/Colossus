@@ -1,14 +1,12 @@
 /*
- * $Id: modulos.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.3 2004-09-17 19:05:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "comandos.h"
 #include "modulos.h"
-#ifndef _WIN32
-#include <dlfcn.h>
-#else
+#ifdef _WIN32
 const char *our_dlerror(void);
 #endif
 
@@ -27,7 +25,7 @@ void response(Cliente *cl, char *nick, char *formato, ...)
 int crea_modulo(char *archivo)
 {
 	char tmppath[128];
-	static id = 0;
+	static int id = 0;
 #ifdef _WIN32
 	HMODULE modulo;
 #else

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.3 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1024,7 +1024,7 @@ void _conf_modulos(Conf *config)
 int _test_log(Conf *config, int *errores)
 {
 	short error_parcial = 0;
-	Conf *eval, *aux;
+	Conf *eval;
 	if ((eval = busca_entrada(config, "tamaño")))
 	{
 		if (atoi(eval->data) < 0)
@@ -1092,8 +1092,7 @@ void _conf_log(Conf *config)
 #ifndef _WIN32
 void conferror(char *formato, ...)
 {
-	char buf[BUFSIZE], *texto, actual[BUFSIZE];
-	int len;
+	char buf[BUFSIZE], *texto = NULL;
 	va_list vl;
 	va_start(vl, formato);
 	vsprintf_irc(buf, formato, vl);

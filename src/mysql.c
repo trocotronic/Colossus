@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.4 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -109,7 +109,7 @@ char *_mysql_get_num(MYSQL *mysql, char *tabla, int registro, char *campo)
 		Free(cam_corr);
 	if (!res)
 		return NULL;
-	for (i = 0; row = mysql_fetch_row(res); i++)
+	for (i = 0; (row = mysql_fetch_row(res)); i++)
 	{
 		mysql_free_result(res);
 		if (i == registro)

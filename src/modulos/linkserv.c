@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -37,11 +37,13 @@ int (*es_fundador_dl)(Cliente *, char *);
 #else
 #define es_fundador_dl es_fundador
 #endif
+
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
 
 DLLFUNC ModInfo info = {
 	"LinkServ" ,
-	0.1 ,
+	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
@@ -75,7 +77,7 @@ DLLFUNC int carga(Modulo *mod)
 		{
 			if (!strcasecmp(ex->info->nombre, "ChanServ"))
 			{
-				irc_dlsym(ex->hmod, "es_fundador", (int) es_fundador_dl);
+				irc_dlsym(ex->hmod, "es_fundador", es_fundador_dl);
 				break;
 			}
 		}

@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -51,9 +51,11 @@ int (*ChanReg_dl)(char *);
 #define IsChanReg_dl(x) (ChanReg_dl(x) == 1)
 #define IsChanPReg_dl(x) (ChanReg_dl(x) == 2)
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
+
 DLLFUNC ModInfo info = {
 	"MemoServ" ,
-	0.5 ,
+	0.6 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
@@ -88,8 +90,8 @@ DLLFUNC int carga(Modulo *mod)
 		{
 			if (!strcasecmp(ex->info->nombre, "ChanServ"))
 			{
-				irc_dlsym(ex->hmod, "tiene_nivel", (u_long) tiene_nivel_dl);
-				irc_dlsym(ex->hmod, "ChanReg", (int) ChanReg_dl);
+				irc_dlsym(ex->hmod, "tiene_nivel", tiene_nivel_dl);
+				irc_dlsym(ex->hmod, "ChanReg", ChanReg_dl);
 				break;
 			}
 		}
@@ -368,7 +370,7 @@ BOTFUNC(memoserv_read)
 	}
 	else if (!strcasecmp(no, "LAST"))
 	{
-		char *fech;
+		char *fech = NULL;
 		if ((res = _mysql_query("SELECT MAX(fecha) FROM %s%s where para='%s'", PREFIJO, MS_MYSQL, para)))
 		{
 			row = mysql_fetch_row(res);
@@ -815,7 +817,6 @@ IRCFUNC(memoserv_join)
 DLLFUNC int memoserv_send(char *para, char *de, char *mensaje)
 {
 	int opts = 0;
-	MYSQL_RES *res;
 	Cliente *al;
 	if (para && de && mensaje)
 	{

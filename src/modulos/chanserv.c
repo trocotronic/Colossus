@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -26,7 +26,6 @@ static int chanserv_modos		(Cliente *, char *[], int, char *[], int);
 static int chanserv_clear		(Cliente *, char *[], int, char *[], int);
 static int chanserv_set		(Cliente *, char *[], int, char *[], int);
 static int chanserv_akick		(Cliente *, char *[], int, char *[], int);
-static int chanserv_levels		(Cliente *, char *[], int, char *[], int);
 static int chanserv_access		(Cliente *, char *[], int, char *[], int);
 static int chanserv_list		(Cliente *, char *[], int, char *[], int);
 static int chanserv_jb		(Cliente *, char *[], int, char *[], int);
@@ -65,6 +64,8 @@ void borra_akick(char *, char *);
 Akick *busca_akicks(char *);
 int es_kick(char *, char *);
 int es_cregistro(char *, char *);
+int test(Conf *, int *);
+void set(Conf *, Modulo *);
 
 static bCom chanserv_coms[] = {
 	{ "help" , chanserv_help , TODOS } ,
@@ -120,10 +121,10 @@ mTab cFlags[] = {
 	{ CS_LEV_REV , 'g' } ,
 	{ 0x0 , 0x0 }
 };
-void set(Conf *, Modulo *);
+
 DLLFUNC ModInfo info = {
 	"ChanServ" ,
-	0.6 ,
+	0.7 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
@@ -310,7 +311,7 @@ int es_residente(Modulo *mod, char *canal)
 }
 u_long borra_acceso(char *usuario, char *canal)
 {
-	char *nuevo = NULL, *registros, *tok;
+	char *registros, *tok;
 	u_long prev = 0L;
 	if ((registros = _mysql_get_registro(CS_MYSQL, canal, "regs")))
 	{
@@ -334,7 +335,7 @@ u_long borra_acceso(char *usuario, char *canal)
 }
 void borra_akick_bd(char *nick, char *canal)
 {
-	char *nuevo = NULL, *registros, *tok;
+	char *registros, *tok;
 	if ((registros = _mysql_get_registro(CS_MYSQL, canal, "akick")))
 	{
 		buf[0] = '\0';
@@ -2644,7 +2645,7 @@ DLLFUNC int chanserv_sig_eos()
 	/* metemos los bots en los canales que lo hayan soliticado */
 	MYSQL_RES *res;
 	MYSQL_ROW row;
-	int bjoins, i;
+	int bjoins;
 	Cliente *bl;
 #ifdef UDB
 	envia_registro_bdd("S::ChanServ %s", chanserv->mascara);

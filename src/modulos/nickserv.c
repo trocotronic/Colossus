@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -57,6 +57,8 @@ char *(*cflags2str_dl)(u_long);
 #define cflags2str_dl cflags2str
 #endif
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
+
 static bCom nickserv_coms[] = {
 	{ "help" , nickserv_help , TODOS } ,
 	{ "register" , nickserv_reg , TODOS } ,
@@ -81,7 +83,7 @@ static bCom nickserv_coms[] = {
 };
 DLLFUNC ModInfo info = {
 	"NickServ" ,
-	0.7 ,
+	0.8 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
@@ -116,7 +118,7 @@ DLLFUNC int carga(Modulo *mod)
 		{
 			if (!strcasecmp(ex->info->nombre, "ChanServ"))
 			{
-				irc_dlsym(ex->hmod, "busca_cregistro", (CsRegistros *)busca_cregistro_dl);
+				irc_dlsym(ex->hmod, "busca_cregistro", busca_cregistro_dl);
 				irc_dlsym(ex->hmod, "cflags2str", (char *) cflags2str_dl);
 				break;
 			}
@@ -564,7 +566,7 @@ BOTFUNC(nickserv_reg)
 	int i, opts;
 	char *dominio;
 	char *mail, *pass;
-	MYSQL_RES *res;
+	MYSQL_RES *res = NULL;
 	if (params < ((nickserv->opts & NS_SMAIL) ? 2 : 3))
 	{
 		if (nickserv->opts & NS_SMAIL)

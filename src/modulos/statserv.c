@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -45,9 +45,11 @@ DLLFUNC int statserv_mysql		();
 DLLFUNC int statserv_laguea		(char *);
 
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
+
 DLLFUNC ModInfo info = {
 	"StatServ" ,
-	0.1 ,
+	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
@@ -360,7 +362,7 @@ int getmon(time_t tiempo)
 }
 void actualiza_stats(char tipo)
 {
-	char *timet, *max, *hoyt, *semt, *mest, *hoy, *sem, *mes;
+	char *timet = NULL, *max = NULL, *hoy = NULLt, *semt = NULL, *mest = NULL, *hoy = NULL, *sem = NULL, *mes = NULL;
 	struct stsno *ts;
 	switch (tipo)
 	{
@@ -513,7 +515,7 @@ IRCFUNC(statserv_server)
 	char *serv;
 	if (!cl)
 		return 0; /* algo pasa! */
-	if (link == cl)
+	if (linkado == cl)
 	{
 		if (statserv->usuarios.hoy_time) /* ya habían sido arrancadas previamente */
 			eos = 0;
@@ -590,7 +592,7 @@ int statserv_umode(Cliente *cl, char *modos)
 }
 IRCFUNC(statserv_eos)
 {
-	if (cl == link)
+	if (cl == linkado)
 		eos = 1;
 	return 0;
 }
@@ -683,11 +685,10 @@ SOCKFUNC(statserv_escribe_web)
 }
 SOCKFUNC(statserv_lee_web)
 {
-	char *pos;
 	if (BadPtr(data))
 	{
 		{
-			char *td, *ac, *bc, *fd;
+			char *td, *ac, *bc = NULL, *fd;
 			time_t tm;
 			double tb = microtime();
 			fd = td = strdup(tempsrc);
@@ -815,7 +816,7 @@ SOCKFUNC(statserv_lee_web)
 					rc = qc;
 					if (!strcmp(pc, "FIN"))
 					{
-						int i, users;
+						int i;
 						for (i = 0; statserv->clientes[i].cliente; i++)
 						{
 							if (statserv->clientes[i].usuarios)

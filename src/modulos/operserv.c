@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -79,9 +79,11 @@ int (*memoserv_send_dl)(char *, char *, char *);
 #define IsChanReg_dl(x) (ChanReg_dl(x) == 1)
 #define IsChanPReg_dl(x) (ChanReg_dl(x) == 2)
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
+
 DLLFUNC ModInfo info = {
 	"OperServ" ,
-	0.5 ,
+	0.6 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
@@ -115,9 +117,9 @@ DLLFUNC int carga(Modulo *mod)
 		for (ex = modulos; ex; ex = ex->sig)
 		{
 			if (!strcasecmp(ex->info->nombre, "ChanServ"))
-				irc_dlsym(ex->hmod, "ChanReg", (int) ChanReg_dl);
+				irc_dlsym(ex->hmod, "ChanReg", ChanReg_dl);
 			else if (!strcasecmp(ex->info->nombre, "MemoServ"))
-				irc_dlsym(ex->hmod, "memoserv_send", (int) memoserv_send_dl);
+				irc_dlsym(ex->hmod, "memoserv_send", memoserv_send_dl);
 		}
 	}
 #endif	
@@ -300,6 +302,11 @@ void operserv_carga_noticias()
 		while ((row = mysql_fetch_row(res)))
 			inserta_noticia(row[1], row[2], atol(row[3]), atoi(row[0]));
 	}
+}
+int os_reinicia()
+{
+	reinicia();
+	return 0;
 }
 BOTFUNC(operserv_help)
 {
@@ -524,7 +531,7 @@ BOTFUNC(operserv_raw)
 BOTFUNC(operserv_restart)
 {
 	response(cl, operserv->nick, "Los servicios van a reiniciarse.");
-	timer("reinicia", NULL, 1, 1, reinicia, NULL, 0);
+	timer("reinicia", NULL, 1, 1, os_reinicia, NULL, 0);
 	return 0;
 }
 BOTFUNC(operserv_rehash)

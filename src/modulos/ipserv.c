@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -42,10 +42,11 @@ static bCom ipserv_coms[] = {
 DLLFUNC IRCFUNC(ipserv_nick);
 DLLFUNC IRCFUNC(ipserv_umode);
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
 
 DLLFUNC ModInfo info = {
 	"IpServ" ,
-	0.6 ,
+	0.7 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };

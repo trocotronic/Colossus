@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -33,10 +33,13 @@ static bCom proxyserv_coms[] = {
 	{ "host" , proxyserv_host , ADMINS } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
+
 void set(Conf *, Modulo *);
+int test(Conf *, int *);
+
 DLLFUNC ModInfo info = {
 	"ProxyServ" ,
-	0.5 ,
+	0.6 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 };
