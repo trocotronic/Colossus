@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.9 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.10 2004-10-10 09:56:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -2590,8 +2590,10 @@ DLLFUNC int chanserv_sig_mysql()
 			tabla[0] = 1;
 		else if (!strcasecmp(mysql_tablas.tabla[i], buf[1]))
 			tabla[1] = 1;
+#ifndef UDB
 		else if (!strcasecmp(mysql_tablas.tabla[i], buf[2]))
 			tabla[2] = 1;
+#endif
 	}
 	if (!tabla[0])
 	{
