@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.3 2004-09-11 16:50:30 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -748,7 +748,14 @@ void carga_bloque(int tipo)
 	Udb *root;
 	u_long lee, obtiene;
 	char bloque;
-	tipo = coge_de_char(tipo);
+	if (tipo == BDD_NICKS)
+		bloque = 'N';
+	else if (tipo == BDD_CHANS)
+		bloque = 'C';
+	else if (tipo == BDD_IPS)
+		bloque = 'I';
+	else if (tipo == BDD_SET)
+		bloque = 'S';
 	root = coge_de_id(tipo);
 	if ((lee = lee_hash(root->id)) != (obtiene = obtiene_hash(root)))
 	{
