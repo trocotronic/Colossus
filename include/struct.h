@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.16 2004-10-10 09:55:22 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.17 2004-10-23 22:40:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -115,7 +115,7 @@ extern int borra_canal_de_hash(struct _canal *, char *);
 extern int match(char *, char *);
 
 extern char *_asctime(time_t *);
-#define PROTOCOL 2304
+#define PROTOCOL 2305
 extern u_long our_crc32(const u_char *, u_int);
 
 
@@ -295,3 +295,5 @@ extern int copyfile(char *, char *);
 #define SSLFLAG_DONOTACCEPTSELFSIGNED 0x4
 #endif
 extern char *my_itoa(int);
+extern char *decode_ip(char *);
+extern int b64_decode(char const *src, u_char *, size_t);
