@@ -11,6 +11,7 @@
 #undef NBLOCK_BSD
 #undef NBLOCK_POSIX
 #undef NBLOCK_SYSV
+#undef NEED_ABS
 #undef NEED_BZERO
 #undef NEED_INET_NTOA
 #undef NEED_STRCASECMP

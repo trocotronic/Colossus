@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.4 2005-02-19 17:46:13 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.5 2005-02-19 18:07:04 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -111,7 +111,9 @@
 #ifdef NEED_BZERO
 #define bzero(x,y) memset(x,0,y)
 #endif
+#ifdef NEED_ABS
 #define abs(x) (x < 0) ? -x : x
+#endif
 #ifdef NEED_INET_NTOA
 #define inet_ntoa(x) inetntoa(&x)
 #endif
