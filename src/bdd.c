@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.4 2004-09-17 16:02:52 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.5 2004-09-17 18:34:20 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -765,8 +765,8 @@ void carga_bloque(int tipo)
 			fclose(fp);
 			actualiza_hash(root);
 		}
-		if (link)
-			sendto_serv(":%s DB %s RES %c 0", me.nombre, link->nombre, bloque);
+		if (linkado)
+			sendto_serv(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloque);
 		return;
 	}
 	if (!(fp = fopen(root->item, "a+b")))

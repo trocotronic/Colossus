@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.3 2004-09-17 18:31:22 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -77,3 +77,4 @@ extern void response(Cliente *, char *, char *, ...);
 #define ERR_DESC "\00304ERROR: Comando desconocido."
 #define ERR_NOID "\00304ERROR: No estás identificado."
 #define ERR_FORB "\00304ERROR: Acceso denegado."
+extern void descarga_modulos(void);

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.3 2004-09-16 21:18:21 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.4 2004-09-17 18:31:22 Trocotronic Exp $ 
  */
 
 #include "flags.h"
@@ -178,3 +178,4 @@ extern SOCKFUNC(escucha_abre);
 extern char *crc_bdd(char *);
 extern MODVAR Cliente *link;
 extern void saca_bot_de_canal(Cliente *, char *, char *);
+extern void conecta_bots(void);

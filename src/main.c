@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.4 2004-09-17 18:15:06 Trocotronic Exp $ 
+ * $Id: main.c,v 1.5 2004-09-17 18:31:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -799,7 +799,7 @@ void cierra_todo()
 	WSACleanup();
 #endif
 }
-int refresca()
+void refresca()
 {
 	Conf config;
 	descarga_modulos();
@@ -813,7 +813,7 @@ int refresca()
 		conecta_bots();
 	return 0;
 }
-int reinicia()
+void reinicia()
 {
 	cierra_todo();
 #ifdef _WIN32
@@ -823,8 +823,13 @@ int reinicia()
 #endif
 	exit(-1);
 }
+void cierra_colossus(int excode)
+{
+	cierra_todo();
+	exit(excode);
+}
 #ifdef _WIN32
-void carga_programa(int argc, char *argv[])
+int carga_programa(int argc, char *argv[])
 #else
 int main(int argc, char *argv[])
 #endif
@@ -844,7 +849,7 @@ int main(int argc, char *argv[])
 	mkdir("tmp", 0744);
 #endif	
 	if (parseconf("colossus.conf", &config, 1) < 0)
-		return;
+		return 1;
 	distribuye_conf(&config);
 	carga_comandos();
 	carga_modulos();
@@ -906,9 +911,9 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
 #else
-	signal(SIGHUP, refresca);
-	signal(SIGTERM, cierra_colossus, 0);
-	signal(SIGINT, reinicia);
+	signal(SIGHUP, (refresca));
+	signal(SIGTERM, (cierra_colossus)(0));
+	signal(SIGINT, (reinicia));
 #endif
 #ifndef _WIN32
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
@@ -921,6 +926,7 @@ int main(int argc, char *argv[])
 	if (!EscuchaIrcd)
 		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
 #endif
+	return 0;
 }
 void programa_loop_principal(void *args)
 {
@@ -972,7 +978,7 @@ int randomiza(int ini, int fin)
 	gettimeofday(&aburst, NULL);
 #endif
 	i = (int)&aburst;
-	srand(i ^ time(NULL) + rand());
+	srand(i ^ (time(NULL) + rand()));
 	r = rand() % (fin + 1);
 #ifdef _WIN32
 	srand(i ^ (aburst.millitm + rand()));
@@ -1333,7 +1339,9 @@ char *_asctime(time_t *tim)
 void fecho(char err, char *error, ...)
 {
 	char buf[BUFSIZE];
+#ifdef _WIN32
 	int opts;
+#endif
 	va_list vl;
 	va_start(vl, error);
 	vsprintf_irc(buf, error, vl);
@@ -1611,11 +1619,6 @@ void Debug(char *formato, ...)
 #else
 	fprintf(stderr, debugbuf);
 #endif
-}
-int cierra_colossus(int excode)
-{
-	cierra_todo();
-	exit(excode);
 }
 void ircd_log(int opt, char *formato, ...)
 {

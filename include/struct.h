@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.4 2004-09-17 18:15:06 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.5 2004-09-17 18:31:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -15,6 +15,8 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <sys/time.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,8 +63,8 @@ extern void ircstrdup(char **, const char *);
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data)
 #define MAXSOCKS 1024
 #define BUFSIZE 8192
-#define ToLower(c) (NTL_tolower_tab[(c)])
-#define ToUpper(c) (NTL_toupper_tab[(c)])
+#define ToLower(c) (NTL_tolower_tab[(int)(c)])
+#define ToUpper(c) (NTL_toupper_tab[(int)(c)])
 #define u_long unsigned long
 #define u_char unsigned char
 #define u_int unsigned int
@@ -279,11 +281,12 @@ extern void conferror(char *, ...);
 extern void sockwritev(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1
-extern int cierra_colossus(int);
+extern void cierra_colossus(int);
 extern void ircd_log(int, char *, ...);
 #define ircfree(x) if (x) Free(x); x = NULL
 #define PID "colossus.pid"
 #ifdef _WIN32
 extern void CleanUpSegv(int);
 #endif
-extern int reinicia();
+extern void reinicia();
+extern int pregunta(char *);

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.6 2004-09-17 18:15:06 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.7 2004-09-17 18:31:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -22,7 +22,6 @@ Cliente *clientes = NULL;
 Canal *canales;
 char **margv;
 void renick_bot(char *);
-void conecta_bots(void);
 Sock *SockIrcd = NULL, *EscuchaIrcd = NULL;
 char reset = 0;
 time_t inicio;
