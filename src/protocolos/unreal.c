@@ -2148,8 +2148,11 @@ int comprueba_opts(Proc *proc)
 				actualiza_gmt(aux, hora);
 			}
 		}
-		proc->proc = 0;
-		proc->time = hora;
+		if (proc)
+		{
+			proc->proc = 0;
+			proc->time = hora;
+		}
 	}
 	return 0;
 }

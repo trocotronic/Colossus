@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.15 2005-03-03 12:13:42 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.16 2005-03-14 18:55:57 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -3031,7 +3031,7 @@ int chanserv_dropachans(Proc *proc)
 	MYSQL_ROW row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = _mysql_query("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) ? CLI(chanserv)->nombre : "", proc->proc)) || !mysql_num_rows(res))
+		if (!(res = _mysql_query("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && SockIrcd ? CLI(chanserv)->nombre : "", proc->proc)) || !mysql_num_rows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);
