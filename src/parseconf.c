@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.5 2004-09-17 19:10:56 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.6 2004-09-23 19:19:35 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -363,12 +363,12 @@ int _test_server(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz addr esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz addr esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!(addr = gethostbyname(eval->data)))
 		{
-			conferror("[%s:%s::%s] No se puede resolver el host.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -381,7 +381,7 @@ int _test_server(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz puerto esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -389,7 +389,7 @@ int _test_server(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 0 || puerto > 65535)
 			{
-				conferror("[%s:%s::%s] El puerto debe estar entre 0 y 65535.", config->archivo, config->item, eval->item);
+				conferror("[%s:%s::%s::%i] El puerto debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
@@ -398,7 +398,7 @@ int _test_server(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz puerto_escucha esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz puerto_escucha esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -406,13 +406,13 @@ int _test_server(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 0 || puerto > 65535)
 			{
-				conferror("[%s:%s::%s] El puerto_escucha debe estar entre 0 y 65535.", config->archivo, config->item, eval->item);
+				conferror("[%s:%s::%s::%i] El puerto_escucha debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 			aux = busca_entrada(config, "puerto");
 			if (puerto == atoi(aux->data))
 			{
-				conferror("[%s:%s::%s] El puerto_escucha no puede ser el mismo que puerto.", config->archivo, config->item, eval->item);
+				conferror("[%s:%s::%s::%i] El puerto_escucha no puede ser el mismo que puerto.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
@@ -433,7 +433,7 @@ int _test_server(Conf *config, int *errores)
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s] La directriz local esta vacia.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] La directriz local esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
@@ -446,7 +446,7 @@ int _test_server(Conf *config, int *errores)
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s] La directriz remoto esta vacia.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] La directriz remoto esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
@@ -460,7 +460,7 @@ int _test_server(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz host esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -473,7 +473,7 @@ int _test_server(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz puerto esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -486,7 +486,7 @@ int _test_server(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz numeric esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz numeric esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -494,7 +494,7 @@ int _test_server(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 0 || puerto > 255)
 			{
-				conferror("[%s:%s::%s] La directriz numeric debe estar entre 0 y 255.", config->archivo, config->item, eval->item);
+				conferror("[%s:%s::%s::%i] La directriz numeric debe estar entre 0 y 255.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
@@ -505,7 +505,7 @@ int _test_server(Conf *config, int *errores)
 		puerto = atoi(eval->data);
 		if (puerto < 1 || puerto > 9)
 		{
-			conferror("[%s:%s::%s] La directriz compresion debe estar entre 1 y 9.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz compresion debe estar entre 1 y 9.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 		}
 	}
@@ -567,12 +567,12 @@ int _test_db(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz host esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!(db = gethostbyname(eval->data)))
 		{
-			conferror("[%s:%s::%s] No se puede resolver el host.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -585,7 +585,7 @@ int _test_db(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz login esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -593,7 +593,7 @@ int _test_db(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz pass esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -606,7 +606,7 @@ int _test_db(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz nombre esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz nombre esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -619,7 +619,7 @@ int _test_db(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz prefijo esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz prefijo esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -627,7 +627,7 @@ int _test_db(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz puerto esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -636,7 +636,7 @@ int _test_db(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 1 || puerto > 65535)
 			{
-				conferror("[%s:%s::%s] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item);
+				conferror("[%s:%s::%s::%i] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
@@ -679,12 +679,12 @@ int _test_smtp(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz host esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!(smtp = gethostbyname(eval->data)))
 		{
-			conferror("[%s:%s::%s] No se puede resolver el host.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -692,7 +692,7 @@ int _test_smtp(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz login esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -700,12 +700,12 @@ int _test_smtp(Conf *config, int *errores)
 	{
 		if (!(eval = busca_entrada(config, "login")))
 		{
-			conferror("[%s:%s::%s] Para usar la directriz pass se requiere la directriz login.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] Para usar la directriz pass se requiere la directriz login.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz pass esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -740,12 +740,12 @@ int _test_set(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz respuesta esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz respuesta esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (strcasecmp(eval->data, "PRIVMSG") && strcasecmp(eval->data, "NOTICE"))
 		{
-			conferror("[%s:%s::%s] La respuesta solo puede tomar los valores PRIVMSG o NOTICE.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La respuesta solo puede tomar los valores PRIVMSG o NOTICE.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -758,7 +758,7 @@ int _test_set(Conf *config, int *errores)
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s] La directriz root esta vacia.", config->archivo, config->item, eval->item);
+			conferror("[%s:%s::%s::%i] La directriz root esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -768,12 +768,12 @@ int _test_set(Conf *config, int *errores)
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s] La directriz usuarios esta vacia.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] La directriz usuarios esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 			if (*(aux->data) != '#')
 			{
-				conferror("[%s:%s::%s::%s] Los canales deben empezar por #.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] Los canales deben empezar por #.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
@@ -781,7 +781,7 @@ int _test_set(Conf *config, int *errores)
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s] La directriz opers esta vacia.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] La directriz opers esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 			if (*(aux->data) != '#')
@@ -797,7 +797,7 @@ int _test_set(Conf *config, int *errores)
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s] La directriz usuarios esta vacia.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] La directriz usuarios esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
@@ -805,7 +805,7 @@ int _test_set(Conf *config, int *errores)
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s] La directriz canales esta vacia.", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] La directriz canales esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 			else
@@ -816,7 +816,7 @@ int _test_set(Conf *config, int *errores)
 				{
 					if (strchr(aux->data, forb[i]))
 					{
-						conferror("[%s:%s::%s::%s] Los modos +ohvbeqar no se permiten.", config->archivo, config->item, eval->item, aux->item);
+						conferror("[%s:%s::%s::%s::%i] Los modos +ohvbeqar no se permiten.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 						error_parcial++;
 					}
 				}
@@ -853,7 +853,7 @@ int _test_set(Conf *config, int *errores)
 	{
 		if (eval->secciones != 3)
 		{
-			conferror("[%s:%s::%s] Solo se necesitan 3 claves, no %i.", config->archivo, config->item, eval->item, eval->secciones);
+			conferror("[%s:%s::%s::%i] Solo se necesitan 3 claves, no %i.", config->archivo, config->item, eval->item, eval->secciones, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -880,7 +880,7 @@ int _test_set(Conf *config, int *errores)
 			
 			if (!(rec = atoi(aux->data)) || rec < 1 || rec >999)
 			{
-				conferror("[%s:%s::%s::%s] Intentos de reconexion invalido (1-999).", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] Intentos de reconexion invalido (1-999).", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
@@ -893,7 +893,7 @@ int _test_set(Conf *config, int *errores)
 		{
 			if (!(rec = atoi(aux->data)) || rec < 1 || rec > 300)
 			{
-				conferror("[%s:%s::%s::%s] Intervalo de reconexion invalido (1-300).", config->archivo, config->item, eval->item, aux->item);
+				conferror("[%s:%s::%s::%s::%i] Intervalo de reconexion invalido (1-300).", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
@@ -1029,13 +1029,13 @@ int _test_log(Conf *config, int *errores)
 	{
 		if (atoi(eval->data) < 0)
 		{
-			conferror("[%s:%s] El tamaño máximo del archivo log debe ser mayor que 0 bytes.", config->archivo, config->item);
+			conferror("[%s:%s::%s::%i] El tamaño máximo del archivo log debe ser mayor que 0 bytes.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
 	if (BadPtr(config->data))
 	{
-		conferror("[%s:%s] Falta nombre de archivo.", config->archivo, config->item);
+		conferror("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
 		error_parcial++;
 	}
 	else
@@ -1057,7 +1057,7 @@ int _test_log(Conf *config, int *errores)
 				strcmp(eval->seccion[i]->item, "errores") &&
 				strcmp(eval->seccion[i]->item, "servidores"))
 				{
-					conferror("[%s:%s::%s] No es una opción válida %s.", config->archivo, config->item, eval->item, eval->seccion[i]->item);
+					conferror("[%s:%s::%s::%i] No es una opción válida %s.", config->archivo, config->item, eval->item, eval->seccion[i]->item, eval->seccion[i]->linea);
 					error_parcial++;
 				}
 		}
