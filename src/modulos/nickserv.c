@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.16 2005-03-14 14:18:11 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.17 2005-03-14 20:04:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,6 +12,9 @@
 #endif
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
 
 NickServ nickserv;
 

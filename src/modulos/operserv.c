@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.12 2005-02-18 22:12:22 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.13 2005-03-14 20:04:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,6 +13,9 @@
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
 
 OperServ operserv;
 Noticia *gnoticia[MAXNOT];

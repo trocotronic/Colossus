@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.11 2005-02-18 22:12:21 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.12 2005-03-14 20:04:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,6 +9,9 @@
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
 
 MemoServ memoserv;
 
