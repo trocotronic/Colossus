@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.12 2004-12-31 12:27:59 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.13 2005-01-01 20:23:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -106,8 +106,11 @@ static bCom chanserv_coms[] = {
 #endif
 	{ 0x0 , 0x0 , 0x0 }
 };
-
+#ifdef _WIN32
 __declspec(dllexport) mTab cFlags[] = {
+#else
+mTab cFlags[] = {
+#endif
 	{ CS_LEV_SET , 's' } ,
 	{ CS_LEV_EDT , 'e' } ,
 	{ CS_LEV_LIS , 'l' } ,
