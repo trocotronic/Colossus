@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.9 2005-03-21 12:38:02 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.10 2005-03-24 12:10:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -238,7 +238,7 @@ void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
 		return;
 	msg = buf;
 	vsprintf_irc(buf, formato, vl);
-#ifdef DEBUG
+#ifndef DEBUG
 	Debug("[Enviando: %s]", buf);
 #endif
 	if (opts & OPT_CR)
@@ -577,7 +577,7 @@ int crea_mensaje(Sock *sck, char *msg, int len)
 					continue;
 				*b = '\0';
 				sck->pos = 0;
-#ifdef DEBUG
+#ifndef DEBUG
 				Debug("[Parseando: %s]", sck->buffer);
 #endif
 				if (sck->readfunc)

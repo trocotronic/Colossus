@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.18 2005-03-19 12:48:49 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.19 2005-03-24 12:10:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -2705,8 +2705,11 @@ int chanserv_join(Cliente *cl, Canal *cn)
 				port_func(P_TOPIC)(CLI(chanserv), cn, topic);
 			if (opts & CS_OPT_RMOD)
 			{
-				strcat(buf, strtok(modos, " "));
-				strcat(tokbuf, strtok(NULL, " "));
+				char *mod;
+				if ((mod = strtok(modos, " ")))
+					strcat(buf, mod);
+				if ((mod = strtok(NULL, " ")))
+					strcat(tokbuf, mod);
 			}
 		}
 		if (buf[0])

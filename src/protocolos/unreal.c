@@ -940,7 +940,7 @@ SOCKFUNC(parsea)
 	u_char tpref = 0;
 	int params, i, j;
 	Comando *comd = NULL;
-	Cliente *cl = NULL;
+	Cliente *cl = linkado;
 	para[0] = (linkado ? linkado->nombre : NULL);
 	for (p = data; *p == ' '; p++);
 	s = sender;
