@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.10 2004-12-31 12:28:00 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.11 2005-02-18 22:12:20 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -25,7 +25,7 @@ int ipserv_sig_mysql	();
 int ipserv_idok 		(Cliente *);
 char *make_virtualhost 	(Cliente *, int);
 int ipserv_umode		(Cliente *, char *);
-int ipserv_nick		(Cliente *, char *);	
+int ipserv_nick		(Cliente *, int);	
 #endif
 int ipserv_sig_drop	(char *);
 int ipserv_sig_eos	();
@@ -89,6 +89,7 @@ int carga(Modulo *mod)
 				errores++;
 			}
 		}
+		libera_conf(&modulo);
 	}
 	return errores;
 }	
@@ -97,7 +98,7 @@ int descarga()
 #ifndef UDB
 	borra_senyal(SIGN_UMODE, ipserv_umode);
 	borra_senyal(NS_SIGN_IDOK, ipserv_idok);
-	borra_senyal(SIGN_NICK, ipserv_nick);
+	borra_senyal(SIGN_POST_NICK, ipserv_nick);
 #endif
 	borra_senyal(SIGN_MYSQL, ipserv_sig_mysql);
 	borra_senyal(NS_SIGN_DROP, ipserv_sig_drop);
@@ -135,7 +136,7 @@ void set(Conf *config, Modulo *mod)
 		mod->comando[mod->comandos] = NULL;
 #ifndef UDB
 		if (!strcmp(config->seccion[i]->item, "clones"))
-			ipserv->clones = atoi(config->seccion[i]->data);
+			ipserv.clones = atoi(config->seccion[i]->data);
 #endif
 		if (!strcmp(config->seccion[i]->item, "sufijo"))
 			ircstrdup(&ipserv.sufijo, config->seccion[i]->data);
@@ -145,6 +146,7 @@ void set(Conf *config, Modulo *mod)
 #ifndef UDB
 	inserta_senyal(SIGN_UMODE, ipserv_umode);
 	inserta_senyal(NS_SIGN_IDOK, ipserv_idok);
+	inserta_senyal(SIGN_POST_NICK, ipserv_nick);
 #endif
 	inserta_senyal(SIGN_MYSQL, ipserv_sig_mysql);
 	inserta_senyal(NS_SIGN_DROP, ipserv_sig_drop);
@@ -406,12 +408,12 @@ BOTFUNC(ipserv_clones)
 	return 0;
 }	
 #ifndef UDB
-int ipserv_nick(Cliente *cl, char *nuevo)
+int ipserv_nick(Cliente *cl)
 {
 	if (!nuevo)
 	{
 		Cliente *aux;
-		int i = 0, clons = ipserv->clones;
+		int i = 0, clons = ipserv.clones;
 		char *cc;
 		for (aux = clientes; aux; aux = aux->sig)
 		{
@@ -423,10 +425,7 @@ int ipserv_nick(Cliente *cl, char *nuevo)
 		if ((cc = _mysql_get_registro(IS_CLONS, cl->host, "clones")))
 			clons = atoi(cc);
 		if (i > clons)
-		{
 			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(ipserv), "Demasiados clones.");
-			return 0;
-		}
 	}
 	return 0;
 }

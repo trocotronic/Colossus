@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.h,v 1.2 2004-12-31 12:27:56 Trocotronic Exp $ 
+ * $Id: proxyserv.h,v 1.3 2005-02-18 22:12:15 Trocotronic Exp $ 
  */
 
 #define XS_MAX_PORTS 32
@@ -28,10 +28,11 @@ struct _proxys
 	struct subp
 	{
 		Sock *sck;
-		int *puerto;
+		int puerto;
 	}*puerto[XS_MAX_PORTS];
 	int puertos;
-	struct _proxys *sig, *prev;
+	struct _proxys *sig;
 };
 
 #define XS_MYSQL "ehosts"
+#define CACHE_PROXY "proxy"

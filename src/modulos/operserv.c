@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.11 2005-01-01 20:45:35 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.12 2005-02-18 22:12:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,7 +24,7 @@ static int operserv_restart		(Cliente *, char *[], int, char *[], int);
 static int operserv_rehash		(Cliente *, char *[], int, char *[], int);
 static int operserv_backup		(Cliente *, char *[], int, char *[], int);
 static int operserv_restaura	(Cliente *, char *[], int, char *[], int);
-static int operserv_blocks		(Cliente *, char *[], int, char *[], int);
+static int operserv_gline		(Cliente *, char *[], int, char *[], int);
 static int operserv_opers		(Cliente *, char *[], int, char *[], int);
 static int operserv_sajoin		(Cliente *, char *[], int, char *[], int);
 static int operserv_sapart		(Cliente *, char *[], int, char *[], int);
@@ -46,7 +46,7 @@ static bCom operserv_coms[] = {
 	{ "backup" , operserv_backup , ROOTS } ,
 	{ "close" , operserv_close , ROOTS } ,
 	{ "restaura" , operserv_restaura , ROOTS } ,
-	{ "blocks" , operserv_blocks , OPERS } ,
+	{ "gline" , operserv_gline , OPERS } ,
 	{ "opers" , operserv_opers , ADMINS } ,
 	{ "sajoin" , operserv_sajoin , OPERS } ,
 	{ "sapart" , operserv_sapart , OPERS } ,
@@ -68,7 +68,7 @@ int operserv_sig_mysql	();
 int operserv_sig_synch	();
 
 int operserv_join(Cliente *, Canal *);
-int operserv_nick(Cliente *, char *);
+int operserv_nick(Cliente *, int);
 #ifndef _WIN32
 int (*ChanReg_dl)(char *);
 int (*memoserv_send_dl)(char *, char *, char *);
@@ -122,6 +122,7 @@ int carga(Modulo *mod)
 				errores++;
 			}
 		}
+		libera_conf(&modulo);
 	}
 #ifndef _WIN32
 	{
@@ -140,7 +141,7 @@ int carga(Modulo *mod)
 int descarga()
 {
 	borra_senyal(SIGN_JOIN, operserv_join);
-	borra_senyal(SIGN_NICK, operserv_nick);
+	borra_senyal(SIGN_POST_NICK, operserv_nick);
 #ifndef UDB
 	borra_senyal(NS_SIGN_IDOK, operserv_idok);
 #endif
@@ -181,7 +182,7 @@ void set(Conf *config, Modulo *mod)
 			operserv.opts |= OS_OPTS_AOP;
 	}
 	inserta_senyal(SIGN_JOIN, operserv_join);
-	inserta_senyal(SIGN_NICK, operserv_nick);
+	inserta_senyal(SIGN_POST_NICK, operserv_nick);
 #ifndef UDB
 	inserta_senyal(NS_SIGN_IDOK, operserv_idok);
 #endif
@@ -206,18 +207,22 @@ int inserta_noticia(char *botname, char *noticia, time_t fecha, int id)
 	MYSQL_ROW row;
 	Cliente *cl = NULL;
 	Noticia *gn;
+	time_t aux;
 	if (gnoticias == MAXNOT)
 		return 0;
 	if (!id && !(gn = es_bot_noticia(botname)))
 		cl = botnick(botname, operserv.hmod->ident, operserv.hmod->host, me.nombre, "kdBq", operserv.hmod->realname);
+	if (gn)
+		cl = gn->cl;
 	not = (Noticia *)Malloc(sizeof(Noticia));
 	not->botname = strdup(botname);
 	not->noticia = strdup(noticia);
-	not->fecha = fecha ? fecha : time(0);
-	not->cl = cl ? cl : gn->cl;
+	aux = fecha ? fecha : time(0);
+	strftime(not->fecha, sizeof(not->fecha), "%d/%m/%Y", localtime(&aux));
+	not->cl = cl ? cl : NULL;
 	if (!id)
 	{
-		_mysql_query("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, not->fecha);
+		_mysql_query("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, aux);
 		res = _mysql_query("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, noticia, botname);
 		row = mysql_fetch_row(res);
 		not->id = atoi(row[0]);
@@ -262,7 +267,7 @@ void operserv_carga_noticias()
 	if ((res = _mysql_query("SELECT * from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
 		while ((row = mysql_fetch_row(res)))
-			inserta_noticia(row[1], row[2], atol(row[3]), atoi(row[0]));
+			inserta_noticia(row[1], row[2], atol(row[3]), atoul(row[0]));
 		mysql_free_result(res);
 	}
 }
@@ -280,7 +285,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Comandos disponibles:");
 		response(cl, CLI(operserv), "\00312RAW\003 Manda un raw al servidor.");
-		response(cl, CLI(operserv), "\00312BLOCKS\003 Gestiona las blocks de la red.");
+		response(cl, CLI(operserv), "\00312GLINE\003 Gestiona las glines de la red.");
 		response(cl, CLI(operserv), "\00312SAJOIN\003 Ejecuta SAJOIN sobre un usuario.");
 		response(cl, CLI(operserv), "\00312SAPART\003 Ejecuta SAPART sobre un usuario.");
 		response(cl, CLI(operserv), "\00312REJOIN\003 Obliga a un usuario a reentrar a un canal.");
@@ -320,20 +325,14 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Ejemplo: \00312RAW %s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
 		response(cl, CLI(operserv), "Ejecutaría el comando \00312:%s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
 	}
-	else if (!strcasecmp(param[1], "BLOCKS"))
+	else if (!strcasecmp(param[1], "GLINES"))
 	{
-		response(cl, CLI(operserv), "\00312BLOCKS");
+		response(cl, CLI(operserv), "\00312GLINES");
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Administra los bloqueos de la red.");
-		response(cl, CLI(operserv), "Existen varios tipos de bloqueo que se detallan a continuación:");
-		response(cl, CLI(operserv), "\00312G\003 - Global Line. Pone un bloqueo global a un user@host.");
-		response(cl, CLI(operserv), "\00312Q\003 - Q Line. Bloquea el uso de un nick.");
-		response(cl, CLI(operserv), "\00312s\003 - Shun. Paraliza a un usuario.");
-		response(cl, CLI(operserv), "\00312Z\003 - Pone un bloqueo a una ip.");
-		response(cl, CLI(operserv), "Nótese el uso correcto de mayúsculas/minúsculas.");
 		response(cl, CLI(operserv), " ");
-		response(cl, CLI(operserv), "Sintaxis: \00312BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
-		response(cl, CLI(operserv), "Para añadir una block se antepone '+' antes de la block. Para quitarla, '-'.");
+		response(cl, CLI(operserv), "Sintaxis: \00312GLINE {+|-}{nick|user@host} [tiempo motivo]");
+		response(cl, CLI(operserv), "Para añadir una gline se antepone '+' antes de la gline. Para quitarla, '-'.");
 		response(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
 	}
 	else if (!strcasecmp(param[1], "SAJOIN"))
@@ -530,7 +529,7 @@ BOTFUNC(operserv_restaura)
 		response(cl, CLI(operserv), "Base de datos restaurada con éxito.");
 	return 0;
 }
-BOTFUNC(operserv_blocks)
+BOTFUNC(operserv_gline)
 {
 	char *user, *host;
 	if (params < 2)
@@ -835,7 +834,7 @@ BOTFUNC(operserv_global)
 			if (EsBot(al) || EsServer(al))
 				continue;
 			if (!t)
-				port_func(P_PRIVADO)(al, bl, msg);
+				response(al, bl, msg);
 		}
 		if (opts & 0x4)
 			port_func(P_QUIT_USUARIO_LOCAL)(bl, conf_set->red);
@@ -890,7 +889,7 @@ BOTFUNC(operserv_noticias)
 			}
 			buf[0] = '\0';
 			ti = atol(row[3]);
-			strftime(buf, BUFSIZE, "%d/%m/%Y", localtime(&ti));
+			strftime(buf, sizeof(buf), "%d/%m/%Y", localtime(&ti));
 			response(cl, CLI(operserv), "\00312%s\003 - %s - \00312%s\003 por \00312%s\003.", row[0], buf, row[2], row[1]);
 		}
 		mysql_free_result(res);
@@ -926,7 +925,7 @@ BOTFUNC(operserv_modos)
 		char *modos;
 		for (modos = param[2]; !BadPtr(modos); modos++)
 		{
-			if (!strchr("ohaAOkNCWqHX", *modos))
+			if (!strchr("+ohaAOkNCWqHX", *modos))
 			{
 				sprintf_irc(buf, "El modo %c está prohibido. Sólo se permiten los modos ohaAOkNCWqHX.", *modos);
 				response(cl, CLI(operserv), OS_ERR_EMPT, buf);
@@ -978,21 +977,16 @@ BOTFUNC(operserv_snomask)
 	return 0;
 }
 #endif
-int operserv_nick(Cliente *cl, char *nuevo)
+int operserv_nick(Cliente *cl, int nuevo)
 {
 	if (!nuevo)
 	{
 		if (gnoticias)
 		{
 			int i;
-			time_t ti;
 			response(cl, gnoticia[0]->cl, "Noticias de la Red:");
 			for (i = 0; i < gnoticias; i++)
-			{
-				ti = gnoticia[i]->fecha;
-				strftime(buf, BUFSIZE, "%d/%m/%Y", localtime(&ti));
-				response(cl, gnoticia[i]->cl, "%s - %s", buf, gnoticia[i]->noticia);
-			}
+				response(cl, gnoticia[i]->cl, "%s - %s", gnoticia[i]->fecha, gnoticia[i]->noticia);
 		}
 	}
 	return 0;
@@ -1008,10 +1002,28 @@ int operserv_join(Cliente *cl, Canal *cn)
 
 int operserv_idok(Cliente *cl)
 {
-#ifdef UDB
 	int nivel;
+#ifdef UDB
 	if ((nivel = level_oper_bdd(cl->nombre)))
+	{	
+#else
+	char *modos;
+	if ((modos = _mysql_get_registro(OS_MYSQL, cl->nombre, "nivel")))
 	{
+		char tmp[5];
+		if ((nivel = atoi(modos)))
+		{
+			if (nivel & BDD_ADMIN)
+			{
+				sprintf_irc(tmp, "+%c%c%c", (protocolo->umodos+1)->flag, (protocolo->umodos+2)->flag, (protocolo->umodos+3)->flag);
+				port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
+			}
+			else
+			{
+				sprintf_irc(tmp, "+%c", (protocolo->umodos+3)->flag);
+				port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
+			}
+#endif
 		if (nivel & BDD_PREO)
 			cl->nivel |= PREO;
 		if (nivel & BDD_OPER)
@@ -1022,34 +1034,8 @@ int operserv_idok(Cliente *cl)
 			cl->nivel |= ADMIN;
 		if (nivel & BDD_ROOT)
 			cl->nivel |= ROOT;
-	}
-#else
-	int opts = 0;
-	char *modos;
-	if ((modos = _mysql_get_registro(OS_MYSQL, cl->nombre, "nivel")))
-	{
-		char tmp[5];
-		opts = atoi(modos);
-		if (opts & BDD_ADMIN)
-		{
-			sprintf_irc(tmp, "+%c%c%c", (protocolo->umodos+1)->flag, (protocolo->umodos+2)->flag, (protocolo->umodos+3)->flag);
-			port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
 		}
-		else
-		{
-			sprintf_irc(tmp, "+%c", (protocolo->umodos+3)->flag);
-			port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, "+h", 1);
-		}
-		if (opts & BDD_PREO)
-			cl->nivel |= PREO;
-		if (opts & BDD_OPER)
-			cl->nivel |= OPER;
-		if (opts & BDD_DEVEL)
-			cl->nivel |= DEVEL;
-		if (opts & BDD_ADMIN)
-			cl->nivel |= ADMIN;
-		if (opts & BDD_ROOT)
-			cl->nivel |= ROOT;
+#ifndef UDB
 	}
 #endif
 	return 0;
@@ -1092,7 +1078,7 @@ int operserv_sig_synch()
 	{
 		while ((row = mysql_fetch_row(res)))
 		{
-			bl = botnick(row[0], operserv.hmod->ident, operserv.hmod->host, me.nombre, "+qkBd", "Servicio de noticias");
+			bl = botnick(row[0], operserv.hmod->ident, operserv.hmod->host, me.nombre, "+oqkBd", "Servicio de noticias");
 			for (i = 0; i < gnoticias; i++)
 			{
 				if (!strcmp(row[0], gnoticia[i]->botname))

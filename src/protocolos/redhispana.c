@@ -44,6 +44,7 @@ IRCFUNC(m_rehash);
 IRCFUNC(sincroniza);
 IRCFUNC(m_burst);
 IRCFUNC(m_create);
+IRCFUNC(m_tburst);
 
 ProtInfo info = {
 	"Protocolo P10" ,
@@ -95,8 +96,6 @@ ProtInfo info = {
 #define TOK_EOB "EB"
 #define MSG_PONG "PONG"
 #define TOK_PONG "Z"
-#define MSG_ACCOUNT "ACCOUNT"
-#define TOK_ACCOUNT "AC"
 #define MSG_GLINE "GLINE"
 #define TOK_GLINE "GL"
 #define MSG_INVITE "INVITE"
@@ -109,6 +108,10 @@ ProtInfo info = {
 #define TOK_EOB_ACK "EA"
 #define MSG_CREATE "CREATE"
 #define TOK_CREATE "C"
+#define MSG_TBURST "TBURST"
+#define TOK_TBURST "TB"
+#define MSG_IDENTIFY "IDENTIFY"
+#define TOK_IDENTIFY "ID"
 
 #define U_REG 0x1
 #define U_OPER 0x2
@@ -120,6 +123,16 @@ ProtInfo info = {
 #define U_DEAF 0x80
 #define U_CHSERV 0x100
 #define U_DEBUG 0x200
+#define U_ADM 0x400
+#define U_SUSPEND 0x800
+#define U_VIEWIP 0x1000
+#define U_DEVEL 0x2000
+#define U_COADM 0x4000
+#define U_PREO 0x8000
+#define U_ONLYREG 0x10000
+#define U_USERBOT 0x20000
+#define U_BOT 0x40000
+#define U_IDED 0x80000
 
 #define C_OP 0x1
 #define C_VOICE 0x2
@@ -133,30 +146,50 @@ ProtInfo info = {
 #define C_BAN 0x200
 #define C_LIMIT 0x400
 #define C_REG 0x800
-
+#define C_REGONLY 0x1000
+#define C_OPERONLY 0x2000
+#define C_HALF 0x4000
+#define C_OWN 0x8000
+#define C_BADWORDS 0x10000
+#define C_NOCOLORS 0x20000
+#define C_AUTOOP 0x40000
+#define C_AUDI 0x80000
+#define C_JOINP 0x100000
+#define C_SUSPEND 0x200000
+#define C_REGMOD 0x400000
+#define C_NOCTCPS 0x800000
 
 mTab umodos[] = {
 	{ U_REG , 'r' } , /* reg */
-	{ U_OPER , 'o' } , /* netadmin */
+	{ U_ADM , 'A' } , /* netadmin */
 	{ U_OPER , 'o' } , /* oper */
 	{ U_LOCOPER , 'O' } , /* helpop */
 	{ U_HIDE , 'x' } , /* hide */
+	{ U_SUSPEND , 'S' } ,
 	{ U_INV, 'i' },
   	{ U_WALLOP, 'w' },
   	{ U_SERVNOTICE, 's' },
   	{ U_DEAF, 'd' },
   	{ U_CHSERV, 'k' },
   	{ U_DEBUG, 'g' },
+  	{ U_VIEWIP , 'X' } ,
+  	{ U_DEVEL , 'D' } ,
+  	{ U_COADM , 'a' } ,
+  	{ U_PREO , 'p' } ,
+  	{ U_ONLYREG , 'R' } ,
+  	{ U_USERBOT , 'b' } ,
+  	{ U_BOT , 'B' } ,
+  	{ U_IDED , 'n' } ,
 	{0x0, '0'}
 };
 mTab cmodos[] = {
-	{ 0x0 , 0x0 } ,
-	{ C_REG , 'r' } , /* rgstronly */
-	{ 0x0 , 0x0 } , /* operonly */
+	{ C_REG , 'r' } ,
+	{ C_REGONLY , 'R' } , /* rgstronly */
+	{ C_OPERONLY , 'O' } , /* operonly */
 	{ 0x0 , 0x0 } , /* admonly */
-	{ 0x0 , 0x0 } , /* half */
+	{ C_HALF , 'h' } , /* half */
 	{ 0x0 , 0x0 } , /* adm */
-	{ 0x0 , 0x0 } , /* owner */
+	{ C_OWN , 'q' } , /* owner */
 	{ C_OP , 'o' } ,
 	{ C_VOICE , 'v' } ,
 	{ C_PRIVATE , 'p' } ,
@@ -168,6 +201,14 @@ mTab cmodos[] = {
 	{ C_KEY , 'k' } ,
 	{ C_BAN , 'b' } ,
 	{ C_LIMIT , 'l' } ,
+	{ C_BADWORDS , 'B' } ,
+	{ C_NOCOLORS , 'c' } ,
+	{ C_AUTOOP , 'A' } ,
+	{ C_AUDI , 'C' } ,
+	{ C_JOINP , 'j' } ,
+	{ C_SUSPEND , 'S' } ,
+	{ C_REGMOD , 'M' } ,
+	{ C_NOCTCPS , 'G' } ,
 	{0x0, '0'}
 };
 
@@ -266,15 +307,7 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 	vsprintf_irc(buf, modos, vl);
 	va_end(vl);
 	if (!strcmp(buf, "+r"))
-	{
-		char account[13];
-		bzero(account, sizeof(account));
-		strncpy(account, cl->nombre, sizeof(account)-1);
-		procesa_umodos(cl, buf);
-		sendto_serv("%s %s %s %s %lu", me.trio, TOK_ACCOUNT, cl->trio, account, time(0));
-	}
-	else if (!strcmp(buf, "-r"))
-		procesa_umodos(cl, buf);
+		sendto_serv("%s %s %s", me.trio, TOK_IDENTIFY, cl->nombre);
 	return 0;
 }
 int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
@@ -384,10 +417,7 @@ int p_nuevonick(Cliente *al)
 	al->numeric = b642int(al->trio);
 	inserta_cliente_en_numerico(al, al->trio, uTab);
 	modos = modes2flags(al->modos, umodos, NULL);
-	if (strchr(modos, 'r')) /* hay account */
-		sendto_serv("%s %s %s 1 %lu %s %s +%s %s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, al->nombre, ipb64, al->trio, al->info);
-	else
-		sendto_serv("%s %s %s 1 %lu %s %s +%s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, ipb64, al->trio, al->info);
+	sendto_serv("%s %s %s 1 %lu %s %s +%s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, ipb64, al->trio, al->info);
 	return 0;
 }
 int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
@@ -485,7 +515,7 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 Com comandos_especiales[] = {
 	{ MSG_NULL , TOK_NULL , (void *)p_trio } ,
 	{ MSG_MODE , TOK_MODE , (void *)p_umode } ,
-	{ MSG_ACCOUNT , TOK_ACCOUNT , (void *)p_svsmode } ,
+	{ MSG_NULL, TOK_NULL , (void *)p_svsmode } ,
 	{ MSG_MODE , TOK_MODE , (void *)p_mode } ,
 	{ MSG_NICK , TOK_NICK , (void *)p_nick } ,
 	COM_NULL , /* no se puede cambiar un nick remotamente */
@@ -571,7 +601,6 @@ void set(Conf *config)
 			}
 		}
 	}
-	conf_set->opts |= NO_OVERRIDE;
 }
 int carga(Conf *config)
 {
@@ -609,7 +638,8 @@ int carga(Conf *config)
 	inserta_comando(MSG_REHASH, TOK_REHASH, m_rehash, INI, MAXPARA);
 	inserta_comando(MSG_EOB, TOK_EOB, m_eos, INI, MAXPARA);
 	inserta_comando(MSG_BURST , TOK_BURST , m_burst , INI , MAXPARA);
-	inserta_comando(MSG_CREATE , TOK_CREATE , m_create , INI ,MAXPARA);
+	inserta_comando(MSG_CREATE , TOK_CREATE , m_create , INI , MAXPARA);
+	inserta_comando(MSG_TBURST , TOK_TBURST , m_tburst , INI , 5);
 	return 0;
 }
 int descarga()
@@ -636,7 +666,8 @@ int descarga()
 	borra_comando(MSG_REHASH, m_rehash);
 	borra_comando(MSG_EOB, m_eos);
 	borra_comando(MSG_BURST, m_burst);
-	borra_comando(MSG_CREATE, m_create);
+	borra_comando(MSG_CREATE , m_create);
+	borra_comando(MSG_TBURST, m_tburst);
 	return 0;
 }
 void inicia()
@@ -645,6 +676,7 @@ void inicia()
 	int2b64(buf, me.numeric, sizeof(buf));
 	//sendto_serv(":%s PROTOCTL REQ :TOKEN", me.nombre);
 	ircstrdup(&me.trio, buf);
+	sendto_serv("PROTOCTL REQ :TOKEN");
 	sendto_serv("PASS :%s", conf_server->password->local);
 	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
 }
@@ -1177,6 +1209,10 @@ IRCFUNC(m_burst)
 							strcat(mod, "o");
 						else if (*d == 'v')
 							strcat(mod, "v");
+						else if (*d == 'h')
+							strcat(mod, "h");
+						else if (*d == 'q')
+							strcat(mod, "q");
 						d++;
 					}
 				}
@@ -1207,6 +1243,20 @@ IRCFUNC(m_create)
 	strcpy(tokbuf, parv[1]);
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 		entra_usuario(cl, canal);
+	return 0;
+}
+IRCFUNC(m_tburst)
+{
+	Canal *cn = NULL;
+	Cliente *al;
+	if (parc == 3)
+	{
+		cn = info_canal(parv[1], !0);
+		al = busca_cliente_numerico(parv[3], NULL);
+		ircstrdup(&cn->topic, parv[4]);
+		cn->ntopic = al;
+		senyal3(SIGN_TOPIC, al, cn, parv[4]);
+	}
 	return 0;
 }
 void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)

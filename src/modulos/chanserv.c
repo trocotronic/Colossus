@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.13 2005-01-01 20:23:05 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.14 2005-02-18 22:12:19 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -76,6 +76,8 @@ static bCom chanserv_coms[] = {
 	{ "identify" , chanserv_identify , USERS } ,
 	{ "info" , chanserv_info , TODOS } ,
 	{ "invite" , chanserv_invite , USERS } ,
+	{ "admin" , chanserv_modos , USERS } ,
+	{ "deadmin" , chanserv_modos , USERS } ,
 	{ "op" , chanserv_modos , USERS } ,
 	{ "deop" , chanserv_modos , USERS } ,
 	{ "half" , chanserv_modos , USERS } ,
@@ -125,7 +127,7 @@ mTab cFlags[] = {
 	{ CS_LEV_JOB , 'j' } ,
 	{ CS_LEV_REV , 'g' } ,
 	{ CS_LEV_MEM , 'm' } ,
-	{ 0x0 , 0x0 }
+	{ 0x0 , '0' }
 };
 
 ModInfo info = {
@@ -169,6 +171,7 @@ int carga(Modulo *mod)
 				errores++;
 			}
 		}
+		libera_conf(&modulo);
 	}
 	return errores;
 }
@@ -425,8 +428,11 @@ BOTFUNC(chanserv_help)
 			response(cl, CLI(chanserv), "\00312IDENTIFY\003 Te identifica como fundador de un canal.");
 			response(cl, CLI(chanserv), "\00312DEAUTH\003 Te quita el estado de fundador.");
 			response(cl, CLI(chanserv), "\00312INVITE\003 Invita a un usuario al canal.");
+			if (MODE_ADM)
+				response(cl, CLI(chanserv), "\00312ADMIN/DEADMIN\003 Da o quita &.");
 			response(cl, CLI(chanserv), "\00312OP/DEOP\003 Da o quita @.");
-			response(cl, CLI(chanserv), "\00312HALF/DEHALF\003 Da o quita %%.");
+			if (MODE_HALF)
+				response(cl, CLI(chanserv), "\00312HALF/DEHALF\003 Da o quita %%.");
 			response(cl, CLI(chanserv), "\00312VOICE/DEVOICE\003 Da o quita +.");
 			response(cl, CLI(chanserv), "\00312BAN/UNBAN\003 Pone o quita bans.");
 			response(cl, CLI(chanserv), "\00312KICK\003 Expulsa a un usuario.");
@@ -539,8 +545,11 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "Resetea distintas opciones de un canal.");
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Opciones disponibles:");
+		if (MODE_ADM)
+			response(cl, CLI(chanserv), "\00312ADMINS\003 Quita todos los +a del canal.");
 		response(cl, CLI(chanserv), "\00312OPS\003 Quita todos los +o del canal.");
-		response(cl, CLI(chanserv), "\00312HALFS\003 Quita todos los +h del canal.");
+		if (MODE_HALF)
+			response(cl, CLI(chanserv), "\00312HALFS\003 Quita todos los +h del canal.");
 		response(cl, CLI(chanserv), "\00312VOICES\003 Quita todos los +v del canal.");
 		response(cl, CLI(chanserv), "\00312BANS\003 Quita todos los +b del canal.");
 		response(cl, CLI(chanserv), "\00312USERS\003 Expulsa a todos los usuarios del canal.");
@@ -714,9 +723,11 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "\00312+s\003 Fijar opciones (SET)");
 		response(cl, CLI(chanserv), "\00312+e\003 Editar la lista de accesos (ACCESS)");
 		response(cl, CLI(chanserv), "\00312+l\003 Listar la lista de accesos (ACCESS)");
-		response(cl, CLI(chanserv), "\00312+a\003 Tiene +a al entrar.");
+		if (MODE_ADM)
+			response(cl, CLI(chanserv), "\00312+a\003 Tiene +a al entrar.");
 		response(cl, CLI(chanserv), "\00312+o\003 Tiene +o al entrar.");
-		response(cl, CLI(chanserv), "\00312+h\003 Tiene +h al entrar.");
+		if (MODE_HALF)
+			response(cl, CLI(chanserv), "\00312+h\003 Tiene +h al entrar.");
 		response(cl, CLI(chanserv), "\00312+v\003 Tiene +v al entrar.");
 		response(cl, CLI(chanserv), "\00312+r\003 Comandos remotos (OP/DEOP/...)");
 		response(cl, CLI(chanserv), "\00312+c\003 Resetear opciones (CLEAR)");
@@ -730,8 +741,8 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "Un acceso no engloba otro. Por ejemplo, el tener +e no implica tener +l.");
 		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal +nick +flags-flags");
 		response(cl, CLI(chanserv), "Añade los accesos al nick.");
-		response(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal +pepito +aoh-lv");
-		response(cl, CLI(chanserv), "pepito tendría +aoh al entrar en #canal y se le quitarían los privilegios de acceder a la lista y autovoz.");
+		response(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal +pepito +o-lv");
+		response(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal y se le quitarían los privilegios de acceder a la lista y autovoz.");
 		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal -nick");
 		response(cl, CLI(chanserv), "Borra todos los accesos de este nick.");
 		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal");
@@ -1105,7 +1116,27 @@ BOTFUNC(chanserv_modos)
 		return 1;
 	}
 	opts = atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts"));
-	if (!strcasecmp(param[0], "OP"))
+	if (!strcasecmp(param[0], "ADMIN") && MODE_ADM)
+	{
+		for (i = 2; i < params; i++)
+		{
+			if (!(al = busca_cliente(param[i], NULL)) || es_link(cn->admin, al))
+				continue;
+			if (!tiene_nivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
+				continue;
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_ADM, TRIO(al));
+		}
+	}
+	else if (!strcasecmp(param[0], "DEADMIN") && MODE_ADM)
+	{
+		for (i = 2; i < params; i++)
+		{
+			if (!(al = busca_cliente(param[i], NULL)) || !es_link(cn->admin, al))
+				continue;
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al));
+		}
+	}
+	else if (!strcasecmp(param[0], "OP"))
 	{
 		for (i = 2; i < params; i++)
 		{
@@ -1125,7 +1156,7 @@ BOTFUNC(chanserv_modos)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al));
 		}
 	}
-	else if (!strcasecmp(param[0], "HALF"))
+	else if (!strcasecmp(param[0], "HALF") && MODE_HALF)
 	{
 		for (i = 2; i < params; i++)
 		{
@@ -1133,16 +1164,16 @@ BOTFUNC(chanserv_modos)
 				continue;
 			if (!tiene_nivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+h %s", TRIO(al));
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_HALF, TRIO(al));
 		}
 	}
-	else if (!strcasecmp(param[0], "DEHALF"))
+	else if (!strcasecmp(param[0], "DEHALF") && MODE_HALF)
 	{
 		for (i = 2; i < params; i++)
 		{
 			if (!(al = busca_cliente(param[i], NULL)) || !es_link(cn->half, al))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-h %s", TRIO(al));
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "VOICE"))
@@ -1221,23 +1252,29 @@ BOTFUNC(chanserv_clear)
 		for (i = 0; al[i]; i++)
 			port_func(P_KICK)(al[i], CLI(chanserv), cn, "CLEAR USERS");
 	}
+	else if (!strcasecmp(param[2], "ADMINS") && MODE_ADM)
+	{
+		al = empaqueta_clientes(cn, cn->admin, !ADD);
+		for (i = 0; al[i]; i++)
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
+	}
 	else if (!strcasecmp(param[2], "OPS"))
 	{
 		al = empaqueta_clientes(cn, cn->op, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
 	}
-	else if (!strcasecmp(param[2], "HALFS"))
+	else if (!strcasecmp(param[2], "HALFS") && MODE_HALF)
 	{
 		al = empaqueta_clientes(cn, cn->half, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-h %s", TRIO(al[i]));
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "VOCES"))
 	{
 		al = empaqueta_clientes(cn, cn->voz, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "ACCESOS"))
 	{
@@ -1259,7 +1296,7 @@ BOTFUNC(chanserv_clear)
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%s", modes2flags(cn->modos, protocolo->cmodos, cn));
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%s", IsChanReg(param[1]) ? "r" : "");
+		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%c", IsChanReg(param[1]) && MODE_RGSTR ? MODEF_RGSTR : 0);
 		response(cl, CLI(chanserv), "Modos resetados a +nt.");
 	}
 	else if (!strcasecmp(param[2], "BANS"))
@@ -1395,13 +1432,21 @@ BOTFUNC(chanserv_set)
 		char *modos = NULL;
 		if (params > 3)
 		{
-			char forb[] = "ohvbeqar";
+			char forb[32] = "ovb";
 			int i;
+			if (MODE_HALF)
+				chrcat(forb, MODEF_HALF);
+			if (MODE_OWNER)
+				chrcat(forb, MODEF_OWNER);
+			if (MODE_ADM)
+				chrcat(forb, MODEF_ADM);
+			if (MODE_RGSTR)
+				chrcat(forb, MODEF_RGSTR);
 			for (i = 0; forb[i] != '\0'; i++)
 			{
 				if (strchr(param[3], forb[i]))
 				{
-					response(cl, CLI(chanserv), CS_ERR_EMPT, "Los modos ohvbeqar no se pueden especificar.");
+					response(cl, CLI(chanserv), CS_ERR_EMPT, "Los modos %s no se pueden especificar.", forb);
 					return 1;
 				}
 			}
@@ -1415,7 +1460,22 @@ BOTFUNC(chanserv_set)
 		_mysql_add(CS_MYSQL, param[1], "modos", modos);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
-			envia_registro_bdd("C::%s::modos %s", param[1], modos);
+		{
+			char *c, *str;
+			strcpy(tokbuf, modos);
+			str = strtok(tokbuf, " ");
+			if ((c = strchr(str, '-')))
+				*c = '\0';
+			if (*str == '+')
+				str++;
+			strcpy(buf, str);
+			if ((str = strtok(NULL, " ")))
+			{
+				strcat(buf, " ");
+				strcat(buf, str);
+			}
+			envia_registro_bdd("C::%s::modos %s", param[1], buf);
+		}
 #endif
 	}
 	else if (!strcasecmp(param[2], "PASS"))
@@ -2006,22 +2066,31 @@ BOTFUNC(chanserv_block)
 		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal está vacío.");
 		return 1;
 	}
-	al = empaqueta_clientes(cn, cn->owner, ADD);
-	for (i = 0; al[i]; i++)
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-q %s", TRIO(al[i]));
-	ircfree(al);
-	al = empaqueta_clientes(cn, cn->admin, ADD);
-	for (i = 0; al[i]; i++)
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-a %s", TRIO(al[i]));
-	ircfree(al);
+	if (MODE_OWNER)
+	{
+		al = empaqueta_clientes(cn, cn->owner, ADD);
+		for (i = 0; al[i]; i++)
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_OWNER, TRIO(al[i]));
+		ircfree(al);
+	}
+	if (MODE_ADM)
+	{
+		al = empaqueta_clientes(cn, cn->admin, ADD);
+		for (i = 0; al[i]; i++)
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
+		ircfree(al);
+	}
 	al = empaqueta_clientes(cn, cn->op, ADD);
 	for (i = 0; al[i]; i++)
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
 	ircfree(al);
-	al = empaqueta_clientes(cn, cn->half, ADD);
-	for (i = 0; al[i]; i++)
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-h %s", TRIO(al[i]));
-	ircfree(al);
+	if (MODE_HALF)
+	{
+		al = empaqueta_clientes(cn, cn->half, ADD);
+		for (i = 0; al[i]; i++)
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
+		ircfree(al);
+	}
 	al = empaqueta_clientes(cn, cn->voz, ADD);
 	for (i = 0; al[i]; i++)
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
@@ -2153,7 +2222,8 @@ BOTFUNC(chanserv_register)
 			{
 				if (RedOverride)
 					mete_bot_en_canal(CLI(chanserv), cn->nombre);
-				port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+r");
+				if (MODE_RGSTR)
+					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", MODEF_RGSTR);
 				port_func(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
 			}
 			senyal1(CS_SIGN_REG, param[1]);
@@ -2356,8 +2426,10 @@ int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
 			}
 			/* buscamos el -k */
 			k = strchr(modebuf, '-');
-			if (k && strchr(k, 'k'))
+			if (k && strchr(k, 'k') && cn->clave)
 				port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-k %s", mods[max-1]); /* siempre está en el último */
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
+			modebuf[0] = parabuf[0] = '\0';
 		}
 		if (opts & CS_OPT_SOP)
 		{
@@ -2366,65 +2438,57 @@ int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
 			modos = mods[0];
 			while (!BadPtr(modos))
 			{
-				switch(*modos)
+				if (*modos == '+')
+					f = ADD;
+				else if (*modos == '-')
+					f = DEL;
+				else if (*modos == 'o')
 				{
-					case '+':
-						f = ADD;
-						break;
-					case '-':
-						
-						f = DEL;
-						break;
-					case 'o':
-						if (f == ADD)
+					if (f == ADD)
+					{
+						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AOP))
 						{
-							if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AOP))
-							{
-								strcat(modebuf, "-o");
-								strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
-								strcat(parabuf, " ");
-							}
+							strcat(modebuf, "-o");
+							strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
+							strcat(parabuf, " ");
 						}
-						pars++;
-						break;
-					case 'h':
-						if (f == ADD)
-						{
-							if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AHA))
-								{
-								strcat(modebuf, "-h");
-								strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
-								strcat(parabuf, " ");
-							}
-						}
-						pars++;
-						break;
-					case 'a':
-						if (f == ADD)
-						{
-							if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AAD))
-							{
-								strcat(modebuf, "-a");
-								strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
-								strcat(parabuf, " ");
-							}
-						}
-						pars++;
-						break;
-					case 'q':
-					case 'b':
-					case 'e':
-					case 'v':
-					case 'L':
-					case 'f':
-					case 'k':
-						pars++;
-						break;
-					case 'l':
-						if (f == ADD)
-							pars++;
-						break;
+					}
+					pars++;
 				}
+				else if (*modos == MODEF_HALF)
+				{
+					if (f == ADD)
+					{
+						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AHA))
+						{
+							char tmp[3];
+							sprintf_irc(tmp, "-%c", MODEF_HALF);
+							strcat(modebuf, tmp);
+							strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
+							strcat(parabuf, " ");
+						}
+					}
+					pars++;
+				}
+				else if (*modos == MODEF_ADM)
+				{
+					if (f == ADD)
+					{
+						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AAD))
+						{
+							char tmp[3];
+							sprintf_irc(tmp, "-%c", MODEF_ADM);
+							strcat(modebuf, tmp);
+							strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
+							strcat(parabuf, " ");
+						}
+					}
+					pars++;
+				}
+				else if (*modos == MODEF_OWNER || *modos == 'b' || *modos == 'e' || *modos == 'v' || *modos == 'L' || *modos == 'f' || *modos == 'k')
+					pars++;
+				else if (*modos == 'l' && f == ADD)
+					pars++;
 				modos++;
 			}
 		}
@@ -2492,7 +2556,6 @@ int chanserv_join(Cliente *cl, Canal *cn)
 		modos = strdup(row[2]);
 		topic = strdup(row[3]);
 		aux = 0L;
-		buf[0] = '\0';
 		if ((susp = IsChanSuspend(cn->nombre)))
 		{
 			port_func(P_NOTICE)(cl, CLI(chanserv), "Este canal está suspendido: %s", susp);
@@ -2527,17 +2590,16 @@ int chanserv_join(Cliente *cl, Canal *cn)
 		if (find)
 			return 0;
 		nivel = IsId(cl) ? tiene_nivel(cl->nombre, cn->nombre, 0L) : 0L;
-		buf[0] = '\0';
-		tokbuf[0] = '\0';
-		if (es_fundador(cl, cn->nombre) && IsId(cl))
+		buf[0] = tokbuf[0] = '\0';
+		if (es_fundador(cl, cn->nombre) && IsId(cl) && MODE_OWNER)
 		{
-			strcat(buf, "q");
+			chrcat(buf, MODEF_OWNER);
 			strcat(tokbuf, TRIO(cl));
 			strcat(tokbuf, " ");
 		}
-		if (nivel & CS_LEV_AAD)
+		if (nivel & CS_LEV_AAD && MODE_ADM)
 		{
-			strcat(buf, "a");
+			chrcat(buf, MODEF_ADM);
 			strcat(tokbuf, TRIO(cl));
 			strcat(tokbuf, " ");
 		}
@@ -2547,9 +2609,9 @@ int chanserv_join(Cliente *cl, Canal *cn)
 			strcat(tokbuf, TRIO(cl));
 			strcat(tokbuf, " ");
 		}
-		if (nivel & CS_LEV_AHA)
+		if (nivel & CS_LEV_AHA && MODE_HALF)
 		{
-			strcat(buf, "h");
+			chrcat(buf, MODEF_HALF);
 			strcat(tokbuf, TRIO(cl));
 			strcat(tokbuf, " ");
 		}
@@ -2565,7 +2627,8 @@ int chanserv_join(Cliente *cl, Canal *cn)
 		//	tokbuf[strlen(tokbuf)-1] = '\0';
 		if (cn->miembros == 1)
 		{
-			strcat(buf, "r");
+			if (MODE_RGSTR)
+				chrcat(buf, MODEF_RGSTR);
 			if (opts & CS_OPT_RTOP)
 				port_func(P_TOPIC)(CLI(chanserv), cn, topic);
 			if (opts & CS_OPT_RMOD)

@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.3 2004-12-31 12:28:03 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.4 2005-02-18 22:12:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -167,6 +167,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					unsigned long i = 60001;
 					Modulo *ex;
+					MENUITEMINFO mitem;
 					GetCursorPos(&p);
 					DestroyMenu(hConfig);
 					hConfig = CreatePopupMenu();
@@ -177,7 +178,10 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 						if (ex->cargado) /* está en conf */
 							AppendMenu(hConfig, MF_STRING, i++, ex->config);
 					}
-					ModifyMenu(hTray, IDM_CONFIG, MF_BYCOMMAND|MF_POPUP|MF_STRING, (UINT)hConfig, "&Configuración");
+					mitem.cbSize = sizeof(MENUITEMINFO);
+					mitem.fMask = MIIM_SUBMENU;
+					mitem.hSubMenu = hConfig;
+					SetMenuItemInfo(hTray, IDM_CONFIG, MF_BYCOMMAND, &mitem);
 					TrackPopupMenu(hTray, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
 					/* Kludge for a win bug */
 					SendMessage(hDlg, WM_NULL, 0, 0);
@@ -272,4 +276,59 @@ LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 	}
 	return FALSE;
+}
+void conferror(char *formato, ...)
+{
+	char buf[BUFSIZE], *texto, actual[BUFSIZE];
+	int len;
+	va_list vl;
+	va_start(vl, formato);
+	vsprintf_irc(buf, formato, vl);
+	va_end(vl);
+	strcat(buf, "\r\n");
+	if (!hwConfError)
+	{
+		hwConfError = CreateDialog(hInst, "CONFERROR", 0, (DLGPROC)ConfErrorDLG);
+		ShowWindow(hwConfError, SW_SHOW);
+		texto = (char *)Malloc(sizeof(char) * (strlen(buf) + 1));
+		strcpy(texto, buf);
+	}
+	else
+	{
+		len = GetDlgItemText(hwConfError, EDT_ERR, actual, BUFSIZE);
+		texto = (char *)Malloc(sizeof(char) * (len + strlen(buf) + 1));
+		strcpy(texto, actual);
+		strcat(texto, buf);
+	}
+	SetDlgItemText(hwConfError, EDT_ERR, texto);
+	Free(texto);
+}
+void ChkBtCon(int val, int block)
+{
+	SetDlgItemText(hwMain, BT_CON, val ? "Desconectar" : "Conectar");
+	CheckDlgButton(hwMain, BT_CON, val && !block ? BST_CHECKED : BST_UNCHECKED);
+	EnableWindow(GetDlgItem(hwMain, BT_CON), block ? FALSE : TRUE);
+}
+void Info(char *formato, ...)
+{
+	static char info[2048];
+	char texto[512], txt[512];
+	static int len = 0;
+	struct tm *timeptr;
+	time_t ts;
+	va_list vl;
+	ts = time(0);
+	timeptr = localtime(&ts);
+	va_start(vl, formato);
+	sprintf_irc(texto, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
+	vsprintf_irc(txt, texto, vl);
+	len += strlen(txt);
+	if (len > sizeof(info))
+	{
+		strcpy(info, txt);
+		len = 0;
+	}
+	else
+		strcat(info, txt);
+	SetDlgItemText(hwMain, EDT_INFO, info);
 }

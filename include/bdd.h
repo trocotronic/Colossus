@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.7 2004-12-31 12:27:51 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.8 2005-02-18 22:12:12 Trocotronic Exp $ 
  */
 
 #ifdef UDB
@@ -15,7 +15,7 @@ struct _udb
 	int id;
 	char *data_char;
 	u_long data_long;
-	struct _udb *prev, *sig, *hsig, *up, *mid, *down;
+	struct _udb *hsig, *up, *mid, *down;
 };
 
 MODFUNC extern MODVAR Udb *nicks;
@@ -26,6 +26,7 @@ MODFUNC extern MODVAR u_int BDD_NICKS;
 MODFUNC extern MODVAR u_int BDD_CHANS;
 MODFUNC extern MODVAR u_int BDD_IPS;
 MODFUNC extern MODVAR u_int BDD_SET;
+MODFUNC extern MODVAR u_long gmts[128];
 
 DLLFUNC extern Udb *busca_registro(int, char *);
 DLLFUNC extern Udb *busca_bloque(char *, Udb *);
@@ -41,10 +42,13 @@ MODFUNC extern MODVAR u_int BDD_TOTAL;
 #define CHAR_NUM '*'
 DLLFUNC extern Udb *coge_de_id(int);
 DLLFUNC extern u_int coge_de_char(char);
+DLLFUNC extern u_char coge_de_tipo(int);
 DLLFUNC extern void carga_bloque(int);
 DLLFUNC extern void descarga_bloque(int);
 DLLFUNC extern int parsea_linea(int, char *, int);
 DLLFUNC extern int actualiza_hash(Udb *);
+DLLFUNC extern int optimiza(Udb *);
+DLLFUNC extern int actualiza_gmt(Udb *, u_long);
 extern void carga_bloques();
 extern void bdd_init();
 DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);

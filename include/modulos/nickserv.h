@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
+ * $Id: nickserv.h,v 1.3 2005-02-18 22:12:14 Trocotronic Exp $ 
  */
 
 #define NS_SID 0x1
@@ -57,3 +57,5 @@ extern NickServ nickserv;
 #define IsNickUDB(x) (IsReg(x) && atoi(_mysql_get_registro(NS_MYSQL, x, "opts")) & NS_OPT_UDB)
 #endif
 #define IsSusp(x) (_mysql_get_registro(NS_MYSQL, x, "suspend"))
+
+#define CACHE_INTENTOS_ID "intentos_id"

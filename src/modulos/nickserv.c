@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.11 2004-12-31 12:28:01 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.12 2005-02-18 22:12:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -35,7 +35,8 @@ static int nickserv_demigrar	(Cliente *, char *[], int, char *[], int);
 static int nickserv_forbid		(Cliente *, char *[], int, char *[], int);
 
 int nickserv_sig_mysql	();
-int nickserv_nick		(Cliente *, char *);
+int nickserv_pre_nick		(Cliente *, char *);
+int nickserv_post_nick		(Cliente *);
 int nickserv_umode		(Cliente *, char *);
 int nickserv_sig_quit 	(Cliente *, char *);
 int nickserv_sig_idok 	(Cliente *);
@@ -123,6 +124,7 @@ int carga(Modulo *mod)
 				errores++;
 			}
 		}
+		libera_conf(&modulo);
 	}
 #ifndef _WIN32
 	{
@@ -142,7 +144,8 @@ int carga(Modulo *mod)
 }	
 int descarga()
 {
-	borra_senyal(SIGN_NICK, nickserv_nick);
+	borra_senyal(SIGN_PRE_NICK, nickserv_pre_nick);
+	borra_senyal(SIGN_POST_NICK, nickserv_post_nick);
 	borra_senyal(SIGN_UMODE, nickserv_umode);
 	borra_senyal(SIGN_MYSQL, nickserv_sig_mysql);
 	borra_senyal(SIGN_QUIT, nickserv_sig_quit);
@@ -173,9 +176,9 @@ void set(Conf *config, Modulo *mod)
 	{
 		if (!strcmp(config->seccion[i]->item, "sid"))
 			nickserv.opts |= NS_SID;
-		if (!strcmp(config->seccion[i]->item, "secure"))
+		else if (!strcmp(config->seccion[i]->item, "secure"))
 			nickserv.opts |= NS_SMAIL;
-		if (!strcmp(config->seccion[i]->item, "prot"))
+		else if (!strcmp(config->seccion[i]->item, "prot"))
 		{
 			nickserv.opts &= ~(NS_PROT_KILL | NS_PROT_CHG);
 			if (!strcasecmp(config->seccion[i]->data, "KILL"))
@@ -184,29 +187,29 @@ void set(Conf *config, Modulo *mod)
 				nickserv.opts |= NS_PROT_CHG;
 		}
 #ifdef UDB
-		if (!strcmp(config->seccion[i]->item, "automigrar"))
+		else if (!strcmp(config->seccion[i]->item, "automigrar"))
 			nickserv.opts |= NS_AUTOMIGRAR;
 #endif
-		if (!strcmp(config->seccion[i]->item, "recovernick"))
+		else if (!strcmp(config->seccion[i]->item, "recovernick"))
 			ircstrdup(&nickserv.recovernick, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "securepass"))
+		else if (!strcmp(config->seccion[i]->item, "securepass"))
 			ircstrdup(&nickserv.securepass, config->seccion[i]->data);
 	//	if (!strcmp(config->seccion[i]->item, "min_reg"))
 	//		nickserv.min_reg = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "autodrop"))
+		else if (!strcmp(config->seccion[i]->item, "autodrop"))
 			nickserv.autodrop = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "nicks"))
+		else if (!strcmp(config->seccion[i]->item, "nicks"))
 			nickserv.nicks = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "intentos"))
+		else if (!strcmp(config->seccion[i]->item, "intentos"))
 			nickserv.intentos = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "maxlist"))
+		else if (!strcmp(config->seccion[i]->item, "maxlist"))
 			nickserv.maxlist = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "forbmails"))
+		else if (!strcmp(config->seccion[i]->item, "forbmails"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++, nickserv.forbmails++)
 				ircstrdup(&nickserv.forbmail[nickserv.forbmails], config->seccion[i]->seccion[p]->item);
 		}
-		if (!strcmp(config->seccion[i]->item, "funciones"))
+		else if (!strcmp(config->seccion[i]->item, "funciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
@@ -226,7 +229,8 @@ void set(Conf *config, Modulo *mod)
 			mod->comando[mod->comandos] = NULL;
 		}
 	}
-	inserta_senyal(SIGN_NICK, nickserv_nick);
+	inserta_senyal(SIGN_PRE_NICK, nickserv_pre_nick);
+	inserta_senyal(SIGN_POST_NICK, nickserv_post_nick);
 	inserta_senyal(SIGN_UMODE, nickserv_umode);
 	inserta_senyal(SIGN_MYSQL, nickserv_sig_mysql);
 	inserta_senyal(SIGN_QUIT, nickserv_sig_quit);
@@ -595,8 +599,8 @@ BOTFUNC(nickserv_reg)
 	_mysql_add(NS_MYSQL, parv[0], "last", "%i", time(0));
 	if (nickserv.opts & NS_SMAIL)
 		envia_clave(parv[0]);
-	else
-		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+r");
+	else if (UMODE_REGNICK)
+		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
 	//cl->ultimo_reg = time(0);
 	response(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
 #ifdef UDB
@@ -643,19 +647,25 @@ BOTFUNC(nickserv_identify)
 	}
 	if (!strcmp(MDString(param[1]), _mysql_get_registro(NS_MYSQL, parv[0], "pass")))
 	{
-		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+r");
+		if (UMODE_REGNICK)
+			port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
 		response(cl, CLI(nickserv), "Ok \00312%s\003, bienvenid@ a casa :)", parv[0]);
 		senyal1(NS_SIGN_IDOK, cl);
 	}
 	else
 	{
-/*		if (++cl->intentos == nickserv.intentos)
+		int intentos = 0;
+		char *cache;
+		if ((cache = coge_cache(CACHE_INTENTOS_ID, cl->nombre)))
+			intentos = atoi(cache);
+		if (++intentos == nickserv.intentos)
 			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
 		else
 		{
-			sprintf_irc(buf, "Contraseña incorrecta. Tienes %i intentos más.", nickserv.intentos - cl->intentos);
+			sprintf_irc(buf, "Contraseña incorrecta. Tienes %i intentos más.", nickserv.intentos - intentos);
 			response(cl, CLI(nickserv), buf);
-		}*/
+			inserta_cache(CACHE_INTENTOS_ID, cl->nombre, 86400, "%i", intentos);
+		}
 	}
 	return 0;
 }
@@ -680,6 +690,11 @@ BOTFUNC(nickserv_set)
 	}
 	else if (!strcasecmp(param[1], "KILL"))
 	{
+		if (atoi(param[2]) < 10 && strcasecmp(param[2], "OFF"))
+		{
+			response(cl, CLI(nickserv), NS_ERR_SNTX, "El valor kill debe ser un número mayor que 10.");
+			return 1;
+		}
 		_mysql_add(NS_MYSQL, parv[0], "kill", param[2]);
 		response(cl, CLI(nickserv), "Tu kill se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
@@ -717,6 +732,11 @@ BOTFUNC(nickserv_set)
 	else if (!strcasecmp(param[1], "HIDE"))
 	{
 		int opts = atoi(_mysql_get_registro(NS_MYSQL, parv[0], "opts"));
+		if (params < 4)
+		{
+			response(cl, CLI(nickserv), NS_ERR_PARA, "SET HIDE valor on|off");
+			return 1;
+		}
 		if (!strcasecmp(param[2], "EMAIL"))
 		{
 			if (!strcasecmp(param[3], "ON"))
@@ -984,7 +1004,8 @@ BOTFUNC(nickserv_suspend)
 #ifdef UDB
 	if ((al = busca_cliente(param[1], NULL)))
 	{
-		port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "+S-r");
+		if (UMODE_SUSPEND || UMODE_REGNICK)
+			port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "+%c-%c", UMODEF_SUSPEND, UMODEF_REGNICK);
 		response(al, CLI(nickserv), "Tu nick ha sido suspendido por \00312%s\003: %s", cl->nombre, motivo);
 	}
 	if (IsNickUDB(param[1]))
@@ -1080,17 +1101,17 @@ BOTFUNC(nickserv_rename)
 		response(cl, CLI(nickserv), NS_ERR_PARA, "RENAME nick nuevonick");
 		return 1;
 	}
-	if (!(al = busca_cliente(param[1], NULL)))
-	{
-		response(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está conectado.");
-		return 1;
-	}
 	if ((al = busca_cliente(param[2], NULL)))
 	{
 		response(cl, CLI(nickserv), NS_ERR_EMPT, "El nuevo nick ya está en uso.");
 		return 1;
 	}
-	port_func(P_CAMBIO_USUARIO_REMOTO)(cl, param[2]);
+	if (!(al = busca_cliente(param[1], NULL)))
+	{
+		response(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está conectado.");
+		return 1;
+	}
+	port_func(P_CAMBIO_USUARIO_REMOTO)(al, param[2]);
 	response(cl, CLI(nickserv), "El nick \00312%s\003 ha cambiado su nick a \00312%s\003.", param[1], param[2]);
 	return 0;
 }
@@ -1214,23 +1235,8 @@ int nickserv_umode(Cliente *cl, char *modos)
 	return 0;
 }
 /* si nuevo es NULL, es un cliente nuevo. si no, es un cambio de nick */
-int nickserv_nick(Cliente *cl, char *nuevo)
+int nickserv_pre_nick(Cliente *cl, char *nuevo)
 {
-	char *nick = nuevo ? nuevo : cl->nombre;
-#ifndef UDB
-	char *motivo = NULL;
-	if ((motivo = _mysql_get_registro(NS_FORBIDS, nick, "motivo")))
-	{
-		char *viejo;
-		response(cl, CLI(nickserv), "Este nick está prohibido: %s", motivo);
-		viejo = strdup(cl->nombre);
-		ircstrdup(&cl->nombre, nick);
-		cambia_nick_inv(cl);
-		ircstrdup(&cl->nombre, viejo);
-		Free(viejo);
-		return 0;
-	}
-#endif
 	if (nuevo)
 	{
 		if (IsReg(cl->nombre))
@@ -1241,11 +1247,19 @@ int nickserv_nick(Cliente *cl, char *nuevo)
 				timer_off(cl->nombre, cl->sck); /* es posible que tenga kill */
 		}
 	}
-	if (!IsId(cl) && IsReg(nick)
-#ifdef UDB
-	 && !IsNickUDB(nick)
+}
+int nickserv_post_nick(Cliente *cl)
+{
+#ifndef UDB
+	char *motivo = NULL;
+	if ((motivo = _mysql_get_registro(NS_FORBIDS, cl->nombre, "motivo")))
+	{
+		response(cl, CLI(nickserv), "Este nick está prohibido: %s", motivo);
+		cambia_nick_inv(cl);
+		return 0;
+	}
 #endif
-	 )
+	if (!IsId(cl) && IsReg(cl->nombre))
 	{
 		char *kill;
 		if (nickserv.opts & NS_SID)
@@ -1253,11 +1267,11 @@ int nickserv_nick(Cliente *cl, char *nuevo)
 		else
 			sprintf_irc(buf, "%s", nickserv.hmod->nick);
 		response(cl, CLI(nickserv), "Este nick está protegido. Si es tu nick escribe \00312/msg %s IDENTIFY tupass\003. Si no lo es, escoge otro.", buf);
-		kill = _mysql_get_registro(NS_MYSQL, nick, "kill");
+		kill = _mysql_get_registro(NS_MYSQL, cl->nombre, "kill");
 		if (kill && atoi(kill))
 		{
 			response(cl, CLI(nickserv), "De no hacerlo, serás desconectado en \00312%s\003 segundos.", kill);
-			timer(nick, cl->sck, 1, atoi(kill), nickserv_killid, nick, sizeof(char) * (strlen(nick) + 1));
+			timer(cl->nombre, cl->sck, 1, atoi(kill), nickserv_killid, cl->nombre, sizeof(char) * (strlen(cl->nombre) + 1));
 		}
 	}
 	return 0;
@@ -1370,9 +1384,9 @@ int nickserv_dropanicks(Proc *proc)
 }
 void cambia_nick_inv(Cliente *cl)
 {
+	char buf[BUFSIZE];
 	if (!port_existe(P_CAMBIO_USUARIO_REMOTO))
 		return;
-	buf[0] = '\0';
 	sprintf_irc(buf, nickserv.recovernick, cl->nombre);
 	port_func(P_CAMBIO_USUARIO_REMOTO)(cl, random_ex(buf));
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.5 2004-10-31 18:11:01 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.6 2005-02-18 22:12:18 Trocotronic Exp $ 
  */
  
 #ifdef USA_ZLIB
@@ -63,9 +63,15 @@ char *comprime(Sock *sck, char *mensaje, int *len)
 	switch ((e = deflate(zout, Z_PARTIAL_FLUSH)))
 	{
 		case Z_OK:
-			sck->zlib->outcount = 0;
+			if (zout->avail_in)
+				Info("deflate() no se puede procesar todos los datos");
+        		sck->zlib->outcount = 0;
 			*len = ZIP_BUFFER_SIZE - zout->avail_out;
 			return zipbuf;
+		default:
+			Info("deflate() error(%i): %s", e, zout->msg ? zout->msg : "?");
+			*len = -1;
+			break;
 	}
 	*len = -1;
 	return NULL;
@@ -74,6 +80,7 @@ char *descomprime(Sock *sck, char *mensaje, int *len)
 {
 	z_stream *zin = sck->zlib->in;
 	int e;
+	char *p;
 	if (sck->zlib->incount)
 	{
 		memcpy((void *)unzipbuf, (void *)sck->zlib->inbuf, sck->zlib->incount);
@@ -91,8 +98,65 @@ char *descomprime(Sock *sck, char *mensaje, int *len)
 	switch ((e = inflate(zin, Z_NO_FLUSH)))
 	{
 		case Z_OK:
+			if (zin->avail_in)
+       			{
+          			sck->zlib->incount = 0;
+				if (!zin->avail_out)
+				{
+					Info("Hay que incrementar UNZIP_BUFFER_SIZE");
+					if (zin->next_out[0] == '\n' || zin->next_out[0] == '\r')
+					{
+						sck->zlib->inbuf[0] = '\n';
+						sck->zlib->incount = 1;
+                			}
+              				else
+					{
+						for (p = (char *) zin->next_out; p >= unzipbuf;)
+						{
+							if (*p == '\r' || *p == '\n')
+								break;
+							zin->avail_out++;
+							p--;
+							sck->zlib->incount++;
+						}
+				                if (p == unzipbuf)
+						{
+							sck->zlib->incount = 0;
+							sck->zlib->inbuf[0] = '\0';
+							*len = -1;
+							return NULL;
+						}
+						p++;
+						sck->zlib->incount--;
+						memcpy((void *)sck->zlib->inbuf, (void *)p, sck->zlib->incount);
+					}
+				}
+         			else
+            			{
+					*len = -1;
+					return NULL;
+				}
+			}
 			*len = UNZIP_BUFFER_SIZE - zin->avail_out;
 			return unzipbuf;
+		case Z_BUF_ERROR:
+			if (zin->avail_out == 0)
+			{
+				Info("inflate() ha devuelto Z_BUF_ERROR: %s", zin->msg ? zin->msg : "?");
+				*len = -1;
+			}
+			break;
+		case Z_DATA_ERROR:
+			if (!strncmp("ERROR ", mensaje, 6))
+			{
+				sck->opts &= ~OPT_ZLIB;
+				return mensaje;
+			}
+			Info("inflate() error: * Quizás esté linkando a un servidor que no tiene ZLib");
+        	default:
+			Info("inflate() error(%i): %s", e, zin->msg ? zin->msg : "?");
+			*len = -1;
+      			break;
 	}
 	*len = -1;
 	return NULL;

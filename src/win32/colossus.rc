@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.3 2004-10-23 22:42:37 Trocotronic Exp $
+// $Id: colossus.rc,v 1.4 2005-02-18 22:12:24 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -118,18 +118,18 @@ END
 // Dialog
 //
 
-COLOSSUS DIALOG DISCARDABLE  0, 0, 205, 65
+COLOSSUS DIALOG DISCARDABLE  0, 0, 205, 130
 STYLE DS_MODALFRAME | DS_3DLOOK | DS_NOFAILCREATE | DS_CENTER | 
     WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
 FONT 8, "Verdana"
 BEGIN
     GROUPBOX        "Opciones disponibles:",-1,5,5,195,55,BS_LEFT
-    CONTROL         "Conectar",BT_CON,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE,
-                    10,15,90,15
+    CONTROL         "Conectar",BT_CON,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE,10,15,90,15
     PUSHBUTTON      "Refrescar",BT_REHASH,105,15,90,15,NOT WS_TABSTOP
     PUSHBUTTON      "Configuración",BT_CONF,10,35,90,15,NOT WS_TABSTOP
     PUSHBUTTON      "Ayuda",BT_AYUDA,105,35,90,15,NOT WS_TABSTOP
-    //LTEXT           "Trocotronic",-1,160,56,37,10,NOT WS_GROUP
+    GROUPBOX        "Información:",-1,5,65,195,60,BS_LEFT
+    EDITTEXT        EDT_INFO,10,75,185,45,ES_MULTILINE | ES_READONLY | WS_VSCROLL
 END
 
 CONFERROR DIALOG DISCARDABLE  0, 0, 331, 178
@@ -138,9 +138,7 @@ CAPTION "Error de configuración"
 FONT 8, "Verdana"
 BEGIN
     DEFPUSHBUTTON   "Aceptar",IDOK,134,157,50,14
-    EDITTEXT        EDT_ERR,7,7,317,142,ES_MULTILINE | 
-                    ES_AUTOHSCROLL | ES_READONLY | ES_WANTRETURN | 
-                    WS_VSCROLL
+    EDITTEXT        EDT_ERR,7,7,317,142,ES_MULTILINE | ES_READONLY | WS_VSCROLL
 END
 
 SSLPASS DIALOG DISCARDABLE  0, 0, 174, 57

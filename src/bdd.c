@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.15 2004-12-31 12:27:56 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.16 2005-02-18 22:12:16 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -32,6 +32,7 @@ Udb *ultimo = NULL;
 #define da_Udb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 #define atoul(x) strtoul(x, NULL, 10)
 char bloques[128];
+static u_long gmts[128];
 u_int BDD_TOTAL = 0;
 void alta_bloque(char letra, char *ruta, Udb **reg, u_int *id)
 {
@@ -49,11 +50,14 @@ void alta_bloque(char letra, char *ruta, Udb **reg, u_int *id)
 void alta_hash()
 {
 	Udb *reg;
+	int id;
 	hash = (Udb ***)Malloc(sizeof(Udb **) * BDD_TOTAL);
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		hash[(reg->id >> 8)] = (Udb **)Malloc(sizeof(Udb *) * 2048);
-		bzero(hash[(reg->id >> 8)], sizeof(Udb *) * 2048);
+		id = (reg->id >> 8);
+		hash[id] = (Udb **)Malloc(sizeof(Udb *) * 2048);
+		bzero(hash[id], sizeof(Udb *) * 2048);
+		gmts[id] = 0L;
 	}
 }
 void bdd_init()
@@ -128,6 +132,34 @@ u_long lee_hash(int id)
 	if (!sscanf(lee, "%X", &hash))
 		return 0L;
 	return (u_long)hash;
+}
+u_long lee_gmt(int id)
+{
+	FILE *fp;
+	u_long hash = 0L;
+	char lee[11];
+	if (!(fp = fopen(DB_DIR "crcs", "r")))
+		return 0L;
+	fseek(fp, BDD_TOTAL * 8 + 10 * id, SEEK_SET);
+	bzero(lee, 11);
+	fread(lee, 1, 10, fp);
+	fclose(fp);
+	return atoul(lee);
+}
+DLLFUNC int actualiza_gmt(Udb *bloque, u_long gm)
+{
+	char lee[11];
+	FILE *fh;
+	u_long hora = gm ? gm : time(0);
+	bzero(lee, 11);
+	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+		return -1;
+	fseek(fh, BDD_TOTAL * 8 + 10 * (bloque->id >> 8), SEEK_SET);
+	sprintf_irc(lee, "%ul", hora);
+	fwrite(lee, 1, 10, fh);
+	fclose(fh);
+	gmts[bloque->id >> 8] = hora;
+	return 0;
 }
 DLLFUNC int actualiza_hash(Udb *bloque)
 {
@@ -246,6 +278,8 @@ Udb *da_formato(char *form, Udb *reg)
 {
 	Udb *root = NULL;
 	form[0] = '\0';
+	if (!reg)
+		return reg;
 	if (reg->up)
 		root = da_formato(form, reg->up);
 	else
@@ -285,6 +319,19 @@ int guarda_en_archivo(Udb *reg, int tipo)
 	actualiza_hash(coge_de_id(tipo));
 	return 0;
 }
+/* guarda en un archivo un registro pero hacia abajo */
+int guarda_en_archivo_ex(Udb *reg, int tipo)
+{
+	if (!reg)
+		return 0;
+	if (reg->mid)
+		guarda_en_archivo_ex(reg->mid, tipo);
+	if (reg->down)
+		guarda_en_archivo_ex(reg->down, tipo);
+	else
+		guarda_en_archivo(reg, tipo);
+	return 0;
+}
 void libera_memoria_udb(int tipo, Udb *reg)
 {
 	if (reg->down)
@@ -320,14 +367,6 @@ void borra_registro(int tipo, Udb *reg, int archivo)
 	reg->down = NULL;
 	if (archivo)
 		guarda_en_archivo(reg, tipo);
-	if (!reg->sig)
-		aux->sig = reg->prev;
-	else
-		reg->sig->prev = reg->prev;
-	if (!reg->prev)
-		aux->prev = reg->sig;
-	else
-		reg->prev->sig = reg->sig;
 	for (aux = up->down; aux; aux = aux->mid)
 	{
 		if (aux == reg)
@@ -348,10 +387,11 @@ void borra_registro(int tipo, Udb *reg, int archivo)
 }
 Udb *inserta_registro(int tipo, Udb *bloque, char *item, char *data_char, u_long data_long, int archivo)
 {
-	Udb *reg;
+	Udb *reg, *root;
 	if (!bloque || !item)
 		return NULL;
 	tipo = coge_de_char(tipo);
+	root = coge_de_id(tipo);
 	if (!(reg = busca_bloque(item, bloque)))
 	{
 		reg = crea_registro(bloque);
@@ -470,30 +510,45 @@ DLLFUNC int parsea_linea(int tipo, char *cur, int archivo)
 }
 DLLFUNC void carga_bloque(int tipo)
 {
-	char *cur, *ds, *p;
 	Udb *root;
-	u_long lee, obtiene;
-	char bloque = 0;
-	int len, fd;
-#ifdef _WIN32
-	HANDLE mapa, archivo;
-#else
-	struct stat sb;
-#endif
+	u_long lee, obtiene, trunca = 0L, bytes = 0L;
+	char bloque, linea[BUFSIZE], *c;
+	FILE *fp;
 	bloque = coge_de_tipo(tipo);
 	root = coge_de_id(tipo);
-	if ((lee = lee_hash(root->id >> 8)) != (obtiene = obtiene_hash(root)))
+	if ((lee = lee_hash(tipo)) != (obtiene = obtiene_hash(root)))
 	{
 		fecho(FADV, "El bloque %c está corrupto (%lu != %lu)", bloque, lee, obtiene);
-		if ((fd = open(root->item, O_WRONLY|O_TRUNC)))
+		if ((fp = fopen(root->item, "wb")))
 		{
-			close(fd);
+			fclose(fp);
 			actualiza_hash(root);
 		}
 		if (linkado)
 			sendto_serv(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloque);
 		return;
 	}
+	gmts[tipo] = lee_gmt(tipo);
+		if ((fp = fopen(root->item, "rb")))
+	{
+		while (fgets(linea, sizeof(linea), fp))
+		{
+			if ((c = strchr(linea, '\r')))
+				*c = '\0';
+			if ((c = strchr(linea, '\n')))
+				*c ='\0';
+			else
+			{
+				trunca = bytes;
+				break;
+			}
+			bytes += strlen(linea) + 1;
+			parsea_linea(tipo, linea, 0);
+			bzero(linea, sizeof(linea));
+		}
+		fclose(fp);
+	}
+/*
 #ifdef _WIN32
 	if ((archivo = CreateFile(root->item, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
 #else
@@ -519,6 +574,11 @@ DLLFUNC void carga_bloque(int tipo)
 			*ds = '\0';
 		if ((ds = strchr(cur, '\n')))
 			*ds = '\0';
+		else 
+		{
+			trunca = cur - p;
+			break;
+		}
 		parsea_linea(tipo, cur, 0);
 		cur = ++ds;
 	}
@@ -530,6 +590,9 @@ DLLFUNC void carga_bloque(int tipo)
 	munmap(p, len);
 	close(fd);
 #endif
+*/
+	if (trunca)
+		trunca_bloque(&me, root, trunca);
 }
 DLLFUNC void descarga_bloque(int tipo)
 {
@@ -593,6 +656,17 @@ int trunca_bloque(Cliente *cl, Udb *bloq, u_long bytes)
 		sendto_serv(":%s DB %s ERR DRP %i %c fopen(rb)", me.nombre, cl->nombre, E_UDB_FATAL, bdd);
 		return 1;
 	}
+	return 0;
+}
+DLLFUNC int optimiza(Udb *bloq)
+{
+	FILE *fp;
+	int id = bloq->id >> 8;
+	if ((fp = fopen(bloq->item, "wb")))
+		fclose(fp);
+	guarda_en_archivo_ex(bloq->down, id);
+	descarga_bloque(id);
+	carga_bloque(id);
 	return 0;
 }
 #endif

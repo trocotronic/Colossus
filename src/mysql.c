@@ -1,9 +1,10 @@
 /*
- * $Id: mysql.c,v 1.6 2004-12-31 19:25:49 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.7 2005-02-18 22:12:17 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
+MYSQL *mysql = NULL;
 struct mysql_t mysql_tablas;
 int carga_mysql()
 {
@@ -14,7 +15,7 @@ int carga_mysql()
 	if (mysql_select_db(mysql, conf_db->bd))
 	{
 #ifdef _WIN32
-		if (MessageBox(NULL, "La base de datos no existe. ¿Quieres crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+		if (MessageBox(hwMain, "La base de datos no existe. ¿Quieres crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
 		if (pregunta("La base de datos no existe. ¿Quieres crearla?") == 1)
 #endif
@@ -51,9 +52,11 @@ MYSQL_RES *_mysql_query(char *formato, ...)
 	va_start(vl, formato);
 	vsprintf_irc(buf, formato, vl);
 	va_end(vl);
+	pthread_mutex_lock(&mutex);
 	if (mysql_query(mysql, buf) < 0)
 	{
 		fecho(FADV, "MySQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", buf, mysql_errno(mysql), mysql_error(mysql));
+		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
 	if ((resultado = mysql_store_result(mysql)))
@@ -61,10 +64,13 @@ MYSQL_RES *_mysql_query(char *formato, ...)
 		if (!mysql_num_rows(resultado))
 		{
 			mysql_free_result(resultado);
+			pthread_mutex_unlock(&mutex);
 			return NULL;
 		}
+		pthread_mutex_unlock(&mutex);
 		return resultado;
 	}
+	pthread_mutex_unlock(&mutex);
 	return NULL;
 }
 char *_mysql_get_registro(char *tabla, char *registro, char *campo)
@@ -72,13 +78,14 @@ char *_mysql_get_registro(char *tabla, char *registro, char *campo)
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char *reg_corr, *cam_corr = NULL;
-	reg_corr = (char *)Malloc(sizeof(char) * strlen(registro) * 2 + 1);
-	mysql_real_escape_string(mysql, reg_corr, registro, strlen(registro));
+	reg_corr = _mysql_escapa(registro);
 	if (campo)
 	{
-		cam_corr = (char *)Malloc(sizeof(char) * strlen(campo) * 2 + 3);
+		cam_corr = (char *)Malloc(sizeof(char) * (strlen(campo) * 2 + 3));
 		cam_corr[0] = '`';
+		pthread_mutex_lock(&mutex);
 		mysql_real_escape_string(mysql, &cam_corr[1], campo, strlen(campo));
+		pthread_mutex_unlock(&mutex);
 		strcat(cam_corr, "`");
 	}
 	res = _mysql_query("SELECT %s from %s%s where item='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, reg_corr);
@@ -102,10 +109,7 @@ char *_mysql_get_num(MYSQL *mysql, char *tabla, int registro, char *campo)
 	int i;
 	char *cam_corr = NULL;
 	if (campo)
-	{
-		cam_corr = (char *)Malloc(sizeof(char) * strlen(campo) * 2 + 1);
-		mysql_real_escape_string(mysql, cam_corr, campo, strlen(campo));
-	}
+		cam_corr = _mysql_escapa(campo);
 	res = _mysql_query("SELECT %s from %s%s", cam_corr ? cam_corr : "*", PREFIJO, tabla);
 	if (campo)
 		Free(cam_corr);
@@ -130,14 +134,10 @@ void _mysql_add(char *tabla, char *registro, char *campo, char *valor, ...)
 		vsprintf_irc(buf, valor, vl);
 		va_end(vl);
 	}
-	reg_c = (char *)Malloc(sizeof(char) * strlen(registro) * 2 + 1);
-	cam_c = (char *)Malloc(sizeof(char) * strlen(campo) * 2 + 1);
+	reg_c = _mysql_escapa(registro);
+	cam_c = _mysql_escapa(campo);
 	if (!BadPtr(valor))
-		val_c = (char *)Malloc(sizeof(char) * strlen(buf) * 2 + 1);
-	mysql_real_escape_string(mysql, reg_c, registro, strlen(registro));
-	mysql_real_escape_string(mysql, cam_c, campo, strlen(campo));
-	if (!BadPtr(valor))
-		mysql_real_escape_string(mysql, val_c, buf, strlen(buf));
+		val_c = _mysql_escapa(buf);
 	if (!_mysql_get_registro(tabla, registro, NULL))
 		_mysql_query("INSERT INTO %s%s (item) values ('%s')", PREFIJO, tabla, reg_c);
 	_mysql_query("UPDATE %s%s SET `%s`='%s' where item='%s'", PREFIJO, tabla, cam_c, val_c ? val_c : "", reg_c);
@@ -150,8 +150,7 @@ void _mysql_del(char *tabla, char *registro)
 	if (registro)
 	{
 		char *reg_c;
-		reg_c = (char *)Malloc(sizeof(char) * strlen(registro) * 2 + 1);
-		mysql_real_escape_string(mysql, reg_c, registro, strlen(registro));
+		reg_c = _mysql_escapa(registro);
 		if (_mysql_get_registro(tabla, registro, NULL))
 			_mysql_query("DELETE from %s%s where item='%s'", PREFIJO, tabla, reg_c);
 		Free(reg_c);
@@ -220,8 +219,13 @@ int _mysql_backup()
 		{
 			while ((row = mysql_fetch_row(res)))
 			{
+				pthread_mutex_lock(&mutex);
 				if (!(resf = mysql_list_fields(mysql, tabla, NULL)))
+				{
+					pthread_mutex_unlock(&mutex);
 					break;
+				}
+				pthread_mutex_lock(&mutex);
 				bzero(buf, BUFSIZE);
 				sprintf_irc(buf, "INSERT INTO `%s` VALUES (", tabla);
 				for (j = 0; (fi = mysql_fetch_field(resf)); j++)
@@ -276,13 +280,17 @@ void _mysql_carga_tablas()
 	MYSQL_ROW row;
 	int i;
 	mysql_tablas.tablas = 0;
+	pthread_mutex_lock(&mutex);
 	if ((res = mysql_list_tables(mysql, NULL)))
 	{
+		pthread_mutex_unlock(&mutex);
 		for (i = 0; (row = mysql_fetch_row(res)); i++)
-			mysql_tablas.tabla[i] = strdup(row[0]);
+			ircstrdup(&mysql_tablas.tabla[i], row[0]);
 		mysql_tablas.tablas = i;
 		mysql_free_result(res);
 	}
+	else
+		pthread_mutex_unlock(&mutex);
 }
 int _mysql_existe_tabla(char *tabla)
 {
@@ -295,4 +303,13 @@ int _mysql_existe_tabla(char *tabla)
 			return 1;
 	}
 	return 0;
+}
+char *_mysql_escapa(char *item)
+{
+	char *tmp;
+	tmp = (char *)Malloc(sizeof(char) * (strlen(item) * 2 + 1));
+	pthread_mutex_lock(&mutex);
+	mysql_real_escape_string(mysql, tmp, item, strlen(item));
+	pthread_mutex_unlock(&mutex);
+	return tmp;
 }

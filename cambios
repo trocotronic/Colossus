@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.13 2004-12-31 12:27:49 Trocotronic Exp $
+ * $Id: cambios,v 1.14 2005-02-18 22:12:09 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -225,3 +225,15 @@
 271204183 - Se cambia el sistema de carga de módulos.
 301204184 - Se cambia el bloque modulos { }.
 301204185 - Se arregla un fallo grave en el borrado de señales.
+080105186 - Se arregla un fallo al enviar mensajes (no enviaba el caracter %).
+190105187 - Se arregla un fallo en el truncado de DBs.
+190105188 - Se arregla un fallo al refrescar el servidor y actualizar datos.
+210105189 - Se cambia todo el núcleo de proceso de conexiones. Se gana velocidad y estabilidad.
+210105190 - Se arregla un fallo en el intercambio de dbs.
+210105191 - Se añade el protocolo NS para ahorrar ancho de banda en UnrealIRCd.
+220105192 - Actualizado a UDB3.1
+260105193 - Arreglado un fallo en el SET de NickServ.
+260105194 - Arreglado un fallo en el cambio de nick en NickServ.
+280105195 - Se da soporte integrado a threads.
+310105196 - Arreglado un fallo estético en los modos de ChanServ.
+310105197 - Arreglado un fallo en el SET MODOS de ChanServ.

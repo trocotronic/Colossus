@@ -16,6 +16,9 @@ static char *modusers = NULL;
 static char *autousers = NULL;
 static char *autoopers = NULL;
 #define NOSERVDEOP 0x40
+LinkCliente *servidores = NULL;
+long base64dec(char *);
+char *base64enc(long);
 
 IRCFUNC(m_chghost);
 IRCFUNC(m_chgident);
@@ -312,11 +315,12 @@ ProtInfo info = {
 #define U_STRIPBADWORDS 0x400000
 #define U_HIDEWHOIS 	0x800000
 #define U_NOCTCP 	0x1000000
+#define U_LOCOP		0x20000000
 #ifdef UDB
-#define U_SUSPEND 	0x20000000
+#define U_SUSPEND 	0x40000000
 #define U_PRIVDEAF	0x80000000
+#define U_SHOWIP	0x100000000
 #endif
-#define U_LOCOP		0x40000000
 
 #define C_CHANOP		0x1
 #define C_VOICE		0x2
@@ -394,15 +398,15 @@ mTab cmodos[] = {
 	{ C_RGSTRONLY , 'R' },
 	{ C_OPERONLY , 'O' },
 	{ C_ADMONLY , 'A' },
+	{ C_HALFOP , 'h' },
+	{ C_CHANPROT , 'a' },
+	{ C_CHANOWNER , 'q' },
 	{ C_CHANOP , 'o' },
 	{ C_VOICE , 'v' },
 	{ C_PRIVATE , 'p' },
 	{ C_SECRET , 's' },
 	{ C_MODERATED , 'm' },
 	{ C_TOPICLIMIT , 't' },
-	{ C_CHANOWNER , 'q' },
-	{ C_CHANPROT , 'a' },
-	{ C_HALFOP , 'h' },
 	{ C_EXCEPT , 'e' },
 	{ C_BAN , 'b' },
 	{ C_INVITEONLY , 'i' },
@@ -428,6 +432,8 @@ mTab cmodos[] = {
 void procesa_modos(Canal *, char *);
 void procesa_umodos(Cliente *, char *);
 void entra_usuario(Cliente *, char *);
+void dale_cosas(Cliente *);
+int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 
 char *p_trio(Cliente *cl)
 {
@@ -438,13 +444,18 @@ int p_umode(Cliente *cl, char *modos)
 	procesa_umodos(cl, modos);
 	return 0;
 }
-int p_svsmode(Cliente *cl, Cliente *bl, char *modos)
+int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 {
+	char buf[BUFSIZE];
+	va_list vl;
+	va_start(vl, modos);
+	vsprintf_irc(buf, modos, vl);
+	va_end(vl);
 	procesa_umodos(cl, modos);
 #ifdef UDB
-	sendto_serv(":%s %s %s %s %lu", bl->nombre, TOK_SVS3MODE, cl->nombre, modos, time(0));
+	sendto_serv(":%s %s %s %s %lu", bl->nombre, TOK_SVS3MODE, cl->nombre, buf, time(0));
 #else
-	sendto_serv(":%s %s %s %s %lu", bl->nombre, TOK_SVS2MODE, cl->nombre, modos, time(0));
+	sendto_serv(":%s %s %s %s %lu", bl->nombre, TOK_SVS2MODE, cl->nombre, buf, time(0));
 #endif
 	senyal2(SIGN_UMODE, cl, modos);
 	return 0;
@@ -558,16 +569,14 @@ int p_nuevonick(Cliente *al)
 }
 int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
 {
-	char buf[BUFSIZE];
 	va_list vl;
 	if (!cl) /* algo pasa */
 		return 1;
 	if (EsBot(cl))
 		return 1;
 	va_start(vl, mensaje);
-	vsprintf_irc(buf, mensaje, vl);
+	p_msg_vl(cl, bl, 1, mensaje, &vl);
 	va_end(vl);
-	sendto_serv(":%s %s %s :%s", bl->nombre, TOK_PRIVATE, cl->nombre, buf);
 	return 0;
 }
 int p_sethost(Cliente *bl, char *host)
@@ -647,21 +656,32 @@ int p_topic(Cliente *bl, Canal *cn, char *topic)
 }
 int p_notice(Cliente *cl, Cliente *bl, char *mensaje, ...)
 {
-	char buf[BUFSIZE];
 	va_list vl;
 	if (!cl) /* algo pasa */
 		return 1;
 	if (EsBot(cl))
 		return 1;
 	va_start(vl, mensaje);
-	vsprintf_irc(buf, mensaje, vl);
+	p_msg_vl(cl, bl, 0, mensaje, &vl);
 	va_end(vl);
-	sendto_serv(":%s %s %s :%s", bl->nombre, TOK_NOTICE, cl->nombre, buf);
 	return 0;
 }
 int p_invite(Cliente *cl, Cliente *bl, Canal *cn)
 {
 	sendto_serv(":%s %s %s %s", bl->nombre, TOK_INVITE, cl->nombre, cn->nombre);
+	return 0;
+}
+int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
+{
+	char buf[BUFSIZE];
+	if (!vl)
+		strcpy(buf, formato);
+	else
+		vsprintf_irc(buf, formato, *vl);
+	if (tipo == 1) 
+		sendto_serv(":%s %s %s :%s", bl->nombre, TOK_PRIVATE, cl->nombre, buf);
+	else
+		sendto_serv(":%s %s %s :%s", bl->nombre, TOK_NOTICE, cl->nombre, buf);
 	return 0;
 }
 /*
@@ -697,6 +717,8 @@ Com comandos_especiales[] = {
 	{ MSG_KICK , TOK_KICK , (void *)p_kick } ,
 	{ MSG_TOPIC , TOK_TOPIC , (void *)p_topic } ,
 	{ MSG_NOTICE , TOK_NOTICE , (void *)p_notice } ,
+	{ MSG_INVITE , TOK_INVITE , (void *)p_invite } ,
+	{ MSG_NULL , TOK_NULL , (void *)p_msg_vl } ,
 	COM_NULL
 };
 int test(Conf *config, int *errores)
@@ -886,9 +908,13 @@ int descarga()
 }
 void inicia()
 {
+	LinkCliente *aux;
+	for (aux = servidores; aux; aux = aux->sig)
+		ircfree(aux);
+	servidores = NULL;
 	sendto_serv("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64");
 #ifdef UDB
-	sendto_serv("PROTOCTL UDB3");
+	sendto_serv("PROTOCTL UDB3.1");
 #endif
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
@@ -922,7 +948,19 @@ SOCKFUNC(parsea)
 		{
 			if (tpref)
 			{
-				/* TODO */
+				int numeric;
+				LinkCliente *aux;
+				numeric = base64dec(sender);
+				for (aux = servidores; aux; aux = aux->sig)
+				{
+					if (aux->user->numeric == numeric)
+					{
+						cl = aux->user;
+						break;
+					}
+				}
+				if (cl)
+					para[0] = cl->nombre;
 			}
 			else
 			{
@@ -1098,14 +1136,23 @@ IRCFUNC(m_nick)
 			p_kill(cl, &me, "Nick protegido.");
 			renick_bot(parv[1]);
 		}
-		senyal2(SIGN_NICK, cl, NULL);
+		senyal2(SIGN_POST_NICK, cl, 0);
 		if (parc > 10)
 			senyal2(SIGN_UMODE, cl, parv[8]);
 	}
 	else
 	{
+		senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		if (strcasecmp(parv[1], cl->nombre))
+		{
+			cl->modos &= ~U_REGNICK;
+#ifdef UDB
+			cl->modos &= ~(U_SUSPEND | U_HELPOP | U_SHOWIP | U_RGSTRONLY | U_SERVICES);
+			dale_cosas(cl);
+#endif
+		}
 		cambia_nick(cl, parv[1]);
-		senyal2(SIGN_NICK, cl, parv[1]);
+		senyal2(SIGN_POST_NICK, cl, 1);
 	}
 	return 0;
 }
@@ -1350,6 +1397,7 @@ IRCFUNC(m_stats)
 IRCFUNC(m_server)
 {
 	Cliente *al;
+	LinkCliente *aux;
 	char *protocol, *opts, *numeric, *inf;
 	protocol = opts = numeric = inf = NULL;
 	strcpy(tokbuf, parv[parc - 1]);
@@ -1368,7 +1416,7 @@ IRCFUNC(m_server)
 		inf = strtok(NULL, "");
 	else
 		numeric = parv[parc - 2];
-	if (!cl && atoi(protocol + 1) < 2302)
+	if (!cl && protocol && atoi(protocol + 1) < 2302)
 	{
 		fecho(FERR, "Version UnrealIRCd incorrecta. Solo funciona con v3.2.x y v3.1.x");
 		sockclose(sck, LOCAL);
@@ -1379,6 +1427,10 @@ IRCFUNC(m_server)
 	al->numeric = numeric ? atoi(numeric) : 0;
 	al->tipo = ES_SERVER;
 	al->trio = strdup(opts);
+	da_Malloc(aux, LinkCliente);
+	aux->user = al;
+	aux->sig = servidores;
+	servidores = aux;
 	if (!cl) /* primer link */
 	{
 #ifdef USA_ZLIB
@@ -1404,8 +1456,21 @@ IRCFUNC(m_server)
 IRCFUNC(m_squit)
 {
 	Cliente *al;
+	LinkCliente *aux, *prev = NULL;
 	al = busca_cliente(parv[1], NULL);
 	libera_cliente_de_memoria(al);
+	for (aux = servidores; aux; aux = aux->sig)
+	{
+		if (aux->user == al)
+		{
+			if (prev)
+				prev->sig = aux->sig;
+			else
+				servidores = aux->sig;
+			break;
+		}
+		prev = aux;
+	}
 	return 0;
 }
 IRCFUNC(m_umode)
@@ -1485,7 +1550,15 @@ IRCFUNC(m_db)
 	{
 		Udb *bloq;
 		bloq = coge_de_id(*parv[3]);
-		if (strcmp(parv[4], bloq->data_char))
+		if (atoul(parv[5]) != gmts[bloq->id >> 8]) /* se ha efectuado un OPT en algún momento */
+		{
+			if (atoul(parv[5]) > gmts[bloq->id >> 8])
+			{
+				trunca_bloque(cl, bloq, 0);
+				sendto_serv(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
+			}
+		}
+		else if (strcmp(parv[4], bloq->data_char))
 			sendto_serv(":%s DB %s RES %c %lu", me.nombre, parv[0], *parv[3], bloq->data_long);
 		else
 		{
@@ -1608,6 +1681,18 @@ IRCFUNC(m_db)
 		/* una vez hemos terminado, retornamos puesto que estos comandos sólo van dirigidos a un nodo */
 		return 1;
 	}
+	/* DB * OPT <bdd> <NULL>*/
+	else if (!strcmp(parv[2], "OPT"))
+	{
+		Udb *bloq;
+		if (!strchr(bloques, *parv[3]))
+		{
+			sendto_serv(":%s DB %s ERR OPT %i %c", me.nombre, cl->nombre, E_UDB_NODB, *parv[3]);
+			return 1;
+		}
+		bloq = coge_de_id(*parv[3]);
+		optimiza(bloq);
+	}
 	return 0;
 }
 IRCFUNC(m_dbq)
@@ -1653,8 +1738,25 @@ IRCFUNC(m_eos)
 {
 	if (cl == linkado)
 	{
+#ifdef UDB
+		u_int i;
+		Udb *aux;
+		u_long hora = time(0);
+#endif
 		sendto_serv(":%s %s", me.nombre, TOK_VERSION);
 		sendto_serv(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
+#ifdef UDB
+		for (i = 0; i < BDD_TOTAL; i++)
+		{
+			aux = coge_de_id(i);
+			if (gmts[i] + 86400 < hora)
+			{
+				sendto_serv(":%s DB * OPT %c %lu", me.nombre, coge_de_tipo(i), hora);
+				optimiza(aux);
+				actualiza_gmt(aux, hora);
+			}
+		}
+#endif
 		intentos = 0;
 		senyal(SIGN_EOS);
 #ifdef _WIN32		
@@ -1666,7 +1768,7 @@ IRCFUNC(m_eos)
 IRCFUNC(m_netinfo)
 {
 	if (*parv[4] != '*' && strcmp(parv[4], conf_set->cloak->crc))
-		fecho(FADV, "Las cloak keys no se corresponden (%s != %s)", conf_set->cloak->crc, parv[3]);
+		fecho(FADV, "Las cloak keys no se corresponden (%s != %s)", conf_set->cloak->crc, parv[4]);
 	//if (strcasecmp(parv[7], conf_set->red))
 	//	fecho(FADV, "El nombre de la red es distinto");
 	return 0;
@@ -1715,10 +1817,10 @@ IRCFUNC(sincroniza)
 {
 	tburst = microtime();
 #ifdef UDB
-	sendto_serv(":%s DB %s INF N %s", me.nombre, cl->nombre, nicks->data_char);
-	sendto_serv(":%s DB %s INF C %s", me.nombre, cl->nombre, chans->data_char);
-	sendto_serv(":%s DB %s INF I %s", me.nombre, cl->nombre, ips->data_char);
-	sendto_serv(":%s DB %s INF S %s", me.nombre, cl->nombre, sets->data_char);
+	sendto_serv(":%s DB %s INF N %s %lu", me.nombre, cl->nombre, nicks->data_char, gmts[nicks->id >> 8]);
+	sendto_serv(":%s DB %s INF C %s %lu", me.nombre, cl->nombre, chans->data_char, gmts[chans->id >> 8]);
+	sendto_serv(":%s DB %s INF I %s %lu", me.nombre, cl->nombre, ips->data_char, gmts[ips->id >> 8]);
+	sendto_serv(":%s DB %s INF S %s %lu", me.nombre, cl->nombre, sets->data_char, gmts[sets->id >> 8]);
 #endif	
 	senyal(SIGN_SYNCH);
 	return 0;
@@ -1911,4 +2013,164 @@ void entra_usuario(Cliente *cl, char *canal)
 	inserta_canal_en_usuario(cl, cn);
 	inserta_usuario_en_canal(cn, cl);
 	senyal2(SIGN_JOIN, cl, cn);
+}
+
+/* ':' and '#' and '&' and '+' and '@' must never be in this table. */
+/* these tables must NEVER CHANGE! >) */
+char int6_to_base64_map[] = {
+	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
+	    'E', 'F',
+	'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+	    'U', 'V',
+	'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+	    'k', 'l',
+	'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+	    '{', '}'
+};
+
+char base64_to_int6_map[] = {
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1,
+	-1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+	25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1,
+	-1, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+	51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, -1, 63, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
+static char *int_to_base64(long val)
+{
+	/* 32/6 == max 6 bytes for representation, 
+	 * +1 for the null, +1 for byte boundaries 
+	 */
+	static char base64buf[8];
+	long i = 7;
+
+	base64buf[i] = '\0';
+
+	/* Temporary debugging code.. remove before 2038 ;p.
+	 * This might happen in case of 64bit longs (opteron/ia64),
+	 * if the value is then too large it can easily lead to
+	 * a buffer underflow and thus to a crash. -- Syzop
+	 */
+	if (val > 2147483647L)
+	{
+		abort();
+	}
+
+	do
+	{
+		base64buf[--i] = int6_to_base64_map[val & 63];
+	}
+	while (val >>= 6);
+
+	return base64buf + i;
+}
+
+static long base64_to_int(char *b64)
+{
+	int v = base64_to_int6_map[(u_char)*b64++];
+
+	if (!b64)
+		return 0;
+		
+	while (*b64)
+	{
+		v <<= 6;
+		v += base64_to_int6_map[(u_char)*b64++];
+	}
+
+	return v;
+}
+char *base64enc(long i)
+{
+	if (i < 0)
+		return ("0");
+	return int_to_base64(i);
+}
+long base64dec(char *b64)
+{
+	if (b64)
+		return base64_to_int(b64);
+	else
+		return 0;
+}
+void dale_cosas(Cliente *cl)
+{
+	Udb *reg, *bloq;
+	if (!(reg = busca_registro(BDD_NICKS, cl->nombre)))
+		return;
+	if (!busca_bloque("suspendido", reg))
+	{
+		cl->modos |= U_REGNICK;
+		if ((bloq = busca_bloque("modos", reg)))
+		{
+			char *cur = bloq->data_char;
+			while (!BadPtr(cur))
+			{
+				switch(*cur)
+				{
+					case 'o':
+						cl->modos |= U_OPER;
+						break;
+					case 'h':
+						cl->modos |= U_HELPOP;
+						break;
+					case 'a':
+						cl->modos |= U_SADMIN;
+						break;
+					case 'A':
+						cl->modos |= U_ADMIN;
+						break;
+					case 'O':
+						cl->modos |= U_LOCOP;
+						break;
+					case 'k':
+						cl->modos |= U_SERVICES;
+						break;
+					case 'N':
+						cl->modos |= U_NETADMIN;
+						break;
+					case 'C':
+						cl->modos |= U_COADMIN;
+						break;
+					case 'W':
+						cl->modos |= U_WHOIS;
+						break;
+					case 'q':
+						cl->modos |= U_KIX;
+						break;
+					case 'H':
+						cl->modos |= U_HIDEOPER;
+						break;
+					case 'X':
+						cl->modos |= U_SHOWIP;
+						break;
+					case 'B':
+						cl->modos |= U_BOT;
+						break;
+				}
+				cur++;
+			}
+		}
+		if ((bloq = busca_bloque("oper", reg)))
+		{
+			u_long nivel = bloq->data_long;
+			if (nivel & BDD_OPER)
+				cl->modos |= U_HELPOP;
+			if (nivel & BDD_ADMIN || nivel & BDD_ROOT)
+				cl->modos |= (U_OPER | U_NETADMIN);
+		}
+	}
+	else
+		cl->modos |= UMODE_SUSPEND;
 }

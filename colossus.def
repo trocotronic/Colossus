@@ -1,6 +1,22 @@
-; dlltool --output-def colossus.def.in --export-all-symbols SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
 	vsprintf_irc
+
+	BDD_IPS
+
+	BDD_NICKS
+
+	BDD_SET
+
+	BDD_TOTAL
+
+	ChkBtCon
+
+	CleanUp
+
+	CleanUpSegv
+
+	ConfErrorDLG
 
 	Debug
 
@@ -8,13 +24,19 @@ EXPORTS
 
 	EscuchaIrcd
 
+	Info
+
 	ListaSocks
 
 	MDString
 
+	MainDLG
+
 	NTL_tolower_tab
 
 	NTL_toupper_tab
+
+	SO
 
 	SSLKeyPasswd
 
@@ -30,6 +52,16 @@ EXPORTS
 
 	StsMalloc
 
+	SysTray
+
+	TaskBarCreated
+
+	VerInfo
+
+	WM_TASKBARCREATED
+
+	WinMain
+
 	_asctime
 
 	_mysql_add
@@ -39,6 +71,8 @@ EXPORTS
 	_mysql_carga_tablas
 
 	_mysql_del
+
+	_mysql_escapa
 
 	_mysql_existe_tabla
 
@@ -51,6 +85,14 @@ EXPORTS
 	_mysql_restaura
 
 	abre_sock_ircd
+
+	actualiza_gmt
+
+	actualiza_hash
+
+	alta_bloque
+
+	alta_hash
 
 	atoi_tab
 
@@ -65,6 +107,10 @@ EXPORTS
 	base64_encode
 
 	base64toint
+
+	bdd_init
+
+	bloques
 
 	borra_ban_de_canal
 
@@ -84,6 +130,10 @@ EXPORTS
 
 	borra_modo_cliente_de_canal
 
+	borra_registro
+
+	borra_registro_de_hash
+
 	borra_senyal
 
 	borra_sock
@@ -91,6 +141,8 @@ EXPORTS
 	botnick
 
 	buf
+
+	busca_bloque
 
 	busca_canal
 
@@ -106,6 +158,10 @@ EXPORTS
 
 	busca_modulo
 
+	busca_registro
+
+	busca_udb_en_hash
+
 	cTab
 
 	cambia_nick
@@ -113,6 +169,10 @@ EXPORTS
 	canal_debug
 
 	canales
+
+	carga_bloque
+
+	carga_bloques
 
 	carga_cache
 
@@ -124,6 +184,10 @@ EXPORTS
 
 	carga_protocolo
 
+	chans
+
+	chrcat
+
 	cierra_colossus
 
 	cierra_ircd
@@ -134,6 +198,10 @@ EXPORTS
 
 	cierra_todo
 
+	cifra_ip
+
+	cifrado_str
+
 	cifranick
 
 	clientes
@@ -141,6 +209,14 @@ EXPORTS
 	cloak_crc
 
 	cmd
+
+	coge_cache
+
+	coge_de_char
+
+	coge_de_id
+
+	coge_de_tipo
 
 	coge_mx
 
@@ -170,17 +246,25 @@ EXPORTS
 
 	conta
 
+	copia_slot
+
 	copyfile
 
 	crea_mensaje
 
 	crea_modulo
 
+	crea_registro
+
 	ctx_client
 
 	ctx_server
 
+	da_formato
+
 	decode_ip
+
+	descarga_bloque
 
 	descarga_modulo
 
@@ -200,6 +284,10 @@ EXPORTS
 
 	dominum
 
+	dropacache
+
+	elimina_slot
+
 	email
 
 	encode_ip
@@ -211,6 +299,8 @@ EXPORTS
 	envia_cola
 
 	envia_email
+
+	envia_registro_bdd
 
 	es_link
 
@@ -234,9 +324,25 @@ EXPORTS
 
 	gettok
 
+	gmts
+
+	guarda_en_archivo
+
+	guarda_en_archivo_ex
+
+	hInst
+
+	hThreadPrincipal
+
+	hash
+
 	hash_canal
 
 	hash_cliente
+
+	hwConfError
+
+	hwMain
 
 	implode
 
@@ -260,6 +366,8 @@ EXPORTS
 
 	inserta_ban_en_canal
 
+	inserta_cache
+
 	inserta_canal_en_hash
 
 	inserta_canal_en_usuario
@@ -272,6 +380,10 @@ EXPORTS
 
 	inserta_modo_cliente_en_canal
 
+	inserta_registro
+
+	inserta_registro_en_hash
+
 	inserta_senyal
 
 	inserta_sock
@@ -281,6 +393,8 @@ EXPORTS
 	intentos
 
 	inttobase64
+
+	ips
 
 	ircd_SSL_accept
 
@@ -302,15 +416,23 @@ EXPORTS
 
 	killbot
 
+	lee_gmt
+
+	lee_hash
+
 	lee_mensaje
 
 	lee_socks
+
+	level_oper_bdd
 
 	libera_canal_de_memoria
 
 	libera_cliente_de_memoria
 
 	libera_conf
+
+	libera_memoria_udb
 
 	libera_protocolo
 
@@ -332,6 +454,10 @@ EXPORTS
 
 	mete_bot_en_canal
 
+	mete_bots
+
+	mete_residentes
+
 	microtime
 
 	mode2flag
@@ -342,13 +468,21 @@ EXPORTS
 
 	modulos
 
+	mutex
+
 	my_itoa
 
 	mysql
 
 	mysql_tablas
 
+	nicks
+
 	nuevo_cliente
+
+	obtiene_hash
+
+	optimiza
 
 	our_crc32
 
@@ -357,6 +491,8 @@ EXPORTS
 	parabuf
 
 	parse_smtp
+
+	parsea_linea
 
 	parseconf
 
@@ -406,6 +542,8 @@ EXPORTS
 
 	setfilemodtime
 
+	sets
+
 	sockaccept
 
 	sockblock
@@ -432,6 +570,8 @@ EXPORTS
 
 	strcasecmp
 
+	strncasecmp
+
 	strtolower
 
 	strtoupper
@@ -450,9 +590,13 @@ EXPORTS
 
 	totalcola
 
+	trunca_bloque
+
 	uTab
+
+	ultimo
 
 	untea
 
-	ChkBtCon
+	BDD_CHANS
 

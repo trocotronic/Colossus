@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.9 2004-12-31 12:28:02 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.10 2005-02-18 22:12:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,9 +24,8 @@ HANDLE proxythread;
 SOCKFUNC(proxy_fin);
 #endif
 Proxys *proxys = NULL;
-int proxyserv_dropacache(void);
 
-int proxyserv_nick(Cliente *, char *);
+int proxyserv_nick(Cliente *, int);
 
 static bCom proxyserv_coms[] = {
 	{ "help" , proxyserv_help , ADMINS } ,
@@ -78,12 +77,13 @@ int carga(Modulo *mod)
 				errores++;
 			}
 		}
+		libera_conf(&modulo);
 	}
 	return errores;
 }
 int descarga()
 {
-	borra_senyal(SIGN_NICK, proxyserv_nick);
+	borra_senyal(SIGN_POST_NICK, proxyserv_nick);
 	borra_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
 	return 0;
 }
@@ -152,9 +152,8 @@ void set(Conf *config, Modulo *mod)
 		if (!strcmp(config->seccion[i]->item, "maxlist"))
 			proxyserv.maxlist = atoi(config->seccion[i]->data);
 	}
-	inserta_senyal(SIGN_NICK, proxyserv_nick);
+	inserta_senyal(SIGN_POST_NICK, proxyserv_nick);
 	inserta_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
-	proc(proxyserv_dropacache);
 	bot_set(proxyserv);
 }
 void escanea(char *host)
@@ -173,15 +172,12 @@ void escanea(char *host)
 		if ((px->puerto[i]->sck = sockopen(host, proxyserv.puerto[i], proxy_fin, NULL, NULL, proxy_fin, ADD)))
 #endif
 		{
-			px->puerto[i]->puerto = &proxyserv.puerto[i];
+			px->puerto[i]->puerto = proxyserv.puerto[i];
 			px->puertos++;
 		}
 	}
 	px->host = strdup(host);
 	px->sig = proxys;
-	px->prev = NULL;
-	if (proxys)
-		proxys->prev = px;
 	proxys = px;
 }
 BOTFUNC(proxyserv_help)
@@ -219,7 +215,7 @@ BOTFUNC(proxyserv_host)
 {
 	if (params < 2)
 	{
-		response(cl, CLI(proxyserv), XS_ERR_PARA, "HOST {+|-|patrón}[{host|ip}]");
+		response(cl, CLI(proxyserv), XS_ERR_PARA, "HOST {+|-|patrón} [host|ip]");
 		return 1;
 	}
 	if (*param[1] == '+')
@@ -252,17 +248,17 @@ BOTFUNC(proxyserv_host)
 	}
 	return 0;
 }
-int proxyserv_nick(Cliente *cl, char *nuevo)
+int proxyserv_nick(Cliente *cl, int nuevo)
 {
 	if (!nuevo)
 	{
 		Proxys *px;
 		char *host;
-		if (cl->ip && *(cl->ip) != '*')
+		if (!BadPtr(cl->ip) && *(cl->ip) != '*')
 			host = cl->ip;
 		else
 			host = cl->host;
-		if (_mysql_get_registro(MYSQL_CACHE, host, "hora") || _mysql_get_registro(XS_MYSQL, host, NULL))
+		if (coge_cache(CACHE_PROXY, host) || _mysql_get_registro(XS_MYSQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
 		{
@@ -304,11 +300,14 @@ SOCKFUNC(proxy_fin)
 		if (!strcmp(px->host, sck->host))
 			break;
 	}
+	if (!px)
+		return 0;
 #endif
 	if (++px->escaneados == proxyserv.puertos) /* fin del scan */
 	{
 		int i;
 		char abiertos[256];
+		Proxys *aux, *prev = NULL;
 		abiertos[0] = '\0';
 		for (i = 0; i < px->puertos; i++)
 		{
@@ -316,7 +315,7 @@ SOCKFUNC(proxy_fin)
 			{
 				char puerto[10];
 				puerto[0] = '\0';
-				sprintf_irc(puerto, "%i ", *(px->puerto[i]->puerto));
+				sprintf_irc(puerto, " %i", px->puerto[i]->puerto);
 				strcat(abiertos, puerto);
 				sockclose(px->puerto[i]->sck, 0);
 			}
@@ -325,17 +324,23 @@ SOCKFUNC(proxy_fin)
 		if (abiertos[0] != '\0')
 		{
 			char motivo[300];
-			sprintf_irc(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos);
+			sprintf_irc(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos + 1);
 			port_func(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv.tiempo, motivo);
 		}
 		else
-			_mysql_add(MYSQL_CACHE, px->host, "hora", "%lu", time(0));
-		if (px->prev)
-			px->prev->sig = px->sig;
-		else
-			proxys = px->sig;
-		if (px->sig)
-			px->sig->prev = px->prev;
+			inserta_cache(CACHE_PROXY, px->host, 86400, px->host);
+		for (aux = proxys; aux; aux = aux->sig)
+		{
+			if (aux == px)
+			{
+				if (prev)
+					prev->sig = aux->sig;
+				else
+					proxys = aux->sig;
+				break;
+			}
+			prev = aux;
+		}
 		Free(px->host);
 		Free(px);
 	}
@@ -400,8 +405,3 @@ void *proxyserv_loop_principal(void *args)
 	return NULL;
 }
 #endif
-int proxyserv_dropacache()
-{
-	_mysql_query("DELETE from %s%s where hora < %i AND hora !='0'", PREFIJO, MYSQL_CACHE, time(0) - 86400); /* validez, un día */
-	return 0;
-}

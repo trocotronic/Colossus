@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.1 2004-12-31 19:25:52 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.2 2005-02-18 22:12:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -139,7 +139,7 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e)
 	sprintf(text, "Se ha producido un fallo grave y el programa se ha cerrado. Se ha escrito la información en"
 		" %s", file);
 	fclose(fd);
-	MessageBox(NULL, text, "Error fatal", MB_OK);
+	MessageBox(hwMain, text, "Error fatal", MB_OK);
 	CleanUp();
 	return EXCEPTION_EXECUTE_HANDLER;
 }

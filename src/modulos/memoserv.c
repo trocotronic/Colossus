@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.10 2004-12-31 12:28:01 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.11 2005-02-18 22:12:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -94,6 +94,7 @@ int carga(Modulo *mod)
 				errores++;
 			}
 		}
+		libera_conf(&modulo);
 	}
 #ifndef _WIN32
 	{

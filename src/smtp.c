@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.6 2004-12-31 19:33:09 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.7 2005-02-18 22:12:17 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -211,8 +211,11 @@ char *coge_mx(char *dominio)
  #define SDK
  #ifdef SDK
 	HMODULE api;
+	char *cache;
 	if (!dominio)
 		return NULL;
+	if ((cache = coge_cache(CACHE_MX, dominio)))
+		return cache;
 	if (VerInfo.dwMajorVersion == 5)
 	{
 		if ((api = LoadLibrary("mx.dll")))
@@ -225,6 +228,7 @@ char *coge_mx(char *dominio)
 				if (host)
 				{
 					FreeLibrary(api);
+					inserta_cache(CACHE_MX, dominio, 86400, host);
 					return host;
 				}
 			}
@@ -238,7 +242,7 @@ char *coge_mx(char *dominio)
 	if (!dominio)
 		return NULL;
 	bzero(host, 512);
-	if ((cache = _mysql_get_registro(MYSQL_CACHE, dominio, "valor")))
+	if ((cache = cache_get(_mysql_get_registro(MYSQL_CACHE, dominio, "valor")))
 	{
 		strcpy(host, cache);
 		return host;

@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.h,v 1.2 2004-12-31 12:27:56 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.3 2005-02-18 22:12:15 Trocotronic Exp $ 
  */
 
 #define OS_OPTS_AOP 0x1
@@ -27,7 +27,7 @@ struct _not
 {
 	char *botname;
 	char *noticia;
-	time_t fecha;
+	char fecha[11];
 	int id;
 	Cliente *cl;
 };

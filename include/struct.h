@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.19 2005-01-01 19:32:24 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.20 2005-02-18 22:12:13 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -8,6 +8,7 @@
 #include "mysql.h"
 #include <sys/timeb.h>
 #include <process.h>
+#include "pthread.h"
 #else
 #define DWORD int
 #include <mysql.h>
@@ -18,6 +19,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <pthread.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
@@ -52,7 +54,10 @@ extern void ircstrdup(char **, const char *);
 #endif
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data)
 #define MAXSOCKS 1024
-#define BUFSIZE 8192
+#define BUFSIZE 1024
+#define BUF_SOCK 8192
+#define DBUF 2032
+#define MIN(x,y) (x < y ? x : y)
 
 typedef struct _dbuf DBuf;
 
@@ -66,9 +71,9 @@ struct _dbuf
 typedef struct _dbufdata DbufData;
 struct _dbufdata
 {
-	char data[2032];
+	char data[DBUF];
 	u_int len;
-	struct _dbufdata *sig, *prev;
+	struct _dbufdata *sig;
 };
 typedef struct _sock Sock;
 struct _sock
@@ -93,6 +98,13 @@ struct _sock
 	SSL *ssl;
 #endif
 };
+struct Sockets
+{
+	Sock *socket[MAXSOCKS];
+	int abiertos;
+	int tope;
+}ListaSocks;
+
 extern Sock *sockopen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
 extern void sockwrite(Sock *, int, char *, ...);
 extern void sockclose(Sock *, char);
@@ -133,6 +145,8 @@ struct mysql_t
 	int tablas;
 };
 extern MODVAR struct mysql_t mysql_tablas;
+extern char *_mysql_escapa(char *);
+
 typedef struct _smtpData SmtpData;
 struct _smtpData
 {
@@ -273,6 +287,7 @@ extern char SO[256];
 extern HWND hwMain;
 extern void CleanUp(void);
 extern void programa_loop_principal(void *);
+extern void Info(char *, ...);
 #endif
 extern void _mysql_carga_tablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
@@ -319,3 +334,12 @@ extern const char *inttobase64(char *, u_int, u_int);
 extern void tea(u_int *, u_int *, u_int *);
 extern char *cifranick(char *, char *);
 extern u_long our_crc32(const u_char *, u_int);
+extern char *chrcat(char *, char);
+extern int strncasecmp(const char *, const char *, int);
+/* definiciones de cache */
+extern char *coge_cache(char *, char *);
+extern void inserta_cache(char *, char *, int, char *, ...);
+#define CACHE_HOST "hosts" /* cache para hosts */
+#define CACHE_MX "mx" /* cache para registros mx */
+
+extern MODVAR pthread_mutex_t mutex;

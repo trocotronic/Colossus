@@ -21,11 +21,12 @@ int main(int argc, char *argv[]) {
 	{
 		if (*buf == '\t') 
 		{
-			char *symbol = strtok(buf, " ");
+			char *symbol = strtok(buf, " "), *c;
 
 			if (!strncmp(symbol, "\t_real@", 7))
 				continue;
-
+			if ((c = strchr(symbol, '@')))
+				*c = 0;
 			fprintf(fdout, "%s\r\n", symbol);	
 		
 		}

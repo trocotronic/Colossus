@@ -8,18 +8,36 @@ Versión 1.1:
 [ ] Hacer modulable el protocolo.
 	[X] Incluir el protocolo de UnrealIRCd
 	[X] Incluir el protocolo p10
-	[ ] Incluir el protocolo de redhispana
+	[X] Incluir el protocolo de redhispana
+	[ ] Incluir el protocolo de irc-hispano
 	
-[ ] Versatilizar la caché
+[X] Versatilizar la caché
 
-		
-Versión 1.2: 
+
+Versión 1.1.1:
+
+[ ] Modularizar la BDD
+	[ ] Incluir soporte UDB
+	[ ] Incluir soporte BDDRH
+	[ ] Incluir soporte BDDH
+	
+[ ] Incluir el protocolo Bahamut
+
+Versión 1.2:
+
+[ ] Integrar varios sistemas de bases de datos
+	[ ] MySQL
+	[ ] PostGres
+
+Versión 1.3: 
 
 [ ] Implementar sistema de niveles de acceso
 	[ ] Funcionalizar los comandos según el nivel de acceso
+	
+[ ] Permitir el enlace estático
 
 
-Versión 1.3: 
+Versión 1.4: 
 
 [ ] Añadir soporte para varios idiomas
 	[ ] Soporte para castellano
@@ -29,7 +47,7 @@ Versión 1.3:
 [ ] Modularizar la ayuda de cada módulo o bot
 
 
-Versión 1.4:
+Versión 1.5:
 
 [ ] Adaptar los módulos o bots a la semántica de IRCServices e irc-hispano
 	[ ] ChanServ
@@ -38,6 +56,6 @@ Versión 1.4:
 	[ ] MemoServ
 	
 
-Versión 1.5:
+Versión 1.6:
 
 [ ] Administración por vía web

@@ -1,5 +1,5 @@
 /*
- * $Id: resource.h,v 1.2 2004-10-02 22:48:45 Trocotronic Exp $ 
+ * $Id: resource.h,v 1.3 2005-02-18 22:12:25 Trocotronic Exp $ 
  */
 
 //{{NO_DEPENDENCIES}}
@@ -9,13 +9,14 @@
 #define VER_COLOSSUS                    1
 #define ICO_MAIN                        129
 #define MENU_SYSTRAY                    130
-#define MENU_CONFIG			     131
+#define MENU_CONFIG			131
 #define BT_CON                          1103
 #define BT_REHASH                       1104
 #define BT_AYUDA                        1105
 #define BT_CONF                         1106
-#define EDT_ERR			     1107
+#define EDT_ERR			    	1107
 #define IDC_PASS                        1108
+#define EDT_INFO			1109
 #define IDM_REHASH                      40029
 #define IDM_CONF                        60000
 #define IDM_AYUDA                       40031

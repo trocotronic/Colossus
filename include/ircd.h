@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.9 2004-12-31 12:27:51 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.10 2005-02-18 22:12:12 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(inicia_ircd);
@@ -152,9 +152,10 @@ extern char *mascara(char *, int);
 #define SIGN_SYNCH 7
 #define SIGN_KICK 8
 #define SIGN_TOPIC 9
-#define SIGN_NICK 10
-#define SIGN_AWAY 11
-#define SIGN_PART 12
+#define SIGN_PRE_NICK 10
+#define SIGN_POST_NICK 11
+#define SIGN_AWAY 12
+#define SIGN_PART 13
 #define EsCliente(x) (x->tipo == ES_CLIENTE)
 #define EsServer(x) (x->tipo == ES_SERVER)
 #define EsBot(x) (x->tipo == ES_BOT)
@@ -185,10 +186,6 @@ extern void carga_comandos();
 extern char *token(char *);
 extern char *cmd(char *);
 extern MODVAR char parabuf[BUFSIZE], modebuf[BUFSIZE];
-
-#define ADD 1
-#define DEL 2
-
 typedef struct _modes mTab;
 struct _modes
 {
@@ -200,60 +197,5 @@ extern u_long flag2mode(char , mTab []);
 extern char mode2flag(u_long , mTab []);
 extern u_long flags2modes(u_long *, char *, mTab []);
 extern char *modes2flags(u_long, mTab [], Canal *);
-
-//Macros de compatibilidad
-#define MSG_NULL NULL
-#define TOK_NULL NULL
-#define p_null NULL
-#define COM_NULL { MSG_NULL , TOK_NULL , p_null }
-#define port_msg(x) (protocolo->especiales + x)->msg
-#define port_tok(x) (protocolo->especiales + x)->tok
-#define port_func(x) (protocolo->especiales + x)->func
-#define port_existe(x) port_func(x)
-#define P_TRIO 0
-#define P_MODO_USUARIO_LOCAL 1
-#define P_MODO_USUARIO_REMOTO 2
-#define P_MODO_CANAL 3
-#define P_CAMBIO_USUARIO_LOCAL 4
-#define P_CAMBIO_USUARIO_REMOTO 5
-#define P_JOIN_USUARIO_LOCAL 6
-#define P_JOIN_USUARIO_REMOTO 7
-#define P_PART_USUARIO_LOCAL 8
-#define P_PART_USUARIO_REMOTO 9
-#define P_QUIT_USUARIO_LOCAL 10
-#define P_QUIT_USUARIO_REMOTO 11
-#define P_NUEVO_USUARIO 12
-#define P_PRIVADO 13
-#define P_CAMBIO_HOST_LOCAL 14
-#define P_CAMBIO_HOST_REMOTO 15
-#define P_FORB_NICK 16
-#define P_LAG 17
-#define P_WHOIS_ESPECIAL 18
-#define P_GLINE 19
-#define P_KICK 20
-#define P_TOPIC 21
-#define P_NOTICE 22
-#define P_INVITE 23
-
-#define port_umodo(x) (protocolo->umodos + x)->mode
-#define port_cmodo(x) (protocolo->cmodos + x)->mode
-
-#define TRIO(x) port_func(P_TRIO)(x)
-
-//estas macros corresponden a la posición dentro de la tabla
-// *** NO CAMBIAR EL ORDEN ***
-#define UMODE_REGNICK 	port_umodo(0)
-#define UMODE_NETADMIN	port_umodo(1)
-#define UMODE_OPER		port_umodo(2)
-#define UMODE_HELPOP		port_umodo(3)
-#define UMODE_HIDE		port_umodo(4)
-#ifdef UDB
-#define UMODE_SUSPEND	port_umodo(5)
-#endif
-
-#define MODE_RGSTR		port_cmodo(0)
-#define MODE_RGSTRONLY 	port_cmodo(1)
-#define MODE_OPERONLY   	port_cmodo(2)
-#define MODE_ADMONLY   	port_cmodo(3)
 
 #define RedOverride		(conf_set->opts & NO_OVERRIDE)

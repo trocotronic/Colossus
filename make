@@ -1,4 +1,4 @@
-## $Id: make,v 1.9 2004-12-31 19:25:48 Trocotronic Exp $
+## $Id: make,v 1.10 2005-02-18 22:12:11 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -34,6 +34,7 @@ MODDBGCFLAG=/LD /MD
 
 !IFDEF UDB
 UDBFLAGS=/D UDB
+UDBOBJ=SRC/BDD.OBJ
 !ENDIF 
 
 !IFDEF ZLIB
@@ -55,26 +56,26 @@ OPENSSL_LIB=/LIBPATH:"$(OPENSSL_LIB_DIR)"
 !ENDIF
 
 CFLAGS=$(DBGCFLAG) /I ./INCLUDE /J $(OPENSSL_INC) /Fosrc/ /nologo $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /D _WIN32 /c 
-LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIBLIB) $(OPENSSL_LIB) $(SSLLIBS) Dbghelp.lib \
+LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIBLIB) ./src/pthreadVC1.lib \
+	$(OPENSSL_LIB) $(SSLLIBS) Dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:colossus.def /implib:colossus.lib
-EXP_OBJ_FILES=SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
+EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
-	SRC/SMTP.OBJ SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) $(SSLOBJ)
+	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) $(SSLOBJ) $(UDBOBJ)
 MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL 
 #	SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL
+OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/DEBUG.OBJ
 !IFDEF UDB
-OBJ_FILES=$(EXP_OBJ_FILES) SRC/BDD.OBJ SRC/WIN32/COLOSSUS.RES SRC/GUI.OBJ SRC/DEBUG.OBJ
 PROT_DLL=SRC/PROTOCOLOS/UNREAL_UDB.DLL
 !ELSE
-OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/GUI.OBJ SRC/DEBUG.OBJ
-PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
+PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL SRC/PROTOCOLOS/REDHISPANA.DLL
 !ENDIF
 
 INCLUDES = ./include/ircd.h ./include/md5.h \
 	./include/modulos.h ./include/mysql.h ./include/parseconf.h ./include/protocolos.h \
 	./include/sprintf_irc.h ./include/struct.h ./include/ssl.h ./include/zlib.h  \
-	./include/sistema.h make
+	./include/sistema.h make colossus.def
 MODCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
 PROTCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
@@ -151,7 +152,10 @@ src/protocolos.obj: src/protocolos.c $(INCLUDES)
         $(CC) $(CFLAGS) src/protocolos.c         
         
 src/smtp.obj: src/smtp.c $(INCLUDES)
-        $(CC) $(CFLAGS) src/smtp.c        
+        $(CC) $(CFLAGS) src/smtp.c    
+        
+src/socks.obj: src/socks.c $(INCLUDES)
+	$(CC) $(CFLAGS) src/socks.c 
         
 src/sprintf_irc.obj: src/sprintf_irc.c $(INCLUDES)
         $(CC) $(CFLAGS) src/sprintf_irc.c        
@@ -219,8 +223,12 @@ src/protocolos/unreal.dll: src/protocolos/unreal.c $(INCLUDES)
 	-@copy src\protocolos\unreal.dll protocolos\unreal.dll
 
 src/protocolos/p10.dll: src/protocolos/p10.c $(INCLUDES) 
-	$(CC) $(PROTCFLAGS) src/protocolos/p10.c $(PROTLFLAGS)
+	$(CC) $(PROTCFLAGS) src/protocolos/p10.c $(PROTLFLAGS) ws2_32.lib
 	-@copy src\protocolos\p10.dll protocolos\p10.dll
+	
+src/protocolos/redhispana.dll: src/protocolos/redhispana.c $(INCLUDES) 
+	$(CC) $(PROTCFLAGS) src/protocolos/redhispana.c $(PROTLFLAGS) ws2_32.lib
+	-@copy src\protocolos\redhispana.dll protocolos\redhispana.dll
 	
 src/protocolos/unreal_udb.dll: src/protocolos/unreal.c $(INCLUDES) 
 	-@copy src\protocolos\unreal.c src\protocolos\unreal_udb.c

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.19 2004-12-31 12:27:57 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.20 2005-02-18 22:12:16 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,9 +8,6 @@
 #include "protocolos.h"
 #ifdef UDB
 #include "bdd.h"
-#endif
-#ifdef USA_ZLIB
-#include "zlib.h"
 #endif
 
 time_t inicio;
@@ -169,7 +166,7 @@ SOCKFUNC(procesa_ircd)
 	if (!canal_debug)
 		canal_debug = busca_canal(conf_set->debug, NULL);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
-		port_func(P_PRIVADO)((Cliente *)canal_debug, &me, "%s", data);
+		port_func(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
 	protocolo->parsea(sck, data);
 	/*parc = tokeniza_irc(data, parv, &com, &sender);
 	//for (i = 0; i < parc; i++)
@@ -217,6 +214,7 @@ SOCKFUNC(cierra_ircd)
 		libera_canal_de_memoria(cn);
 	}
 	canales = NULL;
+	linkado = NULL;
 	if (reset)
 	{
 		(void)execv(margv[0], margv);
@@ -559,10 +557,11 @@ void genera_mask(Cliente *cl)
 }
 void distribuye_me(Cliente *me, Sock **sck)
 {
-	me->nombre = strdup(conf_server->host);
+	ircstrdup(&me->nombre, conf_server->host);
 	me->tipo = ES_SERVER;
 	me->numeric = conf_server->numeric;
 	me->protocol = PROTOCOL;
+	ircfree(me->trio);
 	me->trio = (char *)Malloc(sizeof(char) * 21); /* hay 20 flags posibles */
 	*(me->trio) = '\0';
 	strcat(me->trio, "hK");
@@ -575,14 +574,12 @@ void distribuye_me(Cliente *me, Sock **sck)
 #ifdef USA_SSL
 	strcat(me->trio, "e");
 #endif
-	me->info = strdup(conf_server->info);
+	ircstrdup(&me->info, conf_server->info);
+	ircstrdup(&me->host, "0.0.0.0");
 	me->sck = *sck;
-	me->sig = clientes;
-	me->prev = NULL;
-	me->host = strdup("0.0.0.0");
-	if (clientes)
-		clientes->prev = me;
-	clientes = me;
+	me->sig = me->prev = NULL;
+	if (!clientes)
+		clientes = me;
 	inserta_cliente_en_hash(me, conf_server->host, uTab);
 }
 char *ircdmask(char *mascara)
@@ -900,6 +897,7 @@ char *modes2flags(u_long modes, mTab tabla[], Canal *cn)
 			*flags++ = aux->flag;
 		aux++;
 	}
+	*flags = '\0';
 	if (cn)
 	{
 		if (cn->clave)
@@ -918,8 +916,6 @@ char *modes2flags(u_long modes, mTab tabla[], Canal *cn)
 			strcat(flags, cn->flood);
 		}
 	}
-	else
-		*flags = '\0';
 	return buf;
 }
 void procesa_umodos(Cliente *cl, char *modos)
@@ -951,19 +947,17 @@ void procesa_umodos(Cliente *cl, char *modos)
 }
 void response(Cliente *cl, Cliente *bot, char *formato, ...)
 {
-	char buf[BUFSIZE];
 	va_list vl;
 	if (!cl) /* algo pasa */
 		return;
 	if (EsBot(cl))
 		return;
 	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
-	va_end(vl);
 	if (RESP_PRIVMSG)
-		port_func(P_PRIVADO)(cl, bot, buf);
+		port_func(P_MSG_VL)(cl, bot, 1, formato, &vl);
 	else
-		port_func(P_NOTICE)(cl, bot, buf);
+		port_func(P_MSG_VL)(cl, bot, 0, formato, &vl);
+	va_end(vl);
 }
 int mete_residentes()
 {

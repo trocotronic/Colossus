@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.27 2005-01-01 19:32:25 Trocotronic Exp $ 
+ * $Id: main.c,v 1.28 2005-02-18 22:12:17 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,23 +23,12 @@
 #include <errno.h>
 #include <utime.h>
 #include <sys/resource.h>
-#include <pthread.h>
 #endif
 #include <fcntl.h>
 #undef USA_CONSOLA
-
-static char buf[BUFSIZE];
-static char bufr[BUFSIZE+1];
-
-struct Sockets
-{
-	Sock *socket[MAXSOCKS];
-	int abiertos;
-	int tope;
-}ListaSocks;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 Sock *SockActual;
-MYSQL *mysql = NULL;
 Senyal *senyals[MAXSIGS];
 Timer *timers = NULL;
 Proc *procs = NULL;
@@ -48,17 +37,14 @@ char tokbuf[BUFSIZE];
 char conbuf[128];
 HANDLE hStdin;
 #endif
-int listens[MAX_LISTN];
-int listenS = 0;
+
 MODVAR char **margv;
 time_t iniciado;
 
-void encola(DBuf *, char *, int);
-int desencola(DBuf *, char *, int, int *);
-void envia_cola(Sock *);
-char *lee_cola(Sock *);
-int carga_cache(void);
-int completa_conexion(Sock *);
+int carga_cache();
+int dropacache();
+extern void lee_socks();
+extern void cierra_socks();
 
 #ifdef USA_CONSOLA
 void *consola_loop_principal(void *);
@@ -67,7 +53,7 @@ void parsea_comando(char *);
 #ifdef _WIN32
 void programa_loop_principal(void *);
 #endif
-#define MIN(x,y) (x < y ? x : y)
+
 const char NTL_tolower_tab[] = {
        /* x00-x07 */ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
        /* x08-x0f */ '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f',
@@ -142,6 +128,20 @@ int strcasecmp(const char *a, const char *b)
 	}
 	return (*ra - *rb);
 }
+int strncasecmp(const char *a, const char *b, int len)
+{
+	const char *ra = a;
+	const char *rb = b;
+	int l = 0;
+	while (ToLower(*ra) == ToLower(*rb) && l++ < len) 
+	{
+		if (!*ra++)
+			return 0;
+		else
+			++rb;
+	}
+	return (*ra - *rb);
+}
 void ircstrdup(char **dest, const char *orig)
 {
 	ircfree(*dest);
@@ -184,588 +184,6 @@ void print_r(Conf *conf, int escapes)
 			strcat(tabs, "\t");
 		conferror("%s};", tabs);
 	}
-}
-
-/*
- * resolv
- * Resvuelve el host dado
- * NULL si no se pudo resolver
- */
-struct in_addr *resolv(char *host)
-{
-	struct hostent *he;
-	if (!host || !host[0]) 
-		return NULL;
-	if (!(he = gethostbyname(host))) 
-		return NULL;
-	else 
-		return (struct in_addr *)he->h_addr;
-}
-int sockblock(int pres)
-{
-#ifdef _WIN32
-	int bl = 1;
-	return ioctlsocket(pres, FIONBIO, &bl);
-#else
-	int res, nonb = 0;
-	if ((res = fcntl(pres, F_GETFL, 0)) >= 0)
-		return fcntl(pres, F_SETFL, res | nonb);
-	return -1;
-#endif
-}
-void inserta_sock(Sock *sck)
-{
-	int i;
-	for (i = 0; ListaSocks.socket[i]; i++);
-	sck->slot = i;
-	ListaSocks.socket[i] = sck;
-#ifdef DEBUG
-	Debug("Insertando sock %X %i en %i ", sck, sck->pres, ListaSocks.abiertos);
-#endif
-	ListaSocks.abiertos++;
-	if (i > ListaSocks.tope)
-		ListaSocks.tope = i;
-}
-void borra_sock(Sock *sck)
-{
-	ListaSocks.socket[sck->slot] = NULL;
-	sck->slot = -1;
-	while (!ListaSocks.socket[ListaSocks.tope])
-		ListaSocks.tope--;
-	ListaSocks.abiertos--;
-}
-/*
- * sockopen
- * Abre una conexión
- * Devuelve el puntero al socket abierto
- */
-Sock *sockopen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), int add)
-{
-	Sock *sck;
-	struct in_addr *res;
-	if (add && ListaSocks.abiertos == MAXSOCKS)
-		return NULL;
-	da_Malloc(sck, Sock);
-	SockDesc(sck);
-#ifdef USA_SSL
-	if (puerto < 0) /* es un puerto ssl */
-	{
-		puerto = puerto * -1;
-		sck->opts |= OPT_SSL;
-	}
-#endif
-	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-		return NULL;
-	sck->server.sin_family = AF_INET;
-	sck->server.sin_port = htons((u_short)puerto);
-	if ((res = resolv(host)))
-		sck->server.sin_addr = *res;
-	sck->host = strdup(host);
-	SockConn(sck);
-	if (sockblock(sck->pres) == -1)
-		return NULL;
-#ifdef _WIN32
-	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) == -1 &&
-		WSAGetLastError() != WSAEINPROGRESS &&
-		WSAGetLastError() != WSAEWOULDBLOCK)
-#else
-	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) < 0 && errno != EINPROGRESS)
-#endif			
-			return NULL;
-	da_Malloc(sck->recvQ, DBuf);
-	da_Malloc(sck->sendQ, DBuf);
-	sck->openfunc = openfunc;
-	sck->readfunc = readfunc;
-	sck->writefunc = writefunc;
-	sck->closefunc = closefunc;
-	sck->puerto = puerto;
-#ifdef DEBUG
-	Debug("Abriendo conexion con %s:%i (%i) %s", host, puerto, sck->pres, EsSSL(sck) ? "[SSL]" : "");
-#endif
-	if (add)
-		inserta_sock(sck);
-	return sck;
-}
-Sock *socklisten(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
-{
-	Sock *sck;
-	int i;
-	int ad[4];
-	char ipname[20], *name = "*";
-	for (i = 0; i < listenS; i++)
-	{
-		if (listens[i] == puerto)
-			return NULL;
-	}
-	if (ListaSocks.abiertos == MAXSOCKS)
-		return NULL;
-	ad[0] = ad[1] = ad[2] = ad[3] = 0;
-	(void)sscanf(name, "%d.%d.%d.%d", &ad[0], &ad[1], &ad[2], &ad[3]);
-	(void)sprintf_irc(ipname, "%d.%d.%d.%d", ad[0], ad[1], ad[2], ad[3]);
-	da_Malloc(sck, Sock);
-	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-		return NULL;
-	sck->server.sin_family = AF_INET;
-	sck->server.sin_addr.s_addr = inet_addr(ipname);
-	sck->server.sin_port = htons((u_short)puerto);
-	sck->puerto = puerto;
-	sck->host = strdup("127.0.0.1");
-	if (bind(sck->pres, (struct sockaddr *)&sck->server,
-		    sizeof(sck->server)) == -1)
-		return NULL;
-	SockList(sck);
-	if (sockblock(sck->pres) == -1)
-		return NULL;
-#ifdef DEBUG
-	Debug("Escuchando puerto %i (%i)", puerto, sck->pres);
-#endif
-	da_Malloc(sck->recvQ, DBuf);
-	da_Malloc(sck->sendQ, DBuf);
-	sck->openfunc = openfunc;
-	sck->readfunc = readfunc;
-	sck->writefunc = writefunc;
-	sck->closefunc = closefunc;
-	listen(sck->pres, 5);
-	listens[listenS++] = puerto;
-	inserta_sock(sck);
-	return sck;
-}
-Sock *sockaccept(Sock *list, int pres)
-{
-	Sock *sck;
-	struct sockaddr_in addr;
-	struct in_addr *res;
-	char *host;
-	int len = sizeof(struct sockaddr);
-	if (getpeername(pres, (struct sockaddr *)&addr, &len) == -1)
-	{
-		CLOSE_SOCK(pres);
-		return NULL;
-	}
-	da_Malloc(sck, Sock);
-	sck->pres = pres;
-	sck->server.sin_family = AF_INET;
-	sck->server.sin_port = list->server.sin_port;
-	host = inet_ntoa(addr.sin_addr);
-	if ((res = resolv(host)))
-		sck->server.sin_addr = *res;
-	sck->host = strdup(host);
-	sck->puerto = list->puerto;
-	if (sockblock(sck->pres) == -1)
-		return NULL;
-	da_Malloc(sck->recvQ, DBuf);
-	da_Malloc(sck->sendQ, DBuf);
-	sck->openfunc = list->openfunc;
-	sck->readfunc = list->readfunc;
-	sck->writefunc = list->writefunc;
-	sck->closefunc = list->closefunc;
-	inserta_sock(sck);
-#ifdef USA_SSL
-	if (EsSSL(list))
-	{
-		SetSSLAcceptHandshake(sck);
-		if (!(sck->ssl = SSL_new(ctx_server)))
-		{
-			sockclose(sck, LOCAL);
-			return NULL;
-		}
-		sck->opts |= OPT_SSL;
-		SSL_set_fd(sck->ssl, pres);
-		SSL_set_nonblocking(sck->ssl);
-		if (!ircd_SSL_accept(sck, pres)) 
-		{
-			SSL_set_shutdown(sck->ssl, SSL_RECEIVED_SHUTDOWN);
-			SSL_smart_shutdown(sck->ssl);
-			SSL_free(sck->ssl);
-			sockclose(sck, LOCAL);
-			return NULL;
-		}
-	}
-	else
-#endif
-	completa_conexion(sck);
-	return sck;
-}
-void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
-{
-	char buf[BUFSIZE], *msg;
-	if (!sck)
-		return;
-	msg = buf;
-	vsprintf_irc(buf, formato, vl);
-#ifndef DEBUG
-	Debug("[Enviando: %s]", buf);
-#endif
-	if (opts & OPT_CR)
-		strcat(buf, "\r");
-	if (opts & OPT_LF)
-		strcat(buf, "\n");
-	encola(sck->sendQ, msg, 0); /* de momento siempre son cadenas */
-}
-void sockwrite(Sock *sck, int opts, char *formato, ...)
-{
-	va_list vl;
-	va_start(vl, formato);
-	sockwritev(sck, opts, formato, vl);
-	va_end(vl);
-}
-void sockclose(Sock *sck, char closef)
-{
-	if (!sck)
-		return;
-	if (closef == LOCAL)
-		envia_cola(sck); /* enviamos toda su cola */
-	if (EsList(sck))
-	{
-		int i;
-		for (i = 0; i < listenS; i++)
-		{
-			if (listens[i] == sck->puerto)
-			{
-				for (; i < listenS; i++)
-					listens[i] = listens[i+1];
-				listenS--;
-				break;
-			}
-		}
-	}
-	SockCerr(sck);
-#ifdef DEBUG
-	Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
-#endif
-	CLOSE_SOCK(sck->pres);
-#ifdef USA_SSL
-	if (EsSSL(sck) && sck->ssl) 
-	{
-		SSL_set_shutdown((SSL *)sck->ssl, SSL_RECEIVED_SHUTDOWN);
-		SSL_smart_shutdown((SSL *)sck->ssl);
-		SSL_free((SSL *)sck->ssl);
-		sck->ssl = NULL;
-	}
-#endif
-	if (sck->closefunc)
-		sck->closefunc(sck, closef ? NULL : "LOCAL");
-	bzero(bufr, BUFSIZE+1);
-	borra_sock(sck);
-	ircfree(sck->recvQ);
-	ircfree(sck->sendQ);
-	ircfree(sck->host);
-	Free(sck);
-}
-void cierra_socks()
-{
-	int i;
-	for (i = 0; i < ListaSocks.tope; i++)
-		sockclose(ListaSocks.socket[i], LOCAL);
-}
-void encola(DBuf *bufc, char *str, int bytes)
-{
-	int copiados, len = bytes ? bytes : strlen(str);
-	//Debug("Len %i (%i %i %X)",len,bufc->len,bufc->wslot ? bufc->wslot->len : 0,bufc->wslot);
-	if (!bufc->slots)
-	{
-		da_Malloc(bufc->wslot, DbufData);
-		bufc->rslot = bufc->wslot;
-		bufc->rchar = &bufc->rslot->data[0];
-		bufc->wchar = &bufc->wslot->data[0];
-		//Debug("Abriendo slot 0");
-		bufc->slots++;
-	}
-	do
-	{
-		copiados = MIN(len, (int)(sizeof(bufc->wslot->data) - bufc->wslot->len));
-		//Debug("Copiados %i",copiados);
-		memcpy(bufc->wchar, str, copiados);
-		str += copiados;
-		bufc->wchar += copiados;
-		len -= copiados;
-		bufc->wslot->len += copiados;
-		bufc->len += copiados;
-		if (bufc->wslot->len == sizeof(bufc->wslot->data)) /* está lleno, abrimos otro */
-		{
-			DbufData *aux;
-			da_Malloc(aux, DbufData);
-			aux->prev = bufc->wslot;
-			bufc->wslot->sig = aux;
-			bufc->wslot = aux;
-			bufc->wchar = &bufc->wslot->data[0];
-			//Debug("Abriendo slot %i", bufc->slots);
-			bufc->slots++;
-		}
-	}while (len > 0);
-}	
-int desencola(DBuf *bufc, char *buf, int bytes, int *len)
-{
-	/* bytes contiene el máximo que podemos copiar */
-	DbufData *aux;
-	int curpos = 0, copiados;
-	//Debug("Dlen %i",bytes);
-	if (!bufc->slots)
-		return 0;
-	do
-	{
-		aux = bufc->rslot->sig;
-		copiados = MIN((int)bufc->rslot->len, bytes - curpos);
-		//Debug("DCopiados %i %p %p",copiados, bufc->rchar,&bufc->rslot->data[0]);
-		memcpy(buf + curpos, bufc->rchar, copiados);
-		curpos += copiados;
-		bufc->len -= copiados;
-		bufc->rslot->len -= copiados;
-		if (bufc->rslot->len <= 0) /* lo podemos copiar todo */
-		{
-			Free(bufc->rslot);
-			//Debug("Adios %X %X", bufc->rslot,aux);
-			if (!(bufc->rslot = aux))
-				break;
-			bufc->rchar = &aux->data[0]; /* al siguiente slot */
-			bufc->slots--;
-		}
-		else
-			bufc->rchar += copiados;
-	}while(curpos < bytes);
-	if (bufc->len <= 0) /* todo el bufer copiado */
-	{
-		bufc->len = 0;
-		bufc->wslot = bufc->rslot = NULL;
-		bufc->slots = 0;
-	}
-	//Debug("Liberando %i %i",bufc->len,curpos);
-	*len = MIN(bytes, curpos);
-	return bufc->len;
-}
-void envia_cola(Sock *sck)
-{
-	char *msg;
-	int len = 0;
-	if (sck->sendQ && sck->sendQ->len > 0)
-	{
-		int quedan;
-		msg = bufr;
-		do 
-		{
-			quedan = desencola(sck->sendQ, msg, sizeof(bufr), &len);
-			if (BadPtr(msg))
-				return;
-			if (!len)
-				len = strlen(msg);
-#ifdef USA_ZLIB
-			if (EsZlib(sck))
-				msg = comprime(sck, msg, &len);
-#endif
-#ifdef USA_SSL
-			if (EsSSL(sck))
-				ircd_SSL_write(sck, msg, len);
-			else
-#endif
-			WRITE_SOCK(sck->pres, msg, len);
-			len = 0;
-			if (sck->writefunc)
-				sck->writefunc(sck, msg);
-			bzero(msg, sizeof(bufr)); /* hay que vaciarlo!! */
-		}while(quedan);
-	}
-}
-int lee_mensaje(Sock *sck)
-{
-	char lee[BUFSIZE], *msg;
-	int len = 0;
-	if (EsCerr(sck))
-		return -3;
-	SET_ERRNO(0);
-	msg = lee;
-	bzero(lee, BUFSIZE);
-#ifdef USA_SSL
-	if (EsSSL(sck))
-		len = ircd_SSL_read(sck, lee, BUFSIZE);
-	else
-#endif
-	len = READ_SOCK(sck->pres, lee, BUFSIZE);
-	if (len < 0 && ERRNO == P_EWOULDBLOCK)
-		return 1;
-#ifdef USA_ZLIB
-	if (EsZlib(sck))
-		msg = descomprime(sck, msg, &len);
-#endif
-	if (len > 0)
-		encola(sck->recvQ, msg, len);
-	return len;
-}
-void crea_mensaje(Sock *sck, int leng)
-{
-	char *recv, *ini, *ul;
-	int quedan, off, len = 0;
-	recv = bufr;
-	off = 0;
-	do
-	{
-		quedan = desencola(sck->recvQ, recv + off, BUFSIZE - off, &len);
-		recv[len] = '\0';
-		//Debug("*** recv %i %i",quedan,len);
-		for (ini = ul = recv; !BadPtr(ul); ul++)
-		{
-			if (*ul == '\n')
-			{
-				*ul = '\0';
-				if (*(ul - 1) == '\r')
-					*(ul - 1) = '\0';
-#ifndef DEBUG
-				Debug("[Parseando: %s]", ini);
-#endif
-				if (sck->readfunc)
-					sck->readfunc(sck, ini);
-				if (!sck || EsCerr(sck))
-					return; /* hemos cerrado el socket */
-				ini = ul + 1;
-			}
-		}
-		off = 0;
-		if (!BadPtr(ini))
-		{
-			if (quedan)
-			{
-				memcpy(recv, ini, ul - ini);
-				off += ul - ini;
-			}
-			else
-				encola(sck->recvQ, ini, 0);
-			//Debug("Ini %s %i", ini, off);
-		}
-		bzero(recv + off, sizeof(bufr) - off);
-	}while (quedan);
-}
-int completa_conexion(Sock *sck)
-{
-	SockOk(sck);
-#ifdef DEBUG
-	Debug("Conexion establecida con %s:%i (%i)", sck->host, sck->puerto, sck->pres);
-#endif
-	if (sck->openfunc)
-		sck->openfunc(sck, NULL);
-	ircd_log(LOG_CONN, "Conexión establecida con %s:%i", sck->host, sck->puerto);
-	return 0;
-}
-int lee_socks() /* devuelve los bytes leídos */
-{
-	int i, len, sels, lee = 0;
-	fd_set read_set, write_set, excpt_set;
-	struct timeval wait;
-	Sock *sck;
-	FD_ZERO(&read_set);
-	FD_ZERO(&write_set);
-	FD_ZERO(&excpt_set);
-	for (i = ListaSocks.tope; i >= 0; i--)
-	{
-		if (!(sck = ListaSocks.socket[i]))
-			continue;
-		if (sck->pres >= 0 && !EsCerr(sck))
-		{
-			FD_SET(sck->pres, &read_set);
-			FD_SET(sck->pres, &excpt_set);
-			
-			if (sck->sendQ->len || EsConn(sck)
-#ifdef USA_ZLIB
-			|| (EsZlib(sck) && sck->zlib->outcount > 0)
-#endif
-			)
-				FD_SET(sck->pres, &write_set);
-		}
-	}
-	wait.tv_sec = 1;
-	wait.tv_usec = 0;
-	sels = select(MAXSOCKS + 1, &read_set, &write_set, &excpt_set, &wait);
-	if (sels == -1)
-	{
-		if ((ERRNO == P_EINTR) || (ERRNO == P_ENOTSOCK))
-			return -1;
-#ifdef _WIN32
-		Sleep(1000);
-#else
-		sleep(1);
-#endif
-	}
-	for (i = ListaSocks.tope; i >= 0; i--)
-	{
-		if ((SockActual = ListaSocks.socket[i]) && FD_ISSET(SockActual->pres, &read_set) && EsList(SockActual))
-		{
-			int pres;
-			FD_CLR(SockActual->pres, &read_set);
-			sels--;
-			if ((pres = accept(SockActual->pres, NULL, NULL)) >= 0)
-				sockaccept(SockActual, pres);
-		}
-	}
-	for (i = ListaSocks.tope; i >= 0; i--)
-	{
-		if (!sels)
-			break;
-		if (!(SockActual = ListaSocks.socket[i]))
-			continue;
-		if (FD_ISSET(SockActual->pres, &write_set))
-		{
-			int err = 0;
-			if (EsConn(SockActual))
-			{
-#ifdef USA_SSL
-				if (EsSSL(SockActual))
-					err = ircd_SSL_client_handshake(SockActual);
-				else
-#endif
-					err = completa_conexion(SockActual);
-
-			}
-			else
-				envia_cola(SockActual);
-			if (EsCerr(SockActual) || err)
-			{
-				if (FD_ISSET(SockActual->pres, &read_set))
-				{
-					sels--;
-					FD_CLR(SockActual->pres, &read_set);
-				}
-				sockclose(SockActual, REMOTO);
-				continue;
-			}
-		}
-		if (FD_ISSET(SockActual->pres, &read_set))
-		{
-			len = 1;
-#ifdef USA_SSL
-			if (!(IsSSLAcceptHandshake(SockActual) || IsSSLConnectHandshake(SockActual)))
-#endif
-			len = lee_mensaje(SockActual); /* leemos el mensaje */
-#ifdef USA_SSL
-			if (SockActual->ssl && (IsSSLAcceptHandshake(SockActual) || IsSSLConnectHandshake(SockActual)))
-			{
-				if (!SSL_is_init_finished(SockActual->ssl))
-				{
-					if (EsCerr(SockActual) || IsSSLAcceptHandshake(SockActual) ? !ircd_SSL_accept(SockActual, SockActual->pres) : ircd_SSL_connect(SockActual) < 0)
-						len = -2;
-				}
-				else
-					completa_conexion(SockActual);
-			}
-#endif
-			if (len <= 0)
-			{
-				sels--;
-				FD_CLR(SockActual->pres, &read_set);
-				if (!EsCerr(SockActual))
-					sockclose(SockActual, REMOTO);
-				continue;
-			}
-			lee += len;
-			crea_mensaje(SockActual, len);
-			sels--;
-		}
-		if (FD_ISSET(SockActual->pres, &excpt_set))
-		{
-			sels--;
-			FD_CLR(SockActual->pres, &excpt_set);
-			sockclose(SockActual, REMOTO);
-			continue;
-		}
-	}
-	return lee;
 }
 void inicia_procesos()
 {
@@ -846,6 +264,8 @@ void refresca()
 		senyal(SIGN_SYNCH);
 		senyal(SIGN_EOS);
 	}
+	else
+		distribuye_me(&me, &SockIrcd);
 	return;
 }
 void reinicia()
@@ -877,7 +297,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
 #ifdef UDB
-	fprintf(stderr, "\t\t+UDB 3.0\n");
+	fprintf(stderr, "\t\t+UDB 3.0.1\n");
 #endif
 #ifdef USA_ZLIB
 	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
@@ -911,12 +331,24 @@ int main(int argc, char *argv[])
 		return 1;
 	distribuye_conf(&config);
 	carga_modulos();
+	Info("bleeeeeee %lu", time(0));
+	Info("Blaaaaaa");
+	Info("bleeeeeee %lu", time(0));
+	Info("Blaaaaaa");
+	Info("bleeeeeee %lu", time(0));
+	Info("Blaaaaaa");
+	Info("bleeeeeee %lu", time(0));
+	Info("Blaaaaaa");
+	Info("blee eeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %lu", time(0));
+	Info("Blaaaaaa");
 	if ((val = carga_mysql()) <= 0)
 	{
 		if (!val) /* no ha emitido mensaje */
 		{
 			char pq[256];
+			pthread_mutex_lock(&mutex);
 			sprintf_irc(pq, "No se puede iniciar MySQL\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+			pthread_mutex_unlock(&mutex);
 #ifdef _WIN32			
 			MessageBox(hwMain, pq, "MySQL", MB_OK|MB_ICONERROR);
 #else
@@ -957,6 +389,7 @@ int main(int argc, char *argv[])
 #ifdef USA_SSL
 	init_ssl();
 #endif
+	pthread_mutex_init(&mutex, NULL);
 	for (i = 0; i < UMAX; i++)
 	{
 		uTab[i].item = NULL;
@@ -1020,32 +453,39 @@ typedef struct
 }Host;
 void dominum(Host *aux)
 {
-	if (EsIp(aux->ip))
+	struct hostent *he;
+	int addr;
+	addr = inet_addr(aux->ip);
+	if ((he = gethostbyaddr((char *)&addr, 4, AF_INET)))
 	{
-		struct hostent *he;
-		int addr;
-		addr = inet_addr(aux->ip);
-		if ((he = gethostbyaddr((char *)&addr, 4, AF_INET)))
-			*(aux->destino) = strdup(he->h_name);
+		ircstrdup(aux->destino, he->h_name);
+		inserta_cache(CACHE_HOST, aux->ip, 86400, he->h_name);
 	}
-	else /* es host */
-		*(aux->destino) = aux->ip;
+	else
+		ircfree(*aux->destino);
+	Free(aux->ip);
 	Free(aux);
+	pthread_exit(NULL);
 }
 void resuelve_host(char **destino, char *ip)
 {
-	Host *aux;
-#ifndef _WIN32
-	pthread_t id;
-#endif
-	da_Malloc(aux, Host);
-	aux->destino = destino;
-	aux->ip = ip;
-#ifdef _WIN32
-	_beginthread(dominum, 0, aux);
-#else
-	pthread_create(&id, NULL, (void *)dominum, (void *)aux);
-#endif
+	char *cache;
+	if (EsIp(ip))
+	{
+		if ((cache = coge_cache(CACHE_HOST, ip)))
+			*destino = strdup(cache);
+		else
+		{
+			pthread_t id;
+			Host *aux;
+			da_Malloc(aux, Host);
+			aux->destino = destino;
+			aux->ip = strdup(ip);
+			pthread_create(&id, NULL, (void *)dominum, (void *)aux);
+		}
+	}
+	else
+		*destino = strdup(ip);
 }
 char *decode_ip(char *buf)
 {
@@ -1091,6 +531,7 @@ int randomiza(int ini, int fin)
 char *random_ex(char *patron)
 {
 	char *ptr;
+	static char buf[BUFSIZE];
 	int len;
 	const char *upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", *lower = "abcdefghijklmnopqrstuvwxyz";
 	len = strlen(patron);
@@ -1131,11 +572,22 @@ void inserta_senyal(short senyal, int (*func)())
 		if (aux->func == func)
 			return;
 	}
-	sign = (Senyal *)Malloc(sizeof(Senyal));
+	da_Malloc(sign, Senyal);
 	sign->senyal = senyal;
 	sign->func = func;
-	sign->sig = senyals[senyal];
-	senyals[senyal] = sign;
+	if (!senyals[senyal])
+		senyals[senyal] = sign;
+	else
+	{
+		for (aux = senyals[senyal]; aux; aux = aux->sig)
+		{
+			if (!aux->sig)
+			{
+				aux->sig = sign;
+				break;
+			}
+		}
+	}
 }
 int borra_senyal(short senyal, int (*func)())
 {
@@ -1459,7 +911,7 @@ void fecho(char err, char *error, ...)
 			opts |= MB_ICONINFORMATION;
 			break;
 	}
-	MessageBox(NULL, buf, "Colossus", opts);
+	MessageBox(hwMain, buf, "Colossus", opts);
 #else
 	switch (err)
 	{
@@ -1486,13 +938,70 @@ int carga_cache()
   			"`item` varchar(255) default NULL, "
   			"`valor` varchar(255) default NULL, "
   			"`hora` int(11) NOT NULL default '0', "
+  			"`tipo` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla caché';", PREFIJO, MYSQL_CACHE))
 				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MYSQL_CACHE);
 	}
+	else
+		_mysql_query("ALTER TABLE `%s%s` ADD `tipo` VARCHAR(255) default NULL;", PREFIJO, MYSQL_CACHE);
 	_mysql_carga_tablas();
+	proc(dropacache);
 	return 1;
 }
+char *coge_cache(char *tipo, char *item)
+{
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+	char *tipo_c, *item_c;
+	tipo_c = _mysql_escapa(tipo);
+	item_c = _mysql_escapa(item);
+	res = _mysql_query("SELECT `valor` FROM %s%s WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, item_c, tipo_c);
+	Free(item_c);
+	Free(tipo_c);
+	if (res)
+	{
+		row = mysql_fetch_row(res);
+		mysql_free_result(res);
+		return BadPtr(row[0]) ? NULL : row[0];
+	}
+	return NULL;
+}
+void inserta_cache(char *tipo, char *item, int off, char *valor, ...)
+{
+	char *tipo_c, *item_c, *valor_c = NULL, buf[BUFSIZE];
+	va_list vl;
+	buf[0] = '\0';
+	if (!BadPtr(valor))
+	{
+		va_start(vl, valor);
+		vsprintf_irc(buf, valor, vl);
+		va_end(vl);
+		valor_c = _mysql_escapa(buf);
+	}
+	tipo_c = _mysql_escapa(tipo);
+	item_c = _mysql_escapa(item);
+	if (coge_cache(tipo, item))
+		_mysql_query("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, time(0), item_c, tipo_c);
+	else
+		_mysql_query("INSERT INTO %s%s (item,valor,hora,tipo) values ('%s','%s',%lu,'%s')", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c);
+	Free(item_c);
+	Free(tipo_c);
+	ircfree(valor_c);
+}
+int dropacache(Proc *proc)
+{
+	u_long ts = time(0);
+	if ((u_long)proc->time + 1800 < ts) /* lo hacemos cada 30 mins */
+	{
+		proc->proc = 0;
+		proc->time = ts;
+		return 1;
+	}
+	_mysql_query("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
+	return 0;
+}
+
 /* funciones extraidas del unreal */
 time_t getfilemodtime(char *filename)
 {
@@ -1500,8 +1009,7 @@ time_t getfilemodtime(char *filename)
 	FILETIME cTime;
 	SYSTEMTIME sTime, lTime;
 	ULARGE_INTEGER fullTime;
-	HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING,
-				  FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return 0;
 	if (!GetFileTime(hFile, NULL, NULL, &cTime))
@@ -1527,14 +1035,12 @@ void setfilemodtime(char *filename, time_t mtime)
 #ifdef _WIN32
 	FILETIME mTime;
 	LONGLONG llValue;
-	HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL, OPEN_EXISTING,
-				  FILE_ATTRIBUTE_NORMAL, NULL);
+	HANDLE hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return;
 	llValue = Int32x32To64(mtime, 10000000) + 116444736000000000;
 	mTime.dwLowDateTime = (long)llValue;
 	mTime.dwHighDateTime = (DWORD)llValue >> 32;
-	
 	SetFileTime(hFile, &mTime, &mTime, &mTime);
 	CloseHandle(hFile);
 #else
@@ -1717,44 +1223,6 @@ int pregunta(char *preg)
 	return 0;
 }
 #endif
-#ifdef _WIN32
-#include "win32/resource.h"
-extern HWND hwConfError;
-extern HINSTANCE hInst;
-extern LRESULT CALLBACK ConfErrorDLG(HWND, UINT, WPARAM, LPARAM);
-void conferror(char *formato, ...)
-{
-	char buf[BUFSIZE], *texto, actual[BUFSIZE];
-	int len;
-	va_list vl;
-	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
-	va_end(vl);
-	strcat(buf, "\r\n");
-	if (!hwConfError)
-	{
-		hwConfError = CreateDialog(hInst, "CONFERROR", 0, (DLGPROC)ConfErrorDLG);
-		ShowWindow(hwConfError, SW_SHOW);
-		texto = (char *)Malloc(sizeof(char) * (strlen(buf) + 1));
-		strcpy(texto, buf);
-	}
-	else
-	{
-		len = GetDlgItemText(hwConfError, EDT_ERR, actual, BUFSIZE);
-		texto = (char *)Malloc(sizeof(char) * (len + strlen(buf) + 1));
-		strcpy(texto, actual);
-		strcat(texto, buf);
-	}
-	SetDlgItemText(hwConfError, EDT_ERR, texto);
-	Free(texto);
-}
-void ChkBtCon(int val, int block)
-{
-	SetDlgItemText(hwMain, BT_CON, val ? "Desconectar" : "Conectar");
-	CheckDlgButton(hwMain, BT_CON, val && !block ? BST_CHECKED : BST_UNCHECKED);
-	EnableWindow(GetDlgItem(hwMain, BT_CON), block ? FALSE : TRUE);
-}
-#endif
 
 static u_long crc32_tab[] = {
       0x00000000L, 0x77073096L, 0xee0e612cL, 0x990951baL, 0x076dc419L,
@@ -1935,4 +1403,15 @@ char *cifranick(char *nickname, char *pass)
 	Free(nick);
 	Free(tmpnick);
 	return clave;
+}
+char *chrcat(char *dest, char car)
+{
+	char *c;
+	if ((c = strchr(dest, '\0')))
+	{
+		*c = car;
+		*(c + 1) = '\0';
+		return dest;
+	}
+	return NULL;
 }
