@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.6 2004-09-17 19:09:46 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.7 2004-09-17 19:12:48 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -363,7 +363,7 @@ int getmon(time_t tiempo)
 void actualiza_stats(char tipo)
 {
 	char *timet = NULL, *max = NULL, *hoyt = NULL, *semt = NULL, *mest = NULL, *hoy = NULL, *sem = NULL, *mes = NULL;
-	struct stsno *ts;
+	struct stsno *ts = NULL;
 	switch (tipo)
 	{
 		case STSUSERS:
@@ -512,7 +512,7 @@ IRCFUNC(statserv_local_users)
 IRCFUNC(statserv_server)
 {
 	Cliente *al;
-	char *serv;
+	char *serv = NULL;
 	if (!cl)
 		return 0; /* algo pasa! */
 	if (linkado == cl)
