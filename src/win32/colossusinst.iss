@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.2 2004-11-05 19:59:38 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -38,7 +38,7 @@ Source: "..\..\libmysql.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mx.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
-Source: "..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
 #ifdef USA_SSL
 Source: "c:\openssl\bin\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\openssl\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion

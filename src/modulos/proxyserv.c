@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.7 2004-10-23 22:42:22 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.8 2004-11-05 19:59:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,7 +9,7 @@
 #ifdef UDB
 #include "bdd.h"
 #endif
-#include "proxyserv.h"
+#include "modulos/proxyserv.h"
 
 ProxyServ *proxyserv = NULL;
 

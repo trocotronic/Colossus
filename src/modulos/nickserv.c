@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.9 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.10 2004-11-05 19:59:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,8 +10,8 @@
 #ifdef UDB
 #include "bdd.h"
 #endif
-#include "nickserv.h"
-#include "chanserv.h"
+#include "modulos/nickserv.h"
+#include "modulos/chanserv.h"
 
 NickServ *nickserv = NULL;
 

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ * $Id: proxyserv.h,v 1.1 2004-11-05 19:59:39 Trocotronic Exp $ 
  */
 
 #define XS_MAX_COMS 256

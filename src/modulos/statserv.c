@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.8 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.9 2004-11-05 19:59:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -13,7 +13,7 @@
 #include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
-#include "statserv.h"
+#include "modulos/statserv.h"
 
 StatServ *statserv = NULL;
 char eos, *tempsrc = NULL;

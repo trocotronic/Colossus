@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.10 2004-10-10 09:56:40 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.11 2004-11-05 19:59:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,8 +10,8 @@
 #ifdef UDB
 #include "bdd.h"
 #endif
-#include "chanserv.h"
-#include "nickserv.h"
+#include "modulos/chanserv.h"
+#include "modulos/nickserv.h"
 
 ChanServ *chanserv = NULL;
 Hash csregs[UMAX];
@@ -1403,7 +1403,9 @@ BOTFUNC(chanserv_set)
 		if (params > 3)
 		{
 			response(cl, chanserv->nick, "TOPIC cambiado.");
+#ifndef UDB
 			irctopic(chanserv->nick, busca_canal(param[1], NULL), topic);
+#endif
 		}
 		else
 			response(cl, chanserv->nick, "TOPIC desactivado.");

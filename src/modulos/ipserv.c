@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.8 2004-10-23 22:39:15 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.9 2004-11-05 19:59:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,8 +7,8 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "bdd.h"
-#include "ipserv.h"
-#include "nickserv.h"
+#include "modulos/ipserv.h"
+#include "modulos/nickserv.h"
 
 IpServ *ipserv = NULL;
 

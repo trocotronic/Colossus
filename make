@@ -1,7 +1,7 @@
-## $Id: make,v 1.6 2004-10-10 09:55:50 Trocotronic Exp $
+## $Id: make,v 1.7 2004-11-05 19:59:34 Trocotronic Exp $
 
-CC=icl
-LINK=xilink
+CC=cl
+LINK=link
 RC=rc
 DEBUG=1
 
@@ -25,7 +25,7 @@ OPENSSL_LIB_DIR="c:\openssl\lib"
 ###### FIN SSL ######
 
 !IFDEF DEBUG
-DBGCFLAG=/MD /G5 /Zi /W3 /D _USE_INTEL_COMPILER
+DBGCFLAG=/MD /G5 /Zi /W3
 DBGLFLAG=/debug
 MODDBGCFLAG=/LDd $(DBGCFLAG)
 !ELSE
@@ -158,32 +158,37 @@ CUSTOMMODULE: src/modulos/$(MODULEFILE).c
 	$(CC) $(MODCFLAGS) src/modulos/$(MODULEFILE).c $(MODLFLAGS) $(PARAMS) /OUT:src/modulos/$(MODULEFILE).dlk
        
 MODULES: $(BOT_DLL)
+	-@copy src\modulos\chanserv.dll modulos\chanserv.dll
+	-@copy src\modulos\ipserv.dll modulos\ipserv.dll
+	-@copy src\modulos\memoserv.dll modulos\memoserv.dll
+	-@copy src\modulos\nickserv.dll modulos\nickserv.dll
+	-@copy src\modulos\operserv.dll modulos\operserv.dll
         
-src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES) ./include/chanserv.h
+src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)
         
-src/modulos/nickserv.dll: src/modulos/nickserv.c $(INCLUDES) ./include/chanserv.h ./include/nickserv.h
+src/modulos/nickserv.dll: src/modulos/nickserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/nickserv.c $(MODLFLAGS) ws2_32.lib src/modulos/chanserv.lib  
         
-src/modulos/operserv.dll: src/modulos/operserv.c $(INCLUDES) ./include/chanserv.h ./include/memoserv.h ./include/operserv.h
+src/modulos/operserv.dll: src/modulos/operserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/operserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/operserv.c $(MODLFLAGS) src/modulos/memoserv.lib src/modulos/chanserv.lib
         
-src/modulos/memoserv.dll: src/modulos/memoserv.c $(INCLUDES) ./include/chanserv.h ./include/memoserv.h
+src/modulos/memoserv.dll: src/modulos/memoserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/memoserv.c $(MODLFLAGS) src/modulos/chanserv.lib
 	
-src/modulos/ipserv.dll: src/modulos/ipserv.c $(INCLUDES) ./include/ipserv.h
+src/modulos/ipserv.dll: src/modulos/ipserv.c $(INCLUDES) ./include/modulos/ipserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/ipserv.c $(MODLFLAGS)	
 		      
-src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES) ./include/proxyserv.h
+src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES) ./include/modulos/proxyserv.h
 	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS)
 
-src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/statserv.h
+src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
 	
 src/modulos/mx.dll: src/modulos/mx.c $(INCLUDES)
 	$(CC) $(MODDBGCFLAG) /Fesrc/modulos/ /Fosrc/modulos/ /nologo src/modulos/mx.c /link dnsapi.lib
 	-@copy src\modulos\mx.dll mx.dll
 	
-src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES) ./include/chanserv.h ./include/linkserv.h
+src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/linkserv.h
 	$(CC) $(MODCFLAGS) src/modulos/linkserv.c $(MODLFLAGS) src/modulos/chanserv.lib
 	

@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.11 2004-10-31 17:45:11 Trocotronic Exp $
+ * $Id: cambios,v 1.12 2004-11-05 19:59:34 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -190,3 +190,5 @@
 221004148 - Se cambia el sistema de bloques en UDB3 para hacerlo genérico y modular.
 011104149 - Últimos retoques.
 011104150 - *** Quinta release pública: 1.0 ***
+021104151 - Se mejora el comando BLOCKS de OperServ para un uso más claro.
+041104152 - Se cambian algunas cabeceras.

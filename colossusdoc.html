@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.4 2004-10-10 09:56:15 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.5 2004-11-05 19:59:34 Trocotronic Exp $ -->
 
 <body>
 
@@ -142,13 +142,13 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	host nombre.del.servidor;
 	info &quot;informaci&oacute;n adicional&quot;;
 	numeric numerico del servidor;<br>	puerto_escucha puerto;
-  compresion nivel;
-  cifrados metodos;
+	compresion nivel;
+	cifrados metodos;
 };</pre>
   <p>Los valores se deducen f&aacute;cilmente. La directriz <b>addr</b> indica a qu&eacute; ip debe conectar, siendo<b> puerto</b> a qu&eacute; puerto debe hacerlo. El bloque <b>password { }</b> indica cu&aacute;les son las contrase&ntilde;as de conexi&oacute;n remota y local, especificadas en el bloque <b>link { }</b> de la m&aacute;quina a la que se va a conectar. El <b>host</b> es el servidor visible, el que ver&aacute;n los usuarios y en el que estar&aacute;n albergados los robots de servicio. El <b>numeric</b> indica la identificaci&oacute;n del servidor. Debe ser un n&uacute;mero entre 0 y 255 (ambos inclu&iacute;dos) y <b>NO</b> debe estar repetido en la red. Es decir, ning&uacute;n otro servidor de la red deber&aacute; tener el mismo numeric. El <b>puerto_escucha</b> es opcional y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. La <b>compresion</b> es opcional e indica que el flujo de datos entre servidores debe hacerse con compresi&oacute;n de nivel especificado. Ambos extremos deben disponer de soporte ZLib y tener la misma compresi&oacute;n. Los <b>cifrados</b> es opcional y se&ntilde;alan qu&eacute; cifrados se disponen. Para tener una lista use 'openssl ciphers'. &Uacute;sese ':' para separar varios m&eacute;todos.</p>
   <p>Ejemplo:</p>
   <pre>server {<br>	addr 127.0.0.1;<br>	puerto 6667;<br>	password {<br>		local openaccess;<br>		remoto openaccess;<br>	};<br>	host Servicios.Colossus;<br>	info &quot;Servidor en C&quot;;<br>	numeric 1;<br>	puerto_escucha 6666;
-  compresion 9;
+	compresion 9;
 	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;<br>};</pre>
 <p>&nbsp;</p>
   <p><b><font size="4"><a name="smtp"></a>8.1.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>

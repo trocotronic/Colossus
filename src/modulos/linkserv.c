@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.6 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.7 2004-11-05 19:59:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,8 +9,8 @@
 #ifdef UDB
 #include "bdd.h"
 #endif
-#include "linkserv.h"
-#include "chanserv.h"
+#include "modulos/linkserv.h"
+#include "modulos/chanserv.h"
 
 LinkServ *linkserv = NULL;
 Links **links = NULL;

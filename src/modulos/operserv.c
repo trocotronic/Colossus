@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.7 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.8 2004-11-05 19:59:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,10 +9,10 @@
 #ifdef UDB
 #include "bdd.h"
 #endif
-#include "operserv.h"
-#include "nickserv.h"
-#include "chanserv.h"
-#include "memoserv.h"
+#include "modulos/operserv.h"
+#include "modulos/nickserv.h"
+#include "modulos/chanserv.h"
+#include "modulos/memoserv.h"
 
 OperServ *operserv = NULL;
 Noticia *gnoticia[MAXNOT];
@@ -611,7 +611,7 @@ BOTFUNC(operserv_blocks)
 			}
 			else
 			{
-				response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
+				response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}Q nick motivo");
 				return 1;
 			}
 			break;
@@ -621,6 +621,11 @@ BOTFUNC(operserv_blocks)
 		{
 			char *user, *host;
 			user = host = NULL;
+			if (*param[1] == '+' && params < 5)
+			{
+				response(cl, operserv->nick, OS_ERR_PARA, "BLOCKS {+|-}|Q|Z|s|G nick|user@host tiempo motivo");
+				return 1;
+			}
 			if (!strchr(param[2], '@'))
 			{
 				Cliente *al;
@@ -637,23 +642,17 @@ BOTFUNC(operserv_blocks)
 			}
 			else
 			{
-				user = strtok(param[2], "@");
+				strcpy(tokbuf, param[2]);
+				user = strtok(tokbuf, "@");
 				host = strtok(NULL, "@");
 			}
 			if (*param[1] == '+')
-			{
-				if (params < 5)
-				{
-					response(cl, operserv->nick, OS_ERR_PARA, "BLOCKS {+|-}|Q|Z|s|G nick|user@host tiempo motivo");
-					return 1;
-				}
 				irctkl(TKL_ADD, *(param[1] + 1), user, host, operserv->mascara, atoi(param[3]), implode(param, params, 4, -1));
-			}
 			else if (*param[1] == '-')
 				irctkl(TKL_DEL, *(param[1] + 1), user, host, operserv->mascara, 0, NULL);
 			else
 			{
-			 	response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
+			 	response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}|Q|Z|s|G nick|user@host [tiempo motivo]");
 				return 1;
 			}
 			break;

@@ -1,14 +1,14 @@
 /*
- * $Id: memoserv.c,v 1.8 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.9 2004-11-05 19:59:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
-#include "nickserv.h"
-#include "chanserv.h"
-#include "memoserv.h"
+#include "modulos/nickserv.h"
+#include "modulos/chanserv.h"
+#include "modulos/memoserv.h"
 
 MemoServ *memoserv = NULL;
 

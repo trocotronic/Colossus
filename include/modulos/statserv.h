@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.h,v 1.3 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: statserv.h,v 1.1 2004-11-05 19:59:39 Trocotronic Exp $ 
  */
 
 #define SS_MAX_COMS 256
