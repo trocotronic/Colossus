@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.9 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: main.c,v 1.10 2004-09-18 09:08:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -98,7 +98,7 @@ const char NTL_toupper_tab[] = {
        /* 'p'-'w' */    'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
        /* 'x'-x7f */    'X',    'Y',    'Z',    '[', '\x5c',    ']',    '^', '\x7f'
 };
-#ifdef USA_CONSOLA
+#ifndef _WIN32
 const char logo[] = {
 	32 , 32 , 95 , 95 , 95 , 95 , 95 , 32 , 32 , 32 , 32 , 32 , 32 , 95 , 10 ,
 	32 , 47 , 95 , 95 , 95 , 95 , 95 , 124 , 32 , 32 , 32 , 32 , 124 , 32 , 124 , 10 ,
@@ -845,6 +845,13 @@ int main(int argc, char *argv[])
 	int val, i;
 #ifndef _WIN32
 	struct rlimit corelim;
+	int i;
+	for (i = 0; logo[i] != 0; i++)
+		fprintf(stderr, "%c", logo[i]);
+	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION);
+#ifdef UDB
+	fprintf(stderr, "\n+UDB 3.0");
+#endif
 #endif
 	ListaSocks.abiertos = 0;
 	for (i = 0; i < MAXSOCKS; i++)
