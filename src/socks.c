@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.4 2005-02-20 17:38:40 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.5 2005-02-20 17:48:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -500,9 +500,8 @@ void crea_mensaje(Sock *sck, char *msg, int len)
 {
 	char *p = msg, *c;
 #ifdef USA_ZLIB
-	if (EsZip(sck))
+	if (EsZlib(sck))
 	{
-		zip = len;
 		sck->zlib->incount = 0;
 		sck->zlib->inbuf[0] = '\0';
 		p = descomprime(sck, msg, &len);

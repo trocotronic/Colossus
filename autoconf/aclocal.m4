@@ -92,7 +92,7 @@ AC_MSG_CHECKING(para zlib)
 	AC_MSG_RESULT(no encontrado)
 	AC_WARN(deshabilitando soporte zlib)
     else
-        IRCDLIBS="$IRCDLIBS -lz";
+        IRCDLIBS="$IRCDLIBS-lz ";
 	if test "$zlibdir" != "/usr" ; then
              LDFLAGS="$LDFLAGS -L$zlibdir/lib";
 	fi 
