@@ -1,14 +1,14 @@
 /*
- * $Id: ssl.c,v 1.2 2004-10-02 22:47:21 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.3 2004-10-31 17:41:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "ssl.h"
+#ifdef USA_SSL
 #include <string.h>
 #ifdef _WIN32
 #include <windows.h>
-
 #define IDC_PASS 1108
 extern HINSTANCE hInst;
 extern HWND hwMain;
@@ -443,3 +443,4 @@ static int fatal_ssl_error(int ssl_error, int where, Sock *sck)
 		SET_ERRNO(P_EIO);
 	return -1;
 }
+#endif

@@ -1,10 +1,10 @@
 /*
- * $Id: zlib.c,v 1.3 2004-10-02 22:47:21 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.4 2004-10-31 17:41:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "zlib.h"
-
+#ifdef USA_ZLIB
 #define ZIP_BUFFER_SIZE	ZIP_MAXIMUM + BUFSIZE
 #define UNZIP_BUFFER_SIZE	6 * ZIP_BUFFER_SIZE
 
@@ -97,3 +97,4 @@ char *descomprime(Sock *sck, char *mensaje, int *len)
 	*len = -1;
 	return NULL;
 }
+#endif
