@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.18 2004-12-31 12:27:52 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.19 2005-01-01 19:32:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -303,7 +303,7 @@ extern int b64_decode(char const *src, u_char *, size_t);
 extern int b64_encode(u_char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
 #define creditos() 															\
-	response(cl, bl, "\00312Colossus v%s - Trocotronic ©2004", COLOSSUS_VERSION);					\
+	response(cl, bl, "\00312Colossus v%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);					\
 	response(cl, bl, " ");													\
 	response(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");			\
 	response(cl, bl, "Si no es perfecto, ¿qué más da?");									\

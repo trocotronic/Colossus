@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.26 2004-12-31 19:25:49 Trocotronic Exp $ 
+ * $Id: main.c,v 1.27 2005-01-01 19:32:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -886,7 +886,7 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
 #endif
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
-	fprintf(stderr, "\t\t(c)2004\n");
+	fprintf(stderr, "\t\t(c)2004-2005\n");
 	fprintf(stderr, "\n");
 #endif
 	iniciado = time(0);
@@ -1635,9 +1635,9 @@ void parsea_comando(char *comando)
 	else if (!strcasecmp(comando, "VERSION"))
 	{
 #ifdef UDB
-		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2005\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
 #else
-		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2005\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
 #endif
 	}
 	else if (!strcasecmp(comando, "QUIT"))
