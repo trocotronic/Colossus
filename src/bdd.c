@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.16 2005-02-18 22:12:16 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.17 2005-02-19 19:51:27 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -17,7 +17,7 @@
 #include "bdd.h"
 #ifndef _WIN32
 #define O_BINARY 0x0
-#include <sys/mman.h>
+//#include <sys/mman.h>
 #endif
 Udb *nicks = NULL;
 Udb *chans = NULL;
