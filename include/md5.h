@@ -1,3 +1,4 @@
+/* $Id: md5.h,v 1.2 2004-09-11 15:49:52 Trocotronic Exp $ */
 /* MD5.H - header file for MD5C.C
  */
 

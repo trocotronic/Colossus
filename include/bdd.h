@@ -1,3 +1,7 @@
+/*
+ * $Id: bdd.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #else

@@ -1,3 +1,5 @@
+## $Id: make,v 1.2 2004-09-11 15:49:00 Trocotronic Exp $
+
 CC=cl
 LINK=link
 RC=rc
