@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.9 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.10 2004-09-26 21:05:30 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -85,20 +85,6 @@ struct _dbufdata
 	u_int len;
 	struct _dbufdata *sig, *prev;
 };
-#ifdef USA_ZLIB
-#define ZIP_MINIMUM     4096
-#define ZIP_MAXIMUM     8192
-typedef struct _zlib Zlib;
-struct _zlib
-{
-	z_stream *in;
-	z_stream *out;
-	char inbuf[ZIP_MAXIMUM];
-	char outbuf[ZIP_MAXIMUM];
-	int incount;
-	int outcount;
-};
-#endif
 typedef struct _sock Sock;
 struct _sock
 {
@@ -302,9 +288,3 @@ extern void reinicia();
 extern int pregunta(char *);
 extern void refresca();
 extern int copyfile(char *, char *);
-#ifdef USA_ZLIB
-extern char *descomprime(Sock *, char *, int *);
-extern char *comprime(Sock *, char *, int *);
-extern void libera_zlib(Sock *);
-extern int inicia_zlib(Sock *, int);
-#endif
