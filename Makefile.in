@@ -1,0 +1,63 @@
+#/************************************************************************
+#*   $Id: Makefile.in,v 1.1 2005-02-18 23:08:45 Trocotronic Exp $
+#*/
+
+CC=@CC@
+INCLUDEDIR=../include
+IRCDLIBS=@IRCDLIBS@
+XCFLAGS=@CFLAGS@
+CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS) @LDFLAGS@
+
+SHELL=/bin/sh
+SUBDIRS=src
+BINDIR=@BINDIR@
+INSTALL=@INSTALL@
+RM=@RM@
+CP=@CP@
+TOUCH=@TOUCH@
+all:	build
+
+MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
+		'LDFLAGS=${LDFLAGS}' 'BINDIR=${BINDIR}' 'INSTALL=${INSTALL}' \
+		'INCLUDEDIR=${INCLUDEDIR}' \
+		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
+
+custommodule:
+	cd src; ${MAKE} ${MAKEARGS} MODULEFILE=${MODULEFILE} 'EXLIBS=${EXLIBS}' custommodule
+
+server:
+build:
+	-@if [ ! -f include/setup.h ] ; then \
+		echo "No parece que hayas ejecutado la configuracion..."; \
+		sh Config; \
+	fi
+	@for i in $(SUBDIRS); do \
+		echo "Compilando $$i";\
+		( cd $$i; ${MAKE} ${MAKEARGS} build; ) \
+	done
+	@echo ' __________________________________________________ '
+	@echo '| Compilación terminada.                           |'
+	@echo '|__________________________________________________|'
+
+clean:
+	$(RM) -f *~ \#* core *.orig include/*.orig
+	@for i in $(SUBDIRS); do \
+		echo "Cleaning $$i";\
+		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
+	done
+	-@if [ -f include/setup.h ] ; then \
+	  echo "Para resetear la instalacion, borra include/setup.h" ; \
+	fi
+
+cleandir: clean
+	$(RM) -rf include/setup.h Makefile
+
+install: all
+	$(INSTALL) -m 0700 -d ~/Colossus
+	$(INSTALL) -m 0700 src/colossus ~/Colossus/colossus
+	$(TOUCH) ~/Colossus/colossus.conf
+	chmod 0600 ~/Colossus/colossus.conf
+	$(INSTALL) -m 0700 -d ~/Colossus/modulos
+	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
+	$(INSTALL) -m 0700 -d ~/Colossus/protocolos
+	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos

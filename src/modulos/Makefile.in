@@ -1,0 +1,31 @@
+## $Id: Makefile.in,v 1.1 2005-02-18 23:08:45 Trocotronic Exp $
+
+INCLUDES = ../include/ircd.h ../include/md5.h \
+	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
+	../include/sprintf_irc.h ../include/struct.h
+R_MODULES=chanserv.so nickserv.so operserv.so ipserv.so memoserv.so proxyserv.so
+COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o proxyserv.o	
+MODULES=$(R_MODULES)
+MODULEFLAGS=-fPIC -DPIC -shared
+all: build
+build: $(MODULES)
+custommodule: $(MODULEFILE).c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o $(MODULEFILE).so $(MODULEFILE).c 
+chanserv.so: chanserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o chanserv.so chanserv.c
+nickserv.so: nickserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o nickserv.so nickserv.c
+operserv.so: operserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o operserv.so operserv.c
+ipserv.so: ipserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o ipserv.so ipserv.c
+memoserv.so: memoserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o memoserv.so memoserv.c
+statserv.so: statserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o statserv.so statserv.c
+proxyserv.so: proxyserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o proxyserv.so proxyserv.c
+linkserv.so: linkserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o linkserv.so linkserv.c
+clean:
+	$(RM) -f *.o *.so *~ core
