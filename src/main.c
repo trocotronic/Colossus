@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.6 2004-09-17 18:35:55 Trocotronic Exp $ 
+ * $Id: main.c,v 1.7 2004-09-17 18:36:50 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -911,9 +911,9 @@ int main(int argc, char *argv[])
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
 #else
-	signal(SIGHUP, (refresca));
-	signal(SIGTERM, (cierra_colossus)(0));
-	signal(SIGINT, (reinicia));
+	signal(SIGHUP, refresca);
+	signal(SIGTERM, cierra_colossus(0));
+	signal(SIGINT, reinicia);
 #endif
 #ifndef _WIN32
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;

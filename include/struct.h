@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.5 2004-09-17 18:31:22 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.6 2004-09-17 18:35:56 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -288,5 +288,6 @@ extern void ircd_log(int, char *, ...);
 #ifdef _WIN32
 extern void CleanUpSegv(int);
 #endif
-extern void reinicia();
+extern void reinicia(void);
 extern int pregunta(char *);
+extern void refresca(void);
