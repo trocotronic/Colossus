@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.15 2004-10-02 22:47:13 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.16 2004-10-10 09:55:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -23,13 +23,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#ifndef MODVAR
- #if defined(MODULE_COMPILE) && defined(_WIN32)
-  #define MODVAR __declspec(dllimport)
- #else
-  #define MODVAR
- #endif
-#endif
+#include "sistema.h" /* portabilidades */
 
 #ifdef USA_SSL
 #include <openssl/rsa.h>       /* SSL stuff */
@@ -47,7 +41,6 @@
 
 #include "sprintf_irc.h"
 #include "parseconf.h"
-#include "sistema.h" /* portabilidades */
 
 extern void carga_socks(void);
 extern int strcasecmp(const char *, const char *);

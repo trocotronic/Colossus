@@ -1,7 +1,15 @@
 /*
- * $Id: sistema.h,v 1.1 2004-10-01 19:25:57 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.2 2004-10-10 09:55:25 Trocotronic Exp $ 
  */
- 
+
+#ifndef MODVAR
+ #if defined(MODULE_COMPILE) && defined(_WIN32)
+  #define MODVAR __declspec(dllimport)
+ #else
+  #define MODVAR
+ #endif
+#endif
+
 #ifdef _WIN32
 #define DLLFUNC __declspec(dllexport)
 #define irc_dlopen(x,y) LoadLibrary(x)
