@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.10 2004-09-26 21:05:30 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.11 2004-09-26 21:07:05 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -47,9 +47,6 @@
 #include "sprintf_irc.h"
 #include "parseconf.h"
 #include "md5.h"
-#ifdef USA_ZLIB
-#include "zlib.h"
-#endif
 
 extern void carga_socks(void);
 extern int strcasecmp(const char *, const char *);
