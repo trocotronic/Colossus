@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.5 2004-10-01 19:05:36 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.6 2004-12-31 12:27:52 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -7,8 +7,8 @@
 #define REKILL 0x2
 #define RESP_PRIVMSG 0x4
 #define RESP_NOTICE 0x8
-#define NOSERVDEOP 0x10
-#define REJOIN 0x20
+#define REJOIN 0x10
+#define NO_OVERRIDE 0x20
 typedef struct _conf Conf;
 typedef struct _conf_com cComConf;
 
@@ -64,16 +64,6 @@ struct Conf_smtp
 struct Conf_set
 {
 	int opts;
-	struct Conf_set_autojoin
-	{
-		char *usuarios;
-		char *operadores;
-	}*autojoin;
-	struct Conf_set_modos
-	{
-		char *usuarios;
-		char *canales;
-	}*modos;
 	char *root;
 	int nicklen;
 	struct Conf_set_cloak

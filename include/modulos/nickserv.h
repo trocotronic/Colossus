@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.1 2004-11-05 19:59:39 Trocotronic Exp $ 
+ * $Id: nickserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
  */
 
 #define NS_SID 0x1
@@ -15,28 +15,20 @@
 typedef struct _ns NickServ;
 struct _ns
 {
-	char *nick;
-	char *ident;
-	char *host;
-	char *modos;
-	char *realname;
-	char *mascara;
 	int opts;
-	char *residente; /* canales en los que reside */
 	char *recovernick; /* nick de RECOVER */
 	char *securepass; /* pass segura para VALIDAR */
-	int min_reg; /* en horas */
+	//int min_reg; /* en horas */
 	int autodrop; /* en dias */
 	int nicks; /* maximo de nicks por cuenta */
 	int intentos; /* maximo intentos antes de hacer KILL */
 	int maxlist; /* maximo de entradas por LIST */
 	char *forbmail[NS_MAX_FBMAIL]; /* emails prohibidos */
 	int forbmails;
-	bCom *comando[NS_MAX_COMS]; /* comandos soportados */
-	int comandos;
+	Modulo *hmod;
 };
 
-extern NickServ *nickserv;
+extern NickServ nickserv;
 
 #define NS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
 #define NS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
@@ -57,11 +49,11 @@ extern NickServ *nickserv;
 #ifndef UDB
 #define NS_FORBIDS "nforbids"
 #endif
-#define NS_SIGN_IDOK 10
-#define NS_SIGN_DROP 11
-#define NS_SIGN_REG 13
+#define NS_SIGN_IDOK 61
+#define NS_SIGN_DROP 62
+#define NS_SIGN_REG 63
 
 #ifdef UDB
-#define IsNickUDB(x) (atoi(_mysql_get_registro(NS_MYSQL, x, "opts")) & NS_OPT_UDB)
+#define IsNickUDB(x) (IsReg(x) && atoi(_mysql_get_registro(NS_MYSQL, x, "opts")) & NS_OPT_UDB)
 #endif
 #define IsSusp(x) (_mysql_get_registro(NS_MYSQL, x, "suspend"))

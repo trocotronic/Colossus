@@ -1,90 +1,458 @@
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ
 EXPORTS
-	sendto_serv
-	sendto_serv_us
-	response
-	socklisten
-	sockopen
-	sockwritev
-	sockclose
-	sockwrite
-	busca_entrada
-	conf_db
-	conf_set
-	parseconf
-	proc
-	inserta_senyal
-	borra_senyal
-	senyals
-	timer
-	timer_off
-	inserta_comando
-	borra_comando
-	sprintf_irc
-	_mysql_get_registro
-	_mysql_add
-	_mysql_del
-	_mysql_backup
-	_mysql_restaura
-	_mysql_query
-	_mysql_carga_tablas
-	mysql
-	mysql_tablas
-	buf
-	tokbuf
-	MDString
-	me
-	_asctime
-	microtime
-	busca_cliente
-	busca_canal
-	hash_cliente
-	hash_canal
-	ircstrdup
-	irckick
-	irctkl
-	irckill
-	irctopic
-	ircdmask
-	mascara
-	match
-	tokeniza_irc
-	implode
-	envia_umodos
-	envia_cmodos
-	es_link
-	modes2flags
-	flags2modes
-	chModes
-	flag2mode
-	botnick
-	mete_bot_en_canal
-	saca_bot_de_canal
-	modulos
-	email
-	coge_mx
-	random_ex
-	cifranick
-	reinicia
-	refresca
-	clientes
-	genera_mask
-	busca_modulo
-	linkado
-	EsIp
-	is_file
-	conferror
-	our_crc32
+	vsprintf_irc
+
 	Debug
-	ircd_log
-	fecho
-	strtolower
-	strtoupper
-	str_replace
-	strtoupper
-	strcasecmp
-	inttobase64
-	tea
-	base64toint
-	cierra_colossus
+
+	EsIp
+
+	EscuchaIrcd
+
+	ListaSocks
+
+	MDString
+
+	NTL_tolower_tab
+
+	NTL_toupper_tab
+
+	SSLKeyPasswd
+
+	SSLPassDLG
+
+	SSL_set_nonblocking
+
+	SSL_smart_shutdown
+
+	SockActual
+
+	SockIrcd
+
 	StsMalloc
-	
+
+	_asctime
+
+	_mysql_add
+
+	_mysql_backup
+
+	_mysql_carga_tablas
+
+	_mysql_del
+
+	_mysql_existe_tabla
+
+	_mysql_get_num
+
+	_mysql_get_registro
+
+	_mysql_query
+
+	_mysql_restaura
+
+	abre_sock_ircd
+
+	atoi_tab
+
+	b64_decode
+
+	b64_encode
+
+	backupbuf
+
+	base64_decode
+
+	base64_encode
+
+	base64toint
+
+	borra_ban_de_canal
+
+	borra_canal_de_hash
+
+	borra_canal_de_usuario
+
+	borra_cliente_de_canal
+
+	borra_cliente_de_hash
+
+	borra_comando
+
+	borra_exc_de_canal
+
+	borra_mensaje
+
+	borra_modo_cliente_de_canal
+
+	borra_senyal
+
+	borra_sock
+
+	botnick
+
+	buf
+
+	busca_canal
+
+	busca_canal_en_hash
+
+	busca_cliente
+
+	busca_cliente_en_hash
+
+	busca_comando
+
+	busca_entrada
+
+	busca_modulo
+
+	cTab
+
+	cambia_nick
+
+	canal_debug
+
+	canales
+
+	carga_cache
+
+	carga_modulos
+
+	carga_mysql
+
+	carga_programa
+
+	carga_protocolo
+
+	cierra_colossus
+
+	cierra_ircd
+
+	cierra_smtp
+
+	cierra_socks
+
+	cierra_todo
+
+	cifranick
+
+	clientes
+
+	cloak_crc
+
+	cmd
+
+	coge_mx
+
+	colasmtp
+
+	comandos
+
+	completa_conexion
+
+	comprime
+
+	comprueba_timers
+
+	conf_db
+
+	conf_log
+
+	conf_server
+
+	conf_set
+
+	conf_smtp
+
+	conf_ssl
+
+	conferror
+
+	conta
+
+	copyfile
+
+	crea_mensaje
+
+	crea_modulo
+
+	ctx_client
+
+	ctx_server
+
+	decode_ip
+
+	descarga_modulo
+
+	descarga_modulos
+
+	descomprime
+
+	desencola
+
+	desencola_smtp
+
+	destruye_temporales
+
+	distribuye_conf
+
+	distribuye_me
+
+	dominum
+
+	email
+
+	encode_ip
+
+	encola
+
+	encola_smtp
+
+	envia_cola
+
+	envia_email
+
+	es_link
+
+	es_linkcanal
+
+	escribe_pid
+
+	escucha_abre
+
+	escucha_ircd
+
+	fecho
+
+	flag2mode
+
+	flags2modes
+
+	genera_mask
+
+	getfilemodtime
+
+	gettok
+
+	hash_canal
+
+	hash_cliente
+
+	implode
+
+	info_canal
+
+	inicia_ircd
+
+	inicia_procesos
+
+	inicia_zlib
+
+	iniciado
+
+	inicio
+
+	init_ctx_client
+
+	init_ctx_server
+
+	init_ssl
+
+	inserta_ban_en_canal
+
+	inserta_canal_en_hash
+
+	inserta_canal_en_usuario
+
+	inserta_cliente_en_hash
+
+	inserta_comando
+
+	inserta_exc_en_canal
+
+	inserta_modo_cliente_en_canal
+
+	inserta_senyal
+
+	inserta_sock
+
+	inserta_usuario_en_canal
+
+	intentos
+
+	inttobase64
+
+	ircd_SSL_accept
+
+	ircd_SSL_client_handshake
+
+	ircd_SSL_connect
+
+	ircd_SSL_read
+
+	ircd_SSL_write
+
+	ircd_log
+
+	ircdmask
+
+	ircstrdup
+
+	is_file
+
+	killbot
+
+	lee_mensaje
+
+	lee_socks
+
+	libera_canal_de_memoria
+
+	libera_cliente_de_memoria
+
+	libera_conf
+
+	libera_protocolo
+
+	libera_zlib
+
+	linkado
+
+	listenS
+
+	listens
+
+	margv
+
+	mascara
+
+	match
+
+	me
+
+	mete_bot_en_canal
+
+	microtime
+
+	mode2flag
+
+	modebuf
+
+	modes2flags
+
+	modulos
+
+	my_itoa
+
+	mysql
+
+	mysql_tablas
+
+	nuevo_cliente
+
+	our_crc32
+
+	our_dlerror
+
+	parabuf
+
+	parse_smtp
+
+	parseconf
+
+	print_r
+
+	proc
+
+	procesa_ircd
+
+	procesa_smtp
+
+	procesa_umodos
+
+	procesos_auxiliares
+
+	procs
+
+	programa_loop_principal
+
+	protocolo
+
+	random_ex
+
+	randomiza
+
+	refresca
+
+	reinicia
+
+	renick_bot
+
+	reset
+
+	resolv
+
+	response
+
+	resuelve_host
+
+	saca_bot_de_canal
+
+	sendto_serv
+
+	sendto_serv_us
+
+	senyals
+
+	setfilemodtime
+
+	sockaccept
+
+	sockblock
+
+	sockclose
+
+	socklisten
+
+	sockopen
+
+	sockwrite
+
+	sockwritev
+
+	sprintf_irc
+
+	ssl_error_str
+
+	ssl_get_cipher
+
+	ssl_pem_passwd_cb
+
+	str_replace
+
+	strcasecmp
+
+	strtolower
+
+	strtoupper
+
+	tea
+
+	timer
+
+	timer_off
+
+	timers
+
+	tokbuf
+
+	token
+
+	totalcola
+
+	uTab
+
+	untea
+
+	ChkBtCon
+

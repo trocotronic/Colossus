@@ -1,8 +1,7 @@
 /*
- * $Id: chanserv.h,v 1.1 2004-11-05 19:59:38 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
  */
 
-#define CS_MAX_COMS 256
 #define CS_SID 0x1
 #define CS_AUTOMIGRAR 0x2
 #define CS_MAX_REGS 256
@@ -11,12 +10,6 @@
 typedef struct _cs ChanServ;
 struct _cs
 {
-	char *nick;
-	char *ident;
-	char *host;
-	char *modos;
-	char *realname;
-	char *mascara;
 	int opts;
 	int maxlist;
 	int autodrop;
@@ -25,9 +18,7 @@ struct _cs
 	int vigencia;
 	int necesarios;
 	int antig;
-	char *residente;
-	bCom *comando[CS_MAX_COMS]; /* comandos soportados */
-	int comandos;
+	Modulo *hmod;
 };
 typedef struct _csregistros CsRegistros;
 struct _csregistros
@@ -84,11 +75,11 @@ struct _akick
 #define CS_LEV_ALL (CS_LEV_SET | CS_LEV_EDT | CS_LEV_LIS | CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO | CS_LEV_RMO | CS_LEV_RES | CS_LEV_ACK | CS_LEV_INV | CS_LEV_JOB | CS_LEV_REV | CS_LEV_MEM)
 #define CS_LEV_MOD (CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO)
 
-#define CS_SIGN_IDOK 20
-#define CS_SIGN_DROP 21
-#define CS_SIGN_REG 22
+#define CS_SIGN_IDOK 50
+#define CS_SIGN_DROP 51
+#define CS_SIGN_REG 52
 
-extern ChanServ *chanserv;
+extern ChanServ chanserv;
 
 #define CS_MYSQL "canales"
 #define CS_TOK "ctokens"
@@ -106,7 +97,6 @@ extern ChanServ *chanserv;
 #define IsChanDebug(x) (x && (atoi(_mysql_get_registro(CS_MYSQL, x, "opts")) & CS_OPT_DEBUG))
 DLLFUNC extern u_long tiene_nivel(char *, char *, u_long);
 DLLFUNC extern CsRegistros *busca_cregistro(char *);
-DLLFUNC extern char *cflags2str(u_long);
 #ifdef UDB
 #define IsChanUDB(x) (atoi(_mysql_get_registro(CS_MYSQL, x, "opts")) & CS_OPT_UDB)
 #endif

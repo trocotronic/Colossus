@@ -1,16 +1,16 @@
 /*
- * $Id: memoserv.c,v 1.9 2004-11-05 19:59:36 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.10 2004-12-31 12:28:01 Trocotronic Exp $ 
  */
 
 #include "struct.h"
-#include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "protocolos.h"
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
 
-MemoServ *memoserv = NULL;
+MemoServ memoserv;
 
 static int memoserv_help	(Cliente *, char *[], int, char *[], int);
 static int memoserv_memo	(Cliente *, char *[], int, char *[], int);
@@ -33,14 +33,14 @@ static bCom memoserv_coms[] = {
 	{ 0x0 , 0x0 , 0x0 }
 };
 
-DLLFUNC IRCFUNC(memoserv_away);
-DLLFUNC IRCFUNC(memoserv_join);
+int memoserv_away(Cliente *, char *);
+int memoserv_join(Cliente *, Canal *);
 
-DLLFUNC int memoserv_idok	(Cliente *);
-DLLFUNC int memoserv_sig_mysql	();
+int memoserv_idok	(Cliente *);
+int memoserv_sig_mysql	();
 static void memoserv_notifica	(Cliente *);
-DLLFUNC int memoserv_sig_drop	(char *);
-DLLFUNC int memoserv_sig_reg	(char *);
+int memoserv_sig_drop	(char *);
+int memoserv_sig_reg	(char *);
 #ifndef _WIN32
 u_long (*tiene_nivel_dl)(char *, char *, u_long);
 int (*ChanReg_dl)(char *);
@@ -53,29 +53,47 @@ int (*ChanReg_dl)(char *);
 void set(Conf *, Modulo *);
 int test(Conf *, int *);
 
-DLLFUNC ModInfo info = {
+ModInfo info = {
 	"MemoServ" ,
-	0.6 ,
+	0.7 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net" ,
-	"memoserv.inc"
+	"trocotronic@telefonica.net"
 };
 	
-DLLFUNC int carga(Modulo *mod)
+int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (parseconf(mod->config, &modulo, 1))
-		return 1;
-	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+	if (!mod->config)
 	{
-		if (!test(modulo.seccion[0], &errores))
-			set(modulo.seccion[0], mod);
+		conferror("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		errores++;
 	}
 	else
 	{
-		conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
-		errores++;
+		if (parseconf(mod->config, &modulo, 1))
+		{
+			conferror("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			errores++;
+		}
+		else
+		{
+			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			{
+				if (!test(modulo.seccion[0], &errores))
+					set(modulo.seccion[0], mod);
+				else
+				{
+					conferror("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					errores++;
+				}
+			}
+			else
+			{
+				conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				errores++;
+			}
+		}
 	}
 #ifndef _WIN32
 	{
@@ -93,10 +111,10 @@ DLLFUNC int carga(Modulo *mod)
 #endif
 	return errores;
 }	
-DLLFUNC int descarga()
+int descarga()
 {
-	borra_comando(MSG_AWAY, memoserv_away);
-	borra_comando(MSG_JOIN, memoserv_join);
+	borra_senyal(SIGN_AWAY, memoserv_away);
+	borra_senyal(SIGN_JOIN, memoserv_join);
 	borra_senyal(NS_SIGN_IDOK, memoserv_idok);
 	borra_senyal(SIGN_MYSQL, memoserv_sig_mysql);
 	borra_senyal(NS_SIGN_DROP, memoserv_sig_drop);
@@ -107,53 +125,18 @@ DLLFUNC int descarga()
 }
 int test(Conf *config, int *errores)
 {
-	short error_parcial = 0;
-	Conf *eval;
-	if (!(eval = busca_entrada(config, "nick")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "ident")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "host")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "realname")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	*errores += error_parcial;
-	return error_parcial;
+	return 0;
 }
 void set(Conf *config, Modulo *mod)
 {
 	int i, p;
 	bCom *ms;
-	if (!memoserv)
-		da_Malloc(memoserv, MemoServ);
 	for (i = 0; i < config->secciones; i++)
 	{
-		if (!strcmp(config->seccion[i]->item, "nick"))
-			ircstrdup(&memoserv->nick, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "ident"))
-			ircstrdup(&memoserv->ident, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&memoserv->host, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "realname"))
-			ircstrdup(&memoserv->realname, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "modos"))
-			ircstrdup(&memoserv->modos, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "defecto"))
-			memoserv->def = atoi(config->seccion[i]->data);
+			memoserv.def = atoi(config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "cada"))
-			memoserv->cada = atoi(config->seccion[i]->data);
+			memoserv.cada = atoi(config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -163,7 +146,7 @@ void set(Conf *config, Modulo *mod)
 				{
 					if (!strcasecmp(ms->com, config->seccion[i]->seccion[p]->item))
 					{
-						memoserv->comando[memoserv->comandos++] = ms;
+						mod->comando[mod->comandos++] = ms;
 						break;
 					}
 					ms++;
@@ -171,134 +154,123 @@ void set(Conf *config, Modulo *mod)
 				if (ms->com == 0x0)
 					conferror("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
 			}
+			mod->comando[mod->comandos] = NULL;
 		}
-		if (!strcmp(config->seccion[i]->item, "residente"))
-			ircstrdup(&memoserv->residente, config->seccion[i]->data);
 	}
-	if (memoserv->mascara)
-		Free(memoserv->mascara);
-	memoserv->mascara = (char *)Malloc(sizeof(char) * (strlen(memoserv->nick) + 1 + strlen(memoserv->ident) + 1 + strlen(memoserv->host) + 1));
-	sprintf_irc(memoserv->mascara, "%s!%s@%s", memoserv->nick, memoserv->ident, memoserv->host);
-	inserta_comando(MSG_AWAY, TOK_AWAY, memoserv_away, INI);
-	inserta_comando(MSG_JOIN, TOK_JOIN, memoserv_join, INI);
+	inserta_senyal(SIGN_AWAY, memoserv_away);
+	inserta_senyal(SIGN_JOIN, memoserv_join);
 	inserta_senyal(NS_SIGN_IDOK, memoserv_idok);
 	inserta_senyal(SIGN_MYSQL, memoserv_sig_mysql);
 	inserta_senyal(NS_SIGN_DROP, memoserv_sig_drop);
 	inserta_senyal(NS_SIGN_REG, memoserv_sig_reg);
 	inserta_senyal(CS_SIGN_DROP, memoserv_sig_drop);
 	inserta_senyal(CS_SIGN_REG, memoserv_sig_reg);
-	mod->nick = memoserv->nick;
-	mod->ident = memoserv->ident;
-	mod->host = memoserv->host;
-	mod->realname = memoserv->realname;
-	mod->residente = memoserv->residente;
-	mod->modos = memoserv->modos;
-	mod->comandos = memoserv->comando;
+	bot_set(memoserv);
 }
 BOTFUNC(memoserv_help)
 {
 	if (params < 2)
 	{
-		response(cl, memoserv->nick, "\00312%s\003 se encarga de gestionar el servicio de mensajería.", memoserv->nick);
-		response(cl, memoserv->nick, "Este servicio permite enviar y recibir mensajes entre usuarios aunque no estén conectados simultáneamente.");
-		response(cl, memoserv->nick, "Además, permite mantener un historial de mensajes recibidos y enviar de nuevos a usuarios que se encuentren desconectados.");
-		response(cl, memoserv->nick, "Cuando se conecten, y según su configuración, recibirán un aviso de que tienen nuevos mensajes para leer.");
-		response(cl, memoserv->nick, "Los mensajes también pueden enviarse a un canal. Así, los usuarios que tengan el nivel suficiente podrán enviar y recibir mensajes para un determinado canal.");
-		response(cl, memoserv->nick, "Este servicio sólo es para usuarios y canales registrados.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Comandos disponibles:");
-		response(cl, memoserv->nick, "\00312SEND\003 Envía un mensaje.");
-		response(cl, memoserv->nick, "\00312READ\003 Lee un mensaje.");
-		response(cl, memoserv->nick, "\00312DEL\003 Borra un mensaje.");
-		response(cl, memoserv->nick, "\00312LIST\003 Lista los mensajes.");
-		response(cl, memoserv->nick, "\00312SET\003 Fija tus opciones.");
-		response(cl, memoserv->nick, "\00312INFO\003 Muestra información de tu configuración.");
-		response(cl, memoserv->nick, "\00312CANCELAR\003 Cancela el último mensaje.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Para más información, \00312/msg %s %s comando", memoserv->nick, strtoupper(param[0]));
+		response(cl, CLI(memoserv), "\00312%s\003 se encarga de gestionar el servicio de mensajería.", memoserv.hmod->nick);
+		response(cl, CLI(memoserv), "Este servicio permite enviar y recibir mensajes entre usuarios aunque no estén conectados simultáneamente.");
+		response(cl, CLI(memoserv), "Además, permite mantener un historial de mensajes recibidos y enviar de nuevos a usuarios que se encuentren desconectados.");
+		response(cl, CLI(memoserv), "Cuando se conecten, y según su configuración, recibirán un aviso de que tienen nuevos mensajes para leer.");
+		response(cl, CLI(memoserv), "Los mensajes también pueden enviarse a un canal. Así, los usuarios que tengan el nivel suficiente podrán enviar y recibir mensajes para un determinado canal.");
+		response(cl, CLI(memoserv), "Este servicio sólo es para usuarios y canales registrados.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Comandos disponibles:");
+		response(cl, CLI(memoserv), "\00312SEND\003 Envía un mensaje.");
+		response(cl, CLI(memoserv), "\00312READ\003 Lee un mensaje.");
+		response(cl, CLI(memoserv), "\00312DEL\003 Borra un mensaje.");
+		response(cl, CLI(memoserv), "\00312LIST\003 Lista los mensajes.");
+		response(cl, CLI(memoserv), "\00312SET\003 Fija tus opciones.");
+		response(cl, CLI(memoserv), "\00312INFO\003 Muestra información de tu configuración.");
+		response(cl, CLI(memoserv), "\00312CANCELAR\003 Cancela el último mensaje.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Para más información, \00312/msg %s %s comando", memoserv.hmod->nick, strtoupper(param[0]));
 	}
 	else if (!strcasecmp(param[1], "SEND"))
 	{
-		response(cl, memoserv->nick, "\00312SEND");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Envía un mensaje a un usuario o canal.");
-		response(cl, memoserv->nick, "El mensaje es guardado hasta que no se borra y puede leerse tantas veces se quiera.");
-		response(cl, memoserv->nick, "Cuando se deja un mensaje a un usuario, se le notificará de que tiene mensajes pendientes para leer.");
-		response(cl, memoserv->nick, "Si es a un canal, cada vez que entre un usuario y tenga nivel suficiente, se le notificará de que el canal tiene mensajes.");
-		response(cl, memoserv->nick, "Tanto el nick o canal destinatario deben estar registrados.");
-		response(cl, memoserv->nick, "Sólo pueden enviarse mensajes cada \00312%i\003 segundos.", memoserv->cada);
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintaxis: \00312SEND nick|#canal mensaje");
+		response(cl, CLI(memoserv), "\00312SEND");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Envía un mensaje a un usuario o canal.");
+		response(cl, CLI(memoserv), "El mensaje es guardado hasta que no se borra y puede leerse tantas veces se quiera.");
+		response(cl, CLI(memoserv), "Cuando se deja un mensaje a un usuario, se le notificará de que tiene mensajes pendientes para leer.");
+		response(cl, CLI(memoserv), "Si es a un canal, cada vez que entre un usuario y tenga nivel suficiente, se le notificará de que el canal tiene mensajes.");
+		response(cl, CLI(memoserv), "Tanto el nick o canal destinatario deben estar registrados.");
+		response(cl, CLI(memoserv), "Sólo pueden enviarse mensajes cada \00312%i\003 segundos.", memoserv.cada);
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintaxis: \00312SEND nick|#canal mensaje");
 	}
 	else if (!strcasecmp(param[1], "READ"))
 	{
-		response(cl, memoserv->nick, "\00312READ");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Lee un mensaje.");
-		response(cl, memoserv->nick, "El número de mensaje es el mismo que aparece antepuesto al hacer un LIST.");
-		response(cl, memoserv->nick, "Adicionalmente, puedes especificar NEW para leer todos los mensajes nuevos o LAST para leer el último.");
-		response(cl, memoserv->nick, "Un mensaje lo podrás leer siempre que quieras hasta que sea borrado.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintaxis: \00312READ [#canal] nº|NEW|LAST");
+		response(cl, CLI(memoserv), "\00312READ");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Lee un mensaje.");
+		response(cl, CLI(memoserv), "El número de mensaje es el mismo que aparece antepuesto al hacer un LIST.");
+		response(cl, CLI(memoserv), "Adicionalmente, puedes especificar NEW para leer todos los mensajes nuevos o LAST para leer el último.");
+		response(cl, CLI(memoserv), "Un mensaje lo podrás leer siempre que quieras hasta que sea borrado.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintaxis: \00312READ [#canal] nº|NEW|LAST");
 	}
 	else if (!strcasecmp(param[1], "DEL"))
 	{
-		response(cl, memoserv->nick, "\00312DEL");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Borra un mensaje.");
-		response(cl, memoserv->nick, "El número de mensaje es el mismo que aparece antepuesto al hacer LIST.");
-		response(cl, memoserv->nick, "Adicionalmente, puedes especificar ALL para borrarlos todos a la vez.");
-		response(cl, memoserv->nick, "Recuerda que una vez borrado, no lo podrás recuperar.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintxis: \00312DEL [#canal] nº|ALL");
+		response(cl, CLI(memoserv), "\00312DEL");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Borra un mensaje.");
+		response(cl, CLI(memoserv), "El número de mensaje es el mismo que aparece antepuesto al hacer LIST.");
+		response(cl, CLI(memoserv), "Adicionalmente, puedes especificar ALL para borrarlos todos a la vez.");
+		response(cl, CLI(memoserv), "Recuerda que una vez borrado, no lo podrás recuperar.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintxis: \00312DEL [#canal] nº|ALL");
 	}
 	else if (!strcasecmp(param[1], "LIST"))
 	{
-		response(cl, memoserv->nick, "\00312LIST");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Lista todos los mensajes.");
-		response(cl, memoserv->nick, "Se detalla la fecha de emisión, el emisor y el número que ocupa.");
-		response(cl, memoserv->nick, "Además, si va precedido por un asterisco, marca que el mensaje es nuevo y todavía no se ha leído.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintaxis: \00312LIST [#canal]");
+		response(cl, CLI(memoserv), "\00312LIST");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Lista todos los mensajes.");
+		response(cl, CLI(memoserv), "Se detalla la fecha de emisión, el emisor y el número que ocupa.");
+		response(cl, CLI(memoserv), "Además, si va precedido por un asterisco, marca que el mensaje es nuevo y todavía no se ha leído.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintaxis: \00312LIST [#canal]");
 	}
 	else if (!strcasecmp(param[1], "INFO"))
 	{
-		response(cl, memoserv->nick, "\00312INFO");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Muestra distinta información procedente de tus opciones.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintaxis: \00312INFO [#canal]");
+		response(cl, CLI(memoserv), "\00312INFO");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Muestra distinta información procedente de tus opciones.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintaxis: \00312INFO [#canal]");
 	}
 	else if (!strcasecmp(param[1], "CANCELAR"))
 	{
-		response(cl, memoserv->nick, "\00312CANCELAR");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Cancela el último mensaje que has enviado.");
-		response(cl, memoserv->nick, "Esto puede servir para cerciorarse de enviar un mensaje.");
-		response(cl, memoserv->nick, "Recuerda que si has enviado uno después, tendrás que cancelar ambos ya que se elimina primero el último.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintaxis: \00312CANCELAR nick|#canal");
+		response(cl, CLI(memoserv), "\00312CANCELAR");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Cancela el último mensaje que has enviado.");
+		response(cl, CLI(memoserv), "Esto puede servir para cerciorarse de enviar un mensaje.");
+		response(cl, CLI(memoserv), "Recuerda que si has enviado uno después, tendrás que cancelar ambos ya que se elimina primero el último.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintaxis: \00312CANCELAR nick|#canal");
 	}
 	else if (!strcasecmp(param[1], "SET"))
 	{
-		response(cl, memoserv->nick, "\00312SET");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Fija las distintas opciones.");
-		response(cl, memoserv->nick, " ");
-		response(cl, memoserv->nick, "Sintaxis: \00312SET [#canal] LIMITE nº");
-		response(cl, memoserv->nick, "Fija el nº máximo de mensajes que puede recibir.");
-		response(cl, memoserv->nick, "Sintaxis: \00312SET #canal NOTIFY ON|OFF");
-		response(cl, memoserv->nick, "Avisa si hay mensajes nuevos en el canal.");
-		response(cl, memoserv->nick, "Sintaxis: \00312SET NOTIFY {+|-}modos");
-		response(cl, memoserv->nick, "Fija distintos métodos de notificación de tus memos:");
-		response(cl, memoserv->nick, "-\00312l\003 Te notifica de mensajes nuevos al identificarte como propietario de tu nick.");
-		response(cl, memoserv->nick, "-\00312n\003 Te notifica de mensajes nuevos cuando te son enviados al instante.");
-		response(cl, memoserv->nick, "-\00312w\003 Te notifica de mensajes nuevos cuando vuevles del estado de away.");
-		response(cl, memoserv->nick, "NOTA: El tener el modo +w deshabilita los demás. Esto es así porque sólo se quiere ser informado cuando no se está away.");
+		response(cl, CLI(memoserv), "\00312SET");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Fija las distintas opciones.");
+		response(cl, CLI(memoserv), " ");
+		response(cl, CLI(memoserv), "Sintaxis: \00312SET [#canal] LIMITE nº");
+		response(cl, CLI(memoserv), "Fija el nº máximo de mensajes que puede recibir.");
+		response(cl, CLI(memoserv), "Sintaxis: \00312SET #canal NOTIFY ON|OFF");
+		response(cl, CLI(memoserv), "Avisa si hay mensajes nuevos en el canal.");
+		response(cl, CLI(memoserv), "Sintaxis: \00312SET NOTIFY {+|-}modos");
+		response(cl, CLI(memoserv), "Fija distintos métodos de notificación de tus memos:");
+		response(cl, CLI(memoserv), "-\00312l\003 Te notifica de mensajes nuevos al identificarte como propietario de tu nick.");
+		response(cl, CLI(memoserv), "-\00312n\003 Te notifica de mensajes nuevos cuando te son enviados al instante.");
+		response(cl, CLI(memoserv), "-\00312w\003 Te notifica de mensajes nuevos cuando vuevles del estado de away.");
+		response(cl, CLI(memoserv), "NOTA: El tener el modo +w deshabilita los demás. Esto es así porque sólo se quiere ser informado cuando no se está away.");
 	}
 	else
-		response(cl, memoserv->nick, NS_ERR_EMPT, "Opción desconocida.");
+		response(cl, CLI(memoserv), NS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
 BOTFUNC(memoserv_read)
@@ -310,24 +282,24 @@ BOTFUNC(memoserv_read)
 	time_t tim;
 	if (params < 2)
 	{
-		response(cl, memoserv->nick, MS_ERR_PARA, "READ [#canal] nº|LAST|NEW");
+		response(cl, CLI(memoserv), MS_ERR_PARA, "READ [#canal] nº|LAST|NEW");
 		return 1;
 	}
 	if (*param[1] == '#')
 	{
 		if (params < 3)
 		{
-			response(cl, memoserv->nick, MS_ERR_PARA, "READ #canal nº|LAST|NEW");
+			response(cl, CLI(memoserv), MS_ERR_PARA, "READ #canal nº|LAST|NEW");
 			return 1;
 		}
 		if (!IsChanReg_dl(param[1]))
 		{
-			response(cl, memoserv->nick, MS_ERR_NOTR, "");
+			response(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
 		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
 		{
-			response(cl, memoserv->nick, CS_ERR_FORB, "");
+			response(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		para = param[1];
@@ -340,7 +312,7 @@ BOTFUNC(memoserv_read)
 	}
 	if (!atoi(no) && strcasecmp(no, "LAST") && strcasecmp(no, "NEW"))
 	{
-		response(cl, memoserv->nick, MS_ERR_SNTX, "READ [#canal] nº|LAST|NEW");
+		response(cl, CLI(memoserv), MS_ERR_SNTX, "READ [#canal] nº|LAST|NEW");
 		return 1;
 	}
 	if (!strcasecmp(no, "NEW"))
@@ -350,15 +322,15 @@ BOTFUNC(memoserv_read)
 			while ((row = mysql_fetch_row(res)))
 			{
 				tim = atol(row[2]);
-				response(cl, memoserv->nick, "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], _asctime(&tim));
-				response(cl, memoserv->nick, "%s", row[1]);
+				response(cl, CLI(memoserv), "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], _asctime(&tim));
+				response(cl, CLI(memoserv), "%s", row[1]);
 				_mysql_query("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[1], row[0], row[2]);
 			}
 			mysql_free_result(res);
 		}
 		else
 		{
-			response(cl, memoserv->nick, MS_ERR_EMPT, "No tienes mensajes nuevos.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "No tienes mensajes nuevos.");
 			return 1;
 		}
 	}
@@ -377,8 +349,8 @@ BOTFUNC(memoserv_read)
 		{
 			row = mysql_fetch_row(res);
 			tim = atol(row[2]);
-			response(cl, memoserv->nick, "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], _asctime(&tim));
-			response(cl, memoserv->nick, "%s", row[1]);
+			response(cl, CLI(memoserv), "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], _asctime(&tim));
+			response(cl, CLI(memoserv), "%s", row[1]);
 			_mysql_query("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[1], row[0], row[2]);
 			mysql_free_result(res);
 			Free(fech);
@@ -386,7 +358,7 @@ BOTFUNC(memoserv_read)
 		else
 		{
 			non:
-			response(cl, memoserv->nick, MS_ERR_EMPT, "No tienes mensajes.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "No tienes mensajes.");
 			return 1;
 		}
 	}
@@ -400,20 +372,20 @@ BOTFUNC(memoserv_read)
 				if ((i + 1) == max) /* hay memo */
 				{
 					tim = atol(row[2]);
-					response(cl, memoserv->nick, "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], _asctime(&tim));
-					response(cl, memoserv->nick, "%s", row[1]);
+					response(cl, CLI(memoserv), "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], _asctime(&tim));
+					response(cl, CLI(memoserv), "%s", row[1]);
 					_mysql_query("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[1], row[0], row[2]);
 					mysql_free_result(res);
 					return 0;
 				}
 			}
-			response(cl, memoserv->nick, MS_ERR_EMPT, "Este mensaje no existe.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "Este mensaje no existe.");
 			mysql_free_result(res);
 			return 1;
 		}
 		else
 		{
-			response(cl, memoserv->nick, MS_ERR_EMPT, "No tienes mensajes.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "No tienes mensajes.");
 			return 1;
 		}
 	}
@@ -425,24 +397,24 @@ BOTFUNC(memoserv_memo)
 	MYSQL_ROW row;
 	if (params < 3)
 	{
-		response(cl, memoserv->nick, MS_ERR_PARA, "SEND nick|#canal mensaje");
+		response(cl, CLI(memoserv), MS_ERR_PARA, "SEND nick|#canal mensaje");
 		return 1;
 	}
 	if (*param[1] != '#' && !IsReg(param[1]))
 	{
-		response(cl, memoserv->nick, MS_ERR_EMPT, "Este nick no está registrado.");
+		response(cl, CLI(memoserv), MS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
 	else if (*param[1] == '#')
 	{
 		if (!IsChanReg_dl(param[1]))
 		{
-			response(cl, memoserv->nick, MS_ERR_NOTR, "");
+			response(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
 		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
 		{
-			response(cl, memoserv->nick, CS_ERR_FORB, "");
+			response(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
 	}
@@ -451,16 +423,16 @@ BOTFUNC(memoserv_memo)
 		if ((res = _mysql_query("SELECT MAX(fecha) from %s%s where de='%s'", PREFIJO, MS_MYSQL, cl->nombre)))
 		{
 			row = mysql_fetch_row(res);
-			if (row[0] && (atol(row[0]) + memoserv->cada) > time(0))
+			if (row[0] && (atol(row[0]) + memoserv.cada) > time(0))
 			{
-				sprintf_irc(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv->cada);
-				response(cl, memoserv->nick, MS_ERR_EMPT, buf);
+				sprintf_irc(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv.cada);
+				response(cl, CLI(memoserv), MS_ERR_EMPT, buf);
 				return 1;
 			}
 		}
 	}
 	memoserv_send(param[1], cl->nombre, implode(param, params, 2, -1));
-	response(cl, memoserv->nick, "Mensaje enviado a \00312%s\003.", param[1]);
+	response(cl, CLI(memoserv), "Mensaje enviado a \00312%s\003.", param[1]);
 	return 0;
 }
 BOTFUNC(memoserv_del)
@@ -471,24 +443,24 @@ BOTFUNC(memoserv_del)
 	char *para, *no;
 	if (params < 2)
 	{
-		response(cl, memoserv->nick, MS_ERR_PARA, "DEL [#canal] nº|ALL");
+		response(cl, CLI(memoserv), MS_ERR_PARA, "DEL [#canal] nº|ALL");
 		return 1;
 	}
 	if (*param[1] == '#')
 	{
 		if (params < 3)
 		{
-			response(cl, memoserv->nick, MS_ERR_PARA, "DEL #canal nº|ALL");
+			response(cl, CLI(memoserv), MS_ERR_PARA, "DEL #canal nº|ALL");
 			return 1;
 		}
 		if (!IsChanReg_dl(param[1]))
 		{
-			response(cl, memoserv->nick, MS_ERR_NOTR, "");
+			response(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
 		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
 		{
-			response(cl, memoserv->nick, CS_ERR_FORB, "");
+			response(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		para = param[1];
@@ -501,13 +473,13 @@ BOTFUNC(memoserv_del)
 	}
 	if (!atoi(no) && strcasecmp(no, "ALL"))
 	{
-		response(cl, memoserv->nick, MS_ERR_SNTX, "DEL [#canal] nº|ALL");
+		response(cl, CLI(memoserv), MS_ERR_SNTX, "DEL [#canal] nº|ALL");
 		return 1;
 	}
 	if (!strcasecmp(no, "ALL"))
 	{
 		_mysql_query("DELETE from %s%s where para='%s'", PREFIJO, MS_MYSQL, para);
-		response(cl, memoserv->nick, "Todos los mensajes han sido borrados.");
+		response(cl, CLI(memoserv), "Todos los mensajes han sido borrados.");
 	}
 	else
 	{
@@ -519,16 +491,16 @@ BOTFUNC(memoserv_del)
 				if (max == (i + 1))
 				{
 					_mysql_query("DELETE from %s%s where para='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[0], row[1], row[2]);
-					response(cl, memoserv->nick, "El mensaje \00312%s\003 ha sido borrado.", no);
+					response(cl, CLI(memoserv), "El mensaje \00312%s\003 ha sido borrado.", no);
 					mysql_free_result(res);
 					return 0;
 				}
 			}
-			response(cl, memoserv->nick, MS_ERR_EMPT, "No se encuentra el mensaje.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "No se encuentra el mensaje.");
 			mysql_free_result(res);
 		}
 		else
-			response(cl, memoserv->nick, MS_ERR_EMPT, "No hay mensajes.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "No hay mensajes.");
 	}
 	return 0;
 }
@@ -543,12 +515,12 @@ BOTFUNC(memoserv_list)
 	{
 		if (!IsChanReg_dl(param[1]))
 		{
-			response(cl, memoserv->nick, MS_ERR_NOTR, "");
+			response(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
 		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
 		{
-			response(cl, memoserv->nick, CS_ERR_FORB, "");
+			response(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		tar = param[1];
@@ -560,12 +532,12 @@ BOTFUNC(memoserv_list)
 		for (i = 0; (row = mysql_fetch_row(res)); i++)
 		{
 			tim = atol(row[1]);
-			response(cl, memoserv->nick, "%s \00312%i\003 - \00312%s\003 - \00312%s\003", atoi(row[2]) ? "" : "*", i + 1, row[0], _asctime(&tim));
+			response(cl, CLI(memoserv), "%s \00312%i\003 - \00312%s\003 - \00312%s\003", atoi(row[2]) ? "" : "*", i + 1, row[0], _asctime(&tim));
 		}
 		mysql_free_result(res);
 	}
 	else
-		response(cl, memoserv->nick, MS_ERR_EMPT, "No hay mensajes para listar.");
+		response(cl, CLI(memoserv), MS_ERR_EMPT, "No hay mensajes para listar.");
 	return 0;
 }
 BOTFUNC(memoserv_set)
@@ -573,24 +545,24 @@ BOTFUNC(memoserv_set)
 	char *para, *opt, *val;
 	if (params < 3)
 	{
-		response(cl, memoserv->nick, MS_ERR_PARA, "SET [#canal] opción valor");
+		response(cl, CLI(memoserv), MS_ERR_PARA, "SET [#canal] opción valor");
 		return 1;
 	}
 	if (*param[1] == '#')
 	{
 		if (params < 4)
 		{
-			response(cl, memoserv->nick, MS_ERR_PARA, "SET #canal opción valor");
+			response(cl, CLI(memoserv), MS_ERR_PARA, "SET #canal opción valor");
 			return 1;
 		}
 		if (!IsChanReg_dl(param[1]))
 		{
-			response(cl, memoserv->nick, MS_ERR_NOTR, "");
+			response(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
 		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
 		{
-			response(cl, memoserv->nick, CS_ERR_FORB, "");
+			response(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		para = param[1];
@@ -607,16 +579,16 @@ BOTFUNC(memoserv_set)
 	{
 		if (!atoi(val))
 		{
-			response(cl, memoserv->nick, MS_ERR_SNTX, "SET [#canal] limite nº");
+			response(cl, CLI(memoserv), MS_ERR_SNTX, "SET [#canal] limite nº");
 			return 1;
 		}
 		if (abs(atoi(val)) > 30)
 		{
-			response(cl, memoserv->nick, MS_ERR_EMPT, "El límite no puede superar los 30 mensajes.");
+			response(cl, CLI(memoserv), MS_ERR_EMPT, "El límite no puede superar los 30 mensajes.");
 			return 1;
 		}
 		_mysql_add(MS_SET, para, "limite", val);
-		response(cl, memoserv->nick, "Límite cambiado a \00312%s\003.", val);
+		response(cl, CLI(memoserv), "Límite cambiado a \00312%s\003.", val);
 	}
 	else if (!strcasecmp(opt, "NOTIFY"))
 	{
@@ -628,7 +600,7 @@ BOTFUNC(memoserv_set)
 				_mysql_add(MS_SET, para, "opts", "0");
 			else
 			{
-				response(cl, memoserv->nick, MS_ERR_SNTX, "SET #canal NOTIFY ON|OFF");
+				response(cl, CLI(memoserv), MS_ERR_SNTX, "SET #canal NOTIFY ON|OFF");
 				return 1;
 			}
 		}
@@ -638,7 +610,7 @@ BOTFUNC(memoserv_set)
 			char f = ADD, *modos = val;
 			if (*val != '+' && *val != '-')
 			{
-				response(cl, memoserv->nick, MS_ERR_SNTX, "SET NOTIFY +-modos");
+				response(cl, CLI(memoserv), MS_ERR_SNTX, "SET NOTIFY +-modos");
 				return 1;
 			}
 			while (!BadPtr(modos))
@@ -673,12 +645,12 @@ BOTFUNC(memoserv_set)
 				modos++;
 			}
 			_mysql_add(MS_SET, para, "opts", "%i", opts);
-			response(cl, memoserv->nick, "Notify cambiado a \00312%s\003.", val);
+			response(cl, CLI(memoserv), "Notify cambiado a \00312%s\003.", val);
 		}
 	}
 	else
 	{
-		response(cl, memoserv->nick, MS_ERR_EMPT, "Opción desconocida.");
+		response(cl, CLI(memoserv), MS_ERR_EMPT, "Opción desconocida.");
 		return 1;
 	}
 	return 0;
@@ -691,7 +663,7 @@ BOTFUNC(memoserv_info)
 	{
 		if (!IsChanReg_dl(param[1]))
 		{
-			response(cl, memoserv->nick, MS_ERR_NOTR, "");
+			response(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
 		if ((res = _mysql_query("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, param[1])))
@@ -700,9 +672,9 @@ BOTFUNC(memoserv_info)
 			mysql_free_result(res);
 		}
 		opts = atoi(_mysql_get_registro(MS_SET, param[1], "opts"));
-		response(cl, memoserv->nick, "El canal \00312%s\003 tiene \00312%i\003 mensajes.", param[1], memos);
-		response(cl, memoserv->nick, "La notificación de memos está \002%s\002.", opts ? "ON" : "OFF");
-		response(cl, memoserv->nick, "El límite de mensajes está fijado a \00312%s\003.", _mysql_get_registro(MS_SET, param[1], "limite"));
+		response(cl, CLI(memoserv), "El canal \00312%s\003 tiene \00312%i\003 mensajes.", param[1], memos);
+		response(cl, CLI(memoserv), "La notificación de memos está \002%s\002.", opts ? "ON" : "OFF");
+		response(cl, CLI(memoserv), "El límite de mensajes está fijado a \00312%s\003.", _mysql_get_registro(MS_SET, param[1], "limite"));
 	}
 	else
 	{
@@ -718,15 +690,15 @@ BOTFUNC(memoserv_info)
 			mysql_free_result(res);
 		}
 		opts = atoi(_mysql_get_registro(MS_SET, cl->nombre, "opts"));
-		response(cl, memoserv->nick, "Tienes \00312%i\003 mensajes sin leer de un total de \00312%i\003.", noleid, memos);
-		response(cl, memoserv->nick, "El límite de mensajes está fijado a \00312%s\003.", _mysql_get_registro(MS_SET, cl->nombre, "limite"));
-		response(cl, memoserv->nick, "La notificación de memos está a:");
+		response(cl, CLI(memoserv), "Tienes \00312%i\003 mensajes sin leer de un total de \00312%i\003.", noleid, memos);
+		response(cl, CLI(memoserv), "El límite de mensajes está fijado a \00312%s\003.", _mysql_get_registro(MS_SET, cl->nombre, "limite"));
+		response(cl, CLI(memoserv), "La notificación de memos está a:");
 		if (opts & MS_OPT_LOG)
-			response(cl, memoserv->nick, "-Al identificarte como propietario de tu nick.");
+			response(cl, CLI(memoserv), "-Al identificarte como propietario de tu nick.");
 		if (opts & MS_OPT_AWY)
-			response(cl, memoserv->nick, "-Cuando regreses del away.");
+			response(cl, CLI(memoserv), "-Cuando regreses del away.");
 		if (opts & MS_OPT_NEW)
-			response(cl, memoserv->nick, "-Cuando recibas un mensaje nuevo.");
+			response(cl, CLI(memoserv), "-Cuando recibas un mensaje nuevo.");
 	}	
 	return 0;
 }
@@ -736,17 +708,17 @@ BOTFUNC(memoserv_cancelar)
 	MYSQL_ROW row;
 	if (params < 2)
 	{
-		response(cl, memoserv->nick, MS_ERR_PARA, "CANCELAR nick|#canal");
+		response(cl, CLI(memoserv), MS_ERR_PARA, "CANCELAR nick|#canal");
 		return 1;
 	}
 	if (*param[1] == '#' && !IsChanReg_dl(param[1]))
 	{
-		response(cl, memoserv->nick, MS_ERR_EMPT, "Este canal no está registrado.");
+		response(cl, CLI(memoserv), MS_ERR_EMPT, "Este canal no está registrado.");
 		return 1;
 	}
 	else if (*param[1] != '#' && !IsReg(param[1]))
 	{
-		response(cl, memoserv->nick, MS_ERR_EMPT, "Este nick no está registrado.");
+		response(cl, CLI(memoserv), MS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
 	if ((res = _mysql_query("SELECT MAX(fecha) from %s%s where de='%s' AND para='%s'", PREFIJO, MS_MYSQL, cl->nombre, param[1])))
@@ -756,22 +728,22 @@ BOTFUNC(memoserv_cancelar)
 			goto non;
 		_mysql_query("DELETE from %s%s where para='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, param[1], cl->nombre, row[0]);
 		mysql_free_result(res);
-		response(cl, memoserv->nick, "El último mensaje de \00312%s\003 ha sido eliminado.", param[1]);
+		response(cl, CLI(memoserv), "El último mensaje de \00312%s\003 ha sido eliminado.", param[1]);
 	}
 	else
 	{
 		non:
 		buf[0] = '\0';
 		sprintf_irc(buf, "No has enviado ningún mensaje a %s.", param[1]);
-		response(cl, memoserv->nick, MS_ERR_EMPT, buf);
+		response(cl, CLI(memoserv), MS_ERR_EMPT, buf);
 		return 1;
 	}
 	return 0;
 }
-IRCFUNC(memoserv_away)
+int memoserv_away(Cliente *cl, char *away)
 {
 	int opts;
-	if (parc == 1)
+	if (!away)
 	{
 		if (!IsId(cl))
 			return 1;
@@ -781,30 +753,24 @@ IRCFUNC(memoserv_away)
 	}
 	return 0;
 }
-IRCFUNC(memoserv_join)
+int memoserv_join(Cliente *cl, Canal *cn)
 {
-	char *canal;
 	int opts;
 	MYSQL_RES *res;
-	strcpy(tokbuf, parv[1]);
-	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
+	if (!IsChanReg_dl(cn->nombre))
+		return 1;
+	if (!(res = _mysql_query("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, cn->nombre)))
+		return 1;
+	mysql_free_result(res);
+	opts = atoi(_mysql_get_registro(MS_SET, cn->nombre, "opts"));
+	if (opts & MS_OPT_CNO)
 	{
-		if (!IsChanReg_dl(canal))
-			continue;
-		if (!(res = _mysql_query("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, canal)))
-			continue;
-		mysql_free_result(res);
-		opts = atoi(_mysql_get_registro(MS_SET, canal, "opts"));
-		if (opts & MS_OPT_CNO)
-		{
-			
-			if (tiene_nivel_dl(parv[0], canal, CS_LEV_MEM))
-				sendto_serv(":%s %s %s :Hay mensajes en el canal", memoserv->nick, TOK_NOTICE, parv[0]);
-		}
+		if (tiene_nivel_dl(cl->nombre, cn->nombre, CS_LEV_MEM))
+			port_func(P_NOTICE)(cl, CLI(memoserv), "Hay mensajes en el canal");
 	}
 	return 0;
 }
-DLLFUNC int memoserv_send(char *para, char *de, char *mensaje)
+int memoserv_send(char *para, char *de, char *mensaje)
 {
 	int opts = 0;
 	Cliente *al;
@@ -817,7 +783,7 @@ DLLFUNC int memoserv_send(char *para, char *de, char *mensaje)
 		if (*para == '#')
 		{
 			if (opts & MS_OPT_CNO)
-				sendto_serv(":%s %s @%s :Hay un mensaje nuevo en el canal", memoserv->nick, TOK_NOTICE, para);
+				port_func(P_NOTICE)((Cliente *)busca_canal(para, NULL), CLI(memoserv), "Hay un mensaje nuevo en el canal");
 		}
 		else
 		{
@@ -849,21 +815,9 @@ int memoserv_idok(Cliente *al)
 }
 int memoserv_sig_mysql()
 {
-	int i;
-	char buf[2][BUFSIZE], tabla[2];
-	tabla[0] = tabla[1] = 0;
-	sprintf_irc(buf[0], "%s%s", PREFIJO, MS_MYSQL);
-	sprintf_irc(buf[1], "%s%s", PREFIJO, MS_SET);
-	for (i = 0; i < mysql_tablas.tablas; i++)
+	if (!_mysql_existe_tabla(MS_MYSQL))
 	{
-		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
-			tabla[0] = 1;
-		else if (!strcasecmp(mysql_tablas.tabla[i], buf[1]))
-			tabla[1] = 1;
-	}
-	if (!tabla[0])
-	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
   			"`n` int(11) NOT NULL auto_increment, "
   			"`mensaje` text NOT NULL, "
   			"`para` text NOT NULL, "
@@ -871,20 +825,20 @@ int memoserv_sig_mysql()
   			"`fecha` bigint(20) NOT NULL default '0', "
   			"`leido` int(11) NOT NULL default '0', "
   			"KEY `n` (`n`) "
-			") TYPE=MyISAM COMMENT='Tabla de mensajes';", buf[0]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[0]);
+			") TYPE=MyISAM COMMENT='Tabla de mensajes';", PREFIJO, MS_MYSQL))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_MYSQL);
 	}
-	if (!tabla[1])
+	if (!_mysql_existe_tabla(MS_SET))
 	{
 		MYSQL_RES *res;
 		MYSQL_ROW row;
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"`opts` varchar(255) default NULL, "
   			"`limite` int(11) NOT NULL default '%i', "
   			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de opciones de mensajes';", buf[1], memoserv->def))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[1]);
+			") TYPE=MyISAM COMMENT='Tabla de opciones de mensajes';", PREFIJO, MS_SET, memoserv.def))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
 		if ((res = _mysql_query("SELECT item from %s%s", PREFIJO, NS_MYSQL)))
 		{
 			while ((row = mysql_fetch_row(res)))
@@ -906,7 +860,7 @@ void memoserv_notifica(Cliente *al)
 	MYSQL_RES *res;
 	if ((res = _mysql_query("SELECT * from %s%s where para='%s' AND leido='0'", PREFIJO, MS_MYSQL, al->nombre)))
 	{
-		response(al, memoserv->nick, "Tienes \00312%i\003 mensaje(s) nuevo(s).", mysql_num_rows(res));
+		response(al, CLI(memoserv), "Tienes \00312%i\003 mensaje(s) nuevo(s).", mysql_num_rows(res));
 		mysql_free_result(res);
 	}
 	return;

@@ -1,10 +1,6 @@
 /*
- * $Id: bdd.h,v 1.6 2004-10-23 22:42:30 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.7 2004-12-31 12:27:51 Trocotronic Exp $ 
  */
- 
-extern u_int base64toint(const char *);
-extern const char *inttobase64(char *, u_int, u_int);
-extern void tea(u_int *, u_int *, u_int *);
 
 #ifdef UDB
 #ifdef _WIN32
@@ -22,17 +18,20 @@ struct _udb
 	struct _udb *prev, *sig, *hsig, *up, *mid, *down;
 };
 
-extern MODVAR Udb *nicks, *chans, *ips, *sets;
-#ifdef MODULE_COMPILE
-extern MODVAR u_int BDD_NICKS, BDD_CHANS, BDD_IPS, BDD_SET;
-#else
-DLLFUNC extern MODVAR u_int BDD_NICKS, BDD_CHANS, BDD_IPS, BDD_SET;
-#endif
+MODFUNC extern MODVAR Udb *nicks;
+MODFUNC extern MODVAR Udb *chans;
+MODFUNC extern MODVAR Udb *ips;
+MODFUNC extern MODVAR Udb *sets;
+MODFUNC extern MODVAR u_int BDD_NICKS;
+MODFUNC extern MODVAR u_int BDD_CHANS;
+MODFUNC extern MODVAR u_int BDD_IPS;
+MODFUNC extern MODVAR u_int BDD_SET;
 
-DLLFUNC extern Udb *busca_registro(int, char *), *busca_bloque(char *, Udb *);
+DLLFUNC extern Udb *busca_registro(int, char *);
+DLLFUNC extern Udb *busca_bloque(char *, Udb *);
 DLLFUNC int level_oper_bdd(char *);
-extern char bloques[];
-extern int BDD_TOTAL;
+MODFUNC extern MODVAR char bloques[];
+MODFUNC extern MODVAR u_int BDD_TOTAL;
 
 #define BDD_PREO 0x1
 #define BDD_OPER 0x2
@@ -40,14 +39,15 @@ extern int BDD_TOTAL;
 #define BDD_ADMIN 0x8
 #define BDD_ROOT 0x10
 #define CHAR_NUM '*'
-extern Udb *coge_de_id(int);
-extern int coge_de_char(char);
-extern void carga_bloque(int);
-extern void descarga_bloque(int);
-extern int parsea_linea(int, char *, int);
-extern int actualiza_hash(Udb *);
+DLLFUNC extern Udb *coge_de_id(int);
+DLLFUNC extern u_int coge_de_char(char);
+DLLFUNC extern void carga_bloque(int);
+DLLFUNC extern void descarga_bloque(int);
+DLLFUNC extern int parsea_linea(int, char *, int);
+DLLFUNC extern int actualiza_hash(Udb *);
 extern void carga_bloques();
 extern void bdd_init();
+DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);
 #define E_UDB_NODB 1
 #define E_UDB_LEN 2
 #define E_UDB_NOHUB 3

@@ -1,30 +1,20 @@
 /*
- * $Id: proxyserv.h,v 1.1 2004-11-05 19:59:39 Trocotronic Exp $ 
+ * $Id: proxyserv.h,v 1.2 2004-12-31 12:27:56 Trocotronic Exp $ 
  */
 
-#define XS_MAX_COMS 256
 #define XS_MAX_PORTS 32
 
 typedef struct _xs ProxyServ;
 struct _xs
 {
-	char *nick;
-	char *ident;
-	char *host;
-	char *modos;
-	char *realname;
-	char *mascara;
-	int opts;
-	char *residente;
-	bCom *comando[XS_MAX_COMS]; /* comandos soportados */
-	int comandos;
 	int puerto[XS_MAX_PORTS]; /* puertos a escanear */
 	int puertos;
 	int tiempo;
 	int maxlist;
+	Modulo *hmod;
 };
 
-extern ProxyServ *proxyserv;
+extern ProxyServ proxyserv;
 
 #define XS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
 #define XS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.9 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.10 2004-12-31 12:27:58 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -12,6 +12,7 @@
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "protocolos.h"
 #include "md5.h"
 
 struct Conf_server *conf_server = NULL;
@@ -32,16 +33,17 @@ static int _test_log			(Conf *, int *);
 #ifdef USA_SSL
 static int _test_ssl			(Conf *, int *);
 #endif
+static int _test_protocolo		(Conf *, int *);
 
 static void _conf_server		(Conf *);
 static void _conf_db 		(Conf *);
 static void _conf_smtp		(Conf *);
 static void _conf_set		(Conf *);
-static void _conf_modulos		(Conf *);
 static void _conf_log		(Conf *);
 #ifdef USA_SSL
 static void _conf_ssl		(Conf *);
 #endif
+static void _conf_modulos		(Conf *);
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
@@ -61,6 +63,7 @@ static cComConf cComs[] = {
 #ifdef USA_SSL
 	{ "ssl" , _test_ssl , _conf_ssl , OPC , 1 } ,
 #endif
+	{ "protocolo" , _test_protocolo , NULL , OBL , 1 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 struct bArchivos
@@ -205,6 +208,11 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 				pitem = pdata = NULL;
 				break;
 			case '}':
+				if (!root->root)
+				{
+					pce("Hay llaves cerradas '}' de más.");
+					break;
+				}
 				root->root->seccion[root->root->secciones++] = root;
 				root = root->root;
 				break;
@@ -249,17 +257,23 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 				{
 					for (par++; !BadPtr(par); par++)
 					{
+						if (*par == '\n')
+							linea++;
 						if (*par == '*' && *(par + 1) == '/')
 							break;
 					}
 					par++;
 				}
 				else if (*par == '/')
+				{
 					for (par++; *par != '\n'; par++);
+					linea++;
+				}
 				break;
 			case '#':
 				while (*par != '\n')
 					par++;
+				linea++;
 				break;
 			default:
 				ini = par;
@@ -332,9 +346,9 @@ void distribuye_conf(Conf *config)
 				break;
 			com++;
 		}
-		if (com->func != 0x0)
+		if (com->testfunc != 0x0)
 		{
-			if (!com->testfunc(config->seccion[i], &errores))
+			if (!com->testfunc(config->seccion[i], &errores) && com->func)
 				com->func(config->seccion[i]);
 		}
 		else
@@ -567,9 +581,9 @@ void _conf_server(Conf *config)
 			conf_server->password->local = conf_server->password->remoto = NULL;
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "local"));
+				if (!strcmp(config->seccion[i]->seccion[p]->item, "local"))
 					ircstrdup(&conf_server->password->local, config->seccion[i]->seccion[p]->data);
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "remoto"));
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "remoto"))
 					ircstrdup(&conf_server->password->remoto, config->seccion[i]->seccion[p]->data);
 			}
 		}
@@ -802,101 +816,6 @@ int _test_set(Conf *config, int *errores)
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "autojoin")))
-	{
-		if ((aux = busca_entrada(eval, "usuarios")))
-		{
-			if (!aux->data)
-			{
-				conferror("[%s:%s::%s::%s::%i] La directriz usuarios esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
-				error_parcial++;
-			}
-			if (*(aux->data) != '#')
-			{
-				conferror("[%s:%s::%s::%s::%i] Los canales deben empezar por #.", config->archivo, config->item, eval->item, aux->item, aux->linea);
-				error_parcial++;
-			}
-		}
-		if ((aux = busca_entrada(eval, "opers")))
-		{
-			if (!aux->data)
-			{
-				conferror("[%s:%s::%s::%s::%i] La directriz opers esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
-				error_parcial++;
-			}
-			if (*(aux->data) != '#')
-			{
-				conferror("[%s:%s::%s::%s] Los canales deben empezar por #.", config->archivo, config->item, eval->item, aux->item);
-				error_parcial++;
-			}
-		}
-	}
-	if ((eval = busca_entrada(config, "modos")))
-	{
-		if ((aux = busca_entrada(eval, "usuarios")))
-		{
-			if (!aux->data)
-			{
-				conferror("[%s:%s::%s::%s::%i] La directriz usuarios esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
-				error_parcial++;
-			}
-		}
-		if ((aux = busca_entrada(eval, "canales")))
-		{
-			if (!aux->data)
-			{
-				conferror("[%s:%s::%s::%s::%i] La directriz canales esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
-				error_parcial++;
-			}
-			else
-			{
-				char forb[] = "ohvbeqar";
-				int i;
-				for (i = 0; forb[i] != '\0'; i++)
-				{
-					if (strchr(aux->data, forb[i]))
-					{
-						conferror("[%s:%s::%s::%s::%i] Los modos +ohvbeqar no se permiten.", config->archivo, config->item, eval->item, aux->item, aux->linea);
-						error_parcial++;
-					}
-				}
-			}
-		}
-	}
-	/*if (!(eval = busca_entrada(config, "blocks")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz blocks.", config->archivo, config->item);
-		error_parcial++;
-	}
-	else
-	{
-		if (!(aux = busca_entrada(eval, "bline")))
-		{
-			conferror("[%s:%s::%s] No se encuentra la directriz bline.", config->archivo, config->item, eval->item);
-			error_parcial++;
-		}
-		else
-		{
-			if (!aux->data)
-			{
-				conferror("[%s:%s::%s::%s] La directriz bline esta vacia.", config->archivo, config->item, eval->item, aux->item);
-				error_parcial++;
-			}
-		}
-	}*/
-	if (!(eval = busca_entrada(config, "cloak")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz cloak.", config->archivo, config->item);
-		error_parcial++;
-	}
-	else
-	{
-		if (eval->secciones != 3)
-		{
-			conferror("[%s:%s::%s::%i] Solo se necesitan 3 claves, no %i.", config->archivo, config->item, eval->item, eval->secciones, eval->linea);
-			error_parcial++;
-		}
-	}
 	if (!(eval = busca_entrada(config, "admin")))
 	{
 		conferror("[%s:%s] No se encuentra la directriz admin.", config->archivo, config->item);
@@ -938,6 +857,19 @@ int _test_set(Conf *config, int *errores)
 			}
 		}
 	}
+	if (!(eval = busca_entrada(config, "cloak")))
+	{
+		conferror("[%s:%s] No se encuentra la directriz cloak.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (eval->secciones != 3)
+		{
+			conferror("[%s:%s::%s::%i] Sólo se necesitan 3 claves, no %i.", config->archivo, config->item, eval->item, eval->secciones, eval->linea);
+			error_parcial++;
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -945,19 +877,13 @@ void _conf_set(Conf *config)
 {
 	int i, p;
 	if (!conf_set)
-	{
 		da_Malloc(conf_set, struct Conf_set);
-		conf_set->opts = RESP_PRIVMSG;
-		conf_set->nicklen = 30;
-	}
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "autobop"))
 			conf_set->opts |= AUTOBOP;
 		else if (!strcmp(config->seccion[i]->item, "rekill"))
 			conf_set->opts |= REKILL;
-		else if (!strcmp(config->seccion[i]->item, "no_server_deop"))
-			conf_set->opts |= NOSERVDEOP;
 		else if (!strcmp(config->seccion[i]->item, "rejoin"))
 			conf_set->opts |= REJOIN;
 		else if (!strcmp(config->seccion[i]->item, "respuesta"))
@@ -969,71 +895,6 @@ void _conf_set(Conf *config)
 		}
 		else if (!strcmp(config->seccion[i]->item, "root"))
 			ircstrdup(&conf_set->root, config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "autojoin"))
-		{
-			if (!conf_set->autojoin)
-				da_Malloc(conf_set->autojoin, struct Conf_set_autojoin);
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
-					ircstrdup(&conf_set->autojoin->usuarios, config->seccion[i]->seccion[p]->data);
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "opers"))
-					ircstrdup(&conf_set->autojoin->operadores, config->seccion[i]->seccion[p]->data);
-			}
-		}
-		else if (!strcmp(config->seccion[i]->item, "modos"))
-		{
-			if (!conf_set->modos)
-				da_Malloc(conf_set->modos, struct Conf_set_modos);
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
-					ircstrdup(&conf_set->modos->usuarios, config->seccion[i]->seccion[p]->data);
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
-					ircstrdup(&conf_set->modos->canales, config->seccion[i]->seccion[p]->data);
-			}
-		}
-		/*else if (!strcmp(config->seccion[i]->item, "blocks"))
-		{
-			if (!conf_set->blocks)
-				da_Malloc(conf_set->blocks, struct Conf_set_blocks);
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "bline"))
-					ircstrdup(&conf_set->blocks->bline, config->seccion[i]->seccion[p]->data);
-			}
-		}*/
-		else if (!strcmp(config->seccion[i]->item, "cloak"))
-		{
-			char tmp[512], result[16];
-			MD5_CTX hash;
-			if (!conf_set->cloak)
-				da_Malloc(conf_set->cloak, struct Conf_set_cloak);
-			ircstrdup(&conf_set->cloak->clave1, config->seccion[i]->seccion[0]->item);
-			ircstrdup(&conf_set->cloak->clave2, config->seccion[i]->seccion[1]->item);
-			ircstrdup(&conf_set->cloak->clave3, config->seccion[i]->seccion[2]->item);
-			sprintf_irc(tmp, "%s:%s:%s", conf_set->cloak->clave1, conf_set->cloak->clave2, conf_set->cloak->clave3);
-			MDInit(&hash);
-			MDUpdate(&hash, tmp, strlen(tmp));
-			MDFinal(result, &hash);
-			sprintf_irc(conf_set->cloak->crc, "MD5:%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
-				(u_int)(result[0] & 0xf), (u_int)(result[0] >> 4),
-				(u_int)(result[1] & 0xf), (u_int)(result[1] >> 4),
-				(u_int)(result[2] & 0xf), (u_int)(result[2] >> 4),
-				(u_int)(result[3] & 0xf), (u_int)(result[3] >> 4),
-				(u_int)(result[4] & 0xf), (u_int)(result[4] >> 4),
-				(u_int)(result[5] & 0xf), (u_int)(result[5] >> 4),
-				(u_int)(result[6] & 0xf), (u_int)(result[6] >> 4),
-				(u_int)(result[7] & 0xf), (u_int)(result[7] >> 4),
-				(u_int)(result[8] & 0xf), (u_int)(result[8] >> 4),
-				(u_int)(result[9] & 0xf), (u_int)(result[9] >> 4),
-				(u_int)(result[10] & 0xf), (u_int)(result[10] >> 4),
-				(u_int)(result[11] & 0xf), (u_int)(result[11] >> 4),
-				(u_int)(result[12] & 0xf), (u_int)(result[12] >> 4),
-				(u_int)(result[13] & 0xf), (u_int)(result[13] >> 4),
-				(u_int)(result[14] & 0xf), (u_int)(result[14] >> 4),
-				(u_int)(result[15] & 0xf), (u_int)(result[15] >> 4));
-		}
 		else if (!strcmp(config->seccion[i]->item, "admin"))
 			ircstrdup(&conf_set->admin, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "reconectar"))
@@ -1050,16 +911,90 @@ void _conf_set(Conf *config)
 		}
 		else if (!strcmp(config->seccion[i]->item, "debug"))
 			ircstrdup(&conf_set->debug, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "cloak"))
+		{
+			char tmp[512];
+			if (!conf_set->cloak)
+				da_Malloc(conf_set->cloak, struct Conf_set_cloak);
+			ircstrdup(&conf_set->cloak->clave1, config->seccion[i]->seccion[0]->item);
+			ircstrdup(&conf_set->cloak->clave2, config->seccion[i]->seccion[1]->item);
+			ircstrdup(&conf_set->cloak->clave3, config->seccion[i]->seccion[2]->item);
+			sprintf_irc(tmp, "%s:%s:%s", conf_set->cloak->clave1, conf_set->cloak->clave2, conf_set->cloak->clave3);
+			cloak_crc(tmp);
+		}
 	}
 }
 int _test_modulos(Conf *config, int *errores)
 {
-	return 0;
+	short int error_parcial = 0;
+	Conf *eval;
+	if (BadPtr(config->data))
+	{
+		conferror("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
+		error_parcial++;
+	}
+	if (!(eval = busca_entrada(config, "nick")))
+	{
+		conferror("[%s:%s] No se encuentra la directriz nick.", config->archivo, config->item);
+		error_parcial++;
+	}
+	if (!(eval = busca_entrada(config, "ident")))
+	{
+		conferror("[%s:%s] No se encuentra la directriz ident.", config->archivo, config->item);
+		error_parcial++;
+	}
+	if (!(eval = busca_entrada(config, "host")))
+	{
+		conferror("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
+		error_parcial++;
+	}
+	if (!(eval = busca_entrada(config, "realname")))
+	{
+		conferror("[%s:%s] No se encuentra la directriz realname.", config->archivo, config->item);
+		error_parcial++;
+	}
+	return error_parcial;
 }
 void _conf_modulos(Conf *config)
 {
-	if (crea_modulo(config->data))
-		conferror("[%s:%s] No se puede cargar %s.", config->archivo, config->item, config->data);
+	int i;
+	Modulo *mod;
+	if (!(mod = crea_modulo(config->data)))
+		conferror("[%s:%s] Ha sido imposible cargar el módulo %s.", config->archivo, config->item, config->data);
+	else
+	{
+		for (i = 0; i < config->secciones; i++)
+		{
+			if (!strcmp(config->seccion[i]->item, "nick"))
+				ircstrdup(&mod->nick, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "ident"))
+				ircstrdup(&mod->ident, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "host"))
+				ircstrdup(&mod->host, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "realname"))
+				ircstrdup(&mod->realname, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "modos"))
+				ircstrdup(&mod->modos, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "residente"))
+				ircstrdup(&mod->residente, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "config"))
+			{
+				char *path, *k;
+				path = strdup(config->data);
+				if (!(k = strrchr(path, '/')))
+					k = strrchr(path, '\\');
+				if (k)
+					*k = '\0';
+				ircfree(mod->config);
+				mod->config = (char *)Malloc(sizeof(char) * (strlen(config->seccion[i]->data) + (path ? strlen(path) : 0) + 2));
+				sprintf_irc(mod->config, "%s/%s", path, config->seccion[i]->data);
+				Free(path);
+			}
+		}
+		ircfree(mod->mascara);
+		mod->mascara = (char *)Malloc(sizeof(char) * (strlen(mod->nick) + 1 + strlen(mod->ident) + 1 + strlen(mod->host) + 1));
+		sprintf_irc(mod->mascara, "%s!%s@%s", mod->nick, mod->ident, mod->host);
+	}
 }
 int _test_log(Conf *config, int *errores)
 {
@@ -1225,6 +1160,23 @@ void _conf_ssl(Conf *config)
 	}
 }
 #endif
+int _test_protocolo(Conf *config, int *errores)
+{
+	short error_parcial = 0;
+	if (BadPtr(config->data))
+	{
+		conferror("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
+		error_parcial++;
+	}
+	if (carga_protocolo(config))
+	{
+		conferror("[%s:%s::%i] Ha sido imposible cargar el protocolo %s.", config->archivo, config->item, config->linea, config->data);
+		error_parcial++;
+	}
+	*errores += error_parcial;
+	return error_parcial;
+}
+
 #ifndef _WIN32
 void conferror(char *formato, ...)
 {
@@ -1238,3 +1190,28 @@ void conferror(char *formato, ...)
 	Free(texto);
 }
 #endif
+void cloak_crc(char *tmp)
+{
+	char result[16];
+	MD5_CTX hash;
+	MDInit(&hash);
+	MDUpdate(&hash, tmp, strlen(tmp));
+	MDFinal(result, &hash);
+	sprintf_irc(conf_set->cloak->crc, "MD5:%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
+		(u_int)(result[0] & 0xf), (u_int)(result[0] >> 4),
+		(u_int)(result[1] & 0xf), (u_int)(result[1] >> 4),
+		(u_int)(result[2] & 0xf), (u_int)(result[2] >> 4),
+		(u_int)(result[3] & 0xf), (u_int)(result[3] >> 4),
+		(u_int)(result[4] & 0xf), (u_int)(result[4] >> 4),
+		(u_int)(result[5] & 0xf), (u_int)(result[5] >> 4),
+		(u_int)(result[6] & 0xf), (u_int)(result[6] >> 4),
+		(u_int)(result[7] & 0xf), (u_int)(result[7] >> 4),
+		(u_int)(result[8] & 0xf), (u_int)(result[8] >> 4),
+		(u_int)(result[9] & 0xf), (u_int)(result[9] >> 4),
+		(u_int)(result[10] & 0xf), (u_int)(result[10] >> 4),
+		(u_int)(result[11] & 0xf), (u_int)(result[11] >> 4),
+		(u_int)(result[12] & 0xf), (u_int)(result[12] >> 4),
+		(u_int)(result[13] & 0xf), (u_int)(result[13] >> 4),
+		(u_int)(result[14] & 0xf), (u_int)(result[14] >> 4),
+		(u_int)(result[15] & 0xf), (u_int)(result[15] >> 4));
+}

@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.4 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.5 2004-12-31 12:27:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -54,7 +54,7 @@ MYSQL_RES *_mysql_query(char *formato, ...)
 	if (mysql_query(mysql, buf) < 0)
 	{
 		fecho(FADV, "MySQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", buf, mysql_errno(mysql), mysql_error(mysql));
-		return (MYSQL_RES *)mysql_error(mysql);
+		return NULL;
 	}
 	if ((resultado = mysql_store_result(mysql)))
 	{
@@ -76,10 +76,12 @@ char *_mysql_get_registro(char *tabla, char *registro, char *campo)
 	mysql_real_escape_string(mysql, reg_corr, registro, strlen(registro));
 	if (campo)
 	{
-		cam_corr = (char *)Malloc(sizeof(char) * strlen(campo) * 2 + 1);
-		mysql_real_escape_string(mysql, cam_corr, campo, strlen(campo));
+		cam_corr = (char *)Malloc(sizeof(char) * strlen(campo) * 2 + 3);
+		cam_corr[0] = '`';
+		mysql_real_escape_string(mysql, &cam_corr[1], campo, strlen(campo));
+		strcat(cam_corr, "`");
 	}
-	res = _mysql_query("SELECT `%s` from %s%s where item='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, reg_corr);
+	res = _mysql_query("SELECT %s from %s%s where item='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, reg_corr);
 	Free(reg_corr);
 	if (campo)
 		Free(cam_corr);
@@ -169,6 +171,8 @@ int _mysql_backup()
 		return 1;
 	for (i = 0; i < mysql_tablas.tablas; i++)
 	{
+		if (strncmp(mysql_tablas.tabla[i], PREFIJO, strlen(PREFIJO)))
+			continue;
 		bzero(buf, BUFSIZE);
 		tabla = mysql_tablas.tabla[i];
 		sprintf_irc(buf, "CREATE TABLE %s ( ", tabla);
@@ -216,9 +220,10 @@ int _mysql_backup()
 		{
 			while ((row = mysql_fetch_row(res)))
 			{
+				if (!(resf = mysql_list_fields(mysql, tabla, NULL)))
+					break;
 				bzero(buf, BUFSIZE);
 				sprintf_irc(buf, "INSERT INTO `%s` VALUES (", tabla);
-				resf = mysql_list_fields(mysql, tabla, NULL);
 				for (j = 0; (fi = mysql_fetch_field(resf)); j++)
 				{
 					bzero(buf2, BUFSIZE);
@@ -278,4 +283,16 @@ void _mysql_carga_tablas()
 		mysql_tablas.tablas = i;
 		mysql_free_result(res);
 	}
+}
+int _mysql_existe_tabla(char *tabla)
+{
+	char buf[256];
+	int i;
+	sprintf_irc(buf, "%s%s", PREFIJO, tabla);
+	for (i = 0; i < mysql_tablas.tablas; i++)
+	{
+		if (!strcasecmp(mysql_tablas.tabla[i], buf))
+			return 1;
+	}
+	return 0;
 }

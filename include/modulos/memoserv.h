@@ -1,23 +1,14 @@
 /*
- * $Id: memoserv.h,v 1.1 2004-11-05 19:59:38 Trocotronic Exp $ 
+ * $Id: memoserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
  */
 
-#define MS_MAX_COMS 256
 typedef struct _ms MemoServ;
 struct _ms
 {
-	char *nick;
-	char *ident;
-	char *host;
-	char *modos;
-	char *realname;
-	char *mascara;
 	int opts;
 	int def;
 	int cada;
-	char *residente;
-	bCom *comando[MS_MAX_COMS]; /* comandos soportados */
-	int comandos;
+	Modulo *hmod;
 };
 
 #define MS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
@@ -28,7 +19,7 @@ struct _ms
 #define MS_MYSQL "mensajes"
 #define MS_SET "mopts"
 
-extern MemoServ *memoserv;
+extern MemoServ memoserv;
 
 DLLFUNC extern int memoserv_send(char *, char *, char *);
 

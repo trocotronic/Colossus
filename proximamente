@@ -1,0 +1,43 @@
+TODO 
+
+Trocotronic / 03-11-2004 16:00
+
+
+Versión 1.1:
+
+[ ] Hacer modulable el protocolo.
+	[X] Incluir el protocolo de UnrealIRCd
+	[X] Incluir el protocolo p10
+	[ ] Incluir el protocolo de redhispana
+	
+[ ] Versatilizar la caché
+
+		
+Versión 1.2: 
+
+[ ] Implementar sistema de niveles de acceso
+	[ ] Funcionalizar los comandos según el nivel de acceso
+
+
+Versión 1.3: 
+
+[ ] Añadir soporte para varios idiomas
+	[ ] Soporte para castellano
+	[ ] Soporte para catalán
+	[ ] Soporte para inglés
+	
+[ ] Modularizar la ayuda de cada módulo o bot
+
+
+Versión 1.4:
+
+[ ] Adaptar los módulos o bots a la semántica de IRCServices e irc-hispano
+	[ ] ChanServ
+	[ ] NickServ
+	[ ] OperServ
+	[ ] MemoServ
+	
+
+Versión 1.5:
+
+[ ] Administración por vía web

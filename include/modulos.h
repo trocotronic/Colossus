@@ -1,10 +1,6 @@
 /*
- * $Id: modulos.h,v 1.5 2004-09-23 17:01:49 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.6 2004-12-31 12:27:51 Trocotronic Exp $ 
  */
-
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
    El ultimo bit se reserva al uso de tener el nick registrado.
@@ -28,6 +24,7 @@
 
 #define MAXMODS 128
 #define MAX_RES 64
+#define MAX_COMS 256
 
 #define TODOS 0x0
 #define USERS (BOT | ROOT | ADMIN | OPER | DEVEL | IRCOP | PREO | USER)
@@ -43,14 +40,13 @@ struct _bcom
 	int (*func)(Cliente *, char *[], int, char *[], int);
 	int nivel;
 };
-typedef struct _modinfo
+typedef struct _info
 {
 	char *nombre;
 	double version;
 	char *autor;
 	char *email;
-	char *config;
-}ModInfo;
+}ModInfo, ProtInfo;
 typedef struct _mod
 {
 #ifdef _WIN32
@@ -67,21 +63,31 @@ typedef struct _mod
 	char *host;
 	char *residente;
 	char *modos;
+	char *mascara;
 	int id;
 	char cargado;
 	ModInfo *info;
-	bCom **comandos;
+	bCom *comando[MAX_COMS];
+	int comandos;
 	int (*carga)(struct _mod *);
 	int (*descarga)(struct _mod *);
 	char *config;
+	void *conf; /* es un puntero a su estructura, según lo defina. habrá que hacer cast *CADA VEZ* */
+	Cliente *cl;
 }Modulo;
-	
+
 extern MODVAR Modulo *modulos;
 extern Modulo *busca_modulo(char *, Modulo *);
-extern void response(Cliente *, char *, char *, ...);
 
 #define ERR_DESC "\00304ERROR: Comando desconocido."
 #define ERR_NOID "\00304ERROR: No estás identificado."
 #define ERR_FORB "\00304ERROR: Acceso denegado."
+#define ERR_NSUP "\00304ERROR: Este comando no está soportado en este servidor."
 extern void descarga_modulos(void);
-extern int crea_modulo(char *);
+extern Modulo *crea_modulo(char *);
+#ifdef _WIN32
+extern const char *our_dlerror(void);
+#endif
+
+#define CLI(x) x.hmod->cl
+#define bot_set(x) x.hmod = mod; mod->conf = &(x)

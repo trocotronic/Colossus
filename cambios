@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.12 2004-11-05 19:59:34 Trocotronic Exp $
+ * $Id: cambios,v 1.13 2004-12-31 12:27:49 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -192,3 +192,36 @@
 011104150 - *** Quinta release pública: 1.0 ***
 021104151 - Se mejora el comando BLOCKS de OperServ para un uso más claro.
 041104152 - Se cambian algunas cabeceras.
+061104153 - Se arregla un fallo si conectaba remotamente un servidor no autorizado.
+061104154 - Se optimiza el debug del programa a un canal.
+071104155 - Arreglado un fallo en las contraseñas del servidor.
+121104156 - Arreglado un fallo al contar las líneas de la configuración.
+191104157 - Se cambia el sistema de hash.
+191104158 - Se añaden y modifican nuevas funciones para modularizar los protocolos.
+261104159 - Se añade el comando FORBID en NickServ.
+261104160 - Se quitan las blocks de OperServ para funcionar sólo con GLINE.
+261104161 - Arreglado un fallo en el que se autodropaban canales con la opción NODROP activada.
+271104162 - La resolución de hosts ahora no es bloqueante, con lo que se mejora la rapidez del programa.
+271104163 - Cuando se suspende un nick se le informa de ello si está conectado.
+281104164 - Cada vez que se mandan varios modos de canal a la vez, se unen en una sóla línea.
+301104165 - Arreglado un fallo al hacer una copia de seguridad.
+301104166 - Ahora sólo se hace una copia de seguridad de las tablas que utiliza Colossus.
+011204167 - Se actualiza la librería MySQL a la versión 4.1.
+011204168 - Corregido un fallo que no daba acceso +m a un usuario de un canal.
+021204169 - Se pasa el comando CLONES de OperServ a IpServ.
+021204170 - Se pasa toda la gestión de clones de OperServ a IpServ.
+021204171 - Se añade el comando SET en IpServ para gestionar el número de clones, el sufijo, etc. de la red.
+021204172 - Se quita la directriz Bline de OperServ.
+031204173 - Se añade una utilidad para crear directamente el archivo .def.
+041204174 - Se usan los protocolos SJOIN3, NS y SJB64 para ahorrar ancho de banda.
+061204175 - Se añade otra vez la directriz red en la configuración para redes en las que no sea posible detecarlo.
+061204176 - Actualizado al protocolo UDB 3.1.
+061204177 - Arreglado un importante fallo a la hora de dar memoria.
+061204178 - Arreglado un fallo al debugear en un canal.
+111204179 - Se mejora el borrado de comandos (interno).
+111204180 - Se mejora la función para obtener una máscara (más velocidad).
+191204181 - Debido a que algunas redes no hay override en los bots, añado una opción para detectarla.
+261204182 - Se arreglan un par de fallos en CLEAR y BLOCK de ChanServ.
+271204183 - Se cambia el sistema de carga de módulos.
+301204184 - Se cambia el bloque modulos { }.
+301204185 - Se arregla un fallo grave en el borrado de señales.

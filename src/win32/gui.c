@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.2 2004-10-02 22:48:45 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.3 2004-12-31 12:28:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -251,12 +251,6 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return FALSE;
 }
-void ChkBtCon(int val, int block)
-{
-	SetDlgItemText(hwMain, BT_CON, val ? "Desconectar" : "Conectar");
-	CheckDlgButton(hwMain, BT_CON, val && !block ? BST_CHECKED : BST_UNCHECKED);
-	EnableWindow(GetDlgItem(hwMain, BT_CON), block ? FALSE : TRUE);
-}
 LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
 {
 	switch (message) 
@@ -278,30 +272,4 @@ LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			break;
 	}
 	return FALSE;
-}
-void conferror(char *formato, ...)
-{
-	char buf[BUFSIZE], *texto, actual[BUFSIZE];
-	int len;
-	va_list vl;
-	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
-	va_end(vl);
-	strcat(buf, "\r\n");
-	if (!hwConfError)
-	{
-		hwConfError = CreateDialog(hInst, "CONFERROR", 0, (DLGPROC)ConfErrorDLG);
-		ShowWindow(hwConfError, SW_SHOW);
-		texto = (char *)Malloc(sizeof(char) * (strlen(buf) + 1));
-		strcpy(texto, buf);
-	}
-	else
-	{
-		len = GetDlgItemText(hwConfError, EDT_ERR, actual, BUFSIZE);
-		texto = (char *)Malloc(sizeof(char) * (len + strlen(buf) + 1));
-		strcpy(texto, actual);
-		strcat(texto, buf);
-	}
-	SetDlgItemText(hwConfError, EDT_ERR, texto);
-	Free(texto);
 }

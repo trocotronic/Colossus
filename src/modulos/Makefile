@@ -1,8 +1,7 @@
-## $Id: Makefile,v 1.3 2004-09-17 23:33:52 Trocotronic Exp $
+## $Id: Makefile,v 1.4 2004-12-31 12:28:00 Trocotronic Exp $
 
-INCLUDES = ../include/bdd.h ../include/comandos.h \
-	../include/flags.h ../include/ircd.h ../include/md5.h \
-	../include/modulos.h ../include/mysql.h ../include/parseconf.h \
+INCLUDES = ../include/ircd.h ../include/md5.h \
+	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
 	../include/sprintf_irc.h ../include/struct.h
 R_MODULES=chanserv.so nickserv.so operserv.so ipserv.so \
 	memoserv.so statserv.so proxyserv.so linkserv.so

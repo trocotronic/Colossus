@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.2 2004-10-10 09:55:25 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.3 2004-12-31 12:27:52 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -7,6 +7,14 @@
   #define MODVAR __declspec(dllimport)
  #else
   #define MODVAR
+ #endif
+#endif
+
+#ifndef MODFUNC
+ #if !defined(MODULE_COMPILE) && defined(_WIN32)
+  #define MODFUNC __declspec(dllexport)
+ #else
+  #define MODFUNC
  #endif
 #endif
 
@@ -21,7 +29,7 @@
 #define irc_dlclose dlclose
 #define irc_dlsym(x,y,z) z = dlsym(x,y)
 #define irc_dlerror dlerror
-#define DLLFUNC 
+#define DLLFUNC
 #endif
 
 /* 

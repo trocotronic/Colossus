@@ -1,4 +1,4 @@
-## $Id: make,v 1.7 2004-11-05 19:59:34 Trocotronic Exp $
+## $Id: make,v 1.8 2004-12-31 12:27:50 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -11,7 +11,6 @@ ZLIB=1
 ###### FIN ZLIB ######
 
 #### SOPORTE UDB ####
-#Soporte UDB
 UDB=1
 #
 ###### FIN UDB ######
@@ -58,21 +57,34 @@ OPENSSL_LIB=/LIBPATH:"$(OPENSSL_LIB_DIR)"
 CFLAGS=$(DBGCFLAG) /I ./INCLUDE /J $(OPENSSL_INC) /Fosrc/ /nologo $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /D _WIN32 /c 
 LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIBLIB) $(OPENSSL_LIB) $(SSLLIBS) Dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:colossus.def /implib:colossus.lib
-OBJ_FILES=SRC/BDD.OBJ SRC/DEBUG.OBJ SRC/FLAGS.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
-	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/SMTP.OBJ \
-	SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) $(SSLOBJ) SRC/WIN32/COLOSSUS.RES SRC/GUI.OBJ
-BOT_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL SRC/MODULOS/OPERSERV.DLL \
-	SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL \
-	SRC/MODULOS/MX.DLL
-INCLUDES = ./include/bdd.h ./include/comandos.h \
-	./include/flags.h ./include/ircd.h ./include/md5.h \
-	./include/modulos.h ./include/mysql.h ./include/parseconf.h \
+EXP_OBJ_FILES=SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
+	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
+	SRC/SMTP.OBJ SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) $(SSLOBJ)
+MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
+	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL 
+#	SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL
+!IFDEF UDB
+OBJ_FILES=$(EXP_OBJ_FILES) SRC/BDD.OBJ SRC/WIN32/COLOSSUS.RES SRC/GUI.OBJ SRC/DEBUG.OBJ
+PROT_DLL=SRC/PROTOCOLOS/UNREAL_UDB.DLL
+!ELSE
+OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/GUI.OBJ SRC/DEBUG.OBJ
+PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
+!ENDIF
+
+INCLUDES = ./include/ircd.h ./include/md5.h \
+	./include/modulos.h ./include/mysql.h ./include/parseconf.h ./include/protocolos.h \
 	./include/sprintf_irc.h ./include/struct.h ./include/ssl.h ./include/zlib.h  \
-	./include/sistema.h
-MODCFLAGS=$(MODDBGCFLAG) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
+	./include/sistema.h make
+MODCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
+PROTCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
+PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
 
 ALL: COLOSSUS.EXE MODULES
+
+MX: src/modulos/mx.c $(INCLUDES)
+	$(CC) $(MODDBGCFLAG) /Fesrc/modulos/ /Fosrc/modulos/ /nologo src/modulos/mx.c /link dnsapi.lib
+	-@copy src\modulos\mx.dll mx.dll
 
 CLEAN:
        -@erase src\*.obj >NUL
@@ -104,10 +116,7 @@ src/bdd.obj: src/bdd.c $(INCLUDES)
         
 src/debug.obj: src/debug.c $(INCLUDES)
         $(CC) $(CFLAGS) src/debug.c
-
-src/flags.obj: src/flags.c $(INCLUDES)
-        $(CC) $(CFLAGS) src/flags.c
-        
+  
 src/hash.obj: src/hash.c $(INCLUDES)
         $(CC) $(CFLAGS) src/hash.c        
         
@@ -130,7 +139,10 @@ src/mysql.obj: src/mysql.c $(INCLUDES)
         $(CC) $(CFLAGS) src/mysql.c        
         
 src/parseconf.obj: src/parseconf.c $(INCLUDES)
-        $(CC) $(CFLAGS) src/parseconf.c        
+        $(CC) $(CFLAGS) src/parseconf.c 
+        
+src/protocolos.obj: src/protocolos.c $(INCLUDES)
+        $(CC) $(CFLAGS) src/protocolos.c         
         
 src/smtp.obj: src/smtp.c $(INCLUDES)
         $(CC) $(CFLAGS) src/smtp.c        
@@ -156,39 +168,57 @@ src/gui.obj: src/win32/gui.c $(INCLUDES)
 	
 CUSTOMMODULE: src/modulos/$(MODULEFILE).c
 	$(CC) $(MODCFLAGS) src/modulos/$(MODULEFILE).c $(MODLFLAGS) $(PARAMS) /OUT:src/modulos/$(MODULEFILE).dlk
+	
+DEF: 
+	$(CC) src/win32/def-clean.c
+	dlltool --output-def colossus.def.in --export-all-symbols $(EXP_OBJ_FILES)
+	def-clean colossus.def.in colossus.def
        
-MODULES: $(BOT_DLL)
-	-@copy src\modulos\chanserv.dll modulos\chanserv.dll
-	-@copy src\modulos\ipserv.dll modulos\ipserv.dll
-	-@copy src\modulos\memoserv.dll modulos\memoserv.dll
-	-@copy src\modulos\nickserv.dll modulos\nickserv.dll
-	-@copy src\modulos\operserv.dll modulos\operserv.dll
+MODULES: $(MOD_DLL) $(PROT_DLL)
         
 src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)
+        -@copy src\modulos\chanserv.dll modulos\chanserv.dll
         
 src/modulos/nickserv.dll: src/modulos/nickserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/nickserv.c $(MODLFLAGS) ws2_32.lib src/modulos/chanserv.lib  
+        -@copy src\modulos\nickserv.dll modulos\nickserv.dll
         
 src/modulos/operserv.dll: src/modulos/operserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/operserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/operserv.c $(MODLFLAGS) src/modulos/memoserv.lib src/modulos/chanserv.lib
+        -@copy src\modulos\operserv.dll modulos\operserv.dll
         
 src/modulos/memoserv.dll: src/modulos/memoserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/memoserv.c $(MODLFLAGS) src/modulos/chanserv.lib
+	-@copy src\modulos\memoserv.dll modulos\memoserv.dll
 	
 src/modulos/ipserv.dll: src/modulos/ipserv.c $(INCLUDES) ./include/modulos/ipserv.h ./include/modulos/nickserv.h
-	$(CC) $(MODCFLAGS) src/modulos/ipserv.c $(MODLFLAGS)	
+	$(CC) $(MODCFLAGS) src/modulos/ipserv.c $(MODLFLAGS)
+	-@copy src\modulos\ipserv.dll modulos\ipserv.dll
 		      
 src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES) ./include/modulos/proxyserv.h
 	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS)
+	-@copy src\modulos\proxyserv.dll modulos\proxyserv.dll
 
 src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
-	
-src/modulos/mx.dll: src/modulos/mx.c $(INCLUDES)
-	$(CC) $(MODDBGCFLAG) /Fesrc/modulos/ /Fosrc/modulos/ /nologo src/modulos/mx.c /link dnsapi.lib
-	-@copy src\modulos\mx.dll mx.dll
+	-@copy src\modulos\statserv.dll modulos\statserv.dll
 	
 src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/linkserv.h
 	$(CC) $(MODCFLAGS) src/modulos/linkserv.c $(MODLFLAGS) src/modulos/chanserv.lib
+	-@copy src\modulos\linkserv.dll modulos\linkserv.dll
+	
+src/protocolos/unreal.dll: src/protocolos/unreal.c $(INCLUDES) 
+	$(CC) $(PROTCFLAGS) src/protocolos/unreal.c $(PROTLFLAGS)
+	-@copy src\protocolos\unreal.dll protocolos\unreal.dll
+
+src/protocolos/p10.dll: src/protocolos/p10.c $(INCLUDES) 
+	$(CC) $(PROTCFLAGS) src/protocolos/p10.c $(PROTLFLAGS)
+	-@copy src\protocolos\p10.dll protocolos\p10.dll
+	
+src/protocolos/unreal_udb.dll: src/protocolos/unreal.c $(INCLUDES) 
+	-@copy src\protocolos\unreal.c src\protocolos\unreal_udb.c
+	$(CC) $(PROTCFLAGS) src/protocolos/unreal_udb.c $(PROTLFLAGS)
+	-@copy src\protocolos\unreal_udb.dll protocolos\unreal_udb.dll
+	-@erase src\protocolos\unreal_udb.c
 	

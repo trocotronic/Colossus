@@ -1,28 +1,20 @@
 /*
- * $Id: modulos.c,v 1.5 2004-10-23 22:39:55 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.6 2004-12-31 12:27:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
-#include "comandos.h"
 #include "modulos.h"
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 #ifdef _WIN32
 const char *our_dlerror(void);
 #endif
 
 Modulo *modulos = NULL;
-void response(Cliente *cl, char *nick, char *formato, ...)
-{
-	char buf[BUFSIZE];
-	va_list vl;
-	if (EsBot(cl))
-		return;
-	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
-	va_end(vl);
-	sockwrite(SockActual, OPT_CRLF, ":%s %s %s :%s", nick, conf_set->opts & RESP_PRIVMSG ? TOK_PRIVATE : TOK_NOTICE, cl->nombre, buf);
-}
-int crea_modulo(char *archivo)
+Modulo *crea_modulo(char *archivo)
 {
 	char tmppath[128];
 	static int id = 0;
@@ -39,7 +31,7 @@ int crea_modulo(char *archivo)
 	if (!amod)
 	{
 		fecho(FADV, "Ha sido imposible cargar %s (falla ruta)", archivo);
-		return 1;
+		return NULL;
 	}
 	amod++;
 	sprintf_irc(tmppath, "./tmp/%s", amod);
@@ -48,35 +40,37 @@ int crea_modulo(char *archivo)
 		if (!strcasecmp(ex->archivo, archivo))
 		{
 			ex->cargado = 1; /* está en conf */
-			return 0; /* no creamos lo que está creado */
+			return ex; /* no creamos lo que está creado */
 		}
 	}
 	if (!copyfile(archivo, tmppath))
-		return 1;
+	{
+		fecho(FADV, "Ha sido imposible cargar %s (no puede copiar)", archivo);
+		return NULL;
+	}
 	if ((modulo = irc_dlopen(tmppath, RTLD_NOW)))
 	{
 		Modulo *mod;
-		char *file, *k;
 		irc_dlsym(modulo, "carga", mod_carga);
 		if (!mod_carga)
 		{
 			fecho(FADV, "Ha sido imposible cargar %s (carga)", amod);
 			irc_dlclose(modulo);
-			return 1;
+			return NULL;
 		}
 		irc_dlsym(modulo, "descarga", mod_descarga);
-		if (!mod_carga)
+		if (!mod_descarga)
 		{
 			fecho(FADV, "Ha sido imposible cargar %s (descarga)", amod);
 			irc_dlclose(modulo);
-			return 1;
+			return NULL;
 		}
 		irc_dlsym(modulo, "info", inf);
 		if (!inf || !inf->nombre)
 		{
 			fecho(FADV, "Ha sido imposible cargar %s (info)", amod);
 			irc_dlclose(modulo);
-			return 1;
+			return NULL;
 		}
 		da_Malloc(mod, Modulo);
 		mod->archivo = strdup(archivo);
@@ -87,22 +81,14 @@ int crea_modulo(char *archivo)
 		mod->descarga = mod_descarga;
 		mod->cargado = 1; /* está en conf */
 		mod->info = inf;
-		file = strdup(mod->archivo);
-		if (!(k = strrchr(file, '/')))
-			k = strrchr(file, '\\');
-		*k = '\0';
-		sprintf_irc(buf, "%s/%s", file, inf->config);
-		mod->config = strdup(buf);
+		id <<= 1;
 		mod->sig = modulos;
 		modulos = mod;
-		id <<= 1;
+		return mod;
 	}
 	else
-	{
 		fecho(FADV, "Ha sido imposible cargar %s (dlopen): %s", amod, irc_dlerror());
-		return 2;
-	}
-	return 0;
+	return NULL;
 }
 void descarga_modulo(Modulo *ex)
 {
@@ -113,6 +99,7 @@ void descarga_modulo(Modulo *ex)
 			(*ex->descarga)(ex);
 	}
 	ex->cargado = 0;
+	ex->comandos = 0; /* hay que vaciarlo! */
 }
 void carga_modulos()
 {
@@ -159,8 +146,7 @@ const char *our_dlerror(void)
 {
 	static char errbuf[513];
 	DWORD err = GetLastError();
-	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err,
-		0, errbuf, 512, NULL);
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, NULL, err, 0, errbuf, 512, NULL);
 	return errbuf;
 }
 #endif

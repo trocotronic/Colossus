@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.h,v 1.1 2004-11-05 19:59:38 Trocotronic Exp $ 
+ * $Id: linkserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
  */
 
 #define LS_MAX_COMS 256
@@ -17,6 +17,8 @@ struct _ls
 	char *residente;
 	bCom *comando[LS_MAX_COMS]; /* comandos soportados */
 	int comandos;
+	Cliente *cl;
+	Modulo *mod;
 };
 
 extern LinkServ *linkserv;

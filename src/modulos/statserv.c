@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.9 2004-11-05 19:59:37 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.10 2004-12-31 12:28:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -10,14 +10,13 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "struct.h"
-#include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "modulos/statserv.h"
 
 StatServ *statserv = NULL;
 char eos, *tempsrc = NULL;
-time_t inicio;
+time_t ini;
 
 static int statserv_help		(Cliente *, char *[], int, char *[], int);
 static int statserv_ctcpreply		(Cliente *, char *[], int, char *[], int);
@@ -26,35 +25,37 @@ static bCom statserv_coms[] = {
 	{ "\1VERSION", statserv_ctcpreply , TODOS } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
-DLLFUNC IRCFUNC(statserv_nick);
-DLLFUNC IRCFUNC(statserv_local_uptime);
-DLLFUNC IRCFUNC(statserv_local_users);
-DLLFUNC IRCFUNC(statserv_server);
-DLLFUNC IRCFUNC(statserv_umode2);
-DLLFUNC IRCFUNC(statserv_squit);
-DLLFUNC IRCFUNC(statserv_version);
-DLLFUNC IRCFUNC(statserv_notice);
-DLLFUNC IRCFUNC(statserv_eos);
-DLLFUNC SOCKFUNC(statserv_lee_web);
-DLLFUNC SOCKFUNC(statserv_escribe_web);
+IRCFUNC(statserv_nick);
+IRCFUNC(statserv_local_uptime);
+IRCFUNC(statserv_local_users);
+IRCFUNC(statserv_server);
+IRCFUNC(statserv_umode2);
+IRCFUNC(statserv_squit);
+IRCFUNC(statserv_version);
+IRCFUNC(statserv_notice);
+IRCFUNC(statserv_eos);
+SOCKFUNC(statserv_lee_web);
+SOCKFUNC(statserv_escribe_web);
 static int statserv_umode		(Cliente *cl, char *);
-DLLFUNC int statserv_create_channel	(Canal *);
-DLLFUNC int statserv_destroy_channel	(char *);
-DLLFUNC int statserv_quit		(Cliente *, char *);
-DLLFUNC int statserv_mysql		();
-DLLFUNC int statserv_laguea		(char *);
+int statserv_create_channel	(Canal *);
+int statserv_destroy_channel	(char *);
+int statserv_quit		(Cliente *, char *);
+int statserv_mysql		();
+int statserv_laguea		(char *);
+int statserv_sig_bot	();
+int statserv_sig_eos	();
 
 void set(Conf *, Modulo *);
 int test(Conf *, int *);
 
-DLLFUNC ModInfo info = {
+ModInfo info = {
 	"StatServ" ,
 	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 	"statserv.inc"
 };
-DLLFUNC int carga(Modulo *mod)
+int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
@@ -72,22 +73,26 @@ DLLFUNC int carga(Modulo *mod)
 	}
 	return errores;
 }
-DLLFUNC int descarga()
+int descarga()
 {
 	borra_comando(MSG_NOTICE, statserv_notice);
 	borra_comando(MSG_NICK, statserv_nick);
 	borra_comando("242", statserv_local_uptime);
 	borra_comando("265", statserv_local_users);
 	borra_comando(MSG_SERVER, statserv_server);
-	borra_comando(MSG_UMODE2,  statserv_umode2);
+	if (port_existe(MODO_USUARIO))
+		borra_comando(port_msg(MODO_USUARIO),  statserv_umode2);
 	borra_comando(MSG_SQUIT, statserv_squit);
 	borra_comando("351", statserv_version);
-	borra_comando(MSG_EOS, statserv_eos);
+	if (port_existe(EOS))
+		borra_comando(port_msg(EOS), statserv_eos);
 	borra_senyal(SIGN_UMODE, statserv_umode);
 	borra_senyal(SIGN_QUIT, statserv_quit);
-	borra_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
-	borra_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
+	//borra_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
+	//borra_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
 	borra_senyal(SIGN_MYSQL, statserv_mysql);
+	borra_senyal(SIGN_BOT, statserv_sig_bot);
+	borra_senyal(SIGN_EOS, statserv_sig_eos);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -214,27 +219,25 @@ void set(Conf *config, Modulo *mod)
 		Free(statserv->mascara);
 	statserv->mascara = (char *)Malloc(sizeof(char) * (strlen(statserv->nick) + 1 + strlen(statserv->ident) + 1 + strlen(statserv->host) + 1));
 	sprintf_irc(statserv->mascara, "%s!%s@%s", statserv->nick, statserv->ident, statserv->host);
-	inserta_comando(MSG_NOTICE, TOK_NOTICE, statserv_notice, INI);
-	inserta_comando(MSG_NICK, TOK_NICK, statserv_nick, INI);
-	inserta_comando("242", "242", statserv_local_uptime, INI);
-	inserta_comando("265", "265", statserv_local_users, INI);
-	inserta_comando(MSG_SERVER, TOK_SERVER, statserv_server, INI);
-	inserta_comando(MSG_UMODE2, TOK_UMODE2, statserv_umode2, INI);
-	inserta_comando(MSG_SQUIT, TOK_SQUIT, statserv_squit, INI);
-	inserta_comando("351", "351", statserv_version, INI);
-	inserta_comando(MSG_EOS, TOK_EOS, statserv_eos, INI);
+	inserta_comando(MSG_NOTICE, TOK_NOTICE, statserv_notice, INI, 0);
+	inserta_comando(MSG_NICK, TOK_NICK, statserv_nick, INI, 0);
+	inserta_comando("242", "242", statserv_local_uptime, INI, 0);
+	inserta_comando("265", "265", statserv_local_users, INI, 0);
+	inserta_comando(MSG_SERVER, TOK_SERVER, statserv_server, INI, 0);
+	if (port_existe(MODO_USUARIO))
+		inserta_comando(port_msg(MODO_USUARIO), port_tok(MODO_USUARIO), statserv_umode2, INI, 0);
+	inserta_comando(MSG_SQUIT, TOK_SQUIT, statserv_squit, INI, 0);
+	inserta_comando("351", "351", statserv_version, INI, 0);
+	if (port_existe(EOS))
+		inserta_comando(port_msg(EOS), port_tok(EOS), statserv_eos, INI, 0);
 	inserta_senyal(SIGN_UMODE, statserv_umode);
 	inserta_senyal(SIGN_QUIT, statserv_quit);
-	inserta_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
-	inserta_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
+	//inserta_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
+	//inserta_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
 	inserta_senyal(SIGN_MYSQL, statserv_mysql);
-	mod->nick = statserv->nick;
-	mod->ident = statserv->ident;
-	mod->host = statserv->host;
-	mod->realname = statserv->realname;
-	mod->residente = statserv->residente;
-	mod->modos = statserv->modos;
-	mod->comandos = statserv->comando;
+	inserta_senyal(SIGN_BOT, statserv_sig_bot);
+	inserta_senyal(SIGN_EOS, statserv_sig_eos);
+	bot_mod(statserv);
 }
 int vuelca_template(char *temp)
 {
@@ -472,6 +475,7 @@ IRCFUNC(statserv_nick)
 {
 	if (parc > 4)
 	{
+		cl = busca_cliente(parv[1], NULL);
 		actualiza_stats(STSUSERS);
 		statserv_umode(cl, parv[7]);
 		statserv->servidor[cl->server->numeric].usuarios++;
@@ -513,7 +517,7 @@ IRCFUNC(statserv_server)
 	{
 		if (statserv->usuarios.hoy_time) /* ya habían sido arrancadas previamente */
 			eos = 0;
-		inicio = time(0);
+		ini = time(0);
 	}
 	actualiza_stats(STSSERVS);
 	if (parc == 3)
@@ -530,8 +534,11 @@ IRCFUNC(statserv_server)
 	sendto_serv(":%s %s :%s", statserv->nick, TOK_VERSION, al->nombre);
 	sendto_serv(":%s %s :%s", statserv->nick, TOK_LUSERS, al->nombre);
 	sendto_serv(":%s %s u %s", statserv->nick, TOK_STATS, al->nombre);
-	sendto_serv(":%s %s %s", statserv->nick, TOK_LAG, al->nombre);
-	timer(al->nombre, cl->sck, 0, statserv->laguea, statserv_laguea, al->nombre, sizeof(char) * (strlen(al->nombre) + 1));
+	if (port_existe(LAG))
+	{
+		sendto_serv(":%s %s %s", statserv->nick, port_tok(LAG), al->nombre);
+		timer(al->nombre, cl->sck, 0, statserv->laguea, statserv_laguea, al->nombre, sizeof(char) * (strlen(al->nombre) + 1));
+	}
 	return 0;
 }
 IRCFUNC(statserv_umode2)
@@ -610,23 +617,14 @@ int statserv_destroy_channel(char *nombre)
 }
 int statserv_mysql()
 {
-	int i;
-	char buf[1][BUFSIZE], tabla[1];
-	tabla[0] = 0;
-	sprintf_irc(buf[0], "%s%s", PREFIJO, SS_MYSQL);
-	for (i = 0; i < mysql_tablas.tablas; i++)
+	if (!_mysql_existe_tabla(SS_MYSQL))
 	{
-		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
-			tabla[0] = 1;
-	}
-	if (!tabla[0])
-	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
 			"`item` varchar(255) default NULL, "
   			"`valor` varchar(255) NOT NULL default '0', "
 			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla estadísticas';", buf[0]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[0]);
+			") TYPE=MyISAM COMMENT='Tabla estadísticas';", PREFIJO, SS_MYSQL))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_MYSQL);
 		else
 		{
 			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_max");
@@ -669,7 +667,7 @@ int statserv_mysql()
 }
 int statserv_laguea(char *servidor)
 {
-	sendto_serv(":%s %s %s", statserv->nick, TOK_LAG, servidor);
+	sendto_serv(":%s %s %s", statserv->nick, port_tok(LAG), servidor);
 	return 0;
 }
 SOCKFUNC(statserv_escribe_web)
@@ -788,7 +786,7 @@ SOCKFUNC(statserv_lee_web)
 										sockwrite(sck, 0x0, "%s", statserv->servidor[i].version);
 									else if (!strcmp(pc, "SERVER_UPTIME"))
 									{
-										u_int dura = statserv->servidor[i].uptime + (time(0) - inicio);
+										u_int dura = statserv->servidor[i].uptime + (time(0) - ini);
 										sockwrite(sck, 0x0, "%i días, %02i:%02i:%02i", dura / 86400, (dura / 3600) % 24, (dura / 60) % 60, dura % 60);
 									}
 									wc = qc;
@@ -879,6 +877,24 @@ SOCKFUNC(statserv_lee_web)
 			sockwrite(sck, OPT_CRLF, "%s", bc);
 			Free(fd);
 		}
+	}
+	return 0;
+}
+int statserv_sig_bot()
+{
+	Cliente *bl;
+	bl = botnick(statserv->nick, statserv->ident, statserv->host, me.nombre, statserv->modos, statserv->realname);
+	statserv->cl = bl;
+	return 0;
+}
+int statserv_sig_eos()
+{
+	char *canal;
+	if (statserv->residente)
+	{
+		strcpy(tokbuf, statserv->residente);
+		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
+			mete_bot_en_canal(statserv->cl, canal);
 	}
 	return 0;
 }

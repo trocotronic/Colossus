@@ -1,31 +1,17 @@
 /*
- * $Id: operserv.h,v 1.1 2004-11-05 19:59:39 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.2 2004-12-31 12:27:56 Trocotronic Exp $ 
  */
-
-#define OS_MAX_COMS 256
 
 #define OS_OPTS_AOP 0x1
 
 typedef struct _os OperServ;
 struct _os 
 {
-	char *nick;
-	char *ident;
-	char *host;
-	char *modos;
-	char *realname;
-	char *mascara;
 	int opts;
-#ifndef UDB
-	int clones;
-#endif
-	char *residente;
-	bCom *comando[OS_MAX_COMS]; /* comandos soportados */
-	int comandos;
-	char *bline;
+	Modulo *hmod;
 };
 
-extern OperServ *operserv;
+extern OperServ operserv;
 
 #define OS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
 #define OS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
@@ -34,7 +20,6 @@ extern OperServ *operserv;
 
 #ifndef UDB
 #define OS_MYSQL "opers"
-#define OS_CLONS "clons"
 #endif
 #define OS_NOTICIAS "noticias"
 typedef struct _not Noticia;
@@ -44,6 +29,7 @@ struct _not
 	char *noticia;
 	time_t fecha;
 	int id;
+	Cliente *cl;
 };
 #define MAXNOT 32
 

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.17 2004-10-23 22:40:46 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.18 2004-12-31 12:27:52 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -106,18 +106,16 @@ struct _hash {
 extern const char NTL_tolower_tab[];
 extern MODVAR char buf[BUFSIZE];
 extern Sock *SockActual;
-extern struct _cliente *busca_cliente_en_hash(char *, struct _cliente *);
-extern struct _canal *busca_canal_en_hash(char *, struct _canal *);
-extern void inserta_cliente_en_hash(struct _cliente*, char *);
-extern void inserta_canal_en_hash(struct _canal *, char *);
-extern int borra_cliente_de_hash(struct _cliente *, char *);
-extern int borra_canal_de_hash(struct _canal *, char *);
+extern struct _cliente *busca_cliente_en_hash(char *, struct _cliente *, Hash *);
+extern struct _canal *busca_canal_en_hash(char *, struct _canal *, Hash *);
+extern void inserta_cliente_en_hash(struct _cliente*, char *, Hash *);
+extern void inserta_canal_en_hash(struct _canal *, char *, Hash *);
+extern int borra_cliente_de_hash(struct _cliente *, char *, Hash *);
+extern int borra_canal_de_hash(struct _canal *, char *, Hash *);
 extern int match(char *, char *);
 
 extern char *_asctime(time_t *);
 #define PROTOCOL 2305
-extern u_long our_crc32(const u_char *, u_int);
-
 
 extern int carga_mysql();
 extern MODVAR MYSQL *mysql;
@@ -128,6 +126,7 @@ extern void _mysql_add(char *, char *, char *, char *, ...);
 extern void _mysql_del(char *, char *);
 extern int _mysql_restaura(void);
 extern int _mysql_backup(void);
+extern int _mysql_existe_tabla(char *);
 struct mysql_t
 {
 	char *tabla[256]; /* espero que no haya tantas tablas */
@@ -166,6 +165,9 @@ extern int borra_senyal(short, int (*)());
 #define senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
 #define senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
 #define senyal2(s,x,y) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
+#define senyal3(s,x,y,z) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z); } while(0)
+#define senyal4(s,x,y,z,t) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t); } while(0)
+#define senyal5(s,x,y,z,t,u) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t,u); } while(0)
 
 /* timers */
 typedef struct _timer Timer;
@@ -206,12 +208,13 @@ extern void proc(int(*)());
 #define INI_SUMD 0xFF
 extern u_int hash_cliente(char *);
 extern u_int hash_canal(char *);
-extern Hash uTab[], cTab[];
-#define COLOSSUS_VERNUM "1.0a"
+extern MODVAR Hash uTab[UMAX];
+extern MODVAR Hash cTab[CHMAX];
+#define COLOSSUS_VERNUM "1.1"
 #define COLOSSUS_VERSION "Colossus v" COLOSSUS_VERNUM
 extern char **margv;
 #define Malloc(x) StsMalloc(x, __FILE__, __LINE__)
-#define da_Malloc(p,s) p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s))
+#define da_Malloc(p,s) do { p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s)); }while(0)
 #define EST_DESC 0
 #define EST_CONN 1
 #define EST_LIST 2
@@ -250,7 +253,6 @@ extern struct in_addr *resolv(char *);
 extern MODVAR char tokbuf[BUFSIZE];
 #define MAX_LISTN 256
 extern Sock *socklisten(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
-extern char *dominum(char *);
 extern int EsIp(char *);
 extern int is_file(char *);
 #define OPT_CR 0x1
@@ -296,4 +298,24 @@ extern int copyfile(char *, char *);
 #endif
 extern char *my_itoa(int);
 extern char *decode_ip(char *);
+extern char *encode_ip(char *);
 extern int b64_decode(char const *src, u_char *, size_t);
+extern int b64_encode(u_char const *, size_t, char *, size_t);
+extern MODVAR time_t iniciado;
+#define creditos() 															\
+	response(cl, bl, "\00312Colossus v%s - Trocotronic ©2004", COLOSSUS_VERSION);					\
+	response(cl, bl, " ");													\
+	response(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");			\
+	response(cl, bl, "Si no es perfecto, ¿qué más da?");									\
+	response(cl, bl, "Sé feliz. Paz.");											\
+	response(cl, bl, " "); 													\
+	response(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.rallados.net", 31); 	\
+	response(cl, bl, "Gracias a todos por usar este programa :) (estáis locos)")
+extern void resuelve_host(char **, char *);
+extern void cloak_crc(char *);
+
+extern u_int base64toint(const char *);
+extern const char *inttobase64(char *, u_int, u_int);
+extern void tea(u_int *, u_int *, u_int *);
+extern char *cifranick(char *, char *);
+extern u_long our_crc32(const u_char *, u_int);

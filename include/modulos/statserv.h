@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.h,v 1.1 2004-11-05 19:59:39 Trocotronic Exp $ 
+ * $Id: statserv.h,v 1.2 2004-12-31 12:27:56 Trocotronic Exp $ 
  */
 
 #define SS_MAX_COMS 256
@@ -59,6 +59,8 @@ struct _ss
 		char *donde;
 		u_int usuarios;
 	}dominios[DOMINUMS]; /* +1 para los desconocidos */
+	Cliente *cl;
+	Modulo *mod;
 };
 
 extern StatServ *statserv;

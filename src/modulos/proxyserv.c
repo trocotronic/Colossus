@@ -1,32 +1,32 @@
 /*
- * $Id: proxyserv.c,v 1.8 2004-11-05 19:59:37 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.9 2004-12-31 12:28:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
-#include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "protocolos.h"
 #ifdef UDB
 #include "bdd.h"
 #endif
 #include "modulos/proxyserv.h"
 
-ProxyServ *proxyserv = NULL;
+ProxyServ proxyserv;
 
 static int proxyserv_help	(Cliente *, char *[], int, char *[], int);
 static int proxyserv_host	(Cliente *, char *[], int, char *[], int);
 
-DLLFUNC int proxyserv_sig_mysql();
+int proxyserv_sig_mysql();
 #ifdef USA_THREADS
 void *proxyserv_loop_principal(void *);
 HANDLE proxythread;
 #else
-DLLFUNC SOCKFUNC(proxy_fin);
+SOCKFUNC(proxy_fin);
 #endif
 Proxys *proxys = NULL;
-DLLFUNC int proxyserv_dropacache(void);
+int proxyserv_dropacache(void);
 
-DLLFUNC IRCFUNC(proxyserv_nick);
+int proxyserv_nick(Cliente *, char *);
 
 static bCom proxyserv_coms[] = {
 	{ "help" , proxyserv_help , ADMINS } ,
@@ -37,35 +37,53 @@ static bCom proxyserv_coms[] = {
 void set(Conf *, Modulo *);
 int test(Conf *, int *);
 
-DLLFUNC ModInfo info = {
+ModInfo info = {
 	"ProxyServ" ,
-	0.6 ,
+	0.7 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net" ,
-	"proxyserv.inc"
+	"trocotronic@telefonica.net"
 };
 	
-DLLFUNC int carga(Modulo *mod)
+int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (parseconf(mod->config, &modulo, 1))
-		return 1;
-	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+	if (!mod->config)
 	{
-		if (!test(modulo.seccion[0], &errores))
-			set(modulo.seccion[0], mod);
+		conferror("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		errores++;
 	}
 	else
 	{
-		conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
-		errores++;
+		if (parseconf(mod->config, &modulo, 1))
+		{
+			conferror("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			errores++;
+		}
+		else
+		{
+			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			{
+				if (!test(modulo.seccion[0], &errores))
+					set(modulo.seccion[0], mod);
+				else
+				{
+					conferror("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					errores++;
+				}
+			}
+			else
+			{
+				conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				errores++;
+			}
+		}
 	}
 	return errores;
 }
-DLLFUNC int descarga()
+int descarga()
 {
-	borra_comando(MSG_NICK, proxyserv_nick);
+	borra_senyal(SIGN_NICK, proxyserv_nick);
 	borra_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
 	return 0;
 }
@@ -73,26 +91,6 @@ int test(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
-	if (!(eval = busca_entrada(config, "nick")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "ident")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "host")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "realname")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
 	if (!(eval = busca_entrada(config, "puertos")))
 	{
 		conferror("[%s:%s] No has especificado puertos a escanear.]\n", config->archivo, config->item);
@@ -123,22 +121,10 @@ void set(Conf *config, Modulo *mod)
 {
 	int i, p;
 	bCom *xs;
-	if (!proxyserv)
-		da_Malloc(proxyserv, ProxyServ);
 	for (i = 0; i < config->secciones; i++)
 	{
-		if (!strcmp(config->seccion[i]->item, "nick"))
-			ircstrdup(&proxyserv->nick, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "ident"))
-			ircstrdup(&proxyserv->ident, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&proxyserv->host, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "realname"))
-			ircstrdup(&proxyserv->realname, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "modos"))
-			ircstrdup(&proxyserv->modos, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "tiempo"))
-			proxyserv->tiempo = atoi(config->seccion[i]->data) * 60;
+			proxyserv.tiempo = atoi(config->seccion[i]->data) * 60;
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -148,7 +134,7 @@ void set(Conf *config, Modulo *mod)
 				{
 					if (!strcasecmp(xs->com, config->seccion[i]->seccion[p]->item))
 					{
-						proxyserv->comando[proxyserv->comandos++] = xs;
+						mod->comando[mod->comandos++] = xs;
 						break;
 					}
 					xs++;
@@ -157,48 +143,37 @@ void set(Conf *config, Modulo *mod)
 					conferror("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
 			}
 		}
-		if (!strcmp(config->seccion[i]->item, "residente"))
-			ircstrdup(&proxyserv->residente, config->seccion[i]->data);
+		mod->comando[mod->comandos] = NULL;
 		if (!strcmp(config->seccion[i]->item, "puertos"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
-				proxyserv->puerto[proxyserv->puertos++] = atoi(config->seccion[i]->seccion[p]->item);
+				proxyserv.puerto[proxyserv.puertos++] = atoi(config->seccion[i]->seccion[p]->item);
 		}
 		if (!strcmp(config->seccion[i]->item, "maxlist"))
-			proxyserv->maxlist = atoi(config->seccion[i]->data);
+			proxyserv.maxlist = atoi(config->seccion[i]->data);
 	}
-	if (proxyserv->mascara)
-		Free(proxyserv->mascara);
-	proxyserv->mascara = (char *)Malloc(sizeof(char) * (strlen(proxyserv->nick) + 1 + strlen(proxyserv->ident) + 1 + strlen(proxyserv->host) + 1));
-	sprintf_irc(proxyserv->mascara, "%s!%s@%s", proxyserv->nick, proxyserv->ident, proxyserv->host);
-	inserta_comando(MSG_NICK, TOK_NICK, proxyserv_nick, INI);
+	inserta_senyal(SIGN_NICK, proxyserv_nick);
 	inserta_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
 	proc(proxyserv_dropacache);
-	mod->nick = proxyserv->nick;
-	mod->ident = proxyserv->ident;
-	mod->host = proxyserv->host;
-	mod->realname = proxyserv->realname;
-	mod->residente = proxyserv->residente;
-	mod->modos = proxyserv->modos;
-	mod->comandos = proxyserv->comando;
+	bot_set(proxyserv);
 }
 void escanea(char *host)
 {
 	Proxys *px;
 	int i;
-	if (!match("192.168.*", host) || !strcmp("127.0.0.1", host))
+	if (!strncmp("192.168.", host, 8) || !strcmp("127.0.0.1", host))
 		return;
 	da_Malloc(px, Proxys);
-	for (i = 0; i < proxyserv->puertos; i++)
+	for (i = 0; i < proxyserv.puertos; i++)
 	{
 		da_Malloc(px->puerto[i], struct subp);
 #ifdef USA_THREADS
-		if ((px->puerto[i]->sck = sockopen(host, proxyserv->puerto[i], NULL, NULL, NULL, NULL, !ADD)))
+		if ((px->puerto[i]->sck = sockopen(host, proxyserv.puerto[i], NULL, NULL, NULL, NULL, !ADD)))
 #else
-		if ((px->puerto[i]->sck = sockopen(host, proxyserv->puerto[i], proxy_fin, NULL, NULL, proxy_fin, ADD)))
+		if ((px->puerto[i]->sck = sockopen(host, proxyserv.puerto[i], proxy_fin, NULL, NULL, proxy_fin, ADD)))
 #endif
 		{
-			px->puerto[i]->puerto = &proxyserv->puerto[i];
+			px->puerto[i]->puerto = &proxyserv.puerto[i];
 			px->puertos++;
 		}
 	}
@@ -213,49 +188,49 @@ BOTFUNC(proxyserv_help)
 {
 	if (params < 2)
 	{
-		response(cl, proxyserv->nick, "\00312%s\003 controla las conexiones entrantes para detectar si se tratan de proxies.", proxyserv->nick);
-		response(cl, proxyserv->nick, "Para ello efectua un escán de puertos en la máquina. Si detecta alguno que está abierto desconecta al usuario.");
-		response(cl, proxyserv->nick, "En dicha desconexión figuran los puertos abiertos.");
-		response(cl, proxyserv->nick, "El usuario podrá conectar de nuevo si cierra estos puertos.");
-		response(cl, proxyserv->nick, "El tiempo de desconexión es de \00312%i\003 minutos.", proxyserv->tiempo / 60);
-		response(cl, proxyserv->nick, " ");
-		response(cl, proxyserv->nick, "Comandos disponibles:");
-		response(cl, proxyserv->nick, "\00312HOST\003 Host que omiten el escán.");
-		response(cl, proxyserv->nick, " ");
-		response(cl, proxyserv->nick, "Para más información, \00312/msg %s %s comando", proxyserv->nick, strtoupper(param[0]));
+		response(cl, CLI(proxyserv), "\00312%s\003 controla las conexiones entrantes para detectar si se tratan de proxies.", proxyserv.hmod->nick);
+		response(cl, CLI(proxyserv), "Para ello efectua un escán de puertos en la máquina. Si detecta alguno que está abierto desconecta al usuario.");
+		response(cl, CLI(proxyserv), "En dicha desconexión figuran los puertos abiertos.");
+		response(cl, CLI(proxyserv), "El usuario podrá conectar de nuevo si cierra estos puertos.");
+		response(cl, CLI(proxyserv), "El tiempo de desconexión es de \00312%i\003 minutos.", proxyserv.tiempo / 60);
+		response(cl, CLI(proxyserv), " ");
+		response(cl, CLI(proxyserv), "Comandos disponibles:");
+		response(cl, CLI(proxyserv), "\00312HOST\003 Host que omiten el escán.");
+		response(cl, CLI(proxyserv), " ");
+		response(cl, CLI(proxyserv), "Para más información, \00312/msg %s %s comando", proxyserv.hmod->nick, strtoupper(param[0]));
 	}
 	else if (!strcasecmp(param[1], "HOST"))
 	{
-		response(cl, proxyserv->nick, "\00312HOST");
-		response(cl, proxyserv->nick, " ");
-		response(cl, proxyserv->nick, "Gestiona los hosts que omiten el escán.");
-		response(cl, proxyserv->nick, "Estos hosts no se someterán al escán de puertos y podrán entrar libremente.");
-		response(cl, proxyserv->nick, "Cabe mencionar que si el usuario conecta sin su DNS resuelto, figurará su ip en vez de su host.");
-		response(cl, proxyserv->nick, "Por este motivo, es importante añadir el host o la ip, según conecte el usuario.");
-		response(cl, proxyserv->nick, "Si no se especifica ni + ni -, se usará el patrón como búsqueda.");
-		response(cl, proxyserv->nick, " ");
-		response(cl, proxyserv->nick, "Sintaxis: \00312HOST {+|-|patrón}[{host|ip}]");
+		response(cl, CLI(proxyserv), "\00312HOST");
+		response(cl, CLI(proxyserv), " ");
+		response(cl, CLI(proxyserv), "Gestiona los hosts que omiten el escán.");
+		response(cl, CLI(proxyserv), "Estos hosts no se someterán al escán de puertos y podrán entrar libremente.");
+		response(cl, CLI(proxyserv), "Cabe mencionar que si el usuario conecta sin su DNS resuelto, figurará su ip en vez de su host.");
+		response(cl, CLI(proxyserv), "Por este motivo, es importante añadir el host o la ip, según conecte el usuario.");
+		response(cl, CLI(proxyserv), "Si no se especifica ni + ni -, se usará el patrón como búsqueda.");
+		response(cl, CLI(proxyserv), " ");
+		response(cl, CLI(proxyserv), "Sintaxis: \00312HOST {+|-|patrón}[{host|ip}]");
 	}
 	else
-		response(cl, proxyserv->nick, XS_ERR_EMPT, "Opción desconocida.");
+		response(cl, CLI(proxyserv), XS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
 BOTFUNC(proxyserv_host)
 {
 	if (params < 2)
 	{
-		response(cl, proxyserv->nick, XS_ERR_PARA, "HOST {+|-|patrón}[{host|ip}]");
+		response(cl, CLI(proxyserv), XS_ERR_PARA, "HOST {+|-|patrón}[{host|ip}]");
 		return 1;
 	}
 	if (*param[1] == '+')
 	{
 		_mysql_query("INSERT INTO %s%s (item) values ('%s')", PREFIJO, XS_MYSQL, param[1] + 1);
-		response(cl, proxyserv->nick, "El host \00312%s\003 se ha añadido para omitir el escaneo de puertos.", param[1] + 1);
+		response(cl, CLI(proxyserv), "El host \00312%s\003 se ha añadido para omitir el escaneo de puertos.", param[1] + 1);
 	}
 	else if (*param[1] == '-')
 	{
 		_mysql_del(XS_MYSQL, param[1] + 1);
-		response(cl, proxyserv->nick, "El host \00312%s\003 ha sido borrado de la lista de excepciones.");
+		response(cl, CLI(proxyserv), "El host \00312%s\003 ha sido borrado de la lista de excepciones.");
 	}
 	else
 	{
@@ -266,20 +241,20 @@ BOTFUNC(proxyserv_host)
 		rep = str_replace(param[1], '*', '%');
 		if (!(res = _mysql_query("SELECT item from %s%s where item LIKE '%s'", PREFIJO, XS_MYSQL, rep)))
 		{
-			response(cl, proxyserv->nick, XS_ERR_EMPT, "No se han encontrado coincidencias.");
+			response(cl, CLI(proxyserv), XS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;
 		}
-		response(cl, proxyserv->nick, "*** Hosts que coinciden con el patrón \00312%s\003 ***", param[1]);
-		for (i = 0; i < proxyserv->maxlist && (row = mysql_fetch_row(res)); i++)
-			response(cl, proxyserv->nick, "\00312%s", row[0]);
-		response(cl, proxyserv->nick, "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
+		response(cl, CLI(proxyserv), "*** Hosts que coinciden con el patrón \00312%s\003 ***", param[1]);
+		for (i = 0; i < proxyserv.maxlist && (row = mysql_fetch_row(res)); i++)
+			response(cl, CLI(proxyserv), "\00312%s", row[0]);
+		response(cl, CLI(proxyserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
 		mysql_free_result(res);
 	}
 	return 0;
 }
-IRCFUNC(proxyserv_nick)
+int proxyserv_nick(Cliente *cl, char *nuevo)
 {
-	if (parc > 4)
+	if (!nuevo)
 	{
 		Proxys *px;
 		char *host;
@@ -294,29 +269,20 @@ IRCFUNC(proxyserv_nick)
 			if (!strcasecmp(px->host, host))
 				return 1;
 		}
-		sendto_serv(":%s %s %s :Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.", proxyserv->nick, TOK_NOTICE, cl->nombre);
+		port_func(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
 		escanea(host);
 	}
 	return 0;
 }
 int proxyserv_sig_mysql()
 {
-	char buf[1][BUFSIZE], tabla[1];
-	int i;
-	tabla[0] = 0;
-	sprintf_irc(buf[0], "%s%s", PREFIJO, XS_MYSQL);
-	for (i = 0; i < mysql_tablas.tablas; i++)
+	if (!_mysql_existe_tabla(XS_MYSQL))
 	{
-		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
-			tabla[0] = 1;
-	}
-	if (!tabla[0])
-	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de excepción de hosts';", buf[0]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[0]);
+			") TYPE=MyISAM COMMENT='Tabla de excepción de hosts';", PREFIJO, XS_MYSQL))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, XS_MYSQL);
 	}
 	_mysql_carga_tablas();
 #ifdef USA_THREADS
@@ -328,7 +294,7 @@ int proxyserv_sig_mysql()
 #ifdef USA_THREADS
 void proxy_fin(Proxys *px)
 #else
-DLLFUNC SOCKFUNC(proxy_fin)
+SOCKFUNC(proxy_fin)
 #endif
 {
 #ifndef USA_THREADS	
@@ -339,7 +305,7 @@ DLLFUNC SOCKFUNC(proxy_fin)
 			break;
 	}
 #endif
-	if (++px->escaneados == proxyserv->puertos) /* fin del scan */
+	if (++px->escaneados == proxyserv.puertos) /* fin del scan */
 	{
 		int i;
 		char abiertos[256];
@@ -360,7 +326,7 @@ DLLFUNC SOCKFUNC(proxy_fin)
 		{
 			char motivo[300];
 			sprintf_irc(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos);
-			irctkl(TKL_ADD, TKL_GLINE, "*", px->host, proxyserv->mascara, proxyserv->tiempo, motivo);
+			port_func(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv.tiempo, motivo);
 		}
 		else
 			_mysql_add(MYSQL_CACHE, px->host, "hora", "%lu", time(0));

@@ -1,11 +1,11 @@
 /*
- * $Id: operserv.c,v 1.8 2004-11-05 19:59:37 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.9 2004-12-31 12:28:01 Trocotronic Exp $ 
  */
 
 #include "struct.h"
-#include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "protocolos.h"
 #ifdef UDB
 #include "bdd.h"
 #endif
@@ -14,29 +14,28 @@
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
 
-OperServ *operserv = NULL;
+OperServ operserv;
 Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
 
-static int operserv_help	(Cliente *, char *[], int, char *[], int);
+static int operserv_help		(Cliente *, char *[], int, char *[], int);
 static int operserv_raw		(Cliente *, char *[], int, char *[], int);
-static int operserv_restart	(Cliente *, char *[], int, char *[], int);
-static int operserv_rehash	(Cliente *, char *[], int, char *[], int);
-static int operserv_backup	(Cliente *, char *[], int, char *[], int);
+static int operserv_restart		(Cliente *, char *[], int, char *[], int);
+static int operserv_rehash		(Cliente *, char *[], int, char *[], int);
+static int operserv_backup		(Cliente *, char *[], int, char *[], int);
 static int operserv_restaura	(Cliente *, char *[], int, char *[], int);
-static int operserv_blocks	(Cliente *, char *[], int, char *[], int);
-static int operserv_opers	(Cliente *, char *[], int, char *[], int);
-static int operserv_sajoin	(Cliente *, char *[], int, char *[], int);
-static int operserv_sapart	(Cliente *, char *[], int, char *[], int);
-static int operserv_rejoin	(Cliente *, char *[], int, char *[], int);
-static int operserv_kill	(Cliente *, char *[], int, char *[], int);
-static int operserv_global	(Cliente *, char *[], int, char *[], int);
+static int operserv_blocks		(Cliente *, char *[], int, char *[], int);
+static int operserv_opers		(Cliente *, char *[], int, char *[], int);
+static int operserv_sajoin		(Cliente *, char *[], int, char *[], int);
+static int operserv_sapart		(Cliente *, char *[], int, char *[], int);
+static int operserv_rejoin		(Cliente *, char *[], int, char *[], int);
+static int operserv_kill		(Cliente *, char *[], int, char *[], int);
+static int operserv_global		(Cliente *, char *[], int, char *[], int);
 static int operserv_noticias	(Cliente *, char *[], int, char *[], int);
-static int operserv_clones	(Cliente *, char *[], int, char *[], int);
-static int operserv_close	(Cliente *, char *[], int, char *[], int);
+static int operserv_close		(Cliente *, char *[], int, char *[], int);
 #ifdef UDB
-static int operserv_modos	(Cliente *, char *[], int, char *[], int);
-static int operserv_snomask	(Cliente *, char *[], int, char *[], int);
+static int operserv_modos		(Cliente *, char *[], int, char *[], int);
+static int operserv_snomask		(Cliente *, char *[], int, char *[], int);
 #endif
 
 static bCom operserv_coms[] = {
@@ -55,7 +54,6 @@ static bCom operserv_coms[] = {
 	{ "kill" , operserv_kill , OPERS } ,
 	{ "global" , operserv_global , OPERS } ,
 	{ "noticias" , operserv_noticias , OPERS } ,
-	{ "clones" , operserv_clones , ADMINS } ,
 #ifdef UDB
 	{ "modos" , operserv_modos , ADMINS } ,
 	{ "snomask" , operserv_snomask , ADMINS } ,
@@ -64,14 +62,13 @@ static bCom operserv_coms[] = {
 };
 
 #ifndef UDB
-DLLFUNC int operserv_idok	(Cliente *);
+int operserv_idok	(Cliente *);
 #endif
-DLLFUNC int operserv_sig_mysql	();
-DLLFUNC int operserv_sig_eos	();
+int operserv_sig_mysql	();
+int operserv_sig_synch	();
 
-DLLFUNC IRCFUNC(operserv_umode);
-DLLFUNC IRCFUNC(operserv_join);
-DLLFUNC IRCFUNC(operserv_nick);
+int operserv_join(Cliente *, Canal *);
+int operserv_nick(Cliente *, char *);
 #ifndef _WIN32
 int (*ChanReg_dl)(char *);
 int (*memoserv_send_dl)(char *, char *, char *);
@@ -84,29 +81,47 @@ int (*memoserv_send_dl)(char *, char *, char *);
 void set(Conf *, Modulo *);
 int test(Conf *, int *);
 
-DLLFUNC ModInfo info = {
+ModInfo info = {
 	"OperServ" ,
-	0.6 ,
+	0.7 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net" ,
-	"operserv.inc"
+	"trocotronic@telefonica.net"
 };
 	
-DLLFUNC int carga(Modulo *mod)
+int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (parseconf(mod->config, &modulo, 1))
-		return 1;
-	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+	if (!mod->config)
 	{
-		if (!test(modulo.seccion[0], &errores))
-			set(modulo.seccion[0], mod);
+		conferror("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		errores++;
 	}
 	else
 	{
-		conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
-		errores++;
+		if (parseconf(mod->config, &modulo, 1))
+		{
+			conferror("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			errores++;
+		}
+		else
+		{
+			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			{
+				if (!test(modulo.seccion[0], &errores))
+					set(modulo.seccion[0], mod);
+				else
+				{
+					conferror("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					errores++;
+				}
+			}
+			else
+			{
+				conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				errores++;
+			}
+		}
 	}
 #ifndef _WIN32
 	{
@@ -122,66 +137,27 @@ DLLFUNC int carga(Modulo *mod)
 #endif	
 	return errores;
 }
-DLLFUNC int descarga()
+int descarga()
 {
-	borra_comando(MSG_JOIN, operserv_join);
-	borra_comando(MSG_NICK, operserv_nick);
+	borra_senyal(SIGN_JOIN, operserv_join);
+	borra_senyal(SIGN_NICK, operserv_nick);
 #ifndef UDB
 	borra_senyal(NS_SIGN_IDOK, operserv_idok);
 #endif
 	borra_senyal(SIGN_MYSQL, operserv_sig_mysql);
-	borra_senyal(SIGN_EOS, operserv_sig_eos);
+	borra_senyal(SIGN_SYNCH, operserv_sig_synch);
 	return 0;
 }	
 int test(Conf *config, int *errores)
 {
-	short error_parcial = 0;
-	Conf *eval;
-	if (!(eval = busca_entrada(config, "nick")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "ident")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "host")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	if (!(eval = busca_entrada(config, "realname")))
-	{
-		conferror("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
-		error_parcial++;
-	}
-	*errores += error_parcial;
-	return error_parcial;
+	return 0;
 }
 void set(Conf *config, Modulo *mod)
 {
 	int i, p;
 	bCom *os;
-	if (!operserv)
-		da_Malloc(operserv, OperServ);
-	ircstrdup(&operserv->bline, "Bot-Lined: %s");
-#ifndef UDB
-	operserv->clones = 2;
-#endif
 	for (i = 0; i < config->secciones; i++)
 	{
-		if (!strcmp(config->seccion[i]->item, "nick"))
-			ircstrdup(&operserv->nick, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "ident"))
-			ircstrdup(&operserv->ident, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&operserv->host, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "realname"))
-			ircstrdup(&operserv->realname, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "modos"))
-			ircstrdup(&operserv->modos, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -191,7 +167,7 @@ void set(Conf *config, Modulo *mod)
 				{
 					if (!strcasecmp(os->com, config->seccion[i]->seccion[p]->item))
 					{
-						operserv->comando[operserv->comandos++] = os;
+						mod->comando[mod->comandos++] = os;
 						break;
 					}
 					os++;
@@ -199,36 +175,19 @@ void set(Conf *config, Modulo *mod)
 				if (os->com == 0x0)
 					conferror("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
 			}
+			mod->comando[mod->comandos] = NULL;
 		}
-		if (!strcmp(config->seccion[i]->item, "residente"))
-			ircstrdup(&operserv->residente, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "bline"))
-			ircstrdup(&operserv->bline, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "autoop"))
-			operserv->opts |= OS_OPTS_AOP;
-#ifndef UDB
-		if (!strcmp(config->seccion[i]->item, "clones"))
-			operserv->clones = atoi(config->seccion[i]->data);
-#endif
+			operserv.opts |= OS_OPTS_AOP;
 	}
-	if (operserv->mascara)
-		Free(operserv->mascara);
-	operserv->mascara = (char *)Malloc(sizeof(char) * (strlen(operserv->nick) + 1 + strlen(operserv->ident) + 1 + strlen(operserv->host) + 1));
-	sprintf_irc(operserv->mascara, "%s!%s@%s", operserv->nick, operserv->ident, operserv->host);
-	inserta_comando(MSG_JOIN, TOK_JOIN, operserv_join, INI);
-	inserta_comando(MSG_NICK, TOK_NICK, operserv_nick, INI);
+	inserta_senyal(SIGN_JOIN, operserv_join);
+	inserta_senyal(SIGN_NICK, operserv_nick);
 #ifndef UDB
 	inserta_senyal(NS_SIGN_IDOK, operserv_idok);
 #endif
 	inserta_senyal(SIGN_MYSQL, operserv_sig_mysql);
-	inserta_senyal(SIGN_EOS, operserv_sig_eos);
-	mod->nick = operserv->nick;
-	mod->ident = operserv->ident;
-	mod->host = operserv->host;
-	mod->realname = operserv->realname;
-	mod->residente = operserv->residente;
-	mod->modos = operserv->modos;
-	mod->comandos = operserv->comando;
+	inserta_senyal(SIGN_SYNCH, operserv_sig_synch);
+	bot_set(operserv);
 }
 int es_bot_noticia(char *botname)
 {
@@ -245,14 +204,16 @@ int inserta_noticia(char *botname, char *noticia, time_t fecha, int n)
 	Noticia *not;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
+	Cliente *cl;
 	if (gnoticias == MAXNOT)
 		return 0;
 	if (!n && !es_bot_noticia(botname))
-		botnick(botname, operserv->ident, operserv->host, me.nombre, "kdBq", operserv->realname);
+		cl = botnick(botname, operserv.hmod->ident, operserv.hmod->host, me.nombre, "kdBq", operserv.hmod->realname);
 	not = (Noticia *)Malloc(sizeof(Noticia));
 	not->botname = strdup(botname);
 	not->noticia = strdup(noticia);
 	not->fecha = fecha ? fecha : time(0);
+	not->cl = cl;
 	if (!n)
 	{
 		_mysql_query("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, not->fecha);
@@ -283,7 +244,10 @@ int borra_noticia(int id)
 				gnoticia[i] = gnoticia[i+1];
 			gnoticias--;
 			if (!es_bot_noticia(botname))
-				sendto_serv(":%s %s :Mensajería global %s", botname, TOK_QUIT, conf_set->red);
+			{
+				Cliente *bl = busca_cliente(botname, NULL);
+				port_func(P_QUIT_USUARIO_LOCAL)(bl, "Mensajería global %s", conf_set->red);
+			}
 			Free(botname);
 			return 1;
 		}
@@ -298,6 +262,7 @@ void operserv_carga_noticias()
 	{
 		while ((row = mysql_fetch_row(res)))
 			inserta_noticia(row[1], row[2], atol(row[3]), atoi(row[0]));
+		mysql_free_result(res);
 	}
 }
 int os_reinicia()
@@ -309,234 +274,219 @@ BOTFUNC(operserv_help)
 {
 	if (params < 2)
 	{
-		response(cl, operserv->nick, "\00312%s\003 se encarga de gestionar la red de forma global y reservada al personal cualificado para realizar esta tarea.", operserv->nick);
-		response(cl, operserv->nick, "Esta gestión permite tener un control exhaustivo sobre las actividades de la red para su buen funcionamiento.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Comandos disponibles:");
-		response(cl, operserv->nick, "\00312RAW\003 Manda un raw al servidor.");
-		response(cl, operserv->nick, "\00312BLOCKS\003 Gestiona las blocks de la red.");
-		response(cl, operserv->nick, "\00312SAJOIN\003 Ejecuta SAJOIN sobre un usuario.");
-		response(cl, operserv->nick, "\00312SAPART\003 Ejecuta SAPART sobre un usuario.");
-		response(cl, operserv->nick, "\00312REJOIN\003 Obliga a un usuario a reentrar a un canal.");
-		response(cl, operserv->nick, "\00312KILL\003 Desconecta a un usuario.");
-		response(cl, operserv->nick, "\00312GLOBAL\003 Manda un mensaje global.");
-		response(cl, operserv->nick, "\00312NOTICIAS\003 Administra las noticias de la red.");
+		response(cl, CLI(operserv), "\00312%s\003 se encarga de gestionar la red de forma global y reservada al personal cualificado para realizar esta tarea.", operserv.hmod->nick);
+		response(cl, CLI(operserv), "Esta gestión permite tener un control exhaustivo sobre las actividades de la red para su buen funcionamiento.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Comandos disponibles:");
+		response(cl, CLI(operserv), "\00312RAW\003 Manda un raw al servidor.");
+		response(cl, CLI(operserv), "\00312BLOCKS\003 Gestiona las blocks de la red.");
+		response(cl, CLI(operserv), "\00312SAJOIN\003 Ejecuta SAJOIN sobre un usuario.");
+		response(cl, CLI(operserv), "\00312SAPART\003 Ejecuta SAPART sobre un usuario.");
+		response(cl, CLI(operserv), "\00312REJOIN\003 Obliga a un usuario a reentrar a un canal.");
+		response(cl, CLI(operserv), "\00312KILL\003 Desconecta a un usuario.");
+		response(cl, CLI(operserv), "\00312GLOBAL\003 Manda un mensaje global.");
+		response(cl, CLI(operserv), "\00312NOTICIAS\003 Administra las noticias de la red.");
 		if (IsAdmin(cl))
 		{
-			response(cl, operserv->nick, "\00312OPERS\003 Administra los operadores de la red.");
-			response(cl, operserv->nick, "\00312CLONES\003 Administra la lista de ips con más clones.");
+			response(cl, CLI(operserv), "\00312OPERS\003 Administra los operadores de la red.");
 #ifdef UDB
-			response(cl, operserv->nick, "\00312MODOS\003 Fija los modos de operador que se obtiene automáticamente (BDD).");
-			response(cl, operserv->nick, "\00312SNOMASK\003 Fija las máscaras de operador que se obtiene automáticamente (BDD).");
+			response(cl, CLI(operserv), "\00312MODOS\003 Fija los modos de operador que se obtiene automáticamente (BDD).");
+			response(cl, CLI(operserv), "\00312SNOMASK\003 Fija las máscaras de operador que se obtiene automáticamente (BDD).");
 #endif
 		}
 		if (IsRoot(cl))
 		{
-			response(cl, operserv->nick, "\00312RESTART\003 Reinicia los servicios.");
-			response(cl, operserv->nick, "\00312REHASH\003 Refresca los servicios.");
-			response(cl, operserv->nick, "\00312BACKUP\003 Crea una copia de seguridad de la base de datos.");
-			response(cl, operserv->nick, "\00312RESTAURA\003 Restaura la base de datos.");
-			response(cl, operserv->nick, "\00312CLOSE\003 Cierra el programa.");
+			response(cl, CLI(operserv), "\00312RESTART\003 Reinicia los servicios.");
+			response(cl, CLI(operserv), "\00312REHASH\003 Refresca los servicios.");
+			response(cl, CLI(operserv), "\00312BACKUP\003 Crea una copia de seguridad de la base de datos.");
+			response(cl, CLI(operserv), "\00312RESTAURA\003 Restaura la base de datos.");
+			response(cl, CLI(operserv), "\00312CLOSE\003 Cierra el programa.");
 		}
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Para más información, \00312/msg %s %s comando", operserv->nick, strtoupper(param[0]));
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Para más información, \00312/msg %s %s comando", operserv.hmod->nick, strtoupper(param[0]));
 	}
 	else if (!strcasecmp(param[1], "RAW"))
 	{
-		response(cl, operserv->nick, "\00312RAW");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Manda un raw al servidor.");
-		response(cl, operserv->nick, "Este comando actúa directamente al servidor.");
-		response(cl, operserv->nick, "No es procesado por los servicios, con lo que no tiene un registro sobre él.");
-		response(cl, operserv->nick, "Sólo debe usarse para fines administrativos cuya justificación sea de peso.");
-		response(cl, operserv->nick, "No usárase si no se tuviera conocimiento explícito de los raw's del servidor.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312RAW linea");
-		response(cl, operserv->nick, "Ejemplo: \00312RAW %s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
-		response(cl, operserv->nick, "Ejecutaría el comando \00312:%s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
+		response(cl, CLI(operserv), "\00312RAW");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Manda un raw al servidor.");
+		response(cl, CLI(operserv), "Este comando actúa directamente al servidor.");
+		response(cl, CLI(operserv), "No es procesado por los servicios, con lo que no tiene un registro sobre él.");
+		response(cl, CLI(operserv), "Sólo debe usarse para fines administrativos cuya justificación sea de peso.");
+		response(cl, CLI(operserv), "No usárase si no se tuviera conocimiento explícito de los raw's del servidor.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312RAW linea");
+		response(cl, CLI(operserv), "Ejemplo: \00312RAW %s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
+		response(cl, CLI(operserv), "Ejecutaría el comando \00312:%s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
 	}
 	else if (!strcasecmp(param[1], "BLOCKS"))
 	{
-		response(cl, operserv->nick, "\00312BLOCKS");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Administra los bloqueos de la red.");
-		response(cl, operserv->nick, "Existen varios tipos de bloqueo que se detallan a continuación:");
-		response(cl, operserv->nick, "\00312G\003 - Global Line. Pone un bloqueo global a un user@host.");
-		response(cl, operserv->nick, "\00312Q\003 - Q Line. Bloquea el uso de un nick.");
-		response(cl, operserv->nick, "\00312s\003 - Shun. Paraliza a un usuario.");
-		response(cl, operserv->nick, "\00312Z\003 - Pone un bloqueo a una ip.");
-		response(cl, operserv->nick, "Nótese el uso correcto de mayúsculas/minúsculas.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
-		response(cl, operserv->nick, "Para añadir una block se antepone '+' antes de la block. Para quitarla, '-'.");
-		response(cl, operserv->nick, "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
+		response(cl, CLI(operserv), "\00312BLOCKS");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Administra los bloqueos de la red.");
+		response(cl, CLI(operserv), "Existen varios tipos de bloqueo que se detallan a continuación:");
+		response(cl, CLI(operserv), "\00312G\003 - Global Line. Pone un bloqueo global a un user@host.");
+		response(cl, CLI(operserv), "\00312Q\003 - Q Line. Bloquea el uso de un nick.");
+		response(cl, CLI(operserv), "\00312s\003 - Shun. Paraliza a un usuario.");
+		response(cl, CLI(operserv), "\00312Z\003 - Pone un bloqueo a una ip.");
+		response(cl, CLI(operserv), "Nótese el uso correcto de mayúsculas/minúsculas.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
+		response(cl, CLI(operserv), "Para añadir una block se antepone '+' antes de la block. Para quitarla, '-'.");
+		response(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
 	}
 	else if (!strcasecmp(param[1], "SAJOIN"))
 	{
-		response(cl, operserv->nick, "\00312SAJOIN");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Fuerza a un usuario a entrar en un canal.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312SAJOIN usuario #canal");
+		response(cl, CLI(operserv), "\00312SAJOIN");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Fuerza a un usuario a entrar en un canal.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312SAJOIN usuario #canal");
 	}
 	else if (!strcasecmp(param[1], "SAPART"))
 	{
-		response(cl, operserv->nick, "\00312SAPART");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Fuerza a un usuario a salir de un canal.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312SAPART usuario #canal");
+		response(cl, CLI(operserv), "\00312SAPART");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Fuerza a un usuario a salir de un canal.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312SAPART usuario #canal");
 	}
 	else if (!strcasecmp(param[1], "REJOIN"))
 	{
-		response(cl, operserv->nick, "\00312REJOIN");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Fuerza a un usuario a reentrar en un canal.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312REJOIN usuario #canal");
+		response(cl, CLI(operserv), "\00312REJOIN");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Fuerza a un usuario a reentrar en un canal.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312REJOIN usuario #canal");
 	}
 	else if (!strcasecmp(param[1], "KILL"))
 	{
-		response(cl, operserv->nick, "\00312KILL");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Desconecta a un usuario de la red.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312KILL usuario [motivo]");
+		response(cl, CLI(operserv), "\00312KILL");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Desconecta a un usuario de la red.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312KILL usuario [motivo]");
 	}
 	else if (!strcasecmp(param[1], "GLOBAL"))
 	{
-		response(cl, operserv->nick, "\00312GLOBAL");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Envía un mensaje global.");
-		response(cl, operserv->nick, "Dispone de varios parámetros para especificar sus destinatarios y el modo de envío.");
-		response(cl, operserv->nick, "Estos son:");
-		response(cl, operserv->nick, "\00312o\003 Exclusivo a operadores.");
-		response(cl, operserv->nick, "\00312p\003 Para preopers.");
-		response(cl, operserv->nick, "\00312b\003 Utiliza un bot para mandar el mensaje.");
-		response(cl, operserv->nick, "\00312m\003 Vía memo.");
-		response(cl, operserv->nick, "\00312n\003 Vía notice.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312GLOBAL [-parámetros [[bot]] mensaje");
-		response(cl, operserv->nick, "Si no se especifican modos, se envía a todos los usuarios vía privmsg.");
+		response(cl, CLI(operserv), "\00312GLOBAL");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Envía un mensaje global.");
+		response(cl, CLI(operserv), "Dispone de varios parámetros para especificar sus destinatarios y el modo de envío.");
+		response(cl, CLI(operserv), "Estos son:");
+		response(cl, CLI(operserv), "\00312o\003 Exclusivo a operadores.");
+		response(cl, CLI(operserv), "\00312p\003 Para preopers.");
+		response(cl, CLI(operserv), "\00312b\003 Utiliza un bot para mandar el mensaje.");
+		response(cl, CLI(operserv), "\00312m\003 Vía memo.");
+		response(cl, CLI(operserv), "\00312n\003 Vía notice.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312GLOBAL [-parámetros [[bot]] mensaje");
+		response(cl, CLI(operserv), "Si no se especifican modos, se envía a todos los usuarios vía privmsg.");
 	}
 	else if (!strcasecmp(param[1], "NOTICIAS"))
 	{
-		response(cl, operserv->nick, "\00312NOTICIAS");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Gestiona las noticias de la red.");
-		response(cl, operserv->nick, "Estas noticias son mostradas cuando se conecta un usuario en forma de privado.");
-		response(cl, operserv->nick, "Se muestra la fecha y el cuerpo de la noticia y son mandadas por el bot especificado.");
-		response(cl, operserv->nick, "Las noticias son acumulativas si no se borran.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Comandos disponibles:");
-		response(cl, operserv->nick, "\00312ADD\003 Añade una noticia.");
-		response(cl, operserv->nick, "\00312DEL\003 Bora una noticia.");
-		response(cl, operserv->nick, "\00312LIST\003 Lista las noticias actuales.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis:");
-		response(cl, operserv->nick, "\00312ADD bot noticia");
-		response(cl, operserv->nick, "\00312DEL nº");
-		response(cl, operserv->nick, "\00312LIST");
+		response(cl, CLI(operserv), "\00312NOTICIAS");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Gestiona las noticias de la red.");
+		response(cl, CLI(operserv), "Estas noticias son mostradas cuando se conecta un usuario en forma de privado.");
+		response(cl, CLI(operserv), "Se muestra la fecha y el cuerpo de la noticia y son mandadas por el bot especificado.");
+		response(cl, CLI(operserv), "Las noticias son acumulativas si no se borran.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Comandos disponibles:");
+		response(cl, CLI(operserv), "\00312ADD\003 Añade una noticia.");
+		response(cl, CLI(operserv), "\00312DEL\003 Bora una noticia.");
+		response(cl, CLI(operserv), "\00312LIST\003 Lista las noticias actuales.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis:");
+		response(cl, CLI(operserv), "\00312ADD bot noticia");
+		response(cl, CLI(operserv), "\00312DEL nº");
+		response(cl, CLI(operserv), "\00312LIST");
 	}
 	else if (!strcasecmp(param[1], "OPERS") && IsAdmin(cl))
 	{
-		response(cl, operserv->nick, "\00312OPERS");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Administra los operadores de la red.");
-		response(cl, operserv->nick, "Cuando un usuario es identificador como propietario de su nick, y figura como operador, se le da el modo +h.");
-		response(cl, operserv->nick, "Así queda reconocido como operador de red.");
-		response(cl, operserv->nick, "Rangos:");
-		response(cl, operserv->nick, "\00312PREO");
-		response(cl, operserv->nick, "\00312OPER (+h)");
-		response(cl, operserv->nick, "\00312DEVEL");
-		response(cl, operserv->nick, "\00312ADMIN (+N)");
-		response(cl, operserv->nick, "\00312ROOT");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312OPERS {+|-}usuario rango");
-	}
-	else if (!strcasecmp(param[1], "CLONES") && IsAdmin(cl))
-	{
-		response(cl, operserv->nick, "\00312CLONES");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Gestiona la lista de ips con más clones.");
-		response(cl, operserv->nick, "Estas ips o hosts tienen un número concreto de clones permitidos.");
-		response(cl, operserv->nick, "Si se sobrepasa el límite, los usuarios son desconectados.");
-		response(cl, operserv->nick, "Es importante distinguir entre ip y host. Si el usuario resuelve a host, deberá introducirse el host.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312CLONES +{ip|host} número");
-		response(cl, operserv->nick, "Añade una ip|host con un número propio de clones.");
-		response(cl, operserv->nick, "Sintaxis: \00312CLONES -{ip|host}");
-		response(cl, operserv->nick, "Borra una ip|host.");
+		response(cl, CLI(operserv), "\00312OPERS");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Administra los operadores de la red.");
+		response(cl, CLI(operserv), "Cuando un usuario es identificador como propietario de su nick, y figura como operador, se le da el modo +h.");
+		response(cl, CLI(operserv), "Así queda reconocido como operador de red.");
+		response(cl, CLI(operserv), "Rangos:");
+		response(cl, CLI(operserv), "\00312PREO");
+		response(cl, CLI(operserv), "\00312OPER (+h)");
+		response(cl, CLI(operserv), "\00312DEVEL");
+		response(cl, CLI(operserv), "\00312ADMIN (+N)");
+		response(cl, CLI(operserv), "\00312ROOT");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312OPERS {+|-}usuario rango");
 	}
 #ifdef UDB
 	else if (!strcasecmp(param[1], "MODOS") && IsAdmin(cl))
 	{
-		response(cl, operserv->nick, "\00312MODOS");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Fija los modos de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
-		response(cl, operserv->nick, "Estos modos son: \00312ohAOkNCWqHX");
-		response(cl, operserv->nick, "Serán otorgados de forma automática cada vez que el operador use su nick vía /nick nick:pass");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312MODOS operador [modos]");
-		response(cl, operserv->nick, "Si no se especifican modos, se borrarán los que pueda haber.");
+		response(cl, CLI(operserv), "\00312MODOS");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Fija los modos de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
+		response(cl, CLI(operserv), "Estos modos son: \00312ohAOkNCWqHX");
+		response(cl, CLI(operserv), "Serán otorgados de forma automática cada vez que el operador use su nick vía /nick nick:pass");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312MODOS operador [modos]");
+		response(cl, CLI(operserv), "Si no se especifican modos, se borrarán los que pueda haber.");
 	}
 	else if (!strcasecmp(param[1], "SNOMASK") && IsAdmin(cl))
 	{
-		response(cl, operserv->nick, "\00312SNOMASK");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Fija las máscaras de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
-		response(cl, operserv->nick, "Serán otorgadas de forma automática cada vez que el operador use su nick vía /nick nick:pass");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312SNOMASK operador [snomasks]");
-		response(cl, operserv->nick, "Si no se especifican máscaras, se borrarán las que pueda haber.");
+		response(cl, CLI(operserv), "\00312SNOMASK");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Fija las máscaras de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
+		response(cl, CLI(operserv), "Serán otorgadas de forma automática cada vez que el operador use su nick vía /nick nick:pass");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312SNOMASK operador [snomasks]");
+		response(cl, CLI(operserv), "Si no se especifican máscaras, se borrarán las que pueda haber.");
 	}
 #endif
 	else if (!strcasecmp(param[1], "RESTART") && IsRoot(cl))
 	{
-		response(cl, operserv->nick, "\00312RESTART");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Reinicia los servicios.");
-		response(cl, operserv->nick, "Cierra y vuelve a abrir el programa.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312RESTART");
+		response(cl, CLI(operserv), "\00312RESTART");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Reinicia los servicios.");
+		response(cl, CLI(operserv), "Cierra y vuelve a abrir el programa.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312RESTART");
 	}
 	else if (!strcasecmp(param[1], "REHASH") && IsRoot(cl))
 	{
-		response(cl, operserv->nick, "\00312REHASH");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Refresca los servicios.");
-		response(cl, operserv->nick, "Este comando resulta útil cuando se han modificado los archivos de configuración o hay alguna desincronización.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312REHASH");
+		response(cl, CLI(operserv), "\00312REHASH");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Refresca los servicios.");
+		response(cl, CLI(operserv), "Este comando resulta útil cuando se han modificado los archivos de configuración o hay alguna desincronización.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312REHASH");
 	}
 	else if (!strcasecmp(param[1], "BACKUP") && IsRoot(cl))
 	{
-		response(cl, operserv->nick, "\00312BACKUP");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Crea una copia de seguridad de la base de datos y se guarda en el archivo backup.sql");
-		response(cl, operserv->nick, "Cada vez que se inicie el programa y detecte este archivo pedirá su restauración.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312BACKUPP");
+		response(cl, CLI(operserv), "\00312BACKUP");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Crea una copia de seguridad de la base de datos y se guarda en el archivo backup.sql");
+		response(cl, CLI(operserv), "Cada vez que se inicie el programa y detecte este archivo pedirá su restauración.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312BACKUPP");
 	}
 	else if (!strcasecmp(param[1], "RESTAURAR") && IsRoot(cl))
 	{
-		response(cl, operserv->nick, "\00312RESTAURAR");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Restaura una copia de base de datos realizada con el comando BACKUP");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312RESTAURAR");
+		response(cl, CLI(operserv), "\00312RESTAURAR");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Restaura una copia de base de datos realizada con el comando BACKUP");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR");
 	}
 	else if (!strcasecmp(param[1], "CLOSE") && IsRoot(cl))
 	{
-		response(cl, operserv->nick, "\00312CLOSE");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Cierra el programa.");
-		response(cl, operserv->nick, "Una vez cerrado no se podrá volver ejecutar si no es manualmente.");
-		response(cl, operserv->nick, " ");
-		response(cl, operserv->nick, "Sintaxis: \00312CLOSE");
+		response(cl, CLI(operserv), "\00312CLOSE");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Cierra el programa.");
+		response(cl, CLI(operserv), "Una vez cerrado no se podrá volver ejecutar si no es manualmente.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis: \00312CLOSE");
 	}
 	else
-		response(cl, operserv->nick, OS_ERR_EMPT, "Opción desconocida.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
 BOTFUNC(operserv_raw)
@@ -544,17 +494,17 @@ BOTFUNC(operserv_raw)
 	char *raw;
 	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "RAW mensaje");
+		response(cl, CLI(operserv), OS_ERR_PARA, "RAW mensaje");
 		return 1;
 	}
 	raw = implode(param, params, 1, -1);
-	sendto_serv(":%s", raw);
-	response(cl, operserv->nick, "Comando ejecutado \00312%s\003.", raw);
+	sendto_serv("%s", raw);
+	response(cl, CLI(operserv), "Comando ejecutado \00312%s\003.", raw);
 	return 0;
 }
 BOTFUNC(operserv_restart)
 {
-	response(cl, operserv->nick, "Los servicios van a reiniciarse.");
+	response(cl, CLI(operserv), "Los servicios van a reiniciarse.");
 	timer("reinicia", NULL, 1, 1, os_reinicia, NULL, 0);
 	return 0;
 }
@@ -565,103 +515,69 @@ BOTFUNC(operserv_rehash)
 }
 BOTFUNC(operserv_backup)
 {
-	if ( _mysql_backup())
-		response(cl, operserv->nick, OS_ERR_EMPT, "Ha ocurrido un error al intentar hacer una copia de seguridad de la base de datos.");
+	if (_mysql_backup())
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error al intentar hacer una copia de seguridad de la base de datos.");
 	else
-		response(cl, operserv->nick, "Base de datos copiada con éxito.");
+		response(cl, CLI(operserv), "Base de datos copiada con éxito.");
 	return 0;
 }
 BOTFUNC(operserv_restaura)
 {
 	if (_mysql_restaura())
-		response(cl, operserv->nick, OS_ERR_EMPT, "Ha ocurrido un error al intentar restaurar la base de datos.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error al intentar restaurar la base de datos.");
 	else
-		response(cl, operserv->nick, "Base de datos restaurada con éxito.");
+		response(cl, CLI(operserv), "Base de datos restaurada con éxito.");
 	return 0;
 }
 BOTFUNC(operserv_blocks)
 {
-	if (params < 3)
+	char *user, *host;
+	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
+		response(cl, CLI(operserv), OS_ERR_PARA, "GLINE {+|-}{nick|user@host} [tiempo motivo]");
 		return 1;
 	}
-	switch(*(param[1] + 1))
+	if (*param[1] == '+' && params < 4)
 	{
-		case TKL_QLINE:
-			if (*param[1] == '+')
-			{
-				buf[0] = '\0';
-				sprintf_irc(buf, operserv->bline, implode(param, params, 3, -1));
-#ifdef UDB
-				envia_registro_bdd("N::%s::forbid %s", param[2], buf);
-#else
-				_mysql_add(NS_FORBIDS, param[2], "motivo", buf);
-				sendto_serv(":%s %s %s :%s", me.nombre, TOK_SQLINE, param[2], buf);
-#endif
-			}
-			else if (*param[1] == '-')
-			{
-#ifdef UDB
-				envia_registro_bdd("N::%s::forbid", param[2]);
-#else
-				_mysql_del(NS_FORBIDS, param[2]);
-				sendto_serv(":%s %s %s", me.nombre, TOK_UNSQLINE, param[2]);
-#endif
-			}
-			else
-			{
-				response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}Q nick motivo");
-				return 1;
-			}
-			break;
-		case TKL_SHUN:
-		case TKL_ZAP:
-		case TKL_GLINE:
-		{
-			char *user, *host;
-			user = host = NULL;
-			if (*param[1] == '+' && params < 5)
-			{
-				response(cl, operserv->nick, OS_ERR_PARA, "BLOCKS {+|-}|Q|Z|s|G nick|user@host tiempo motivo");
-				return 1;
-			}
-			if (!strchr(param[2], '@'))
-			{
-				Cliente *al;
-				if ((al = busca_cliente(param[2], NULL)))
-				{
-					user = al->ident;
-					host = al->host;
-				}
-				else
-				{
-					response(cl, operserv->nick, OS_ERR_EMPT, "Este usuario no está conectado.");
-					return 1;
-				}
-			}
-			else
-			{
-				strcpy(tokbuf, param[2]);
-				user = strtok(tokbuf, "@");
-				host = strtok(NULL, "@");
-			}
-			if (*param[1] == '+')
-				irctkl(TKL_ADD, *(param[1] + 1), user, host, operserv->mascara, atoi(param[3]), implode(param, params, 4, -1));
-			else if (*param[1] == '-')
-				irctkl(TKL_DEL, *(param[1] + 1), user, host, operserv->mascara, 0, NULL);
-			else
-			{
-			 	response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}|Q|Z|s|G nick|user@host [tiempo motivo]");
-				return 1;
-			}
-			break;
-		}
-		default:
-			response(cl, operserv->nick, OS_ERR_SNTX, "BLOCKS {+|-}|Q|Z|s|G nick|user@host [parámetros]");
-			return 1;
+		response(cl, CLI(operserv), OS_ERR_PARA, "GLINE +{nick|user@host} [tiempo motivo]");
+		return 1;
 	}
-	response(cl, operserv->nick, "Block \00312%c\003 %s con éxito.", *(param[1] + 1), *param[1] == '+' ? "añadida" : "eliminada");
+	else if (*param[1] != '+' && *param[1] != '-')
+	{
+		response(cl, CLI(operserv), OS_ERR_SNTX, "GLINE {+|-}{nick|user@host} [tiempo motivo]");
+		return 1;
+	}
+	user = host = NULL;
+	if (!strchr(param[1] + 1, '@'))
+	{
+		Cliente *al;
+		if ((al = busca_cliente(param[1] + 1, NULL)))
+		{
+			user = al->ident;
+			host = al->host;
+		}
+		else
+		{
+			response(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
+			return 1;
+		}
+	}
+	else
+	{
+		strcpy(tokbuf, param[1] + 1);
+		user = strtok(tokbuf, "@");
+		host = strtok(NULL, "@");
+	}
+	if (*param[1] == '+')
+	{
+		port_func(P_GLINE)(CLI(operserv), ADD, user, host, atoi(param[2]), implode(param, params, 3, -1));
+		response(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
+	}
+	else if (*param[1] == '-')
+	{
+		port_func(P_GLINE)(CLI(operserv), ADD, user, host, 0, NULL);
+		response(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
+	}
 	return 0;
 }
 BOTFUNC(operserv_opers)
@@ -669,19 +585,19 @@ BOTFUNC(operserv_opers)
 	char oper[128];
 	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "OPERS {+|-}nick [rango]");
+		response(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick [rango]");
 		return 1;
 	}
 	if (*param[1] == '+')
 	{
 		if (params < 3)
 		{
-			response(cl, operserv->nick, OS_ERR_PARA, "OPERS {+|-}nick rango");
+			response(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick rango");
 			return 1;
 		}
 		if (!IsReg(param[1] + 1))
 		{
-			response(cl, operserv->nick, OS_ERR_EMPT, "Este nick no está registrado.");
+			response(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
 		if (!strcasecmp(param[2], "OPER"))
@@ -692,7 +608,7 @@ BOTFUNC(operserv_opers)
 		{
 			if (!IsRoot(cl))
 			{
-				response(cl, operserv->nick, OS_ERR_FORB, "");
+				response(cl, CLI(operserv), OS_ERR_FORB, "");
 				return 1;
 			}
 			sprintf_irc(oper, "%i", BDD_ADMIN);
@@ -701,7 +617,7 @@ BOTFUNC(operserv_opers)
 		{
 			if (strcasecmp(conf_set->root, cl->nombre))
 			{
-				response(cl, operserv->nick, OS_ERR_FORB, "");
+				response(cl, CLI(operserv), OS_ERR_FORB, "");
 				return 1;
 			}
 			sprintf_irc(oper, "%i", BDD_ROOT);
@@ -710,7 +626,7 @@ BOTFUNC(operserv_opers)
 			sprintf_irc(oper, "%i", BDD_PREO);
 		else
 		{
-			response(cl, operserv->nick, OS_ERR_SNTX, "OPERS +nick OPER|DEVEL|ADMIN|ROOT|PREO");
+			response(cl, CLI(operserv), OS_ERR_SNTX, "OPERS +nick OPER|DEVEL|ADMIN|ROOT|PREO");
 			return 1;
 		}
 #ifdef UDB
@@ -718,7 +634,7 @@ BOTFUNC(operserv_opers)
 #else
 		_mysql_add(OS_MYSQL, param[1] + 1, "nivel", oper);
 #endif		
-		response(cl, operserv->nick, "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1] + 1, param[2]);
+		response(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1] + 1, param[2]);
 	}
 	else if (*param[1] == '-')
 	{
@@ -727,16 +643,16 @@ BOTFUNC(operserv_opers)
 #else
 		if (!_mysql_get_registro(OS_MYSQL, param[1] + 1, "nivel"))
 		{
-			response(cl, operserv->nick, OS_ERR_EMPT, "Este usuario no es oper.");
+			response(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
 			return 1;
 		}
 		_mysql_del(OS_MYSQL, param[1]);
 #endif
-		response(cl, operserv->nick, "El usuario \00312%s\003 ha sido borrado.", param[1] + 1);
+		response(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1] + 1);
 	}
 	else
 	{
-		response(cl, operserv->nick, OS_ERR_SNTX, "OPERS {+|-}nick [rango]");
+		response(cl, CLI(operserv), OS_ERR_SNTX, "OPERS {+|-}nick [rango]");
 		return 1;
 	}
 	return 0;
@@ -744,68 +660,83 @@ BOTFUNC(operserv_opers)
 BOTFUNC(operserv_sajoin)
 {
 	Cliente *al;
+	if (!port_existe(P_JOIN_USUARIO_REMOTO))
+	{
+		response(cl, CLI(operserv), ERR_NSUP);
+		return 1;
+	}
 	if (params < 3)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "SAJOIN nick #canal");
+		response(cl, CLI(operserv), OS_ERR_PARA, "SAJOIN nick #canal");
 		return 1;
 	}
 	if (!(al = busca_cliente(param[1], NULL)))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "Este usuario no está conectado.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
 	if (IsOper(al))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	sendto_serv_us(&me, MSG_SVSJOIN, TOK_SVSJOIN, "%s %s", param[1], param[2]);
-	response(cl, operserv->nick, "El usuario \00312%s\003 ha sido forzado a entrar en \00312%s\003.", param[1], param[2]);
+	port_func(P_JOIN_USUARIO_REMOTO)(al, param[2]);
+	response(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a entrar en \00312%s\003.", param[1], param[2]);
 	return 0;
 }
 BOTFUNC(operserv_sapart)
 {
 	Cliente *al;
+	if (!port_existe(P_PART_USUARIO_REMOTO))
+	{
+		response(cl, CLI(operserv), ERR_NSUP);
+		return 1;
+	}
 	if (params < 3)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "SAPART nick #canal");
+		response(cl, CLI(operserv), OS_ERR_PARA, "SAPART nick #canal");
 		return 1;
 	}
 	if (!(al = busca_cliente(param[1], NULL)))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "Este usuario no está conectado.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
 	if (IsOper(al))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	sendto_serv_us(&me, MSG_SVSPART, TOK_SVSPART, "%s %s", param[1], param[2]);
-	response(cl, operserv->nick, "El usuario \00312%s\003 ha sido forzado a salir de \00312%s\003.", param[1], param[2]);
+	port_func(P_PART_USUARIO_REMOTO)(al, busca_canal(param[2], NULL), NULL);
+	response(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir de \00312%s\003.", param[1], param[2]);
 	return 0;
 }
 BOTFUNC(operserv_rejoin)
 {
 	Cliente *al;
+	if (!port_existe(P_JOIN_USUARIO_REMOTO) || !port_existe(P_PART_USUARIO_REMOTO))
+	{
+		response(cl, CLI(operserv), ERR_NSUP);
+		return 1;
+	}
 	if (params < 3)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "REJOIN nick #canal");
+		response(cl, CLI(operserv), OS_ERR_PARA, "REJOIN nick #canal");
 		return 1;
 	}
 	if (!(al = busca_cliente(param[1], NULL)))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "Este usuario no está conectado.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
 	if (IsOper(al))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	sendto_serv_us(&me, MSG_SVSPART, TOK_SVSPART, "%s %s", param[1], param[2]);
-	sendto_serv_us(&me, MSG_SVSJOIN, TOK_SVSJOIN, "%s %s", param[1], param[2]);
-	response(cl, operserv->nick, "El usuario \00312%s\003 ha sido forzado a salir y a entrar en \00312%s\003.", param[1], param[2]);
+	port_func(P_PART_USUARIO_REMOTO)(al, busca_canal(param[2], NULL), NULL);
+	port_func(P_JOIN_USUARIO_REMOTO)(al, param[2]);
+	response(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir y a entrar en \00312%s\003.", param[1], param[2]);
 	return 0;
 }
 BOTFUNC(operserv_kill)
@@ -813,30 +744,30 @@ BOTFUNC(operserv_kill)
 	Cliente *al;
 	if (params < 3)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "KILL nick motivo");
+		response(cl, CLI(operserv), OS_ERR_PARA, "KILL nick motivo");
 		return 1;
 	}
 	if (!(al = busca_cliente(param[1], NULL)))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "Este usuario no está conectado.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
 	if (IsOper(al))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	irckill(al, operserv->nick, implode(param, params, 2, -1));
-	response(cl, operserv->nick, "El usuario \00312%s\003 ha sido desconectado.", param[1]);
+	port_func(P_QUIT_USUARIO_REMOTO)(al, CLI(operserv), implode(param, params, 2, -1));
+	response(cl, CLI(operserv), "El usuario \00312%s\003 ha sido desconectado.", param[1]);
 	return 0;
 }
 BOTFUNC(operserv_global)
 {
 	int opts = 0;
-	char *msg, *t = TOK_PRIVATE;
+	char *msg, t = 0; /* privmsg */
 	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "GLOBAL [-modos] mensaje");
+		response(cl, CLI(operserv), OS_ERR_PARA, "GLOBAL [-modos] mensaje");
 		return 1;
 	}
 	if (*param[1] == '-')
@@ -850,7 +781,7 @@ BOTFUNC(operserv_global)
 		if (strchr(param[1], 'm'))
 			opts |= 0x8;
 		if (strchr(param[1], 'n'))
-			t = TOK_NOTICE;
+			t = 1; /* notice */
 	}
 	if (opts & 0x8)
 	{
@@ -873,21 +804,19 @@ BOTFUNC(operserv_global)
 				if (opts & 0x4)
 					memoserv_send_dl(row[0], param[2], implode(param, params, 3, -1));
 				else
-					memoserv_send_dl(row[0], operserv->nick, implode(param, params, 2, -1));
+					memoserv_send_dl(row[0], operserv.hmod->nick, implode(param, params, 2, -1));
 			}
 			mysql_free_result(res);
 		}
-		response(cl, operserv->nick, "Mensaje global enviado vía memo.");
+		response(cl, CLI(operserv), "Mensaje global enviado vía memo.");
 	}
 	else
 	{
-		char *bot;
-		Cliente *al;
+		Cliente *al, *bl = CLI(operserv);
 		if (opts & 0x4)
 		{
-			sendto_serv("%s %s 1 %lu %s %s %s 0 +%s %s :%s", TOK_NICK, param[2], time(0), operserv->ident, operserv->host, me.nombre, operserv->modos, operserv->host, operserv->realname);
+			bl = botnick(param[2], operserv.hmod->ident, operserv.hmod->host, me.nombre, operserv.hmod->modos, operserv.hmod->realname);
 			msg = implode(param, params, 3, -1);
-			bot = param[2];
 		}
 		else
 		{
@@ -895,7 +824,6 @@ BOTFUNC(operserv_global)
 				msg = implode(param, params, 2, -1);
 			else
 				msg = implode(param, params, 1, -1);
-			bot = operserv->nick;
 		}
 		for (al = clientes; al; al = al->sig)
 		{
@@ -905,11 +833,12 @@ BOTFUNC(operserv_global)
 				continue;
 			if (EsBot(al) || EsServer(al))
 				continue;
-			sendto_serv(":%s %s %s :%s", bot, t, al->nombre, msg);
+			if (!t)
+				port_func(P_PRIVADO)(al, bl, msg);
 		}
 		if (opts & 0x4)
-			sendto_serv(":%s %s :Mensajería global %s", bot, TOK_QUIT, conf_set->red);
-		response(cl, operserv->nick, "Mensaje global enviado.");
+			port_func(P_QUIT_USUARIO_LOCAL)(bl, conf_set->red);
+		response(cl, CLI(operserv), "Mensaje global enviado.");
 	}
 	return 0;
 }
@@ -917,28 +846,28 @@ BOTFUNC(operserv_noticias)
 {
 	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "NOTICIAS ADD|DEL|LIST parámetros");
+		response(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS ADD|DEL|LIST parámetros");
 		return 1;
 	}
 	if (!strcasecmp(param[1], "ADD"))
 	{
 		if (params < 4)
 		{
-			response(cl, operserv->nick, OS_ERR_PARA, "NOTICIAS ADD botname noticia");
+			response(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS ADD botname noticia");
 			return 1;
 		}
 		inserta_noticia(param[2], implode(param, params, 3, -1), 0, 0);
-		response(cl, operserv->nick, "Noticia añadida.");
+		response(cl, CLI(operserv), "Noticia añadida.");
 	}
 	else if (!strcasecmp(param[1], "DEL"))
 	{
 		if (params < 3)
 		{
-			response(cl, operserv->nick, OS_ERR_PARA, "NOTICIAS DEL nº");
+			response(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS DEL nº");
 			return 1;
 		}
 		borra_noticia(atoi(param[2]));
-		response(cl, operserv->nick, "Noticia borrada.");
+		response(cl, CLI(operserv), "Noticia borrada.");
 	}
 	else if (!strcasecmp(param[1], "LIST"))
 	{
@@ -947,10 +876,10 @@ BOTFUNC(operserv_noticias)
 		time_t ti;
 		if (!(res = _mysql_query("SELECT n,bot,noticia,fecha from %s%s", PREFIJO, OS_NOTICIAS)))
 		{
-			response(cl, operserv->nick, OS_ERR_EMPT, "No hay noticias.");
+			response(cl, CLI(operserv), OS_ERR_EMPT, "No hay noticias.");
 			return 1;
 		}
-		response(cl, operserv->nick, "Noticias de la red");
+		response(cl, CLI(operserv), "Noticias de la red");
 		while ((row = mysql_fetch_row(res)))
 		{
 			if (strlen(row[2]) > 35)
@@ -961,64 +890,20 @@ BOTFUNC(operserv_noticias)
 			buf[0] = '\0';
 			ti = atol(row[3]);
 			strftime(buf, BUFSIZE, "%d/%m/%Y", localtime(&ti));
-			response(cl, operserv->nick, "\00312%s\003 - %s - \00312%s\003 por \00312%s\003.", row[0], buf, row[2], row[1]);
+			response(cl, CLI(operserv), "\00312%s\003 - %s - \00312%s\003 por \00312%s\003.", row[0], buf, row[2], row[1]);
 		}
 		mysql_free_result(res);
 	}
 	else
 	{
-		response(cl, operserv->nick, OS_ERR_SNTX, "NOTICIAS ADD|DEL|LIST parámetros");
+		response(cl, CLI(operserv), OS_ERR_SNTX, "NOTICIAS ADD|DEL|LIST parámetros");
 		return 1;
 	}
 	return 0;
 }
-BOTFUNC(operserv_clones)
-{
-	if (params < 2)
-	{
-		response(cl, operserv->nick, OS_ERR_PARA, "CLONES {+|-}{ip|host} [nº]");
-		return 1;
-	}
-	if (*param[1] == '+')
-	{
-		if (params < 3)
-		{
-			response(cl, operserv->nick, OS_ERR_PARA, "CLONES +{ip|host} nº");
-			return 1;
-		}
-		if (atoi(param[2]) < 1)
-		{
-			response(cl, operserv->nick, OS_ERR_SNTX, "CLONES +{ip|host} número");
-			return 1;
-		}
-		param[1]++;
-#ifdef UDB
-		envia_registro_bdd("I::%s %c%s", param[1], CHAR_NUM, param[2]);
-#else
-		_mysql_add(OS_CLONS, param[1], "clones", param[2]);
-#endif
-		response(cl, operserv->nick, "La ip/host \00312%s\003 se ha añadido con \00312%s\003 clones.", param[1], param[2]);
-	}
-	else if (*param[1] == '-')
-	{
-		param[1]++;
-#ifdef UDB
-		envia_registro_bdd("I::%s", param[1]);
-#else
-		_mysql_del(OS_CLONS, param[1]);
-#endif
-		response(cl, operserv->nick, "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
-	}
-	else
-	{
-		response(cl, operserv->nick, OS_ERR_SNTX, "CLONES {+|-}{ip|host} [nº]");
-		return 1;
-	}
-	return 0;
-}		
 BOTFUNC(operserv_close)
 {
-	response(cl, operserv->nick, "Los servicios van a cerrarse.");
+	response(cl, CLI(operserv), "Los servicios van a cerrarse.");
 	cierra_colossus(0);
 	return 0;
 }
@@ -1027,12 +912,12 @@ BOTFUNC(operserv_modos)
 {
 	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "MODOS nick [modos]");
+		response(cl, CLI(operserv), OS_ERR_PARA, "MODOS nick [modos]");
 		return 1;
 	}
 	if (!IsNickUDB(param[1]))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "Este nick no está migrado.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está migrado.");
 		return 1;
 	}
 	if (params == 3)
@@ -1043,17 +928,17 @@ BOTFUNC(operserv_modos)
 			if (!strchr("ohaAOkNCWqHX", *modos))
 			{
 				sprintf_irc(buf, "El modo %c está prohibido. Sólo se permiten los modos ohaAOkNCWqHX.", *modos);
-				response(cl, operserv->nick, OS_ERR_EMPT, buf);
+				response(cl, CLI(operserv), OS_ERR_EMPT, buf);
 				return 1;
 			}
 		}
 		envia_registro_bdd("N::%s::modos %s", param[1], param[2]);
-		response(cl, operserv->nick, "Los modos de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
+		response(cl, CLI(operserv), "Los modos de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
 	}
 	else
 	{
 		envia_registro_bdd("N::%s::modos", param[1]);
-		response(cl, operserv->nick, "Se han eliminado los modos de operador para \00312%s", param[1]);
+		response(cl, CLI(operserv), "Se han eliminado los modos de operador para \00312%s", param[1]);
 	}
 	return 0;
 }
@@ -1061,12 +946,12 @@ BOTFUNC(operserv_snomask)
 {
 	if (params < 2)
 	{
-		response(cl, operserv->nick, OS_ERR_PARA, "SNOMASK nick [máscaras]");
+		response(cl, CLI(operserv), OS_ERR_PARA, "SNOMASK nick [máscaras]");
 		return 1;
 	}
 	if (!IsNickUDB(param[1]))
 	{
-		response(cl, operserv->nick, OS_ERR_EMPT, "Este nick no está migrado.");
+		response(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está migrado.");
 		return 1;
 	}
 	if (params == 3)
@@ -1077,67 +962,46 @@ BOTFUNC(operserv_snomask)
 			if (!strchr("cefFGjknNoqsSv", *modos))
 			{
 				sprintf_irc(buf, "La máscara %c está prohibido. Sólo se permiten las máscaras cefFGjknNoqsSv.", *modos);
-				response(cl, operserv->nick, OS_ERR_EMPT, buf);
+				response(cl, CLI(operserv), OS_ERR_EMPT, buf);
 				return 1;
 			}
 		}
 		envia_registro_bdd("N::%s::snomasks %s", param[1], param[2]);
-		response(cl, operserv->nick, "Las máscaras de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
+		response(cl, CLI(operserv), "Las máscaras de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
 	}
 	else
 	{
 		envia_registro_bdd("N::%s::snomasks", param[1]);
-		response(cl, operserv->nick, "Se han eliminado las máscaras de operador para \00312%s", param[1]);
+		response(cl, CLI(operserv), "Se han eliminado las máscaras de operador para \00312%s", param[1]);
 	}
 	return 0;
 }
 #endif
-IRCFUNC(operserv_nick)
+int operserv_nick(Cliente *cl, char *nuevo)
 {
-#ifndef UDB
-	Cliente *aux;
-	int i = 0, clons = operserv->clones;
-	char *cc;
-	for (aux = clientes; aux; aux = aux->sig)
+	if (!nuevo)
 	{
-		if (EsServer(aux) || EsBot(aux))
-			continue;
-		if (!strcmp(cl->host, aux->host))
-			i++;
-	}
-	if ((cc = _mysql_get_registro(OS_CLONS, cl->host, "clones")))
-		clons = atoi(cc);
-	if (i > clons)
-	{
-		irckill(cl, operserv->nick, "Demasiados clones.");
-		return 0;
-	}
-#endif
-	if (gnoticias && parc > 4)
-	{
-		int i;
-		time_t ti;
-		response(cl, gnoticia[0]->botname, "Noticias de la Red:");
-		for (i = 0; i < gnoticias; i++)
+		if (gnoticias)
 		{
-			ti = gnoticia[i]->fecha;
-			strftime(buf, BUFSIZE, "%d/%m/%Y", localtime(&ti));
-			response(cl, gnoticia[i]->botname, "%s - %s", buf, gnoticia[i]->noticia);
+			int i;
+			time_t ti;
+			response(cl, gnoticia[0]->cl, "Noticias de la Red:");
+			for (i = 0; i < gnoticias; i++)
+			{
+				ti = gnoticia[i]->fecha;
+				strftime(buf, BUFSIZE, "%d/%m/%Y", localtime(&ti));
+				response(cl, gnoticia[i]->cl, "%s - %s", buf, gnoticia[i]->noticia);
+			}
 		}
 	}
 	return 0;
 }
-IRCFUNC(operserv_join)
+int operserv_join(Cliente *cl, Canal *cn)
 {
-	char *canal;
-	if (!IsOper(cl) || !(operserv->opts & OS_OPTS_AOP))
+	if (!IsOper(cl) || !(operserv.opts & OS_OPTS_AOP))
 		return 0;
-	strcpy(tokbuf, parv[1]);
-	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-	{
-		if (!IsChanReg_dl(canal))
-			envia_cmodos(busca_canal(canal, NULL), operserv->nick, "+o %s", cl->nombre);
-	}
+	if (!IsChanReg_dl(cn->nombre))
+		port_func(P_MODO_CANAL)(RedOverride ? &me : CLI(operserv), cn, "+o %s", TRIO(cl));
 	return 0;
 }
 
@@ -1163,11 +1027,18 @@ int operserv_idok(Cliente *cl)
 	char *modos;
 	if ((modos = _mysql_get_registro(OS_MYSQL, cl->nombre, "nivel")))
 	{
+		char tmp[5];
 		opts = atoi(modos);
 		if (opts & BDD_ADMIN)
-			envia_umodos(cl, operserv->nick, "+ohN");
+		{
+			sprintf_irc(tmp, "+%c%c%c", (protocolo->umodos+1)->flag, (protocolo->umodos+2)->flag, (protocolo->umodos+3)->flag);
+			port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
+		}
 		else
-			envia_umodos(cl, operserv->nick, "+h");
+		{
+			sprintf_irc(tmp, "+%c", (protocolo->umodos+3)->flag);
+			port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, "+h", 1);
+		}
 		if (opts & BDD_PREO)
 			cl->nivel |= PREO;
 		if (opts & BDD_OPER)
@@ -1184,75 +1055,50 @@ int operserv_idok(Cliente *cl)
 }
 int operserv_sig_mysql()
 {
-	int i;
-#ifdef UDB
-	char buf[1][BUFSIZE], tabla[1];
-#else
-	char buf[3][BUFSIZE], tabla[3];
-#endif
-	tabla[0] = 0;
-#ifndef UDB
-	tabla[1] = tabla[2] = 0;
-#endif
-	sprintf_irc(buf[0], "%s%s", PREFIJO, OS_NOTICIAS);
-#ifndef UDB
-	sprintf_irc(buf[1], "%s%s", PREFIJO, OS_MYSQL);
-	sprintf_irc(buf[2], "%s%s", PREFIJO, OS_CLONS);
-#endif
-	for (i = 0; i < mysql_tablas.tablas; i++)
+	if (!_mysql_existe_tabla(OS_NOTICIAS))
 	{
-		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
-			tabla[0] = 1;
-#ifndef UDB			
-		else if (!strcasecmp(mysql_tablas.tabla[i], buf[1]))
-			tabla[1] = 1;
-		else if (!strcasecmp(mysql_tablas.tabla[i], buf[2]))
-			tabla[2] = 1;
-#endif
-	}
-	if (!tabla[0])
-	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
   			"`n` int(11) NOT NULL auto_increment, "
   			"`bot` text NOT NULL, "
   			"`noticia` text NOT NULL, "
   			"`fecha` bigint(20) NOT NULL default '0', "
   			"KEY `n` (`n`) "
-			") TYPE=MyISAM COMMENT='Tabla de noticias';", buf[0]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[0]);
+			") TYPE=MyISAM COMMENT='Tabla de noticias';", PREFIJO, OS_NOTICIAS))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
 	}
 #ifndef UDB
-	if (!tabla[1])
+	if (!_mysql_existe_tabla(OS_MYSQL))
 	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"`nivel` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de operadores';", buf[1]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[1]);
-	}
-	if (!tabla[2])
-	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`clones` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de clones';", buf[2]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[2]);
+			") TYPE=MyISAM COMMENT='Tabla de operadores';", PREFIJO, OS_MYSQL))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_MYSQL);
 	}
 #endif
 	_mysql_carga_tablas();
 	operserv_carga_noticias();
 	return 1;
 }
-int operserv_sig_eos()
+int operserv_sig_synch()
 {
+	Cliente *bl;
+	int i = 0;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	if ((res = _mysql_query("SELECT DISTINCT bot from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
 		while ((row = mysql_fetch_row(res)))
-			botnick(row[0], operserv->ident, operserv->host, me.nombre, "+qkBd", "Servicio de noticias");
+		{
+			bl = botnick(row[0], operserv.hmod->ident, operserv.hmod->host, me.nombre, "+qkBd", "Servicio de noticias");
+			for (i = 0; i < gnoticias; i++)
+			{
+				if (!strcmp(row[0], gnoticia[i]->botname))
+					gnoticia[i]->cl = bl;
+			}
+		}
+		mysql_free_result(res);
 	}
 	return 0;
 }

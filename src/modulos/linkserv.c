@@ -1,9 +1,8 @@
 /*
- * $Id: linkserv.c,v 1.7 2004-11-05 19:59:36 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.8 2004-12-31 12:28:00 Trocotronic Exp $ 
  */
 
 #include "struct.h"
-#include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
 #ifdef UDB
@@ -27,11 +26,12 @@ static bCom linkserv_coms[] = {
 	{ 0x0 , 0x0 , 0x0 }
 };
 
-DLLFUNC int linkserv_sig_mysql();
-DLLFUNC int linkserv_sig_eos();
-DLLFUNC SOCKFUNC(linkserv_sockop);
-DLLFUNC SOCKFUNC(linkserv_sockre);
-DLLFUNC SOCKFUNC(linkserv_sockcl);
+int linkserv_sig_mysql();
+int linkserv_sig_eos();
+int linkserv_sig_bot();
+SOCKFUNC(linkserv_sockop);
+SOCKFUNC(linkserv_sockre);
+SOCKFUNC(linkserv_sockcl);
 #ifndef _WIN32
 int (*es_fundador_dl)(Cliente *, char *);
 #else
@@ -41,14 +41,14 @@ int (*es_fundador_dl)(Cliente *, char *);
 void set(Conf *, Modulo *);
 int test(Conf *, int *);
 
-DLLFUNC ModInfo info = {
+ModInfo info = {
 	"LinkServ" ,
 	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
 	"linkserv.inc"
 };
-DLLFUNC int carga(Modulo *mod)
+int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
@@ -79,10 +79,11 @@ DLLFUNC int carga(Modulo *mod)
 #endif
 	return errores;
 }
-DLLFUNC int descarga()
+int descarga()
 {
 	borra_senyal(SIGN_MYSQL, linkserv_sig_mysql);
 	borra_senyal(SIGN_EOS, linkserv_sig_eos);
+	borra_senyal(SIGN_BOT, linkserv_sig_bot);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -157,13 +158,8 @@ void set(Conf *config, Modulo *mod)
 	sprintf_irc(linkserv->mascara, "%s!%s@%s", linkserv->nick, linkserv->ident, linkserv->host);
 	inserta_senyal(SIGN_MYSQL, linkserv_sig_mysql);
 	inserta_senyal(SIGN_EOS, linkserv_sig_eos);
-	mod->nick = linkserv->nick;
-	mod->ident = linkserv->ident;
-	mod->host = linkserv->host;
-	mod->realname = linkserv->realname;
-	mod->residente = linkserv->residente;
-	mod->modos = linkserv->modos;
-	mod->comandos = linkserv->comando;
+	inserta_senyal(SIGN_BOT, linkserv_sig_bot);
+	bot_mod(linkserv);
 }
 /* devuelve el puntero al link a partir del sock */
 Links *GetLinkSock(Sock *sck)
@@ -238,15 +234,15 @@ BOTFUNC(linkserv_red)
 		MYSQL_ROW row;
 		if (!(res = _mysql_query("SELECT * from %s%s", PREFIJO, LS_MYSQL)))
 		{
-			response(cl, linkserv->nick, LS_ERR_EMPT, "No existen redes para listar.");
+			response(cl, linkserv->cl, LS_ERR_EMPT, "No existen redes para listar.");
 			return 1;
 		}
 		while ((row = mysql_fetch_row(res)))
 		{
 			if (!BadPtr(row[3]))
-				response(cl, linkserv->nick, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s\003 con el nick \00312%s", row[0], row[1], row[2], row[3]);
+				response(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s\003 con el nick \00312%s", row[0], row[1], row[2], row[3]);
 			else
-				response(cl, linkserv->nick, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s", row[0], row[1], row[2]);
+				response(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s", row[0], row[1], row[2]);
 		}
 		mysql_free_result(res);
 	}
@@ -254,7 +250,7 @@ BOTFUNC(linkserv_red)
 	{
 		if (!IsAdmin(cl))
 		{
-			response(cl, linkserv->nick, LS_ERR_FORB, "");
+			response(cl, linkserv->cl, LS_ERR_FORB, "");
 			return 1;
 		}
 		if (*param[1] == '+')
@@ -262,13 +258,13 @@ BOTFUNC(linkserv_red)
 			char *port = NULL;
 			if (params < 3)
 			{
-				response(cl, linkserv->nick, LS_ERR_PARA, "RED +red servidor[:puerto] [nick]");
+				response(cl, linkserv->cl, LS_ERR_PARA, "RED +red servidor[:puerto] [nick]");
 				return 1;
 			}
 			param[1]++;
 			if (_mysql_get_registro(LS_MYSQL, param[1], NULL))
 			{
-				response(cl, linkserv->nick, LS_ERR_EMPT, "Esta red ya está en la lista.");
+				response(cl, linkserv->cl, LS_ERR_EMPT, "Esta red ya está en la lista.");
 				return 1;
 			}
 			if ((port = strchr(param[2], ':')))
@@ -281,23 +277,23 @@ BOTFUNC(linkserv_red)
 			if (port)
 				_mysql_add(LS_MYSQL, param[1], "puerto", port);
 			linkserv_conecta_red(param[1]);
-			response(cl, linkserv->nick, "Se ha añadido la red \00312%s", param[1]);
+			response(cl, linkserv->cl, "Se ha añadido la red \00312%s", param[1]);
 		}
 		else if (*param[1] == '-')
 		{
 			param[1]++;
 			if (!_mysql_get_registro(LS_MYSQL, param[1], NULL))
 			{
-				response(cl, linkserv->nick, LS_ERR_EMPT, "Esta red no se encuentra.");
+				response(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no se encuentra.");
 				return 1;
 			}
 			_mysql_del(LS_MYSQL, param[1]);
 			linkserv_cierra_red(param[1]);
-			response(cl, linkserv->nick, "Se ha borrado la red \00312%s", param[1]);
+			response(cl, linkserv->cl, "Se ha borrado la red \00312%s", param[1]);
 		}
 		else
 		{
-			response(cl, linkserv->nick, LS_ERR_SNTX, "RED {+|-}red servidor[:puerto] [nick]");
+			response(cl, linkserv->cl, LS_ERR_SNTX, "RED {+|-}red servidor[:puerto] [nick]");
 			return 1;
 		}
 	}
@@ -305,40 +301,38 @@ BOTFUNC(linkserv_red)
 }
 BOTFUNC(linkserv_link)
 {
-	Cliente *bl;
 	Sock *sck;
 	if (params < 3)
 	{
-		response(cl, linkserv->nick, LS_ERR_PARA, "LINK red {+|-}#canal");
+		response(cl, linkserv->cl, LS_ERR_PARA, "LINK red {+|-}#canal");
 		return 1;
 	}
 	if (!IsAdmin(cl) && !es_fundador_dl(cl, param[2] + 1))
 	{
-		response(cl, linkserv->nick, LS_ERR_FORB, "");
+		response(cl, linkserv->cl, LS_ERR_FORB, "");
 		return 1;
 	}
 	if (!GetLinkRed(param[1]) || !(sck = GetLinkRed(param[1])->sck))
 	{
-		response(cl, linkserv->nick, LS_ERR_EMPT, "Esta red no está disponible.");
+		response(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no está disponible.");
 		return 1;
 	}
-	bl = busca_cliente(linkserv->nick, NULL);
 	if (*param[2] == '+')
 	{
 		sockwrite(sck, OPT_CRLF, "JOIN %s", param[2] + 1);
-		mete_bot_en_canal(bl, param[2] + 1);
+		mete_bot_en_canal(linkserv->cl, param[2] + 1);
 	}
 	else if (*param[2] == '-')
 	{
 		sockwrite(sck, OPT_CRLF, "PART %s", param[2] + 1);
-		saca_bot_de_canal(bl, param[2] + 1, "Separación recibida");
+		saca_bot_de_canal(linkserv->cl, param[2] + 1, "Separación recibida");
 	}
 	else
 	{
-		response(cl, linkserv->nick, LS_ERR_SNTX, "LINK red {+|-}#canal");
+		response(cl, linkserv->cl, LS_ERR_SNTX, "LINK red {+|-}#canal");
 		return 1;
 	}
-	response(cl, linkserv->nick, "%s con el canal \00312%s\003 de \00312%s\003 realizado.", *param[2] == '+' ? "Unión" : "Separación", param[2] + 1, param[1]);
+	response(cl, linkserv->cl, "%s con el canal \00312%s\003 de \00312%s\003 realizado.", *param[2] == '+' ? "Unión" : "Separación", param[2] + 1, param[1]);
 	return 0;
 }
 int linkserv_sig_mysql()
@@ -352,16 +346,16 @@ int linkserv_sig_mysql()
 		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
 			tabla[0] = 1;
 	}
-	if (!tabla[0])
+	if (!_mysql_existe_tabla(LS_MYSQL))
 	{
-		if (_mysql_query("CREATE TABLE `%s` ( "
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"`servidor` varchar(255) default NULL, "
   			"`puerto` varchar(255) NOT NULL default '6667', "
   			"`nick` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de excepción de hosts';", buf[0]))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s'.", buf[0]);
+			") TYPE=MyISAM COMMENT='Tabla de servidores para links';", PREFIJO, LS_MYSQL))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_MYSQL);
 	}
 	_mysql_carga_tablas();
 	return 0;
@@ -370,6 +364,13 @@ int linkserv_sig_eos()
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
+	char *canal;
+	if (linkserv->residente)
+	{
+		strcpy(tokbuf, linkserv->residente);
+		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
+			mete_bot_en_canal(linkserv->cl, canal);
+	}
 	if (!links) /* primer arranque */
 	{
 		if ((res = _mysql_query("SELECT item from %s%s", PREFIJO, LS_MYSQL)))
@@ -381,6 +382,14 @@ int linkserv_sig_eos()
 	}
 	return 0;
 }
+int linkserv_sig_bot()
+{
+	Cliente *bl;
+	bl = botnick(linkserv->nick, linkserv->ident, linkserv->host, me.nombre, linkserv->modos, linkserv->realname);
+	linkserv->cl = bl;
+	return 0;
+}
+
 SOCKFUNC(linkserv_sockop)
 {
 	char *nick, *lnick;
@@ -397,7 +406,7 @@ SOCKFUNC(linkserv_sockre)
 #ifdef DEBUG
 	Debug("& %s", data);
 #endif
-	lparc = tokeniza_irc(data, lparv, &com, &sender);
+	//lparc = tokeniza_irc(data, lparv, &com, &sender);
 	if (com)
 	{
 		if (!strcmp(com, "PING"))

@@ -1,0 +1,10 @@
+EXPORTS
+	info
+	carga
+	descarga
+	inicia
+	parsea
+	umodos
+	cmodos
+	comandos_especiales
+	

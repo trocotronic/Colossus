@@ -5,18 +5,17 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.5 2004-11-05 19:59:34 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.6 2004-12-31 12:27:49 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.rallados.net" target="_blank"><font size="3">http://www.rallados.net</font></a><font size="3"><br>
-    <b>Versi&oacute;n actual:</b> 1.0a <br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 01/10/2004</font><br>
+    <b>Versi&oacute;n actual:</b> 1.1<br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 05/12/2004</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
-    <b>Tester:</b> MaD</font><br>
-  &nbsp;<br>
+   &nbsp;<br>
   <b><font size="6">&Iacute;NDICE</font></b><br>
   <font size="+1">1.- <a href="#intro">Introducción</a></font><br>
   <font size="+1">2.- <a href="#instalacion">Instalación</a></font><br>
@@ -51,8 +50,10 @@
   <p><br>
     <b><font size="6"><a name="intro"></a>1.0 Introducci&oacute;n </font></b><br>
     Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
-    Este documento puede imprimirse tantas veces como se desee pero su distribuci&oacute;n est&aacute; vinculada &uacute;nica y exclusivamente a Colossus, debiendo adjuntar el programa con el mismo.</p>
-<p>    <b>Lea detenidamente</b> este archivo para configurar y comprender el uso de este programa. Est&aacute; unido a muchas caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
+    Este documento puede imprimirse tantas veces como se desee pero su distribuci&oacute;n est&aacute; vinculada &uacute;nica y 
+    exclusivamente a Colossus, debiendo adjuntar el programa con el mismo.</p>
+<p>    <b>Lea detenidamente</b> este archivo para configurar y comprender el uso de este programa. Est&aacute; unido a muchas 
+caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 <p>&nbsp;</p>
   <p><b><font size="6"><a name="instalacion"></a>2.0 Instalaci&oacute;n</font></b></p>
 <p>Sistemas operativos soportados:</p>
@@ -75,15 +76,23 @@
   <li>Windows 98
   <li>Windows Me
   </ul></ul><br>
-    Para	instalar	el	programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix, o C:\Colossus si usas Windows.
+    Para	instalar	el	programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix, 
+    o C:\Colossus si usas Windows.
 
     <p>Una vez descomprimido, crea el archivo colossus.conf y config&uacute;relo a sus necesidades.</p>
     <p>&nbsp;</p>
   <p><b><font size="6"><a name="caracteristicas"></a>3.0 Caracter&iacute;sticas</font></b></p>
   <p>Estos servicios para IRC est&aacute;n programados en C. </p>
-  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals, la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones. A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos. La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
-  <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro. Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
-  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll, en Windows, o archivo .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
+  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals, 
+  la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base 
+  para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones. 
+  A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos. 
+  La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
+  <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro. 
+  Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
+  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll, 
+  en Windows, o archivo .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios 
+  servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
   <ul>
     <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.     
     <li><b>ChanServ:</b> administra los canales y todo lo que les englobe.  
@@ -93,24 +102,45 @@
 </ul>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="udb"></a>4.0 UDB (Unreal Data Base)</font></b></p>
-  <p>El sistema UDB es exclusivo de Rallados. Su uso principal es la de poder distribuir bases de datos por toda la red de forma s&iacute;ncrona. As&iacute; se consigue que todos los nodos tengan unos registros globales que no dependan del mismo. Con s&oacute;lo introducir un registro en un nodo, inmediatamente se propaga por toda la red de forma instant&aacute;nea y sincronizada. </p>
-  <p>Para ello se usa el protocolo UDB propuesto &uacute;nicamente para este fin. Actualmente el protocolo en desarrollo es el UDB3, dejando el primero obsoleto e incompatible la primera y segunda versi&oacute;n. Esta nueva versi&oacute;n incorpora cuantiosos cambios que dan lugar a un nuevo sistema de bases de datos. Es un protocolo abierto y libre, con lo cual se consigue que puedan usarse distintos servicios que potencien las caracter&iacute;sticas de la red al un&iacute;sono. Es tarea del desarrollador aprovechar estas caracter&iacute;sticas.</p>
-  <p>El sistema se compone de varios bloques (nicks, canales, ips y set) que contienen varias directrices que conforman el ircd. Es parecido a la configuraci&oacute;n de UnrealIRCd, puesto que usa el formato bloque::seccion::subseccion valor. La propagaci&oacute;n de la red se hace mediante el comando DB. En este, se proporciona la informaci&oacute;n necesaria para a&ntilde;adir el registro en el nodo local y propagarlo al siguiente. As&iacute;, en pocos segundos toda la red queda actualizada con la informaci&oacute;n. Tan s&oacute;lo es necesario introducirla por un servidor HUB. Generalmente, y por norma, se hace a trav&eacute;s del nodo de servicio.</p>
-  <p>Colossus tiene integrado soporte UDB de forma opcional (definido a voluntad del compilador). Est&aacute;n elaborados para explotar al m&aacute;ximo todas las opciones que ofrece UDB. Todas las tablas est&aacute;n preparadas para ser usadas con Colossus. Soporta servidores UnrealIRCd+UDB y UnrealIRCd official, ambos 3.2 y superiores. </p>
+  <p>El sistema UDB es exclusivo de Rallados. Su uso principal es la de poder distribuir bases de datos por toda la red de forma s&iacute;ncrona. 
+  As&iacute; se consigue que todos los nodos tengan unos registros globales que no dependan del mismo. Con s&oacute;lo introducir un registro en un nodo, 
+  inmediatamente se propaga por toda la red de forma instant&aacute;nea y sincronizada. </p>
+  <p>Para ello se usa el protocolo UDB propuesto &uacute;nicamente para este fin. Actualmente el protocolo en desarrollo es el UDB3, dejando el primero obsoleto e incompatible la primera y segunda versi&oacute;n. 
+  Esta nueva versi&oacute;n incorpora cuantiosos cambios que dan lugar a un nuevo sistema de bases de datos. Es un protocolo abierto y libre, 
+  con lo cual se consigue que puedan usarse distintos servicios que potencien las caracter&iacute;sticas de la red al un&iacute;sono. 
+  Es tarea del desarrollador aprovechar estas caracter&iacute;sticas.</p>
+  <p>El sistema se compone de varios bloques (nicks, canales, ips y set) que contienen varias directrices que conforman el ircd. 
+  Es parecido a la configuraci&oacute;n de UnrealIRCd, puesto que usa el formato bloque::seccion::subseccion valor. La propagaci&oacute;n de la red se hace mediante el comando DB. 
+  En este, se proporciona la informaci&oacute;n necesaria para a&ntilde;adir el registro en el nodo local y propagarlo al siguiente. As&iacute;, en pocos segundos toda la red queda actualizada con la informaci&oacute;n. 
+  Tan s&oacute;lo es necesario introducirla por un servidor HUB. Generalmente, y por norma, se hace a trav&eacute;s del nodo de servicio.</p>
+  <p>Colossus tiene integrado soporte UDB de forma opcional (definido a voluntad del compilador). Est&aacute;n elaborados para explotar al m&aacute;ximo todas las opciones que ofrece UDB. 
+  Todas las tablas est&aacute;n preparadas para ser usadas con Colossus. Soporta servidores UnrealIRCd+UDB y UnrealIRCd official, ambos 3.2 y superiores. </p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="mysql"></a>5.0 MySQL</font></b></p>
-  <p>Colossus utiliza el sistema de base de datos libre MySQL. Para ello es necesario tener instalado este servicio en alguna m&aacute;quina. Puede descargarlo de <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
-  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Una vez hecho esto, tendr&aacute; que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots. Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>. Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a> y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p>
-  <p>Es posible que no sepa a&ntilde;adir o quitar permisos y que a la hora de crear las tablas no se creen o lo hagan mal. Por esta raz&oacute;n se incluye el archivo mysql.tablas, en el que contiene todas las sintaxis para crear las tablas &quot;manualmente&quot; a trav&eacute;s de alg&uacute;n editor como phpMyAdmin. Tan s&oacute;lo tiene que abrir el archivo y cambiar el prefijo por el que use. Recuerde que este proceso debe hacerse con Colossus cerrado. </p>
+  <p>Colossus utiliza el sistema de base de datos libre MySQL. Para ello es necesario tener instalado este servicio en alguna m&aacute;quina. Puede descargarlo de 
+  <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
+  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Una vez hecho esto, tendr&aacute; 
+  que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots. 
+  Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>. 
+  Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a> 
+  y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p>
+  <p>Es posible que no sepa a&ntilde;adir o quitar permisos y que a la hora de crear las tablas no se creen o lo hagan mal. Por esta raz&oacute;n se incluye el archivo mysql.tablas, 
+  en el que contiene todas las sintaxis para crear las tablas &quot;manualmente&quot; a trav&eacute;s de alg&uacute;n editor como phpMyAdmin. Tan s&oacute;lo tiene que abrir el archivo 
+  y cambiar el prefijo por el que use. Recuerde que este proceso debe hacerse con Colossus cerrado. </p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="udb"></a>6.0 Conexi&oacute;n remota</font></b></p>
-  <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha el puerto al que se conecta para recibir conexiones remotas. Una vez se ha realizado la conexi&oacute;n, se cierra el puerto para no recibir m&aacute;s conexiones. Si se cierra la conexi&oacute;n a la red, se vuelve a poner en escucha para recibir otra vez la conexi&oacute;n y as&iacute; sucesivamente.<br>
+  <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha 
+  el puerto al que se conecta para recibir conexiones remotas. Una vez se ha realizado la conexi&oacute;n, se cierra el puerto para no recibir m&aacute;s conexiones. 
+  Si se cierra la conexi&oacute;n a la red, se vuelve a poner en escucha para recibir otra vez la conexi&oacute;n y as&iacute; sucesivamente.<br>
     Su sintaxis es sencilla: /connect servidor.colossus.
 Para poder utilizar este comando, debes especificar la ip en el bloque link { } de UnrealIRCd (no sirve '*'). </p>
-  <p><b>Nota</b>: cabe poner una especial atenci&oacute;n en m&aacute;quinas donde se est&eacute; ejecutando el ircd y los servicios a la misma vez. En estas situaciones s&oacute;lo puede haber un mismo puerto en escucha. As&iacute;, el ircd y los servicios no pueden utilizar el mismo puerto de escucha. Por esta raz&oacute;n, existe la directriz opcional en el bloque server, puerto_escucha, para especificar otro puerto de escucha que no est&eacute; utilizando el ircd. Esta directriz es &uacute;til cuando los dos programas est&aacute;n bajo la misma m&aacute;quina y conectan entre s&iacute;. </p>
+  <p><b>Nota</b>: cabe poner una especial atenci&oacute;n en m&aacute;quinas donde se est&eacute; ejecutando el ircd y los servicios a la misma vez. En estas situaciones s&oacute;lo puede haber un mismo puerto en escucha. 
+  As&iacute;, el ircd y los servicios no pueden utilizar el mismo puerto de escucha. Por esta raz&oacute;n, existe la directriz opcional en el bloque server, puerto_escucha, para especificar otro puerto de escucha que no est&eacute; 
+  utilizando el ircd. Esta directriz es &uacute;til cuando los dos programas est&aacute;n bajo la misma m&aacute;quina y conectan entre s&iacute;. </p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="zlib"></a>7.0 SSL y ZLib</font></b></p>
-  <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro considerable del ancho de banda. Ambos servidores (servicios e ircd) tienen que estar configurados con la misma compresi&oacute;n: 1 a 9. </p>
+  <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro 
+  considerable del ancho de banda. Ambos servidores (servicios e ircd) tienen que estar configurados con la misma compresi&oacute;n: 1 a 9. </p>
   <p>Tambi&eacute;n se incluye la caracter&iacute;stica SSL para trabajar con conexiones seguras y evitar el robo de informaci&oacute;n. Esta caracter&iacute;stica se define con su propio bloque, cuya presencia indica su suporte.</p>
   <p>Ambas caracter&iacute;sticas son opcionales, siendo en conexiones &quot;localhost&quot; triviales.</p>
   <p>&nbsp; </p>
@@ -127,7 +157,8 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
   <p>Cabe mencionar que si el valor contiene alg&uacute;n s&iacute;mbolo de comentario (#, // o /* */) el uso del entrecomillado es <b>obligatorio</b>, puesto que, de no hacerse as&iacute;, se tomar&iacute;a como un comentario y dar&iacute;a error.<br>
   As&iacute; pues, por ejemplo canal &quot;#canal&quot;; ser&iacute;a correcto; pero canal #canal; ser&iacute;a incorrecto. </p>
   <p>Adem&aacute;s, los comentarios pueden hacerse anteponiendo // para comentar toda esta l&iacute;nea o con /* */ para comentar varias l&iacute;neas.</p>
-  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una s&oacute;la l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
+  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una s&oacute;la l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, 
+  recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
   <p><b><font size="5"><a name="principal"></a>8.1 Archivo principal </font></b></p>
   <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa.</p>
   <p>El archivo se compone de varios bloques:</p>
@@ -141,50 +172,164 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	};
 	host nombre.del.servidor;
 	info &quot;informaci&oacute;n adicional&quot;;
-	numeric numerico del servidor;<br>	puerto_escucha puerto;
+	numeric numerico-del-servidor;
+	puerto_escucha puerto;
 	compresion nivel;
 	cifrados metodos;
 };</pre>
-  <p>Los valores se deducen f&aacute;cilmente. La directriz <b>addr</b> indica a qu&eacute; ip debe conectar, siendo<b> puerto</b> a qu&eacute; puerto debe hacerlo. El bloque <b>password { }</b> indica cu&aacute;les son las contrase&ntilde;as de conexi&oacute;n remota y local, especificadas en el bloque <b>link { }</b> de la m&aacute;quina a la que se va a conectar. El <b>host</b> es el servidor visible, el que ver&aacute;n los usuarios y en el que estar&aacute;n albergados los robots de servicio. El <b>numeric</b> indica la identificaci&oacute;n del servidor. Debe ser un n&uacute;mero entre 0 y 255 (ambos inclu&iacute;dos) y <b>NO</b> debe estar repetido en la red. Es decir, ning&uacute;n otro servidor de la red deber&aacute; tener el mismo numeric. El <b>puerto_escucha</b> es opcional y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. La <b>compresion</b> es opcional e indica que el flujo de datos entre servidores debe hacerse con compresi&oacute;n de nivel especificado. Ambos extremos deben disponer de soporte ZLib y tener la misma compresi&oacute;n. Los <b>cifrados</b> es opcional y se&ntilde;alan qu&eacute; cifrados se disponen. Para tener una lista use 'openssl ciphers'. &Uacute;sese ':' para separar varios m&eacute;todos.</p>
+  <p>Los valores se deducen f&aacute;cilmente. </p>
+  <p><b>addr</b><br>Indica a qu&eacute; ip o host debe conectar.</p>
+  <p><b>puerto</b><br>Es el puerto donde tiene que conectar.</p>
+  <p><b>password { }</b><br>Indica cu&aacute;les son las contrase&ntilde;as de conexi&oacute;n remota y local, especificadas en el bloque <b>link { }</b> de la m&aacute;quina a la que se va a conectar. </p>
+  <p><b>host</b><br>Es el servidor visible, el que ver&aacute;n los usuarios y en el que estar&aacute;n albergados los robots de servicio. </p>
+  <p><b>numeric</b><br>Es la identificaci&oacute;n del servidor. Debe ser un n&uacute;mero entre 0 y 255 (ambos inclu&iacute;dos) y <b>NO</b> debe estar repetido en la red. Es decir, ning&uacute;n otro servidor de la red deber&aacute; tener el mismo numeric. </p>
+  <p><b>puerto_escucha</b><br>Es <i>opcional</i> y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. </p>
+  <p><b>compresion</b><br>Es <i>opcional</i> e indica que el flujo de datos entre servidores debe hacerse con compresi&oacute;n de nivel especificado. Ambos extremos deben disponer de soporte ZLib y tener la misma compresi&oacute;n. </p>
+  <p><b>cifrados</b><br>Es <i>opcional</i> y se&ntilde;alan qu&eacute; cifrados se disponen. Para tener una lista use 'openssl ciphers'. &Uacute;sese ':' para separar varios m&eacute;todos.</p>
   <p>Ejemplo:</p>
-  <pre>server {<br>	addr 127.0.0.1;<br>	puerto 6667;<br>	password {<br>		local openaccess;<br>		remoto openaccess;<br>	};<br>	host Servicios.Colossus;<br>	info &quot;Servidor en C&quot;;<br>	numeric 1;<br>	puerto_escucha 6666;
+  <pre>server {
+	addr 127.0.0.1;
+	puerto 6667;
+	password {
+		local openaccess;
+		remoto openaccess;
+	};
+	host Servicios.Colossus;
+	info &quot;Servidor en C&quot;;
+	numeric 1;
+	puerto_escucha 6666;
 	compresion 9;
-	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;<br>};</pre>
+	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;
+};</pre>
 <p>&nbsp;</p>
   <p><b><font size="4"><a name="smtp"></a>8.1.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>
-  <pre>smtp {<br>	host host.del.servidor.smtp;<br>	login &quot;milogin&quot;;<br>	pass &quot;mipass&quot;;<br>};</pre>
-  <p><br>
-  Este bloque configura los par&aacute;metros para enviar emails desde el programa. La directriz <b>host</b> indica la direcci&oacute;n de la m&aacute;quina smtp. Puede ser ip o host. El <b>login</b> es <i>opcional</i>. Si se especifica, indica que el servidor SMTP no es libre y requiere autentificaci&oacute;n. Si no se especifica, esta directriz, se asume que no es necesaria ninguna identificaci&oacute;n y procede al env&iacute;o an&oacute;nimo. El <b>pass</b> es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
-<p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP. Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra es m&aacute;s inestable que el pasar por un SMTP, ya que de esta forma conecta a distintos sitios; mientras que usando un SMTP, s&oacute;lo conecta a uno.<br>
-  <b>Nota</b>: bajo sistemas Windows 9x/ME este bloque es <b>obligatorio</b>.</p>
+  <pre>smtp {
+	host host.del.servidor.smtp;
+	login &quot;milogin&quot;;
+	pass &quot;mipass&quot;;
+};</pre>
+  <p>Este bloque configura los par&aacute;metros para enviar emails desde el programa. </p>
+  <p><b>host</b><br>Indica la direcci&oacute;n de la m&aacute;quina smtp. Puede ser ip o host. </p>
+  <p><b>login</b><br>Es <i>opcional</i>. Si se especifica, indica que el servidor SMTP no es libre y requiere autentificaci&oacute;n. Si no se especifica, esta directriz, se asume que no es necesaria ninguna identificaci&oacute;n y procede al env&iacute;o an&oacute;nimo. </p>
+  <p><b>pass</b><br>Es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
+  <p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP. 
+  Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra es m&aacute;s inestable que el pasar por un SMTP, ya que de esta forma conecta a distintos sitios; mientras que usando un SMTP, s&oacute;lo conecta a uno.</p>
+  <p><b>Nota</b>: bajo sistemas Windows 9x/ME o Linux este bloque es <b>obligatorio</b>.</p>
   <p>Ejemplo:</p>
-  <pre>smtp {<br>	host smtp.telefonica.net;<br>	login milogin$telefonica.net;<br>	pass mipass;<br>};
-</pre>
+  <pre>smtp {
+	host smtp.telefonica.net;
+	login milogin$telefonica.net;
+	pass mipass;
+};</pre>
   <p>&nbsp;</p>
   <p><b><font size="4"><a name="db"></a>8.1.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
-  <pre>db {<br>	host host;<br>	login login;<br>	pass pass;<br>	nombre db;<br>	prefijo prefijo_;
-	puerto puerto;<br>};</pre>
-  <p>Establece la configuraci&oacute;n para utilizar MySQL. El <b>host</b> indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>. El <b>login</b> es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios. Si el <b>login</b> requiere una contrase&ntilde;a, puedes especificarla en <b>pass</b> (<i>opcional</i>). El <b>nombre</b> es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. El <b>prefijo</b> se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
+  <pre>db {
+	host host;
+	login login;
+	pass pass;
+	nombre db;
+	prefijo prefijo_;
+	puerto puerto;
+};</pre>
+  <p>Establece la configuraci&oacute;n para utilizar MySQL. </p>
+  <p><b>host</b><br>Indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>. </p>
+  <p><b>login</b><br>Es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios. </p>
+  <p><b>pass</b><br>ES <i>opcional</i>Define una contraseña si fuera necesario para el login anterior. </p>
+  <p><b>nombre</b><br>Es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. </p>
+  <p><b>prefijo</b><br>Se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
   <p>Ejemplo:</p>
-  <pre>db {<br>	host localhost;<br>	login milogin;<br>	pass mipass;<br>	nombre rallados;<br>	prefijo colossus_;<br>};</pre>
+  <pre>db {
+	host localhost;
+	login milogin;
+	pass mipass;
+	nombre rallados;
+	prefijo colossus_;
+};</pre>
   <p>&nbsp;</p>
   <p><b><font size="4"><a name="set"></a>8.1.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
-  <pre>set {<br>	autobop;  //opcional<br>	respuesta PRIVMSG;<br>	rekill;  //opcional
-	rejoin;  //opcional<br>	no_server_deop;  //opcional<br>	admin mail@admin.com;<br>	autojoin {<br>		usuarios &quot;#canal1,#canal2...&quot;;<br>		opers &quot;#canal1,#canal2...&quot;;<br>	};  //opcional<br>	modos {<br>		usuarios +modos-modos;<br>		canales +modos-modos;<br>	};  //opcional<br>	root nickdelroot;<br>	cloak {<br>		llave1;<br>		llave2;<br>		llave3;<br>	};<br>	reconectar {<br>		intentos &quot;n&ordm; intentos&quot;;<br>		intervalo &quot;n&ordm; intervalo&quot;;<br>	};
+  <pre>set {
+	autobop;  //opcional
+	respuesta PRIVMSG|NOTICE;
+	rekill;  //opcional
+	rejoin;  //opcional
+	no_server_deop;  //opcional
+	admin mail@admin.com;
+	autojoin {
+		usuarios &quot;#canal1,#canal2...&quot;;
+		opers &quot;#canal1,#canal2...&quot;;
+	};  //opcional
+	modos {
+		usuarios +modos-modos;
+		canales +modos-modos;
+	};  //opcional
+	root nickdelroot;
+	cloak {
+		llave1;
+		llave2;
+		llave3;
+	};
+	reconectar {
+		intentos n&ordm;-intentos;
+		intervalo n&ordm;-intervalo;
+	};
 	debug &quot;#canal&quot;; //opcional
+	red nombre-red; //opcional
 };</pre>
-<p>Este bloque configura los par&aacute;metros del programa. El <b>autobop</b> indica que los robots obtienen el estado de @ al entrar en un canal. La <b>respuesta</b> indica c&oacute;mo debe procederse: por <b>PRIVMSG</b> o por <b>NOTICE</b>. S&oacute;lo acepta estas dos opciones. El par&aacute;metro <b>rekill</b> hace que el robot sea reconectado en caso de haber sido killeado. El <b>rejoin</b> hace que el robot sea introducido en el canal donde haya sido expulsado. El <b>no_server_deop</b> se utiliza para evitar que al linkar dos nodos, uno quite todos los modos de .&amp;@%+ que pueda haber en un canal. El <b>admin</b> se utiliza para indicar cu&aacute;l es el email del administrador o el de la red. Se utiliza como remitente en el env&iacute;o de emails. El bloque <b>autojoin { } </b> fija los canales en los que entrar&aacute;n autom&aacute;ticamente los usuarios y/o los operadores de red. Para especificar varios canales, sep&aacute;relos con comas. Los <b>modos { } </b> indican qu&eacute; modos deben ser permanentes (si es +) o qu&eacute; modos no pueden utilizarse en la red (si es -), ya sea en canales como en usuarios. El <b>root</b> indica qu&eacute; nick es el superusuario de los robots. Cuando se identifique como administrador de red (+N), tenga el nick registrado e identificado (+r) y figure como root en esta configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de superusuario o root. El bloque <b>cloak { } </b>debe ser id&eacute;ntico al de la configuraci&oacute;n de las 'cloak keys' de la red para un correcto cifrado. El bloque <b>reconectar { }</b> indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b> con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. El <b>debug</b> indica el canal en el que se hace debug de toda la red si est&aacute; presente.</p>
+<p>Este bloque configura los par&aacute;metros del programa. </p>
+<p><b>autobop</b><br>Indica que los robots obtienen el estado de @ al entrar en un canal. </p>
+<p><b>respuesta</b><br>Indica c&oacute;mo debe procederse: por <b>PRIVMSG</b> o por <b>NOTICE</b>. S&oacute;lo acepta estas dos opciones. </p>
+<p><b>rekill</b><br>Hace que el robot sea reconectado en caso de haber sido killeado. </p>
+<p><b>rejoin</b><br>Hace que el robot sea introducido en el canal donde haya sido expulsado. </p>
+<p><b>no_server_deop</b><br>Se utiliza para evitar que al linkar dos nodos, uno quite todos los modos de .&amp;@%+ que pueda haber en un canal. </p>
+<p><b>admin</b><br>Se utiliza para indicar cu&aacute;l es el email del administrador o el de la red. Se utiliza como remitente en el env&iacute;o de emails. </p>
+<p><b>autojoin { } </b><br>Fija los canales en los que entrar&aacute;n autom&aacute;ticamente los usuarios y/o los operadores de red. Para especificar varios canales, sep&aacute;relos con comas. </p>
+<p><b>modos { } </b><br>Indican qu&eacute; modos deben ser permanentes (si es +) o qu&eacute; modos no pueden utilizarse en la red (si es -), ya sea en canales como en usuarios. </p>
+<p><b>root</b><br>Indica qu&eacute; nick es el superusuario de los robots. Cuando se identifique como administrador de red (+N), tenga el nick registrado e identificado (+r) y figure como root en esta 
+configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de superusuario o root. </p>
+<p><b>cloak { } </b><br>Debe ser id&eacute;ntico al de la configuraci&oacute;n de las 'cloak keys' de la red para un correcto cifrado. </p>
+<p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b> 
+con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
+<p><b>debug</b><br>Indica el canal en el que se hace debug de toda la red si est&aacute; presente. </p>
+<p><b>red</b><br>Fija el nombre de la red. En caso de obtenerlo vía /VERSION, se usará el valor obtenido y se omitirá el de esta configuración. </p>
 <p>Ejemplo:</p>
-<pre>set {<br>	autobop;<br>	respuesta PRIVMSG;<br>	rekill;
-	rejoin;<br>	no_server_deop;<br>	admin mi@email.com;<br>	autojoin {<br>		usuarios &quot;#colossus&quot;;<br>		opers &quot;#operadores&quot;;<br>	};<br>	modos {<br>		usuarios +i-d;<br>		canales +S-i;<br>	};<br>	root Colossus;<br>	cloak {<br>		abcdefg;<br>		hijklmn;<br>		opqrstu;<br>	};<br>	reconectar {<br>		intentos 3;<br>		intervalo 5;<br>	};
+<pre>set {
+	autobop;
+	respuesta PRIVMSG;
+	rekill;
+	rejoin;
+	no_server_deop;
+	admin mi@email.com;
+	autojoin {
+		usuarios &quot;#colossus&quot;;
+		opers &quot;#operadores&quot;;
+	};
+	modos {
+		usuarios +i-d;
+		canales +S-i;
+	};
+	root Trocotronic;
+	cloak {
+		abcdefg;
+		hijklmn;
+		opqrstu;
+	};
+	reconectar {
+		intentos 3;
+		intervalo 5;
+	};
 	debug &quot;#debug&quot;;
+	red Rallados;
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="4"><a name="modulos"></a>8.1.5 Directriz modulo <font color="#0000FF">(opcional)</font></font></b></p>
   <pre>modulo &quot;ruta/archivo.dll&quot;; // en Windows<br>modulo &quot;ruta/archivo.so&quot;; // en *nix</pre>
-  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix. As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen. Es conveniente que todos los m&oacute;dulos est&eacute;n en la carpeta /modulos.</p>
+  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix. 
+  As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. 
+  Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen. 
+  Es conveniente que todos los m&oacute;dulos est&eacute;n en la carpeta /modulos.</p>
   <p>Ejemplo:</p>
-  <pre>modulo &quot;modulos/chanserv.dll&quot;; // en Windows<br>modulo &quot;modulos/chanserv.so&quot;; // en *nix</pre>
+  <pre>modulo &quot;modulos/chanserv.dll&quot;; // en Windows
+modulo &quot;modulos/chanserv.so&quot;; // en *nix</pre>
   <p>&nbsp;</p>
   <p><a name="log"></a><font size="4"><b>8.1.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>log archivo {
@@ -194,8 +339,7 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 		conexiones;
 		errores;
 	};
-};
-</pre>
+};</pre>
   <p>Este bloque se utiliza para loguear en <b>archivo</b> los eventos que sean de inter&eacute;s y a su elecci&oacute;n. Estos eventos se escogen mediante el bloque <b>opciones</b>. Estas <b>opciones</b> son:</p>
   <ul>
     <li><b>servidores</b>: cuando se conecta un servidor a la red.</li>
@@ -225,9 +369,12 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
 	};
 };</pre>
   </p>
-  <p>Este bloque define que todas las conexiones relacionadas con el ircd ser&aacute;n SSL. El <b>egd</b> especifica que el soporte EGD 
-  (Entropy Gathering Daemon)
-  est&aacute; activo. Si usa OpenSSL 0.9.7 o mayor se busca el archivo por defecto y no es necesario especificarlo. Si no es el caso, deber&aacute; especificar la ruta (recuerde en usar / en vez de \). El <b>certificado</b> indica el archivo donde el certificado SSL est&aacute; localizado. La <b>clave</b> indica el archivo donde se encuentra la clave privada SSL. Los <b>certificados-seguros</b> indican en qu&eacute; archivo se encuentran. Las <b>opciones</b> definen as&iacute;:</p>
+  <p>Este bloque define que todas las conexiones relacionadas con el ircd ser&aacute;n SSL. </p>
+  <p><b>egd</b><br>Especifica que el soporte EGD (Entropy Gathering Daemon) est&aacute; activo. </p>
+  <p><b>certificado</b><br>Indica el archivo donde el certificado SSL est&aacute; localizado. </p>
+  <p><b>clave</b><br>Indica el archivo donde se encuentra la clave privada SSL. </p>
+  <p><b>certificados-seguros</b><br>Indican en qu&eacute; archivo se encuentran. </p>
+  <p><b>opciones</b><br>Definen as&iacute;:</p>
   <ul>
     <li>  <b>certificado-cliente</b>: s&oacute;lo autoriza conexiones con certificado.</li>
     <li><b>solo-oficiales</b>: s&oacute;lo autoriza certificados oficiales (no self-signed).</li>
@@ -235,75 +382,269 @@ Para poder utilizar este comando, debes especificar la ip en el bloque link { } 
   </ul>
   <p>Ejemplo:</p>
   <pre>ssl {
-	egd;<br>	clave &quot;server.key.pem&quot;;<br>	opciones {<br>		certificado-cliente;<br>	};<br>};</pre>
+	egd;
+	clave &quot;server.key.pem&quot;;
+	opciones {
+		certificado-cliente;
+	};
+};</pre>
   <p>&nbsp;</p>
-  <p><br>
-    Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.
-    </pre>
-  </p>
+  <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal. </p>
   <p>Algunos  requieren que est&eacute;n cargados otros m&oacute;dulos antes.</p>
   <p><b><font size="5"><a name="nickserv"></a>8.2 NickServ</font></b></p>
   <p>Nombre del archivo <b>nickserv.inc</b>.</p>
   <p>Requiere: <b>chanserv</b>. </p>
-  <pre>NickServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sid;  //opcional<br>	secure;  //opcional<br>	automigrar;  //opcional<br>	prot KILL|NICK;<br>	recovernick formato-%s;<br>	securepass formato;<br>	min_reg n&ordm;;<br>	autodrop n&ordm;;  //opcional<br>	nicks n&ordm;;  //opcional<br>	intentos n&ordm;;<br>	maxlist n&ordm;;<br>	forbmails {<br>		dominio1;
+  <pre>NickServ {
+  	nick nick;
+  	ident ident;
+  	host host;
+  	realname realname;
+  	modos modos;
+  	sid;  //opcional
+  	secure;  //opcional
+  	automigrar;  //opcional
+  	prot KILL|NICK;
+  	recovernick formato-%s;
+  	securepass formato;
+  	min_reg n&ordm;;
+  	autodrop n&ordm;;  //opcional
+  	nicks n&ordm;;  //opcional
+  	intentos n&ordm;;
+  	maxlist n&ordm;;
+  	forbmails {
+  		dominio1;
 		dominio2;
-		...<br>	};  //opcional<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
+		...
+	};  //opcional
+	residente &quot;#canal1,...,#canalN&quot;;  //opcional
+	funciones {
+		funci&oacute;n1;
 		funci&oacute;n2;
 		...
-		funci&oacute;nN;<br>	};<br>};</pre>
-<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. El <b>sid</b> indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. El <b>secure</b> se utiliza para que los usuarios no falseen sus cuentas de correo. Al registrar un nick, si est&aacute; especificado <b>secure</b>, se le enviar&aacute; una contrase&ntilde;a temporal al mail especificado. El <b>automigrar</b>, si est&aacute; en soporte UDB, realiza la migraci&oacute;n autom&aacute;tica del registro del nick a las tablas de toda la red. El <b>prot</b> especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick. S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>NICK</b> (se le cambia el nick al usuario). El <b>recovernick</b> es el patr&oacute;n que se sigue al cambiar el nick a un usuario. El par&aacute;metro %s es sustitu&iacute;do por el nick anterior. Para m&aacute;s informaci&oacute;n lea la secci&oacute;n de <a href="#patrones">parámetros de patrón</a>. El <b>securepass</b> es el formato a seguir para la creaci&oacute;n de contrase&ntilde;as seguras. El <b>min_reg</b> es un n&uacute;mero que indica cu&aacute;ntas horas deben pasar antes de poder volver a registrar un nick. El <b>autodrop</b> es un n&uacute;mero que indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un nick para que sea dropado autom&aacute;ticamente. El par&aacute;metro <b>nicks</b> es un n&uacute;mero para indicar cu&aacute;ntos nicks se pueden registrar bajo una misma cuenta. El <b>intentos</b> es el n&uacute;mero de intentos que tiene un usuario para identificarse como propietario de su nick. Si sobrepasa este n&uacute;mero, se ejecuta la acci&oacute;n especificada en <b>prot</b>. El <b>maxlist</b> es un n&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. El bloque <b>forbmails { }</b> se usa para no permitir el registro de nicks bajo cuentas email con los dominios especificados. La directriz <b>residente</b> se utiliza para especificar los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales. El bloque <b>funciones { }</b> tambi&eacute;n  es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. Tiene las funciones de NickServ en su <a href="#fnick">sección</a>. </p>
+		funci&oacute;nN;
+	};
+};</pre>
+<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. </p>
+<p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
+<p><b>secure</b><br>Se utiliza para que los usuarios no falseen sus cuentas de correo. Al registrar un nick, si est&aacute; especificado <b>secure</b>, se le enviar&aacute; una contrase&ntilde;a temporal al mail especificado. </p>
+<p><b>automigrar</b><br>Si est&aacute; en soporte UDB, realiza la migraci&oacute;n autom&aacute;tica del registro del nick a las tablas de toda la red. </p>
+<p><b>prot</b><br>Especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick. 
+S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>NICK</b> (se le cambia el nick al usuario). </p>
+<p><b>recovernick</b><br>Patr&oacute;n que se sigue al cambiar el nick a un usuario. El par&aacute;metro %s es sustitu&iacute;do por el nick anterior. Para m&aacute;s informaci&oacute;n lea la secci&oacute;n de <a href="#patrones">parámetros de patrón</a>. </p>
+<p><b>securepass</b><br>Gormato a seguir para la creaci&oacute;n de contrase&ntilde;as seguras. </p>
+<p><b>min_reg</b><br>N&uacute;mero que indica cu&aacute;ntas horas deben pasar antes de poder volver a registrar un nick. </p>
+<p><b>autodrop</b><br>N&uacute;mero que indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un nick para que sea dropado autom&aacute;ticamente. </p>
+<p><b>nicks</b><br>N&uacute;mero para indicar cu&aacute;ntos nicks se pueden registrar bajo una misma cuenta. </p>
+<p><b>intentos</b><br>N&uacute;mero de intentos que tiene un usuario para identificarse como propietario de su nick. Si sobrepasa este n&uacute;mero, se ejecuta la acci&oacute;n especificada en <b>prot</b>. </p>
+<p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
+<p><b>forbmails { }</b><br>No permite el registro de nicks bajo cuentas email con los dominios especificados. </p>
+<p><b>residente</b><br>Especifica los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales. </p>
+<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. 
+Tiene las funciones de NickServ en su <a href="#fnick">sección</a>. </p>
 <p>Ejemplo:</p>
-<pre>NickServ {<br>	nick NickServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n de nicks&quot;;<br>	modos owhraAOkNCqBvd;<br>	sid;<br>	secure;<br>	automigrar;<br>	prot kill;<br>	recovernick inv-%s-????;<br>	securepass *******;<br>	min_reg 24;<br>	autodrop 15;<br>	nicks 3;<br>	intentos 3;<br>	maxlist 30;<br>	forbmails {<br>		hotmail.com;<br>	};<br>	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};</pre>
+<pre>NickServ {
+	nick NickServ;
+	ident colossus;
+	host Servicios.Colossus;
+	realname &quot;Servicio de gesti&oacute;n de nicks&quot;;
+	modos owhraAOkNCqBvd;
+	sid;
+	secure;
+	automigrar;
+	prot kill;
+	recovernick inv-%s-????;
+	securepass *******;
+	min_reg 24;
+	autodrop 15;
+	nicks 3;
+	intentos 3;
+	maxlist 30;
+	forbmails {
+		hotmail.com;
+	};
+	residente &quot;#rallados&quot;;
+	funciones {
+		...
+	};
+};</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="chanserv"></a>8.3 ChanServ</font></b></p>
 <p>Nombre del archivo <b>chanserv.inc</b>.</p>
-<pre>ChanServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sid;  //opcional<br>	autodrop n&ordm;;<br>	maxlist n&ordm;;<br>	bantype n&ordm;;
-	automigrar;  //opcional<br>	tokens {<br>		formato format;<br>		vigencia n&ordm;;<br>		necesarios n&ordm;;<br>		antig n&ordm;;<br>	};<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
+<pre>ChanServ {
+	nick nick;
+	ident ident;
+	host host;
+	realname realname;
+	modos modos;
+	sid;  //opcional
+	autodrop n&ordm;;
+	maxlist n&ordm;;
+	bantype n&ordm;;
+	automigrar;  //opcional
+	tokens {
+		formato format;
+		vigencia n&ordm;;
+		necesarios n&ordm;;
+		antig n&ordm;;
+	};
+	residente &quot;#canal1,...,#canalN&quot;;  //opcional
+	funciones {
+		funci&oacute;n1;
 		funci&oacute;n2;
 		...
-		funci&oacute;nN;<br>	};<br>};
-</pre>
-<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. El <b>sid</b> indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. El <b>autodrop</b> es un n&uacute;mero que indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un canal para que sea dropado autom&aacute;ticamente.  El <b>maxlist</b> es un n&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. El <b>bantype</b> es el tipo de ban que se usar&aacute; en las listas de auto-kick. El <b>automigrar</b>, si est&aacute; en soporte UDB, realiza la migraci&oacute;n autom&aacute;tica del registro del canal a las tablas de toda la red. El bloque <b>tokens { }</b> configura todo el sistema de tokens o 'firmas digitales'. El <b>formato</b> indica qu&eacute; forma deben tener los tokens. La <b>vigencia</b> indica cu&aacute;ntas horas tiene de vida el token solicitado. El <b>necesarios</b> es el n&uacute;mero que indica cu&aacute;ntos tokens son necesarios para presentar una petici&oacute;n de registro de un canal. El <b>antig</b> indica cu&aacute;ntos d&iacute;as tiene que tener registrado el nick como m&iacute;nimo para solicitar un token. La directriz <b>residente</b> se utiliza para especificar los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales.  El bloque <b>funciones { }</b> tambi&eacute;n es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. Tiene las funciones de ChanServ en su <a href="#fchan">sección</a>.</p>
+		funci&oacute;nN;
+	};
+};</pre>
+<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. </p>
+<p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
+<p><b>autodrop</b><br>Indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un canal para que sea dropado autom&aacute;ticamente. </p>
+<p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
+<p><b>bantype</b><br>Tipo de ban que se usar&aacute; en las listas de auto-kick. </p>
+<p><b>automigrar</b><br>Realiza la migraci&oacute;n autom&aacute;tica del registro del canal a las tablas de toda la red. </p>
+<p><b>tokens { }</b><br>Configura todo el sistema de tokens o 'firmas digitales'. </p>
+<p><b>tokens::formato</b><br>Indica qu&eacute; forma deben tener los tokens. </p>
+<p><b>tokens::vigencia</b><br>Indica cu&aacute;ntas horas tiene de vida el token solicitado. </p>
+<p><b>tokens::necesarios</b><br>N&uacute;mero que indica cu&aacute;ntos tokens son necesarios para presentar una petici&oacute;n de registro de un canal. </p>
+<p><b>tokens::antig</b><br>Indica cu&aacute;ntos d&iacute;as tiene que tener registrado el nick como m&iacute;nimo para solicitar un token. </p>
+<p><b>residente</b><br>Especifica los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales. </p>
+<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. 
+Tiene las funciones de ChanServ en su <a href="#fchan">sección</a>.</p>
 <p>Ejemplo:</p>
-<pre>ChanServ {<br>	nick ChanServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n de canales&quot;;<br>	modos owhraAOkNCqBvd;<br>	sid;<br>	autodrop 15;<br>	maxlist 30;<br>	bantype 9;<br>	tokens {<br>		formato &quot;############&quot;;<br>		vigencia 24; /* en horas */<br>		necesarios 1;<br>		antig 15; /* en d&iacute;as */<br>	};
-	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};</pre>
+<pre>ChanServ {
+	nick ChanServ;
+	ident colossus;
+	host Servicios.Colossus;
+	realname &quot;Servicio de gesti&oacute;n de canales&quot;;
+	modos owhraAOkNCqBvd;
+	sid;
+	autodrop 15;
+	maxlist 30;
+	bantype 9;
+	tokens {
+		formato &quot;############&quot;;
+		vigencia 24; /* en horas */
+		necesarios 1;
+		antig 15; /* en d&iacute;as */
+	};
+	residente &quot;#rallados&quot;;
+	funciones {
+		...
+	};
+};</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="operserv"></a>8.4 OperServ</font></b></p>
 <p>Nombre del archivo <b>operserv.inc</b>.</p>
 <p>Requiere: <b>chanserv</b>, <b>memoserv</b>. </p>
-<pre>OperServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	bline &quot;mensaje: %s&quot;;<br>	autoop;
-	clones n&ordm;; //si no tiene soporte UDB<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		...<br>	};<br>};<br>
-</pre>
-<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. El mensaje <b>bline</b> se utiliza para poner un bloqueo desde los servicios de tipo Q. Use el par&aacute;metro %s para indicar el motivo (ser&aacute; substitu&iacute;do). El <b>autoop</b> se utiliza para que los operadores de red obtengan @ al entrar en un canal autom&aacute;ticamente no registrado (en un registrado deber&aacute; tener su correspondiente acceso). El par&aacute;metro <b>clones</b> s&oacute;lo debe especificarse si el programa no est&aacute; en soporte UDB e indica cu&aacute;l es el n&uacute;mero por defecto de conexiones simult&aacute;neas permitidas en la red o clones. La directriz <b>residente</b> se utiliza para especificar los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales.  El bloque <b>funciones { }</b> tambi&eacute;n es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. Tiene las funciones de OperServ en su <a href="#foper">sección</a>.</p>
+<pre>OperServ {
+	nick nick;
+	ident ident;
+	host host;
+	realname realname;
+	modos modos;
+	autoop;
+	residente &quot;#canal1,...,#canalN&quot;;  //opcional
+	funciones {
+		...
+	};
+};</pre>
+<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. </p>
+<p><b>autoop</b><br>Los operadores de red obtienen @ al entrar en un canal autom&aacute;ticamente no registrado (en un registrado deber&aacute; tener su correspondiente acceso). </p>
+<p><b>residente</b><br>Especifica los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales. </p>
+<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. 
+Tiene las funciones de OperServ en su <a href="#foper">sección</a>.</p>
 <p>Ejemplo:</p>
-<pre>OperServ {<br>	nick OperServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n para operadores&quot;;<br>	modos owhraAOkNCqBvd;<br>	residente &quot;#rallados&quot;;<br>	bline &quot;Bot-Lined: %s&quot;;<br>	autoop;<br>	funciones {<br>		funci&oacute;n1;
+<pre>OperServ {
+	nick OperServ;
+	ident colossus;
+	host Servicios.Colossus;
+	realname &quot;Servicio de gesti&oacute;n para operadores&quot;;
+	modos owhraAOkNCqBvd;
+	residente &quot;#rallados&quot;;
+	autoop;
+	funciones {
+		funci&oacute;n1;
 		funci&oacute;n2;
 		...
-		funci&oacute;nN;<br>	};<br>};<br>
-</pre>
+		funci&oacute;nN;
+	};
+};</pre>
+<p>&nbsp;</p>
 <p><b><font size="5"><a name="memoserv"></a>8.5 MemoServ</font></b></p>
 <p>Nombre del archivo <b>memoserv.inc</b>.</p>
 <p>Requiere: <b>chanserv</b>. </p>
-<pre>MemoServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	defecto n&ordm;;<br>	cada n&ordm;;<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		...<br>	};<br>};<br>
-</pre>
-<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. El <b>defecto</b> es el n&uacute;mero del l&iacute;mite de mensajes por defecto que acepta un usuario. El <b>cada</b> indica cu&aacute;ntos segundos deben transcurrir antes de poder enviar otro mensaje. La directriz <b>residente</b> se utiliza para especificar los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales.  El bloque <b>funciones { }</b> tambi&eacute;n es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. Tiene las funciones de MemoServ en su <a href="#fmemo">sección</a>.</p>
+<pre>MemoServ {
+	nick nick;
+	ident ident;
+	host host;
+	realname realname;
+	modos modos;<
+	defecto n&ordm;;
+	cada n&ordm;;
+	esidente &quot;#canal1,...,#canalN&quot;;  //opcional
+	funciones {
+		...
+	};
+};</pre>
+<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. </p>
+<p><b>defecto</b><br>N&uacute;mero del l&iacute;mite de mensajes por defecto que acepta un usuario. </p>
+<p><b>cada</b><br>Indica cu&aacute;ntos segundos deben transcurrir antes de poder enviar otro mensaje. </p>
+<p><b>residente</b><br>Especifica los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales. </p>
+<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. 
+Tiene las funciones de MemoServ en su <a href="#fmemo">sección</a>.</p>
 <p>Ejemplo:</p>
-<pre>MemoServ {<br>	nick MemoServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de mensajer&iacute;a&quot;;<br>	modos owhraAOkNCqBvd;<br>	defecto 5;<br>	cada 60;<br>	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};
-</pre>
+<pre>MemoServ {
+	nick MemoServ;
+	ident colossus;
+	host Servicios.Colossus;
+	realname &quot;Servicio de mensajer&iacute;a&quot;;
+	modos owhraAOkNCqBvd;
+	defecto 5;
+	cada 60;
+	residente &quot;#rallados&quot;;
+	funciones {
+		...
+	};
+};</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="ipserv"></a>8.6 IpServ</font></b></p>
 <p>&nbsp;Nombre del archivo <b>ipserv.inc</b>.</p>
-<pre>IpServ {<br>	nick nick;<br>	ident ident;<br>	host host;<br>	realname realname;<br>	modos modos;<br>	sufijo sufijo;<br>	cambio n&ordm;;<br>	residente &quot;#canal1,...,#canalN&quot;;  //opcional<br>	funciones {<br>		funci&oacute;n1;
+<pre>IpServ {
+	nick nick;
+	ident ident;
+	host host;
+	realname realname;
+	modos modos;
+	sufijo sufijo;
+	cambio n&ordm;;
+	residente &quot;#canal1,...,#canalN&quot;;  //opcional
+	funciones {
+		funci&oacute;n1;
 		funci&oacute;n2;
 		...
-		funci&oacute;nN;<br>	};<br>};
-</pre>
-<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. El <b>sufijo</b> es el sufijo que se a&ntilde;adir&aacute; a la ip virtual si se precisa. El <b>cambio</b> son las horas en que se cambia el cifrado de ip virtuales. La directriz <b>residente</b> se utiliza para especificar los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales.  El bloque <b>funciones { }</b> tambi&eacute;n es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. Tiene las funciones de IpServ en su <a href="#fip">sección</a>.</p>
+		funci&oacute;nN;
+	};
+};</pre>
+<p>Los par&aacute;metros <b>nick, ident, host, realname </b>y<b> modos</b> son comunes a todos los m&oacute;dulos. Su uso no precisa de explicaci&oacute;n. </p>
+<p><b>sufijo</b><br>Es el sufijo que se a&ntilde;adir&aacute; a la ip virtual si se precisa. </p>
+<p><b>cambio</b><br>Son las horas en que se cambia el cifrado de ip virtuales. </p>
+<p><b>residente</b><br>Especifica los canales en qu&eacute; el robot est&aacute; residente. &Uacute;sese una coma (',') para especificar varios canales. </p>
+<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. 
+Tiene las funciones de IpServ en su <a href="#fip">sección</a>.</p>
 <p>Ejemplo:</p>
-<pre>IpServ {<br>	nick IpServ;<br>	ident colossus;<br>	host Servicios.Colossus;<br>	realname &quot;Servicio de gesti&oacute;n de ips&quot;;<br>	modos owhraAOkNCqBvd;<br>	sufijo virtual;<br>	cambio 24; // en horas<br>	residente &quot;#rallados&quot;;<br>	funciones {<br>		...<br>	};<br>};
-</pre>
+<pre>IpServ {
+	nick IpServ;
+	ident colossus;
+	host Servicios.Colossus;
+	realname &quot;Servicio de gesti&oacute;n de ips&quot;;
+	modos owhraAOkNCqBvd;
+	sufijo virtual;
+	cambio 24; // en horas
+	residente &quot;#rallados&quot;;
+	funciones {
+		...
+	};
+};</pre>
 <p>&nbsp;</p>
-
 <p><b><font size="6"><a name="funciones"></a>9.0 Comandos disponibles</font></b></p>
 <p>Cada robot dispone de varios comandos que pueden cargarse o descargarse de la configuraci&oacute;n. Estos comandos son los que deben incluirse en el bloque <b>funciones { }</b> en la configuraci&oacute;n de cada robot.</p>
 <p><b><font size="5"><a name="fnick"></a>9.1 Nickserv</font></b></p>

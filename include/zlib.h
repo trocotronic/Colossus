@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.h,v 1.2 2004-09-26 21:05:30 Trocotronic Exp $ 
+ * $Id: zlib.h,v 1.3 2004-12-31 12:27:52 Trocotronic Exp $ 
  */
  
 #include "libzlib.h"
@@ -20,5 +20,5 @@ struct _zlib
 
 extern char *descomprime(Sock *, char *, int *);
 extern char *comprime(Sock *, char *, int *);
-extern void libera_zlib(Sock *);
-extern int inicia_zlib(Sock *, int);
+DLLFUNC extern void libera_zlib(Sock *);
+DLLFUNC extern int inicia_zlib(Sock *, int);
