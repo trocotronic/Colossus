@@ -1,3 +1,7 @@
+/*
+ * $Id: parseconf.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
 #ifdef _WIN32
 #include <io.h>
 #else

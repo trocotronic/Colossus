@@ -1,4 +1,8 @@
 /*
+ * $Id: zip.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
+/*
  *   IRC - Internet Relay Chat, ircd/s_zip.c
  *   Copyright (C) 1996  Christophe Kalt
  *
@@ -16,7 +20,6 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *
- *   $Id: zip.c,v 1.1.1.1 2004-09-11 15:22:50 Trocotronic Exp $
  */
 #include "struct.h"
 #include <string.h>

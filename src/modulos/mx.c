@@ -1,3 +1,7 @@
+/*
+ * $Id: mx.c,v 1.2 2004-09-11 16:08:05 Trocotronic Exp $ 
+ */
+
 #include <windows.h>
 #include <windns.h>
 __declspec(dllexport) char *MX(char *dominio)

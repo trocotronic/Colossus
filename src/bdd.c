@@ -1,3 +1,7 @@
+/*
+ * $Id: bdd.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ */
+
 #ifdef _WIN32
 #include <io.h>
 #else

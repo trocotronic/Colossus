@@ -1,3 +1,5 @@
+## $Id: Makefile,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $
+
 CC=gcc
 INCLUDEDIR=../include
 IRCDLIBS=-ldl -lmysqlclient

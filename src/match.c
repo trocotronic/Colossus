@@ -1,4 +1,8 @@
 /*
+ * $Id: match.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
+/*
  *   Unreal Internet Relay Chat Daemon, src/match.c
  *   Copyright (C) 1990 Jarkko Oikarinen
  *

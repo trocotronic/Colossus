@@ -1,3 +1,7 @@
+/*
+ * $Id: hash.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ */
+
 #include <stdio.h>
 #include "struct.h"
 #include "ircd.h"

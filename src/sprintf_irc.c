@@ -1,4 +1,8 @@
 /*
+ * $Id: sprintf_irc.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
+/*
  * IRC - Internet Relay Chat, ircd/s_ping.c
  *
  * (C) Copyright 1997

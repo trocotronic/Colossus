@@ -1,3 +1,7 @@
+/*
+ * $Id: linkserv.c,v 1.2 2004-09-11 16:08:05 Trocotronic Exp $ 
+ */
+
 #include "struct.h"
 #include "comandos.h"
 #include "ircd.h"

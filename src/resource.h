@@ -1,3 +1,7 @@
+/*
+ * $Id: resource.h,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by colossus.rc

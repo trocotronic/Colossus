@@ -1,3 +1,7 @@
+/*
+ * $Id: smtp.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
 #include <time.h>
 #include "struct.h"
 #define MAXSMTP 128

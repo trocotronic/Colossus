@@ -1,3 +1,5 @@
+; $Id: colossusinst.iss,v 1.2 2004-09-11 16:08:55 Trocotronic Exp $
+
 ; Instalador de Colossus
 
 [Setup]

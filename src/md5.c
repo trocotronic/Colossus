@@ -1,3 +1,7 @@
+/*
+ * $Id: md5.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ */
+
 /* MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
  */
 
