@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.3 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.4 2004-09-17 19:09:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -10,8 +10,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include "struct.h"
-#ifdef _WIN32
-#endif
+#include "modulos.h"
 
 struct Conf_server *conf_server = NULL;
 struct Conf_db *conf_db = NULL;

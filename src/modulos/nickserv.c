@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.6 2004-09-17 19:09:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -119,7 +119,7 @@ DLLFUNC int carga(Modulo *mod)
 			if (!strcasecmp(ex->info->nombre, "ChanServ"))
 			{
 				irc_dlsym(ex->hmod, "busca_cregistro", busca_cregistro_dl);
-				irc_dlsym(ex->hmod, "cflags2str", (char *) cflags2str_dl);
+				irc_dlsym(ex->hmod, "cflags2str", cflags2str_dl);
 				break;
 			}
 		}

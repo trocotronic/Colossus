@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.3 2004-09-17 19:09:46 Trocotronic Exp $ 
  */
 
 /* MD5C.C - RSA Data Security, Inc., MD5 message-digest algorithm
@@ -61,7 +61,6 @@ static void Decode PROTO_LIST
   ((UINT4 *, unsigned char *, unsigned int));
 static void MD5_memcpy PROTO_LIST ((POINTER, POINTER, unsigned int));
 static void MD5_memset PROTO_LIST ((POINTER, int, unsigned int));
-static void MDPrint PROTO_LIST ((unsigned char [16]));
 
 static unsigned char PADDING[64] = {
   0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

@@ -1,7 +1,12 @@
 /*
- * $Id: bdd.h,v 1.3 2004-09-17 19:05:31 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.4 2004-09-17 19:09:46 Trocotronic Exp $ 
  */
+ 
+extern u_int base64toint(const char *);
+extern const char *inttobase64(char *, u_int, u_int);
+extern void tea(u_int *, u_int *, u_int *);
 
+#ifdef UDB
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #else
@@ -42,6 +47,4 @@ extern void descarga_bloque(int);
 #define E_UDB_PARAMS 4
 #define E_UDB_NOOPEN 5
 #define E_UDB_FATAL 6
-extern u_int base64toint(const char *);
-extern const char *inttobase64(char *, u_int, u_int);
-extern void tea(u_int *, u_int *, u_int *);
+#endif

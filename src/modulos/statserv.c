@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.6 2004-09-17 19:09:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -362,7 +362,7 @@ int getmon(time_t tiempo)
 }
 void actualiza_stats(char tipo)
 {
-	char *timet = NULL, *max = NULL, *hoy = NULLt, *semt = NULL, *mest = NULL, *hoy = NULL, *sem = NULL, *mes = NULL;
+	char *timet = NULL, *max = NULL, *hoyt = NULL, *semt = NULL, *mest = NULL, *hoy = NULL, *sem = NULL, *mes = NULL;
 	struct stsno *ts;
 	switch (tipo)
 	{

@@ -1,14 +1,12 @@
 /*
- * $Id: ipserv.c,v 1.5 2004-09-17 19:05:32 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.6 2004-09-17 19:09:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "comandos.h"
 #include "ircd.h"
 #include "modulos.h"
-#ifdef UDB
 #include "bdd.h"
-#endif
 #include "ipserv.h"
 #include "nickserv.h"
 
@@ -16,7 +14,6 @@ IpServ *ipserv = NULL;
 
 static int ipserv_help		(Cliente *, char *[], int, char *[], int);
 static int ipserv_setipv	(Cliente *, char *[], int, char *[], int);
-static int ipserv_setvhost	(Cliente *, char *[], int, char *[], int);
 static int ipserv_temphost	(Cliente *, char *[], int, char *[], int);
 
 DLLFUNC int ipserv_sig_mysql	();
