@@ -1,7 +1,8 @@
 /*
- * $Id: struct.h,v 1.25 2005-02-19 19:54:52 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.26 2005-02-19 20:08:50 Trocotronic Exp $ 
  */
 
+#include "setup.h"
 #ifdef _WIN32
 #include <Winsock.h>
 #include <direct.h>
@@ -31,7 +32,6 @@
 #ifdef STRINGH
 #include <string.h>
 #endif
-#include "setup.h"
 #include "sistema.h" /* portabilidades */
 
 #ifdef USA_SSL

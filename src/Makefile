@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.9 2005-02-19 16:09:06 Trocotronic Exp $
+## $Id: Makefile,v 1.10 2005-02-19 20:08:51 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o main.o match.o md5.o modulos.o mysql.o \
 	parseconf.o protocolos.o smtp.o socks.o soporte.o sprintf_irc.o ssl.o zlib.o
@@ -48,7 +48,7 @@ parseconf.o: parseconf.c $(INCLUDES)
 smtp.o: smtp.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c smtp.c
 socks.o: socks.c $(INCLUDES)
-	$(CC) $(CFLAGS) -c socks.
+	$(CC) $(CFLAGS) -c socks.c
 soporte.o: soporte.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c soporte.c
 sprintf_irc.o: sprintf_irc.c $(INCLUDES)

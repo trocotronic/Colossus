@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.18 2005-02-19 19:54:53 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.19 2005-02-19 20:08:51 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
