@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.14 2004-10-01 18:55:20 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.15 2004-10-02 22:46:59 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -318,6 +318,7 @@ SOCKFUNC(cierra_ircd)
 #ifdef _WIN32			
 			ChkBtCon(0, 0);
 #endif
+			intentos = 0;
 			return 1;
 		}
 		//fecho(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
