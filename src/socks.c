@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.2 2005-02-19 17:46:14 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.3 2005-02-20 15:34:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -33,7 +33,10 @@ struct in_addr *resolv(char *host)
 }
 int sockblock(int pres)
 {
-	int res, nonb = 0;
+#ifndef _WIN32
+	int res;
+#endif
+	int nonb = 0;
 #ifdef	NBLOCK_POSIX
 	nonb |= O_NONBLOCK;
 #endif
@@ -42,20 +45,21 @@ int sockblock(int pres)
 #endif
 #ifdef	NBLOCK_SYSV
 	res = 1;
-	if (ioctl(fd, FIONBIO, &res) < 0)
+	if (ioctl(pres, FIONBIO, &res) < 0)
 		return -1;
 #else
   #if !defined(_WIN32)
-	if ((res = fcntl(fd, F_GETFL, 0)) == -1)
+	if ((res = fcntl(pres, F_GETFL, 0)) == -1)
 		return -1;
-	else if (fcntl(fd, F_SETFL, res | nonb) == -1)
+	else if (fcntl(pres, F_SETFL, res | nonb) == -1)
 		return -2;
   #else
 	nonb = 1;
-	if (ioctlsocket(fd, FIONBIO, &nonb) < 0)
+	if (ioctlsocket(pres, FIONBIO, &nonb) < 0)
 		return -1;
   #endif
 #endif
+	return 0;
 }
 void inserta_sock(Sock *sck)
 {
@@ -178,7 +182,6 @@ Sock *sockaccept(Sock *list, int pres)
 {
 	Sock *sck;
 	struct sockaddr_in addr;
-	struct in_addr *res;
 	int len = sizeof(struct sockaddr);
 	if (getpeername(pres, (struct sockaddr *)&addr, &len) == -1)
 	{

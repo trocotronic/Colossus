@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.10 2004-12-31 12:27:58 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.11 2005-02-20 15:34:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1180,14 +1180,24 @@ int _test_protocolo(Conf *config, int *errores)
 #ifndef _WIN32
 void conferror(char *formato, ...)
 {
-	char buf[BUFSIZE], *texto = NULL;
+	char buf[BUFSIZE];
 	va_list vl;
 	va_start(vl, formato);
 	vsprintf_irc(buf, formato, vl);
 	va_end(vl);
 	strcat(buf, "\r\n");
 	fprintf(stderr, buf);	
-	Free(texto);
+}
+void Info(char *Info)
+{
+	char buf[BUFSIZE], txt[BUFSIZE];
+	va_list vl;
+	va_start(vl, formato);
+	sprintf_irc(txt, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
+	vsprintf_irc(buf, txt, vl);
+	va_end(vl);
+	strcat(buf, "\r\n");
+	fprintf(stderr, buf);	
 }
 #endif
 void cloak_crc(char *tmp)

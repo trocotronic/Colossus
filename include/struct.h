@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.27 2005-02-19 20:14:26 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.28 2005-02-20 15:34:09 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -299,11 +299,11 @@ extern char SO[256];
 extern HWND hwMain;
 extern void CleanUp(void);
 extern void programa_loop_principal(void *);
-extern void Info(char *, ...);
 #endif
 extern void _mysql_carga_tablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
 extern void conferror(char *, ...);
+extern void Info(char *, ...);
 extern void sockwritev(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1

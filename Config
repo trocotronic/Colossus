@@ -29,7 +29,6 @@ if [ "$UDB" = "1" ]; then
 	ARG="$ARG--enable-udb "
 fi
 ARG="$ARG--with-listen=$LISTEN_SIZE "
-ARG="$ARG--with-dpath=$DPATH "
 ARG="$ARG--with-spath=$SPATH "
 ARG="$ARG--with-permissions=$DEFPERM "
 ARG="$ARG--with-fd-setsize=$MAXCONNECTIONS "
@@ -53,7 +52,6 @@ fi
 c=""
 n=""
 HUB="1"
-DPATH="`pwd`"
 SPATH="`pwd`/bin/colossus"
 DEFPERM="0600"
 CRYPTOIRCD=""
@@ -119,17 +117,6 @@ clear
         read cc
         clear
     fi
-
-TEST="$DPATH"
-echo ""
-echo "En que directorio se encuentran los archivos de configuracion?"
-echo $n "[$TEST] -> $c"
-read cc
-if [ -z "$cc" ] ; then
-   DPATH=$TEST
-else
-   DPATH=`eval echo $cc` # modified
-fi
 
 TEST="$SPATH"
 echo ""
@@ -398,7 +385,6 @@ read EXTRAPARA
 rm -f config.settings
 cat > config.settings << __EOF__
 #
-DPATH="$DPATH"
 SPATH="$SPATH"
 INET6="$INET6"
 UDB="$UDB"

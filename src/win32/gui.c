@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.5 2005-02-19 17:46:15 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.6 2005-02-20 15:34:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -312,7 +312,7 @@ void ChkBtCon(int val, int block)
 void Info(char *formato, ...)
 {
 	static char info[2048];
-	char texto[512], txt[512];
+	char texto[BUFSIZE], txt[BUFSIZE];
 	static int len = 0;
 	struct tm *timeptr;
 	time_t ts;

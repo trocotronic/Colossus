@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.20 2005-02-19 20:14:27 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.21 2005-02-20 15:34:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -135,7 +135,6 @@ u_long lee_hash(int id)
 u_long lee_gmt(int id)
 {
 	FILE *fp;
-	u_long hash = 0L;
 	char lee[11];
 	if (!(fp = fopen(DB_DIR "crcs", "r")))
 		return 0L;

@@ -1,4 +1,4 @@
-## $Id: make,v 1.11 2005-02-19 16:09:04 Trocotronic Exp $
+## $Id: make,v 1.12 2005-02-20 15:34:08 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -81,41 +81,49 @@ MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(O
 PROTCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
 PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
 
-ALL: COLOSSUS.EXE MODULES
+ALL: SETUP COLOSSUS.EXE MODULES
 
 MX: src/modulos/mx.c $(INCLUDES)
 	$(CC) $(MODDBGCFLAG) /Fesrc/modulos/ /Fosrc/modulos/ /nologo src/modulos/mx.c /link dnsapi.lib
 	-@copy src\modulos\mx.dll mx.dll
+	
+AUTOCONF: src/win32/autoconf.c
+	$(CC) src/win32/autoconf.c
+	-@autoconf.exe
 
 CLEAN:
-       -@erase src\*.obj >NUL
-       -@erase .\*.exe >NUL
-       -@erase .\*.ilk >NUL
-       -@erase .\*.pdb >NUL
-       -@erase .\*.core >NUL
-       -@erase .\*.exp >NUL
-       -@erase colossus.lib >NUL
-       -@erase src\modulos\*.exp >NUL
+	-@erase src\*.obj >NUL
+	-@erase .\*.exe >NUL
+	-@erase .\*.ilk >NUL
+	-@erase .\*.pdb >NUL
+	-@erase .\*.core >NUL
+	-@erase .\*.exp >NUL
+	-@erase colossus.lib >NUL
+	-@erase src\modulos\*.exp >NUL
 	-@erase src\modulos\*.lib >NUL
 	-@erase src\modulos\*.pdb >NUL
 	-@erase src\modulos\*.ilk >NUL
 	-@erase src\modulos\*.dll >NUL
-       -@erase src\modulos\*.obj >NUL
-       -@erase src\protocolos\*.exp >NUL
+	-@erase src\modulos\*.obj >NUL
+	-@erase src\protocolos\*.exp >NUL
 	-@erase src\protocolos\*.lib >NUL
 	-@erase src\protocolos\*.pdb >NUL
 	-@erase src\protocolos\*.ilk >NUL
 	-@erase src\protocolos\*.dll >NUL
-       -@erase src\protocolos\*.obj >NUL
+	-@erase src\protocolos\*.obj >NUL
 	-@erase src\win32\colossus.res >NUL
+	-@erase include\setup.h >NUL
+
+SETUP: 
+	-@copy src\win32\setup.h include\setup.h >NUL
 
 ./COLOSSUS.EXE: $(OBJ_FILES)
         $(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
 	
 !IFNDEF DEBUG
- @echo Non Debug version built 
+ @echo Version no Debug compilada ...
 !ELSE
- @echo Debug version built ... 
+ @echo Version Debug compilada ... 
 !ENDIF
 
 src/bdd.obj: src/bdd.c $(INCLUDES)
@@ -191,51 +199,51 @@ MODULES: $(MOD_DLL) $(PROT_DLL)
         
 src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)
-        -@copy src\modulos\chanserv.dll modulos\chanserv.dll
+        -@copy src\modulos\chanserv.dll modulos\chanserv.dll >NUL
         
 src/modulos/nickserv.dll: src/modulos/nickserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/nickserv.c $(MODLFLAGS) ws2_32.lib src/modulos/chanserv.lib  
-        -@copy src\modulos\nickserv.dll modulos\nickserv.dll
+        -@copy src\modulos\nickserv.dll modulos\nickserv.dll >NUL
         
 src/modulos/operserv.dll: src/modulos/operserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/operserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/operserv.c $(MODLFLAGS) src/modulos/memoserv.lib src/modulos/chanserv.lib
-        -@copy src\modulos\operserv.dll modulos\operserv.dll
+        -@copy src\modulos\operserv.dll modulos\operserv.dll >NUL
         
 src/modulos/memoserv.dll: src/modulos/memoserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/memoserv.c $(MODLFLAGS) src/modulos/chanserv.lib
-	-@copy src\modulos\memoserv.dll modulos\memoserv.dll
+	-@copy src\modulos\memoserv.dll modulos\memoserv.dll >NUL
 	
 src/modulos/ipserv.dll: src/modulos/ipserv.c $(INCLUDES) ./include/modulos/ipserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/ipserv.c $(MODLFLAGS)
-	-@copy src\modulos\ipserv.dll modulos\ipserv.dll
+	-@copy src\modulos\ipserv.dll modulos\ipserv.dll >NUL
 		      
 src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES) ./include/modulos/proxyserv.h
 	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS)
-	-@copy src\modulos\proxyserv.dll modulos\proxyserv.dll
+	-@copy src\modulos\proxyserv.dll modulos\proxyserv.dll >NUL
 
 src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
-	-@copy src\modulos\statserv.dll modulos\statserv.dll
+	-@copy src\modulos\statserv.dll modulos\statserv.dll >NUL
 	
 src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/linkserv.h
 	$(CC) $(MODCFLAGS) src/modulos/linkserv.c $(MODLFLAGS) src/modulos/chanserv.lib
-	-@copy src\modulos\linkserv.dll modulos\linkserv.dll
+	-@copy src\modulos\linkserv.dll modulos\linkserv.dll >NUL
 	
 src/protocolos/unreal.dll: src/protocolos/unreal.c $(INCLUDES) 
 	$(CC) $(PROTCFLAGS) src/protocolos/unreal.c $(PROTLFLAGS)
-	-@copy src\protocolos\unreal.dll protocolos\unreal.dll
+	-@copy src\protocolos\unreal.dll protocolos\unreal.dll >NUL
 
 src/protocolos/p10.dll: src/protocolos/p10.c $(INCLUDES) 
 	$(CC) $(PROTCFLAGS) src/protocolos/p10.c $(PROTLFLAGS) ws2_32.lib
-	-@copy src\protocolos\p10.dll protocolos\p10.dll
+	-@copy src\protocolos\p10.dll protocolos\p10.dll >NUL
 	
 src/protocolos/redhispana.dll: src/protocolos/redhispana.c $(INCLUDES) 
 	$(CC) $(PROTCFLAGS) src/protocolos/redhispana.c $(PROTLFLAGS) ws2_32.lib
-	-@copy src\protocolos\redhispana.dll protocolos\redhispana.dll
+	-@copy src\protocolos\redhispana.dll protocolos\redhispana.dll >NUL
 	
 src/protocolos/unreal_udb.dll: src/protocolos/unreal.c $(INCLUDES) 
-	-@copy src\protocolos\unreal.c src\protocolos\unreal_udb.c
+	-@copy src\protocolos\unreal.c src\protocolos\unreal_udb.c >NUL
 	$(CC) $(PROTCFLAGS) src/protocolos/unreal_udb.c $(PROTLFLAGS)
-	-@copy src\protocolos\unreal_udb.dll protocolos\unreal_udb.dll
-	-@erase src\protocolos\unreal_udb.c
+	-@copy src\protocolos\unreal_udb.dll protocolos\unreal_udb.dll >NUL
+	-@erase src\protocolos\unreal_udb.c >NUL
 	

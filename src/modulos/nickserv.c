@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.12 2005-02-18 22:12:21 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.13 2005-02-20 15:34:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1247,6 +1247,7 @@ int nickserv_pre_nick(Cliente *cl, char *nuevo)
 				timer_off(cl->nombre, cl->sck); /* es posible que tenga kill */
 		}
 	}
+	return 0;
 }
 int nickserv_post_nick(Cliente *cl)
 {
