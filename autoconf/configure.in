@@ -291,8 +291,6 @@ configuration files])], AC_DEFINE_UNQUOTED(DEFAULT_PERMISSIONS,$withval), AC_DEF
 AC_ARG_WITH(fd-setsize, [AC_HELP_STRING([--with-fd-setsize=size],[Specify the max file descriptors to use])],
 ac_fd=$withval, ac_fd=1024)
 AC_DEFINE_UNQUOTED(MAXCONNECTIONS, $ac_fd)
-AC_ARG_WITH(spath, [AC_HELP_STRING([--with-spath],[Specify the location of the executable])],
-AC_DEFINE_UNQUOTED(SPATH,"$withval") BINDIR="$withval",AC_DEFINE_UNQUOTED(SPATH,"`pwd`/src/ircd") BINDIR="`pwd`/src/ircd")
 AC_ARG_ENABLE(udb, [AC_HELP_STRING([--enable-udb],[Activa el soporte UDB])], AC_DEFINE(UDB))
 AC_ARG_ENABLE(hub, [AC_HELP_STRING([--enable-hub],[Compile as a hub server])], AC_DEFINE(HUB))
 CHECK_SSL
@@ -301,7 +299,6 @@ CHECK_MYSQL
 AC_ARG_ENABLE(dynamic-linking, [AC_HELP_STRING([--enable-dynamic-linking],[Make the IRCd dynamically link shared objects rather than statically])], AC_ENABLE_DYN, AC_DEFINE(STATIC_LINKING))
 AC_ARG_ENABLE(inet6, [AC_HELP_STRING([--enable-inet6],[Make the IRCd support IPv6])], AC_ENABLE_INET6)
 AC_SUBST(IRCDDIR)
-AC_SUBST(BINDIR)
 AC_MSG_CHECKING(if FD_SETSIZE is large enough to allow $ac_fd file descriptors)
 AC_TRY_RUN([
 #include <sys/types.h>

@@ -18,7 +18,6 @@
 #undef NEED_STRERROR
 #undef NEED_STRNCASECMP
 #undef POSIX_SIGNALS
-#undef SPATH
 #undef STATIC_LINKING
 #undef STDLIBH
 #undef STRINGH

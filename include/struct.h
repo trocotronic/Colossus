@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.33 2005-03-21 12:38:01 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.34 2005-03-21 14:21:40 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -364,3 +364,9 @@ extern void borra_cache(char *, char *, int);
 #define CACHE_MX "mx" /* cache para registros mx */
 
 extern MODVAR pthread_mutex_t mutex;
+#ifdef _WIN32
+extern MODVAR char spath[MAX_PATH];
+#else
+extern MODVAR char spath[PATH_MAX];
+#endif
+#define SPATH spath

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.38 2005-03-21 12:38:01 Trocotronic Exp $ 
+ * $Id: main.c,v 1.39 2005-03-21 14:21:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -35,6 +35,12 @@ char tokbuf[BUFSIZE];
 char conbuf[128];
 HANDLE hStdin;
 #endif
+#ifdef _WIN32
+char spath[MAX_PATH];
+#else
+char spath[PATH_MAX];
+#endif
+
 
 MODVAR char **margv;
 time_t iniciado;
@@ -249,8 +255,10 @@ int main(int argc, char *argv[])
 	memset(senyals, (int)NULL, sizeof(senyals));
 #ifdef _WIN32	
 	mkdir("tmp");
+	_getcwd(spath, sizeof(spath));
 #else
 	mkdir("tmp", 0744);
+	getcwd(spath, sizeof(spath));
 #endif	
 #if !defined(_WIN32) && defined(FORCE_CORE)
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
