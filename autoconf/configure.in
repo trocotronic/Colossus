@@ -143,8 +143,8 @@ colossus_CHECK_TYPE_SIZES
 
 AC_CACHE_CHECK(que tipo de conexiones no bloqueantes usa, ac_cv_nonblocking,
 	[	
-		save_libs="$IRCDLIBS"
-		IRCDLIBS="$IRCDLIBS $SOCKLIB"
+		save_libs="$LIBS"
+		LIBS="$LIBS $SOCKLIB"
 		AC_TRY_RUN(
 			[
 				#include <sys/types.h>
@@ -241,7 +241,7 @@ elif test "$ac_cv_nonblocking" = "O_NDELAY"; then
 elif test "$ac_cv_nonblocking" = "FIONBIO"; then
 	AC_DEFINE(NBLOCK_SYSV)
 fi
-IRCDLIBS="$save_libs"
+LIBS="$save_libs"
 dnl Checks for library functions.
 AC_PROG_GCC_TRADITIONAL
 AC_FUNC_SETPGRP
@@ -327,10 +327,10 @@ AC_CHECK_FUNCS(bcopy,,AC_DEFINE(NEED_BCOPY))
 AC_CHECK_FUNCS(bcmp,,AC_DEFINE(NEED_BCMP))
 AC_CHECK_FUNCS(bzero,,AC_DEFINE(NEED_BZERO))
 AC_CHECK_FUNCS(strcasecmp,AC_DEFINE(GOT_STRCASECMP))
-save_libs="$IRCDLIBS"
-IRCDLIBS="$IRCDLIBS $SOCKLIB $INETLIB"
+save_libs="$LIBS"
+LIBS="$LIBS $SOCKLIB $INETLIB"
 AC_CHECK_FUNCS(inet_addr,,AC_DEFINE(NEED_INET_ADDR))
-IRCDLIBS="$save_libs"
+LIBS="$save_libs"
 AC_SUBST(CRYPTOLIB)
 AC_SUBST(MODULEFLAGS)
 AC_ARG_WITH(listen, [AC_HELP_STRING([--with-listen=backlog],[Especifica el valor para listen])],	AC_DEFINE_UNQUOTED(LISTEN_SIZE,$withval),AC_DEFINE(LISTEN_SIZE,5))
