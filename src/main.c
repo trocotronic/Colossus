@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.34 2005-02-19 20:14:26 Trocotronic Exp $ 
+ * $Id: main.c,v 1.35 2005-03-14 14:18:09 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -51,6 +51,7 @@ void parsea_comando(char *);
 #ifdef _WIN32
 void programa_loop_principal(void *);
 #endif
+#define descarga_protocolo() do { if (protocolo) { libera_protocolo(protocolo); protocolo = NULL;	} }while(0)
 
 #ifndef _WIN32
 const char logo[] = {
@@ -169,11 +170,8 @@ VOIDSIG refresca()
 	struct sigaction act;
 #endif
 	descarga_modulos();
-	if (protocolo)
-	{
-		libera_protocolo(protocolo);
-		protocolo = NULL;
-	}
+	descarga_protocolo();
+	descarga_conf();
 	parseconf(CPATH, &config, 1);
 	distribuye_conf(&config);
 	carga_modulos();
@@ -264,7 +262,7 @@ int main(int argc, char *argv[])
 		return 1;
 	distribuye_conf(&config);
 	carga_modulos();
-	Info("bleeeeeee %lu", time(0));
+	/*Info("bleeeeeee %lu", time(0));
 	Info("Blaaaaaa");
 	Info("bleeeeeee %lu", time(0));
 	Info("Blaaaaaa");
@@ -273,7 +271,7 @@ int main(int argc, char *argv[])
 	Info("bleeeeeee %lu", time(0));
 	Info("Blaaaaaa");
 	Info("blee eeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %lu", time(0));
-	Info("Blaaaaaa");
+	Info("Blaaaaaa");*/
 	if ((val = carga_mysql()) <= 0)
 	{
 		if (!val) /* no ha emitido mensaje */
@@ -288,7 +286,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "[MySQL: %s]\n", pq);
 #endif
 		}
-		cierra_colossus(-1);
+		return 1;
 	}
 	if (is_file("backup.sql"))
 	{
@@ -318,9 +316,6 @@ int main(int argc, char *argv[])
 	carga_cache();
 #ifdef UDB
 	bdd_init();
-#endif
-#ifdef USA_SSL
-	init_ssl();
 #endif
 	pthread_mutex_init(&mutex, NULL);
 	for (i = 0; i < UMAX; i++)
@@ -889,7 +884,7 @@ void inserta_cache(char *tipo, char *item, int off, char *valor, ...)
 	tipo_c = _mysql_escapa(tipo);
 	item_c = _mysql_escapa(item);
 	if (coge_cache(tipo, item))
-		_mysql_query("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, time(0), item_c, tipo_c);
+		_mysql_query("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c);
 	else
 		_mysql_query("INSERT INTO %s%s (item,valor,hora,tipo) values ('%s','%s',%lu,'%s')", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c);
 	Free(item_c);
@@ -907,6 +902,15 @@ int dropacache(Proc *proc)
 	}
 	_mysql_query("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
 	return 0;
+}
+void borra_cache(char *tipo, char *item)
+{
+	char *tipo_c, *item_c;
+	tipo_c = _mysql_escapa(tipo);
+	item_c = _mysql_escapa(item);
+	_mysql_query("DELETE FROM %s%s WHERE item='%s' AND tipo='%s'", PREFIJO, MYSQL_CACHE, item_c, tipo_c);
+	Free(item_c);
+	Free(tipo_c);
 }
 #ifdef USA_CONSOLA
 #define MyErrorExit(x) { fecho(FERR, x); exit(-1); }

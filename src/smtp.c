@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.7 2005-02-18 22:12:17 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.8 2005-03-14 14:18:10 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -207,8 +207,8 @@ int parse_smtp(char *data, int numeric)
 }
 char *coge_mx(char *dominio)
 {
+#define SDK
 #ifdef _WIN32
- #define SDK
  #ifdef SDK
 	HMODULE api;
 	char *cache;
@@ -220,7 +220,7 @@ char *coge_mx(char *dominio)
 	{
 		if ((api = LoadLibrary("mx.dll")))
 		{
-			char * (*mx)(char *);
+			char *(*mx)(char *);
 			char *host;
 			if ((mx = (char * (*)(char *))GetProcAddress(api, "MX")))
 			{
@@ -235,23 +235,26 @@ char *coge_mx(char *dominio)
 		}
 	}
  #else
-	HANDLE ppw, ppr;
+	HANDLE hStdin, hStdout;
 	DWORD btr, btw;
-	char orden[512], *cache;
+	char orden[512];
 	static char host[512];
 	if (!dominio)
 		return NULL;
 	bzero(host, 512);
-	if ((cache = cache_get(_mysql_get_registro(MYSQL_CACHE, dominio, "valor")))
-	{
-		strcpy(host, cache);
-		return host;
-	}
+	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
+	hStdin = GetStdHandle(STD_INPUT_HANDLE);
 	sprintf_irc(orden, "nslookup -type=mx %s", dominio);
-	if (CreatePipe(&ppr, &ppw, NULL, 0))
+	if (CreatePipe(&hStdout, &hStdin, NULL, 0))
 	{
-		WriteFile(ppw, orden, strlen(orden), &btw, NULL);
-		ReadFile(ppr, host, 512, &btr, NULL);
+		int i;
+		WriteFile(hStdin, orden, strlen(orden), &btw, NULL);
+		for (;;)
+		{
+			if (!(i =ReadFile(hStdout, host, 512, &btr, NULL)) || !btr)
+				break;
+			Debug("%s %i %i", host, i, btr);
+		}
 		/*while ((fgets(buf, BUFSIZE, pp)))
 		{
 			char *mx;

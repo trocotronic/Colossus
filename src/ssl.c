@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.5 2005-02-20 16:43:10 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.6 2005-03-14 14:18:10 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -218,8 +218,12 @@ void init_ctx_client()
 }
 void init_ssl(void)
 {
+	static int cargado = 0;
 	if (!conf_ssl) /* no hay configuración, así que no hay "soporte" */
 		return;
+	if (cargado)
+		return;
+	cargado = 1;
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
 	if (conf_ssl->usa_egd) 
@@ -316,9 +320,9 @@ int ircd_SSL_client_handshake(Sock *sck)
 	SSL_set_fd(sck->ssl, sck->pres);
 	SSL_set_connect_state(sck->ssl);
 	SSL_set_nonblocking(sck->ssl);
-	if (SockIrcd == sck && conf_server->cifrados)
+	if (SockIrcd == sck && conf_ssl->cifrados)
 	{
-		if (SSL_set_cipher_list((SSL *)sck->ssl, conf_server->cifrados) == 0)
+		if (SSL_set_cipher_list((SSL *)sck->ssl, conf_ssl->cifrados) == 0)
 			return -2;
 	}
 	sck->opts |= OPT_SSL;

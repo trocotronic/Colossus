@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.2 2004-11-05 19:59:38 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.3 2005-03-14 14:18:12 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus v1.0a
+AppVerName=Colossus v1.1
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.rallados.net
 AppSupportURL=http://www.rallados.net
@@ -34,11 +34,14 @@ Name: "enccert"; Description: "&Encriptar certificado"; GroupDescription: "Opcio
 Source: "..\..\Colossus.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\Colossus.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignoreversion
+Source: "..\..\proximamente"; DestDir: "{app}"; DestName: "proximamente.txt"; Flags: ignoreversion
 Source: "..\..\libmysql.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mx.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\pthreadVC1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
 Source: "..\..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\protocolos\*.dll"; DestDir: "{app}\protocolos"; Flags: ignoreversion
 #ifdef USA_SSL
 Source: "c:\openssl\bin\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\openssl\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -130,11 +133,11 @@ begin
   Result := true;
 end;
 
-procedure CurStepChanged(CurStep: Integer);
+procedure CurStepChanged(CurStep: TSetupStep);
 var
 input,output: String;
 begin
-  if (CurStep = csCopy) then begin
+  if (CurStep = ssPostInstall) then begin
     if (didDbgDl) then begin
       input := ExpandConstant('{tmp}\dbghelp.dll');
       output := ExpandConstant('{app}\dbghelp.dll');
@@ -175,5 +178,5 @@ Filename: "{app}\encpem.bat"; WorkingDir: "{app}"; Tasks: enccert
 [UninstallRun]
 
 [Languages]
-Name: "Castellano"; MessagesFile: "compiler:Languages\Spanish-5-4.1.4.isl"
+Name: "Castellano"; MessagesFile: "compiler:Languages\SpanishStd-2-5.1.0.isl"
 

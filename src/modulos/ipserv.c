@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.11 2005-02-18 22:12:20 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.12 2005-03-14 14:18:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -408,7 +408,7 @@ BOTFUNC(ipserv_clones)
 	return 0;
 }	
 #ifndef UDB
-int ipserv_nick(Cliente *cl)
+int ipserv_nick(Cliente *cl, int nuevo)
 {
 	if (!nuevo)
 	{
@@ -475,7 +475,7 @@ int comprueba_cifrado()
 	char tiempo[BUFSIZE];
 	FILE *fp;
 #endif
-	sprintf_irc(clave, "a%lu", our_crc32(conf_set->cloak->crc, strlen(conf_set->cloak->crc)) + (time(0) / ipserv.cambio));
+	sprintf_irc(clave, "a%lu", our_crc32(conf_set->clave_cifrado, strlen(conf_set->clave_cifrado)) + (time(0) / ipserv.cambio));
 #ifdef UDB
 	envia_registro_bdd("S::clave_cifrado %s", clave);
 #else
@@ -527,7 +527,7 @@ char *cifra_ip(char *ipreal)
 	int ts = 0;
 	unsigned int ourcrc, v[2], k[2], x[2];
 	ourcrc = our_crc32(ipreal, strlen(ipreal));
-	sprintf_irc(clave, "a%lu", our_crc32(conf_set->cloak->crc, strlen(conf_set->cloak->crc)) + (time(0) / ipserv.cambio));
+	sprintf_irc(clave, "a%lu", our_crc32(conf_set->clave_cifrado, strlen(conf_set->clave_cifrado)) + (time(0) / ipserv.cambio));
 	p = cifrada;
 	while (1)
   	{

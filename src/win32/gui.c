@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.6 2005-02-20 15:34:10 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.7 2005-03-14 14:18:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -97,7 +97,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
 	InitDebug();
-	carga_programa(__argc, __argv);
+	if (carga_programa(__argc, __argv))
+		exit(-1);
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{
 		MessageBox(hWnd, "No se ha podido inicializar winsock.", "Error", MB_OK|MB_ICONERROR);
@@ -205,13 +206,13 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				{
 					if (IsDlgButtonChecked(hDlg, BT_CON))
 					{
-						ChkBtCon(1, 1);
+						ChkBtCon(0, 1);
 						abre_sock_ircd();
 					}
 					else
 					{
-						ChkBtCon(0, 1);
 						sockclose(SockIrcd, LOCAL);
+						ChkBtCon(0, 0);
 					}
 					break;
 				}
@@ -288,7 +289,7 @@ void conferror(char *formato, ...)
 	strcat(buf, "\r\n");
 	if (!hwConfError)
 	{
-		hwConfError = CreateDialog(hInst, "CONFERROR", 0, (DLGPROC)ConfErrorDLG);
+		hwConfError = CreateDialog(hInst, "CONFERROR", hwMain, (DLGPROC)ConfErrorDLG);
 		ShowWindow(hwConfError, SW_SHOW);
 		texto = (char *)Malloc(sizeof(char) * (strlen(buf) + 1));
 		strcpy(texto, buf);
@@ -309,7 +310,7 @@ void ChkBtCon(int val, int block)
 	CheckDlgButton(hwMain, BT_CON, val && !block ? BST_CHECKED : BST_UNCHECKED);
 	EnableWindow(GetDlgItem(hwMain, BT_CON), block ? FALSE : TRUE);
 }
-void Info(char *formato, ...)
+int Info(char *formato, ...)
 {
 	static char info[2048];
 	char texto[BUFSIZE], txt[BUFSIZE];
@@ -331,4 +332,5 @@ void Info(char *formato, ...)
 	else
 		strcat(info, txt);
 	SetDlgItemText(hwMain, EDT_INFO, info);
+	return -1;
 }

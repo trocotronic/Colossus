@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.4 2005-02-18 22:12:24 Trocotronic Exp $
+// $Id: colossus.rc,v 1.5 2005-03-14 14:18:12 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -74,7 +74,7 @@ END
 //
 
 VER_COLOSSUS VERSIONINFO
- FILEVERSION 1,0,0,0
+ FILEVERSION 1,1,0,0
  PRODUCTVERSION 1,0,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG

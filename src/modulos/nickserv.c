@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.15 2005-03-03 12:13:42 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.16 2005-03-14 14:18:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -166,7 +166,7 @@ void set(Conf *config, Modulo *mod)
 	nickserv.opts = NS_PROT_KILL;
 	ircstrdup(&nickserv.recovernick, "inv-%s-????");
 	ircstrdup(&nickserv.securepass,"******");
-	//nickserv.min_reg = 24;
+	nickserv.min_reg = 24;
 	nickserv.autodrop = 15;
 	nickserv.nicks = 3;
 	nickserv.intentos = 3;
@@ -194,8 +194,8 @@ void set(Conf *config, Modulo *mod)
 			ircstrdup(&nickserv.recovernick, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "securepass"))
 			ircstrdup(&nickserv.securepass, config->seccion[i]->data);
-	//	if (!strcmp(config->seccion[i]->item, "min_reg"))
-	//		nickserv.min_reg = atoi(config->seccion[i]->data);
+		if (!strcmp(config->seccion[i]->item, "min_reg"))
+			nickserv.min_reg = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "autodrop"))
 			nickserv.autodrop = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "nicks"))
@@ -528,10 +528,12 @@ BOTFUNC(nickserv_help)
 }
 BOTFUNC(nickserv_reg)
 {
-	int i, opts;
+	u_int i, opts;
+	u_long ultimo;
 	char *dominio;
-	char *mail, *pass;
+	char *mail, *pass, *usermask, *cache;
 	MYSQL_RES *res = NULL;
+	usermask = strchr(cl->mask, '!') + 1;
 	if (params < ((nickserv.opts & NS_SMAIL) ? 2 : 3))
 	{
 		if (nickserv.opts & NS_SMAIL)
@@ -540,13 +542,19 @@ BOTFUNC(nickserv_reg)
 			response(cl, CLI(nickserv), NS_ERR_PARA, "REGISTER tupass tu@email");
 		return 1;
 	}
-	/* if ((cl->ultimo_reg + (3600 * nickserv.min_reg)) > time(0))
+	if ((cache = coge_cache(CACHE_ULTIMO_REG, usermask)))
 	{
-		char buf[512];
-		sprintf_irc(buf, "No puedes efectuar otro registro hasta que no pasen %i horas.", nickserv.min_reg);
-		response(cl, CLI(nickserv), NS_ERR_EMPT, buf);
-		return 1;
-	} */	
+		ultimo = atoul(cache);
+		if ((ultimo + (3600 * nickserv.min_reg)) > (u_long)time(0))
+		{
+			char buf[512];
+			sprintf_irc(buf, "No puedes efectuar otro registro hasta que no pasen %i horas.", nickserv.min_reg);
+			response(cl, CLI(nickserv), NS_ERR_EMPT, buf);
+			return 1;
+		}
+		else
+			borra_cache(CACHE_ULTIMO_REG, usermask);
+	}
 	/* comprobamos que no esté registrado */
 	if (IsReg(cl->nombre))
 	{
@@ -603,7 +611,7 @@ BOTFUNC(nickserv_reg)
 		envia_clave(parv[0]);
 	else if (UMODE_REGNICK)
 		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
-	//cl->ultimo_reg = time(0);
+	inserta_cache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, "%lu", time(0));
 	response(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
 #ifdef UDB
 	if (nickserv.opts & NS_AUTOMIGRAR)
@@ -661,7 +669,10 @@ BOTFUNC(nickserv_identify)
 		if ((cache = coge_cache(CACHE_INTENTOS_ID, cl->nombre)))
 			intentos = atoi(cache);
 		if (++intentos == nickserv.intentos)
+		{
 			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
+			borra_cache(CACHE_INTENTOS_ID, cl->nombre);
+		}
 		else
 		{
 			sprintf_irc(buf, "Contraseña incorrecta. Tienes %i intentos más.", nickserv.intentos - intentos);
@@ -926,7 +937,7 @@ BOTFUNC(nickserv_list)
 	char *rep;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
-	int i;
+	u_int i;
 	if (params < 2)
 	{
 		response(cl, CLI(nickserv), NS_ERR_PARA, "LIST patrón");
@@ -1335,7 +1346,6 @@ int nickserv_sig_idok(Cliente *cl)
 		_mysql_add(NS_MYSQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
 		_mysql_add(NS_MYSQL, cl->nombre, "gecos", cl->info);
 		timer_off(cl->nombre, cl->sck);
-		//cl->intentos = 0;
 		if (
 #ifdef UDB
 		!IsNickUDB(cl->nombre) && 
@@ -1377,7 +1387,7 @@ int nickserv_dropanicks(Proc *proc)
 				if (atoi(row[1]) + 86400 < time(0)) /* 24 horas */
 					nickserv_baja(row[0], 0);
 			}
-			else if (nickserv.autodrop && (atoi(row[2]) + 86400 * nickserv.autodrop < time(0)))
+			else if (nickserv.autodrop && (atoi(row[2]) + 86400 * nickserv.autodrop < (u_long)time(0)))
 				nickserv_baja(row[0], 0);
 		}
 		proc->proc += 30;

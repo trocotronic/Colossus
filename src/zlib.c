@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.8 2005-03-03 12:13:42 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.9 2005-03-14 14:18:10 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -151,6 +151,7 @@ char *descomprime(Sock *sck, char *mensaje, int *len)
 		case Z_DATA_ERROR:
 			if (!strncmp("ERROR ", mensaje, 6))
 			{
+				sck->zlib->primero = 0;
 				sck->opts &= ~OPT_ZLIB;
 				return mensaje;
 			}

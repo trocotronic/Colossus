@@ -908,9 +908,12 @@ int descarga()
 }
 void inicia()
 {
-	LinkCliente *aux;
-	for (aux = servidores; aux; aux = aux->sig)
+	LinkCliente *aux, *tmp;
+	for (aux = servidores; aux; aux = tmp)
+	{
+		tmp = aux->sig;
 		ircfree(aux);
+	}
 	servidores = NULL;
 	sendto_serv("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64");
 #ifdef UDB
@@ -920,7 +923,7 @@ void inicia()
 	if (conf_server->compresion)
 		sendto_serv("PROTOCTL ZIP");
 #endif
-	sendto_serv("PASS :%s", conf_server->password->local);
+	sendto_serv("PASS :%s", conf_server->password.local);
 	sendto_serv("SERVER %s 1 :U%i-%s-%i %s", me.nombre, me.protocol, me.trio, me.numeric, me.info);
 }
 SOCKFUNC(parsea)
@@ -1145,13 +1148,15 @@ IRCFUNC(m_nick)
 		senyal2(SIGN_PRE_NICK, cl, parv[1]);
 		if (strcasecmp(parv[1], cl->nombre))
 		{
-			cl->modos &= ~U_REGNICK;
+			procesa_umodos(cl, "-r");
+			cambia_nick(cl, parv[1]);
 #ifdef UDB
-			cl->modos &= ~(U_SUSPEND | U_HELPOP | U_SHOWIP | U_RGSTRONLY | U_SERVICES);
+			procesa_umodos(cl, "-ShXRk");
 			dale_cosas(cl);
 #endif
 		}
-		cambia_nick(cl, parv[1]);
+		else
+			cambia_nick(cl, parv[1]);
 		senyal2(SIGN_POST_NICK, cl, 1);
 	}
 	return 0;
@@ -1209,7 +1214,7 @@ IRCFUNC(m_ping)
 }
 IRCFUNC(m_pass)
 {
-	if (strcmp(parv[1], conf_server->password->remoto))
+	if (strcmp(parv[1], conf_server->password.remoto))
 	{
 		fecho(FERR, "Contraseñas incorrectas");
 		sockclose(sck, LOCAL);
@@ -1451,6 +1456,7 @@ IRCFUNC(m_server)
 				return 0;
 			}
 			sck->opts |= OPT_ZLIB;
+			sck->zlib->primero = 1;
 		}
 #endif
 		linkado = al;
@@ -1474,6 +1480,7 @@ IRCFUNC(m_squit)
 				prev->sig = aux->sig;
 			else
 				servidores = aux->sig;
+			ircfree(aux);
 			break;
 		}
 		prev = aux;
@@ -1774,8 +1781,6 @@ IRCFUNC(m_eos)
 }
 IRCFUNC(m_netinfo)
 {
-	if (*parv[4] != '*' && strcmp(parv[4], conf_set->cloak->crc))
-		fecho(FADV, "Las cloak keys no se corresponden (%s != %s)", conf_set->cloak->crc, parv[4]);
 	//if (strcasecmp(parv[7], conf_set->red))
 	//	fecho(FADV, "El nombre de la red es distinto");
 	return 0;
@@ -2118,66 +2123,18 @@ void dale_cosas(Cliente *cl)
 		return;
 	if (!busca_bloque("suspendido", reg))
 	{
-		cl->modos |= U_REGNICK;
+		procesa_umodos(cl, "+r");
 		if ((bloq = busca_bloque("modos", reg)))
-		{
-			char *cur = bloq->data_char;
-			while (!BadPtr(cur))
-			{
-				switch(*cur)
-				{
-					case 'o':
-						cl->modos |= U_OPER;
-						break;
-					case 'h':
-						cl->modos |= U_HELPOP;
-						break;
-					case 'a':
-						cl->modos |= U_SADMIN;
-						break;
-					case 'A':
-						cl->modos |= U_ADMIN;
-						break;
-					case 'O':
-						cl->modos |= U_LOCOP;
-						break;
-					case 'k':
-						cl->modos |= U_SERVICES;
-						break;
-					case 'N':
-						cl->modos |= U_NETADMIN;
-						break;
-					case 'C':
-						cl->modos |= U_COADMIN;
-						break;
-					case 'W':
-						cl->modos |= U_WHOIS;
-						break;
-					case 'q':
-						cl->modos |= U_KIX;
-						break;
-					case 'H':
-						cl->modos |= U_HIDEOPER;
-						break;
-					case 'X':
-						cl->modos |= U_SHOWIP;
-						break;
-					case 'B':
-						cl->modos |= U_BOT;
-						break;
-				}
-				cur++;
-			}
-		}
+			procesa_umodos(cl, bloq->data_char);
 		if ((bloq = busca_bloque("oper", reg)))
 		{
 			u_long nivel = bloq->data_long;
 			if (nivel & BDD_OPER)
-				cl->modos |= U_HELPOP;
+				procesa_umodos(cl, "+h");
 			if (nivel & BDD_ADMIN || nivel & BDD_ROOT)
-				cl->modos |= (U_OPER | U_NETADMIN);
+				procesa_umodos(cl, "+oN");
 		}
 	}
 	else
-		cl->modos |= UMODE_SUSPEND;
+		procesa_umodos(cl, "+S");
 }

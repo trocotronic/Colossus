@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.6 2005-03-03 12:13:41 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.7 2005-03-14 14:18:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -246,12 +246,14 @@ void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
 	if (opts & OPT_LF)
 		strcat(buf, "\n");
 	len = strlen(buf);
-#ifdef ZLIB
+#ifdef USA_ZLIB
 	if (EsZlib(sck))
 		msg = comprime(sck, msg, &len, 0);
 	if (len)
 #endif
-	encola(sck->sendQ, msg, 0); /* de momento siempre son cadenas */
+	encola(sck->sendQ, msg, len); /* de momento siempre son cadenas */
+	if (sck->writefunc)
+		sck->writefunc(sck, msg);
 }
 void sockwrite(Sock *sck, int opts, char *formato, ...)
 {
@@ -370,9 +372,12 @@ void elimina_slot(DBuf *bufc, int bytes)
 			aux = bufc->rslot->sig;
 			Free(bufc->rslot);
 			bufc->slots--;
-			if (!aux) /* final del trayecto */
-				break;
 			bufc->rslot = aux;
+			if (!aux) /* final del trayecto */
+			{
+				bufc->rchar = NULL;
+				break;
+			}
 			bufc->rchar = &aux->data[0];
 		}
 	}
@@ -381,13 +386,11 @@ void elimina_slot(DBuf *bufc, int bytes)
 int copia_slot(DBuf *bufc, char *dest, int bytes)
 {
 	int copiados = 0;
-	DbufData *aux;
 	char *b = dest;
 	if (!bufc->rslot)
 		return 0;
-	while (bytes > 0)
+	while (bytes > 0 && bufc->rslot)
 	{
-		aux = bufc->rslot->sig;
 		copiados = MIN((int)bufc->rslot->len, bytes);
 		memcpy(b, bufc->rchar, copiados);
 		b += copiados;
@@ -477,7 +480,7 @@ void envia_cola(Sock *sck)
 #endif
 	if (sck->sendQ && sck->sendQ->len > 0)
 	{
-		while ((len = desencola(sck->sendQ, &buf[0], sizeof(buf))) > 0) /* hemos copiado una línea entera */
+		while ((len = copia_slot(sck->sendQ, buf, sizeof(buf))) > 0)
 		{
 			msg = &buf[0];
 #ifdef USA_SSL
@@ -486,8 +489,6 @@ void envia_cola(Sock *sck)
 			else
 #endif
 			WRITE_SOCK(sck->pres, msg, len);
-			if (sck->writefunc)
-				sck->writefunc(sck, msg);
 		}
 #ifdef USA_ZLIB
 		if (!sck->sendQ->len && mas)
@@ -523,18 +524,93 @@ int lee_mensaje(Sock *sck)
 		encola(sck->recvQ, lee, len);
 	return len;
 }
-void crea_mensaje(Sock *sck, char *msg, int len)
+int crea_mensaje(Sock *sck, char *msg, int len)
 {
-	char *p = msg, *c;
-	if ((c = strchr(p, '\r')))
-		*c = '\0';
-	if ((c = strchr(p, '\n')))
-		*c = '\0';
-#ifndef DEBUG
-	Debug("[Parseando: %s]", p);
+#ifdef USA_ZLIB
+	int zip = 0, hecho = 0;
 #endif
-	if (sck->readfunc)
-		sck->readfunc(sck, p);
+	char *p, *b;
+	p = msg;
+	b = sck->buffer + sck->pos;
+#ifdef USA_ZLIB
+	if (EsZlib(sck) && sck->zlib->primero)
+	{
+		if (*p == '\n' || *p == '\r')
+		{
+			p++;
+			len--;
+		}
+		sck->zlib->primero = 0;
+	}
+	else
+		hecho = 1;
+	if (EsZlib(sck))
+	{
+		zip = len;
+		sck->zlib->inbuf[0] = '\0';
+		sck->zlib->incount = 0;
+		p = descomprime(sck, p, &zip);
+		len = zip;
+		zip = 1;
+		if (len == -1)
+			return Info("Ha sido imposible hacer descomprime() (1)");
+	}
+	do
+	{
+#endif
+		while(--len >= 0)
+		{
+			char g = (*b = *p++);
+			if (g == '\n' || g == '\r') /* asumo que terminan en \r\n o \r o \n, pero nunca \n\r */
+			{
+				if (b == sck->buffer) 
+					continue;
+				*b = '\0';
+				sck->pos = 0;
+#ifndef DEBUG
+				Debug("[Parseando: %s]", sck->buffer);
+#endif
+				if (sck->readfunc)
+					sck->readfunc(sck, sck->buffer);
+#ifdef USA_ZLIB
+				if (EsZlib(sck) && zip == 0 && len > 0)
+				{
+					zip = len;
+					if (zip > 0 && (*p == '\n' || *p == '\r'))
+					{
+						p++;
+						zip--;
+					}
+					sck->zlib->primero = 0;
+					p = descomprime(sck, p, &zip);
+					len = zip;
+					zip = 1;
+					if (len == -1);
+						//return Info("Ha sido imposible hacer descomprime() (2)");
+				}
+#endif
+				b = sck->buffer;
+			}
+			else if (b < sck->buffer + sizeof(sck->buffer) - 1)
+				b++;
+		}
+#ifdef USA_ZLIB
+		if (EsZlib(sck) && sck->zlib->incount)
+		{
+			p = descomprime(sck, (char *)NULL, &zip);
+			len = zip;
+			zip = 1;
+			if (len == -1)
+				return Info("Ha sido imposible hacer descomprime() (3)");
+			b = p + len;
+			hecho = 0;
+		}
+		else
+			hecho = 1;
+	} while(!hecho);
+#endif
+	sck->pos = b - sck->buffer;
+	return 0;
 }
 int completa_conexion(Sock *sck)
 {
@@ -613,7 +689,6 @@ int lee_socks() /* devuelve los bytes leídos */
 				else
 #endif
 					err = completa_conexion(SockActual);
-
 			}
 			else
 				envia_cola(SockActual);
@@ -660,9 +735,13 @@ int lee_socks() /* devuelve los bytes leídos */
 			{
 				char read[BUFSIZE];
 				int cop = 0;
-				cop = desencola(SockActual->recvQ, read, sizeof(read));
+				cop = copia_slot(SockActual->recvQ, read, sizeof(read));
+				//Debug("Creando mensaje %s", read);
 				if (cop > 0)
-					crea_mensaje(SockActual, read, cop);
+				{
+					if (crea_mensaje(SockActual, read, cop) < 0)
+						break;
+				}
 				else /* stop, por lo que sea */
 					break;
 				if (EsCerr(SockActual))

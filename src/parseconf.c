@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.12 2005-02-20 16:23:54 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.13 2005-03-14 14:18:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -27,15 +27,15 @@ struct Conf_ssl *conf_ssl = NULL;
 static int _test_server		(Conf *, int *);
 static int _test_db 			(Conf *, int *);
 static int _test_smtp		(Conf *, int *);
-static int _test_set			(Conf *, int *);
-static int _test_modulos		(Conf *, int *);
-static int _test_log			(Conf *, int *);
+static int _test_set		(Conf *, int *);
+static int _test_modulos	(Conf *, int *);
+static int _test_log		(Conf *, int *);
 #ifdef USA_SSL
-static int _test_ssl			(Conf *, int *);
+static int _test_ssl		(Conf *, int *);
 #endif
-static int _test_protocolo		(Conf *, int *);
+static int _test_protocolo	(Conf *, int *);
 
-static void _conf_server		(Conf *);
+static void _conf_server	(Conf *);
 static void _conf_db 		(Conf *);
 static void _conf_smtp		(Conf *);
 static void _conf_set		(Conf *);
@@ -43,7 +43,7 @@ static void _conf_log		(Conf *);
 #ifdef USA_SSL
 static void _conf_ssl		(Conf *);
 #endif
-static void _conf_modulos		(Conf *);
+static void _conf_modulos	(Conf *);
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
@@ -101,6 +101,79 @@ void libera_conf(Conf *seccion)
 		ircfree(seccion->archivo);
 	if (seccion->root)
 		ircfree(seccion);
+}
+void libera_server()
+{
+	if (!conf_server)
+		return;
+	ircfree(conf_server->addr);
+	ircfree(conf_server->host);
+	ircfree(conf_server->info);
+	ircfree(conf_server->password.local);
+	ircfree(conf_server->password.remoto);
+	bzero(conf_server, sizeof(struct Conf_server));
+}
+void libera_db()
+{
+	if (!conf_db)
+		return;
+	ircfree(conf_db->host);
+	ircfree(conf_db->login);
+	ircfree(conf_db->pass);
+	ircfree(conf_db->bd);
+	ircfree(conf_db->prefijo);
+	bzero(conf_db, sizeof(struct Conf_db));
+}
+void libera_smtp()
+{
+	if (!conf_smtp)
+		return;
+	ircfree(conf_smtp->host);
+	ircfree(conf_smtp->login);
+	ircfree(conf_smtp->pass);
+	bzero(conf_smtp, sizeof(struct Conf_smtp));
+}
+void libera_set()
+{
+	if (!conf_set)
+		return;
+	ircfree(conf_set->root);
+	ircfree(conf_set->admin);
+	ircfree(conf_set->red);
+	ircfree(conf_set->debug);
+	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
+	bzero(conf_set, sizeof(struct Conf_set));
+}
+void libera_log()
+{
+	if (!conf_log)
+		return;
+	ircfree(conf_log->archivo);
+	bzero(conf_log, sizeof(struct Conf_log));
+}
+#ifdef USA_SSL
+void libera_ssl()
+{
+	if (!conf_ssl)
+		return;
+	ircfree(conf_ssl->egd_path);
+	ircfree(conf_ssl->x_server_cert_pem);
+	ircfree(conf_ssl->x_server_key_pem);
+	ircfree(conf_ssl->trusted_ca_file);
+	ircfree(conf_ssl->cifrados);
+	bzero(conf_ssl, sizeof(struct Conf_ssl));
+}
+#endif
+void descarga_conf()
+{
+	libera_server();
+	libera_db();
+	libera_smtp();
+	libera_set();
+	libera_log();
+#ifdef USA_SSL
+	libera_ssl();
+#endif
 }
 #define pce(x) conferror("[%s:%i] " x, archivo, linea)
 /* parseconf
@@ -550,16 +623,6 @@ int _test_server(Conf *config, int *errores)
 		}
 	}
 #endif
-#ifdef USA_SSL
-	if ((eval = busca_entrada(config, "cifrados")))
-	{
-		if (!eval->data)
-		{
-			conferror("[%s:%s::%s::%i] La directriz cifrados esta vacia.", config->archivo, config->item, eval->item, eval->linea);
-			error_parcial++;
-		}
-	}
-#endif
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -576,15 +639,12 @@ void _conf_server(Conf *config)
 			conf_server->puerto = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "password"))
 		{
-			if (!conf_server->password)
-				da_Malloc(conf_server->password, struct Conf_server_password);
-			conf_server->password->local = conf_server->password->remoto = NULL;
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "local"))
-					ircstrdup(&conf_server->password->local, config->seccion[i]->seccion[p]->data);
+					ircstrdup(&conf_server->password.local, config->seccion[i]->seccion[p]->data);
 				else if (!strcmp(config->seccion[i]->seccion[p]->item, "remoto"))
-					ircstrdup(&conf_server->password->remoto, config->seccion[i]->seccion[p]->data);
+					ircstrdup(&conf_server->password.remoto, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "host"))
@@ -596,10 +656,6 @@ void _conf_server(Conf *config)
 #ifdef USA_ZLIB
 		else if (!strcmp(config->seccion[i]->item, "compresion"))
 			conf_server->compresion = atoi(config->seccion[i]->data);
-#endif
-#ifdef USA_SSL
-		else if (!strcmp(config->seccion[i]->item, "cifrados"))
-			ircstrdup(&conf_server->cifrados, config->seccion[i]->data);
 #endif
 		else if (!strcmp(config->seccion[i]->item, "puerto_escucha"))
 			conf_server->escucha = atoi(config->seccion[i]->data);
@@ -857,16 +913,16 @@ int _test_set(Conf *config, int *errores)
 			}
 		}
 	}
-	if (!(eval = busca_entrada(config, "cloak")))
+	if (!(eval = busca_entrada(config, "clave_cifrado")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz cloak.", config->archivo, config->item);
+		conferror("[%s:%s] No se encuentra la directriz clave_cifrado", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
-		if (eval->secciones != 3)
+		if (strlen(eval->data) > 32)
 		{
-			conferror("[%s:%s::%s::%i] Sólo se necesitan 3 claves, no %i.", config->archivo, config->item, eval->item, eval->secciones, eval->linea);
+			conferror("[%s:%s::%s::%i] La clave de cifrado es demasiado larga. Sólo puede tener 32 caracteres.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -899,29 +955,18 @@ void _conf_set(Conf *config)
 			ircstrdup(&conf_set->admin, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "reconectar"))
 		{
-			if (!conf_set->reconectar)
-				da_Malloc(conf_set->reconectar, struct Conf_set_reconectar);
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "intentos"))
-					conf_set->reconectar->intentos = atoi(config->seccion[i]->seccion[p]->data);
+					conf_set->reconectar.intentos = atoi(config->seccion[i]->seccion[p]->data);
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "intervalo"))
-					conf_set->reconectar->intervalo = atoi(config->seccion[i]->seccion[p]->data);
+					conf_set->reconectar.intervalo = atoi(config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "debug"))
 			ircstrdup(&conf_set->debug, config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "cloak"))
-		{
-			char tmp[512];
-			if (!conf_set->cloak)
-				da_Malloc(conf_set->cloak, struct Conf_set_cloak);
-			ircstrdup(&conf_set->cloak->clave1, config->seccion[i]->seccion[0]->item);
-			ircstrdup(&conf_set->cloak->clave2, config->seccion[i]->seccion[1]->item);
-			ircstrdup(&conf_set->cloak->clave3, config->seccion[i]->seccion[2]->item);
-			sprintf_irc(tmp, "%s:%s:%s", conf_set->cloak->clave1, conf_set->cloak->clave2, conf_set->cloak->clave3);
-			cloak_crc(tmp);
-		}
+		else if (!strcmp(config->seccion[i]->item, "clave_cifrado"))
+			strncpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
 	}
 }
 int _test_modulos(Conf *config, int *errores)
@@ -1120,6 +1165,14 @@ int _test_ssl(Conf *config, int *errores)
 			}
 		}
 	}
+	if ((eval = busca_entrada(config, "cifrados")))
+	{
+		if (!eval->data)
+		{
+			conferror("[%s:%s::%s::%i] La directriz cifrados esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -1157,7 +1210,10 @@ void _conf_ssl(Conf *config)
 				}
 			}
 		}
+		else if (!strcmp(config->seccion[i]->item, "cifrados"))
+			ircstrdup(&conf_ssl->cifrados, config->seccion[i]->data);
 	}
+	init_ssl();
 }
 #endif
 int _test_protocolo(Conf *config, int *errores)
@@ -1188,7 +1244,7 @@ void conferror(char *formato, ...)
 	strcat(buf, "\r\n");
 	fprintf(stderr, buf);	
 }
-void Info(char *formato, ...)
+int Info(char *formato, ...)
 {
 	char buf[BUFSIZE], txt[BUFSIZE];
 	struct tm *timeptr;
@@ -1201,31 +1257,7 @@ void Info(char *formato, ...)
 	vsprintf_irc(buf, txt, vl);
 	va_end(vl);
 	strcat(buf, "\r\n");
-	fprintf(stderr, buf);	
+	fprintf(stderr, buf);
+	return -1;
 }
 #endif
-void cloak_crc(char *tmp)
-{
-	char result[16];
-	MD5_CTX hash;
-	MDInit(&hash);
-	MDUpdate(&hash, tmp, strlen(tmp));
-	MDFinal(result, &hash);
-	sprintf_irc(conf_set->cloak->crc, "MD5:%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x%x",
-		(u_int)(result[0] & 0xf), (u_int)(result[0] >> 4),
-		(u_int)(result[1] & 0xf), (u_int)(result[1] >> 4),
-		(u_int)(result[2] & 0xf), (u_int)(result[2] >> 4),
-		(u_int)(result[3] & 0xf), (u_int)(result[3] >> 4),
-		(u_int)(result[4] & 0xf), (u_int)(result[4] >> 4),
-		(u_int)(result[5] & 0xf), (u_int)(result[5] >> 4),
-		(u_int)(result[6] & 0xf), (u_int)(result[6] >> 4),
-		(u_int)(result[7] & 0xf), (u_int)(result[7] >> 4),
-		(u_int)(result[8] & 0xf), (u_int)(result[8] >> 4),
-		(u_int)(result[9] & 0xf), (u_int)(result[9] >> 4),
-		(u_int)(result[10] & 0xf), (u_int)(result[10] >> 4),
-		(u_int)(result[11] & 0xf), (u_int)(result[11] >> 4),
-		(u_int)(result[12] & 0xf), (u_int)(result[12] >> 4),
-		(u_int)(result[13] & 0xf), (u_int)(result[13] >> 4),
-		(u_int)(result[14] & 0xf), (u_int)(result[14] >> 4),
-		(u_int)(result[15] & 0xf), (u_int)(result[15] >> 4));
-}

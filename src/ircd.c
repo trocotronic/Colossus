@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.22 2005-03-14 14:18:09 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.23 2005-03-14 14:20:39 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -151,7 +151,9 @@ void escucha_ircd()
 SOCKFUNC(inicia_ircd)
 {
 	inicio = time(0);
+#ifdef _WIN32
 	ChkBtCon(1, 1);
+#endif
 	timer_off("rircd", NULL);
 	canales = NULL;
 	protocolo->inicia();
