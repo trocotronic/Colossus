@@ -1,7 +1,7 @@
-## $Id: Makefile,v 1.8 2005-01-01 19:32:25 Trocotronic Exp $
+## $Id: Makefile,v 1.9 2005-02-19 16:09:06 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o main.o match.o md5.o modulos.o mysql.o \
-	parseconf.o protocolos.o smtp.o sprintf_irc.o ssl.o zlib.o
+	parseconf.o protocolos.o smtp.o socks.o soporte.o sprintf_irc.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'RM=${RM}'
@@ -47,6 +47,10 @@ parseconf.o: parseconf.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c parseconf.c
 smtp.o: smtp.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c smtp.c
+socks.o: socks.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c socks.
+soporte.o: soporte.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c soporte.c
 sprintf_irc.o: sprintf_irc.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c sprintf_irc.c
 ssl.o: ssl.c $(INCLUDES)

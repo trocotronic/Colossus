@@ -3,7 +3,8 @@
 #undef DPATH
 #undef FORCE_CORE
 #undef GETTIMEOFDAY
-#undef GOT_STRCASECMP
+#undef HAVE_STRCASECMP
+#undef HAVE_STRNCASECMP
 #undef HUB
 #undef INET6
 #undef LINK_DINAMICO

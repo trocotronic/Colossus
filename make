@@ -1,4 +1,4 @@
-## $Id: make,v 1.10 2005-02-18 22:12:11 Trocotronic Exp $
+## $Id: make,v 1.11 2005-02-19 16:09:04 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -61,7 +61,7 @@ LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib 
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:colossus.def /implib:colossus.lib
 EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
-	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) $(SSLOBJ) $(UDBOBJ)
+	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ $(ZLIBOBJ) $(SSLOBJ) $(UDBOBJ)
 MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL 
 #	SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL
@@ -156,6 +156,9 @@ src/smtp.obj: src/smtp.c $(INCLUDES)
         
 src/socks.obj: src/socks.c $(INCLUDES)
 	$(CC) $(CFLAGS) src/socks.c 
+	
+src/soporte.obj: src/soporte.c $(INCLUDES)
+	$(CC) $(CFLAGS) src/soporte.c
         
 src/sprintf_irc.obj: src/sprintf_irc.c $(INCLUDES)
         $(CC) $(CFLAGS) src/sprintf_irc.c        
