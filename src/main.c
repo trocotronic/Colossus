@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.7 2004-09-17 18:36:50 Trocotronic Exp $ 
+ * $Id: main.c,v 1.8 2004-09-17 18:39:54 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -912,7 +912,7 @@ int main(int argc, char *argv[])
 	signal(SIGSEGV, CleanUpSegv);
 #else
 	signal(SIGHUP, refresca);
-	signal(SIGTERM, cierra_colossus(0));
+	signal(SIGTERM, cierra_colossus);
 	signal(SIGINT, reinicia);
 #endif
 #ifndef _WIN32
