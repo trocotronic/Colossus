@@ -8,7 +8,7 @@ fi
 AC_CONFIG_HEADER(include/setup.h)
 AC_PROG_CC
 if test "$ac_cv_prog_gcc" = "yes"; then
-CFLAGS="$CFLAGS -funsigned-char"
+CFLAGS="$CFLAGS -funsigned-char -Wall"
 AC_CACHE_CHECK(if gcc has a working -pipe, ac_cv_pipe, [
 	save_cflags="$CFLAGS"
 	CFLAGS="$CFLAGS -pipe"

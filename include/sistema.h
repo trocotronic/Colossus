@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.5 2005-02-19 18:07:04 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.6 2005-02-19 18:21:48 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -108,6 +108,7 @@
 #define u_int unsigned int
 #define u_short unsigned short
 #define BadPtr(x) (!(x) || (*(x) == '\0'))
+
 #ifdef NEED_BZERO
 #define bzero(x,y) memset(x,0,y)
 #endif

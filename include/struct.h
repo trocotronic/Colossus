@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.22 2005-02-19 17:46:13 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.23 2005-02-19 18:21:49 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -313,7 +313,11 @@ extern void CleanUpSegv(int);
 #endif
 extern void reinicia();
 extern int pregunta(char *);
-extern void refresca();
+#ifndef _WIN32
+static VOIDSIG refresca()
+#else
+VOIDSIG refresca()
+#endif
 extern int copyfile(char *, char *);
 #ifdef USA_SSL
 #define SSLFLAG_FAILIFNOCERT 	0x1

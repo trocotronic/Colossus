@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.30 2005-02-19 17:46:14 Trocotronic Exp $ 
+ * $Id: main.c,v 1.31 2005-02-19 18:21:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -636,46 +636,6 @@ void comprueba_timers()
 				timer_off(aux->nombre, aux->sck);
 		}
 	}
-}
-char *str_replace(char *str, char orig, char rep)
-{
-	static char rem[BUFSIZE];
-	char *remp;
-	remp = &rem[0];
-	strcpy(remp, str);
-	while (*remp)
-	{
-		if (*remp == orig)
-			*remp = rep;
-		remp++;
-	}
-	return rem;
-}
-char *strtolower(char *str)
-{
-	static char tol[BUFSIZE];
-	char *tolo;
-	tolo = &tol[0];
-	strcpy(tolo, str);
-	while (*tolo)
-	{
-		*tolo = ToLower(*tolo);
-		tolo++;
-	}
-	return tol;
-}
-char *strtoupper(char *str)
-{
-	static char tou[BUFSIZE];
-	char *toup;
-	toup = &tou[0];
-	strcpy(toup, str);
-	while (*toup)
-	{
-		*toup = ToUpper(*toup);
-		toup++;
-	}
-	return tou;
 }
 char *implode(char *array[], int total, int parte, int hasta)
 {
