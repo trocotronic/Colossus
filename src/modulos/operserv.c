@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.10 2005-01-01 20:43:27 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.11 2005-01-01 20:45:35 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -214,7 +214,7 @@ int inserta_noticia(char *botname, char *noticia, time_t fecha, int id)
 	not->botname = strdup(botname);
 	not->noticia = strdup(noticia);
 	not->fecha = fecha ? fecha : time(0);
-	not->cl = cl ? cl = gn->cl;
+	not->cl = cl ? cl : gn->cl;
 	if (!id)
 	{
 		_mysql_query("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, not->fecha);
