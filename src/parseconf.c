@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.6 2004-09-23 19:19:35 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.7 2004-09-23 19:27:58 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -366,7 +366,7 @@ int _test_server(Conf *config, int *errores)
 			conferror("[%s:%s::%s::%i] La directriz addr esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
-		if (!(addr = gethostbyname(eval->data)))
+		if (!EsIp(eval->data) && !(addr = gethostbyname(eval->data)))
 		{
 			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
@@ -570,7 +570,7 @@ int _test_db(Conf *config, int *errores)
 			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
-		if (!(db = gethostbyname(eval->data)))
+		if (!EsIp(eval->data) && !(db = gethostbyname(eval->data)))
 		{
 			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
@@ -682,7 +682,7 @@ int _test_smtp(Conf *config, int *errores)
 			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
-		if (!(smtp = gethostbyname(eval->data)))
+		if (!EsIp(eval->data) && !(smtp = gethostbyname(eval->data)))
 		{
 			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
