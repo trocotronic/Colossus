@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.24 2005-02-19 19:51:27 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.25 2005-02-19 19:54:52 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -304,20 +304,16 @@ extern void conferror(char *, ...);
 extern void sockwritev(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1
-extern void cierra_colossus(int);
+extern VOIDSIG cierra_colossus(int);
 extern void ircd_log(int, char *, ...);
 #define ircfree(x) if (x) Free(x); x = NULL
 #define PID "colossus.pid"
 #ifdef _WIN32
 extern void CleanUpSegv(int);
 #endif
-extern void reinicia();
+extern VOIDSIG reinicia();
 extern int pregunta(char *);
-#ifndef _WIN32
-extern static VOIDSIG refresca();
-#else
 extern VOIDSIG refresca();
-#endif
 extern int copyfile(char *, char *);
 #ifdef USA_SSL
 #define SSLFLAG_FAILIFNOCERT 	0x1

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.31 2005-02-19 18:21:49 Trocotronic Exp $ 
+ * $Id: main.c,v 1.32 2005-02-19 19:54:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -164,11 +164,7 @@ void cierra_todo()
 	WSACleanup();
 #endif
 }
-#ifndef _WIN32
-static VOIDSIG refresca()
-#else
 VOIDSIG refresca()
-#endif
 {
 	Conf config;
 #ifdef	POSIX_SIGNALS
