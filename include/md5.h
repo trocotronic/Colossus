@@ -1,5 +1,5 @@
 /*
- * $Id: md5.h,v 1.4 2004-10-01 18:55:20 Trocotronic Exp $ 
+ * $Id: md5.h,v 1.5 2004-10-01 19:06:11 Trocotronic Exp $ 
  */
  
 #define MDInit MD5_Init

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.4 2004-10-01 18:55:20 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.5 2004-10-01 19:05:36 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
