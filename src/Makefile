@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.12 2005-03-14 20:08:32 Trocotronic Exp $
+## $Id: Makefile,v 1.13 2005-03-14 20:09:49 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o main.o match.o md5.o modulos.o mysql.o \
 	parseconf.o protocolos.o smtp.o socks.o soporte.o sprintf_irc.o ssl.o zlib.o
@@ -61,5 +61,5 @@ zlib.o: zlib.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c zlib.c
 clean:
 	$(RM) -f *.o *.so *~ core colossus; \
-	cd modulos; make clean \
+	cd modulos; make clean; \
 	cd protocolos; make clean
