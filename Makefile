@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.10 2004-09-17 23:48:38 Trocotronic Exp $
+## $Id: Makefile,v 1.11 2004-09-17 23:51:05 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
@@ -29,7 +29,7 @@ clean:
 	done
 install: all
 	$(INSTALL) -m 0700 -d ~/Colossus
-	$(INSTALL) -m 0700 src/colossus ~/Colossus/src/colossus
+	mv src/colossus ~/Colossus/colossus
 	$(TOUCH) ~/Colossus/colossus.conf
 	chmod 0600 ~/Colossus/colossus.conf
 	$(INSTALL) -m 0700 servicios ~/Colossus
