@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.11 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.12 2004-09-27 11:24:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -873,6 +873,7 @@ IRCFUNC(m_server)
 	else
 	{
 		protocol = NULL;
+		opts = "(null)";
 		inf = parv[parc - 1];
 	}
 	if (numeric)
