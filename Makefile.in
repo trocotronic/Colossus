@@ -1,11 +1,12 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.1 2005-02-18 23:08:45 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.2 2005-02-19 17:53:19 Trocotronic Exp $
 #*/
 
 CC=@CC@
 INCLUDEDIR=../include
 IRCDLIBS=@IRCDLIBS@
 XCFLAGS=@CFLAGS@
+OPENSSLPATH=@OPENSSLPATH@
 CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS) @LDFLAGS@
 
 SHELL=/bin/sh
@@ -61,3 +62,30 @@ install: all
 	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
 	$(INSTALL) -m 0700 -d ~/Colossus/protocolos
 	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos
+
+pem:	src/ssl.cnf
+	@echo "Generating certificate request .. "
+	$(OPENSSLPATH) req -new \
+              -config src/ssl.cnf -out server.req.pem \
+              -keyout server.key.pem -nodes
+	@echo "Generating self-signed certificate .. "
+	$(OPENSSLPATH) req -x509 -days 365 -in server.req.pem \
+               -key server.key.pem -out server.cert.pem
+	@echo "Generating fingerprint .."
+	$(OPENSSLPATH) x509 -subject -dates -fingerprint -noout \
+		-in server.cert.pem
+	@echo "Setting o-rwx & g-rwx for files... "
+	chmod o-rwx server.req.pem server.key.pem server.cert.pem
+	chmod g-rwx server.req.pem server.key.pem server.cert.pem
+	@echo "Done!. If you want to encrypt the private key, run"
+	@echo "make encpem"
+
+encpem: server.key.pem
+	@echo "Encrypting server key .."
+	$(OPENSSLPATH) rsa -in server.key.pem -out server.key.c.pem -des3
+	-@if [ -f server.key.c.pem ] ; then \
+		echo "Replacing unencrypted with encrypted .." ; \
+		cp server.key.c.pem server.key.pem ; \
+		rm -f server.key.c.pem ; \
+	fi
+

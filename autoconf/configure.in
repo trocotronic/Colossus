@@ -23,6 +23,7 @@ fi
 AC_PATH_PROG(RM,rm)
 AC_PATH_PROG(CP,cp)
 AC_PATH_PROG(TOUCH,touch)
+AC_PATH_PROG(OPENSSLPATH,openssl)
 AC_PATH_PROG(INSTALL,install)
 
 dnl Checks for libraries.

@@ -114,9 +114,8 @@ AC_MSG_CHECKING(para zlib)
 	if test "$zlibdir" != "/usr" ; then
              LDFLAGS="$LDFLAGS -L$zlibdir/lib";
 	fi 
-        HAVE_ZLIB=yes
+        AC_DEFINE(USA_ZLIB)
     fi
-    AC_SUBST(HAVE_ZLIB)
 ],
 )
 ])

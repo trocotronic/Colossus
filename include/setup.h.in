@@ -26,3 +26,4 @@
 #undef UNDERSCORE
 #undef UNISTDH
 #undef USA_SSL
+#undef USA_ZLIB
