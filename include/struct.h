@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.28 2005-02-20 15:34:09 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.29 2005-02-20 17:13:05 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -12,7 +12,7 @@
 #include "pthreadMS.h"
 #else
 #define DWORD int
-#include <mysql.h>
+#include <mysql/mysql.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>

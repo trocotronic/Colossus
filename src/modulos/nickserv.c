@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.13 2005-02-20 15:34:10 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.14 2005-02-20 17:13:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -268,7 +268,7 @@ BOTFUNC(nickserv_help)
 	if (params < 2)
 	{
 		response(cl, CLI(nickserv), "\00312%s\003 se encarga de gestionar los nicks de la red para evitar robos de identidad.", nickserv.hmod->nick);
-		response(cl, CLI(nickserv), "El registro de tu nick permite que otros lo utilicen, mostrarte como propietario y aventajarte de cuantiosas oportunidades.");
+		response(cl, CLI(nickserv), "El registro de tu nick permite que otros no lo utilicen, mostrarte como propietario y aventajarte de cuantiosas oportunidades.");
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Comandos disponibles:");
 		response(cl, CLI(nickserv), "\00312REGISTER\003 Registra tu nick.");

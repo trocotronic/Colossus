@@ -1,19 +1,3 @@
-dnl aclocal.m4 generated automatically by aclocal 1.4-p4
-
-dnl Copyright (C) 1994, 1995-8, 1999 Free Software Foundation, Inc.
-dnl This file is free software; the Free Software Foundation
-dnl gives unlimited permission to copy and/or distribute it,
-dnl with or without modifications, as long as this notice is preserved.
-
-dnl This program is distributed in the hope that it will be useful,
-dnl but WITHOUT ANY WARRANTY, to the extent permitted by law; without
-dnl even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-dnl PARTICULAR PURPOSE.
-
-dnl Macro: unet_CHECK_TYPE_SIZES
-dnl
-dnl Check the size of several types and define a valid int16_t and int32_t.
-dnl
 AC_DEFUN(CHECK_TYPE_SIZES,
 [dnl Check type sizes
 AC_CHECK_SIZEOF(short)
@@ -45,8 +29,6 @@ if test "$ac_cv_sizeof_rlim_t" = 8 ; then
 AC_DEFINE(LONG_LONG_RLIM_T)
 fi
 ])
-
-dnl the following 2 macros are based on CHECK_SSL by Mark Ethan Trostler <trostler@juniper.net> 
 
 AC_DEFUN([CHECK_SSL],
 [
@@ -89,8 +71,8 @@ AC_MSG_CHECKING(para openssl)
 
 AC_DEFUN([CHECK_ZLIB],
 [
-AC_ARG_ENABLE(ziplinks,
-[AC_HELP_STRING([--enable-ziplinks],[enable ziplinks will check /usr/local /usr /usr/pkg])],
+AC_ARG_ENABLE(zlib,
+[AC_HELP_STRING([--enable-zlib],[enable zlib will check /usr/local /usr /usr/pkg])],
 [ 
 AC_MSG_CHECKING(para zlib)
     for dir in $enableval /usr/local /usr /usr/pkg; do
@@ -118,4 +100,11 @@ AC_MSG_CHECKING(para zlib)
     fi
 ],
 )
+])
+
+AC_DEFUN([CHECK_MYSQL],
+[
+AC_MSG_CHECKING(para mysql)
+LDFLAGS="$LDFLAGS -L/usr/lib/mysql";
+IRCDLIBS="$IRCDLIBS-lmysqlclient ";
 ])
