@@ -1,5 +1,5 @@
 /*
- * $Id: comandos.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ * $Id: comandos.h,v 1.3 2004-09-23 17:00:42 Trocotronic Exp $ 
  */
 
 #define MSG_PRIVATE	"PRIVMSG"	/* PRIV */
@@ -178,8 +178,8 @@
 #define TOK_SETHOST 	"AA"	/* 127 4ever !;) */
 #define MSG_NACHAT  	"NACHAT"	/* netadmin chat */
 #define TOK_NACHAT  	"AC"	/* *beep* */
-#define MSG_SETIDENT    "SETIDENT"
-#define TOK_SETIDENT    "AD"
+#define MSG_SETIDENT "SETIDENT"
+#define TOK_SETIDENT "AD"
 #define MSG_SETNAME	"SETNAME"	/* set GECOS */
 #define TOK_SETNAME	"AE"	/* its almost unreeaaall... */
 #define MSG_LAG		"LAG"	/* Lag detect */
@@ -215,7 +215,7 @@
 #define MSG_TSCTL 	"TSCTL"
 #define TOK_TSCTL 	"AW"
 #define MSG_SVSJOIN 	"SVSJOIN"
-#define TOK_SVSJOIN 	"BR"
+#define TOK_SVSJOIN 	"BX"
 #define MSG_SAJOIN 	"SAJOIN"
 #define TOK_SAJOIN 	"AX"
 #define MSG_SVSPART 	"SVSPART"
@@ -284,3 +284,9 @@
 #define TOK_SVS3MODE "vv"
 #endif
 
+#define MSG_SDESC "SDESC"
+#define TOK_SDESC "AG"
+#define MSG_LICENCE "LICENCE"
+#define TOK_LICENCE "AK"
+#define MSG_SVSNLINE "SVSNLINE"
+#define TOK_SVSNLINE "BR"
