@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.2 2004-09-11 16:08:05 Trocotronic Exp $
+## $Id: Makefile,v 1.3 2004-09-17 23:33:52 Trocotronic Exp $
 
 INCLUDES = ../include/bdd.h ../include/comandos.h \
 	../include/flags.h ../include/ircd.h ../include/md5.h \
@@ -30,3 +30,5 @@ proxyserv.so: proxyserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o proxyserv.so proxyserv.c
 linkserv.so: linkserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o linkserv.so linkserv.c
+clean:
+	$(RM) -f *.o *.so *~ core

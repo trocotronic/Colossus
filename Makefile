@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.6 2004-09-17 23:33:52 Trocotronic Exp $
+## $Id: Makefile,v 1.7 2004-09-17 23:34:42 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
@@ -25,4 +25,3 @@ clean:
 		echo "Cleaning $$i";\
 		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
 	done
-	fi
