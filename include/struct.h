@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.26 2005-02-19 20:08:50 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.27 2005-02-19 20:14:26 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -24,6 +24,9 @@
 #include <sys/time.h>
 #include <pthread.h>
 #endif /* _WIN32 */
+#ifdef FCNTLH
+#include <fcntl.h>
+#endif
 #include <stdio.h>
 #ifdef STDLIBH
 #include <stdlib.h>

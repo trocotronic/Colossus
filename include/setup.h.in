@@ -2,6 +2,7 @@
 #undef DEFAULT_PERMISSIONS
 #undef DPATH
 #undef DYNAMIC_LINKING
+#undef FCNTLH
 #undef FORCE_CORE
 #undef GETTIMEOFDAY
 #undef HUB

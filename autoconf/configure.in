@@ -110,7 +110,7 @@ AC_CHECK_HEADER(stdlib.h,AC_DEFINE(STDLIBH))
 AC_CHECK_HEADER(sys/syslog.h,AC_DEFINE(SYSSYSLOGH))
 AC_CHECK_HEADER(unistd.h,AC_DEFINE(UNISTDH))
 AC_CHECK_HEADER(string.h,AC_DEFINE(STRINGH))
-AC_CHECK_HEADER(strings.h,AC_DEFINE(STRINGSH))
+AC_CHECK_HEADER(fcntl.h,AC_DEFINE(FCNTLH))
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

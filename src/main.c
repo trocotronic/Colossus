@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.33 2005-02-19 20:08:51 Trocotronic Exp $ 
+ * $Id: main.c,v 1.34 2005-02-19 20:14:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,7 +13,6 @@
 #ifdef USA_ZLIB
 #include "zlib.h"
 #endif
-#include <fcntl.h>
 #include <signal.h>
 #include <sys/stat.h>
 #ifdef _WIN32
@@ -24,8 +23,7 @@
 #include <utime.h>
 #include <sys/resource.h>
 #endif
-#include <fcntl.h>
-#undef USA_CONSOLA
+
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 Sock *SockActual;
