@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.7 2004-09-17 23:34:42 Trocotronic Exp $
+## $Id: Makefile,v 1.8 2004-09-17 23:46:42 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
@@ -8,6 +8,7 @@ CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS)
 SUBDIRS=src
 LDFLAGS=
 RM=/bin/rm
+INSTALL=/usr/bin/install
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'RM=${RM}' 'LDFLAGS=$(LDFLAGS)'
 all:	build
@@ -19,9 +20,18 @@ build:
 	@echo ' __________________________________________________ '
 	@echo '| Compilación terminada.                           |'
 	@echo '|__________________________________________________|'
+	install
 clean:
 	$(RM) -f *~ \#* core *.orig include/*.orig
 	@for i in $(SUBDIRS); do \
 		echo "Cleaning $$i";\
 		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
 	done
+install: all
+	$(INSTALL) -m 0700 -d ~/Colossus
+	$(INSTALL) -m 0700 src/colossus ~/Colossus/src/colossus
+	$(TOUCH) ~/Colossus/colossus.conf
+	chmod 0600 ~/Colossus/colossus.conf
+	$(INSTALL) -m 0700 servicios ~/Colossus
+	$(INSTALL) -m 0700 -d ~/Colossus/modulos
+	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
