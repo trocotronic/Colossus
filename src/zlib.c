@@ -1,9 +1,9 @@
 /*
- * $Id: zlib.c,v 1.6 2005-02-18 22:12:18 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.7 2005-02-20 16:43:10 Trocotronic Exp $ 
  */
  
-#ifdef USA_ZLIB
 #include "struct.h"
+#ifdef USA_ZLIB
 #include "zlib.h"
 #define ZIP_BUFFER_SIZE	ZIP_MAXIMUM + BUFSIZE
 #define UNZIP_BUFFER_SIZE	6 * ZIP_BUFFER_SIZE
