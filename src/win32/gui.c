@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.2 2004-10-02 22:48:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -48,7 +48,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	WSADATA wsaData;
 	InitCommonControls();
 	WM_TASKBARCREATED = RegisterWindowMessage("TaskbarCreated");
-	hWnd = CreateDialog(hInstance, MAKEINTRESOURCE(COLOSSUS), 0, (DLGPROC)MainDLG);
+	hWnd = CreateDialog(hInstance, "COLOSSUS", 0, (DLGPROC)MainDLG);
 	hwMain = hWnd;
 	hInst = hInstance; 
 	atexit(CleanUp);
@@ -131,13 +131,11 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			ShowWindow(hDlg, SW_HIDE);
 			SetWindowText(hDlg, COLOSSUS_VERSION);
-			/* Systray popup menu set the items to point to the other menus*/
-			hTray = GetSubMenu(LoadMenu(hInst, MAKEINTRESOURCE(MENU_SYSTRAY)),0);
+			hTray = GetSubMenu(LoadMenu(hInst, MAKEINTRESOURCE(MENU_SYSTRAY)), 0);
 			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_SMALL, 
-				(LPARAM)(HICON)LoadImage(NULL, "src/icon1.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE));
+				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE));
 			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_BIG, 
-				(LPARAM)(HICON)(HICON)LoadImage(NULL, "src/icon1.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
-
+				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
 			return TRUE;
 		}
 		case WM_CLOSE: 
@@ -204,7 +202,6 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					if (IsDlgButtonChecked(hDlg, BT_CON))
 					{
 						ChkBtCon(1, 1);
-						reth = 0;
 						abre_sock_ircd();
 					}
 					else
@@ -256,8 +253,8 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 }
 void ChkBtCon(int val, int block)
 {
-	CheckDlgButton(hwMain, BT_CON, val ? BST_CHECKED : BST_UNCHECKED);
 	SetDlgItemText(hwMain, BT_CON, val ? "Desconectar" : "Conectar");
+	CheckDlgButton(hwMain, BT_CON, val && !block ? BST_CHECKED : BST_UNCHECKED);
 	EnableWindow(GetDlgItem(hwMain, BT_CON), block ? FALSE : TRUE);
 }
 LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
@@ -293,7 +290,7 @@ void conferror(char *formato, ...)
 	strcat(buf, "\r\n");
 	if (!hwConfError)
 	{
-		hwConfError = CreateDialog(hInst, MAKEINTRESOURCE(CONFERROR), 0, (DLGPROC)ConfErrorDLG);
+		hwConfError = CreateDialog(hInst, "CONFERROR", 0, (DLGPROC)ConfErrorDLG);
 		ShowWindow(hwConfError, SW_SHOW);
 		texto = (char *)Malloc(sizeof(char) * (strlen(buf) + 1));
 		strcpy(texto, buf);

@@ -1,14 +1,12 @@
 /*
- * $Id: resource.h,v 1.1 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: resource.h,v 1.2 2004-10-02 22:48:45 Trocotronic Exp $ 
  */
 
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by colossus.rc
 //
-#define IDS_STRING1                     1
-#define COLOSSUS                        2
-#define CONFERROR			     3
+#define VER_COLOSSUS                    1
 #define ICO_MAIN                        129
 #define MENU_SYSTRAY                    130
 #define MENU_CONFIG			     131
@@ -23,14 +21,16 @@
 #define IDM_AYUDA                       40031
 #define IDM_SHUTDOWN                    40032
 #define IDM_CONFIG                      40033
+#define IDC_STATIC                      -1
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        106
-#define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1000
+#define _APS_NO_MFC                     1
+#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_COMMAND_VALUE         40033
+#define _APS_NEXT_CONTROL_VALUE         1109
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
