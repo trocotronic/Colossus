@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.20 2005-03-21 12:38:03 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.21 2005-03-21 12:40:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -838,7 +838,7 @@ BOTFUNC(nickserv_drop)
 int nickserv_baja(char *nick, char opt)
 {
 	Cliente *al;
-	int opts;
+	int opts = 0;
 	if (!opt && (opts = atoi(_mysql_get_registro(NS_MYSQL, nick, "opts"))) & NS_OPT_NODROP)
 		return 1;
 	al = busca_cliente(nick, NULL);

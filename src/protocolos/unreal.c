@@ -824,7 +824,9 @@ void set(Conf *config)
 			}
 		}
 	}
+#ifdef UDB
 	proc(comprueba_opts);
+#endif
 }
 int carga(Conf *config)
 {
