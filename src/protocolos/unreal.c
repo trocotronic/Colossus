@@ -304,7 +304,7 @@ ProtInfo info = {
 #define U_HIDE 		0x800
 #define U_NETADMIN 	0x1000
 #define U_COADMIN 	0x2000
-#define U_WHOIS 		0x4000
+#define U_WHOIS 	0x4000
 #define U_KIX 		0x8000
 #define U_BOT 		0x10000
 #define U_SECURE 	0x20000
@@ -322,16 +322,16 @@ ProtInfo info = {
 #define U_SHOWIP	0x100000000
 #endif
 
-#define C_CHANOP		0x1
+#define C_CHANOP	0x1
 #define C_VOICE		0x2
-#define C_PRIVATE		0x4
-#define C_SECRET		0x8
+#define C_PRIVATE	0x4
+#define C_SECRET	0x8
 #define C_MODERATED  	0x10
 #define C_TOPICLIMIT 	0x20
 #define C_CHANOWNER	0x40
 #define C_CHANPROT	0x80
-#define C_HALFOP		0x100
-#define C_EXCEPT		0x200
+#define C_HALFOP	0x100
+#define C_EXCEPT	0x200
 #define C_BAN		0x400
 #define C_INVITEONLY 	0x800
 #define C_NOPRIVMSGS 	0x1000
@@ -340,17 +340,17 @@ ProtInfo info = {
 #define C_RGSTR		0x8000
 #define C_RGSTRONLY 	0x10000
 #define C_LINK		0x20000
-#define C_NOCOLOR		0x40000
+#define C_NOCOLOR	0x40000
 #define C_OPERONLY   	0x80000
 #define C_ADMONLY   	0x100000
 #define C_NOKICKS   	0x200000
 #define C_STRIP	   	0x400000
-#define C_NOKNOCK		0x800000
+#define C_NOKNOCK	0x800000
 #define C_NOINVITE  	0x1000000
 #define C_FLOODLIMIT	0x2000000
-#define C_MODREG		0x4000000
+#define C_MODREG	0x4000000
 #define C_STRIPBADWORDS	0x8000000
-#define C_NOCTCP		0x10000000
+#define C_NOCTCP	0x10000000
 #define C_AUDITORIUM	0x20000000
 #define C_ONLYSECURE	0x40000000
 #define C_NONICKCHANGE	0x80000000
@@ -2116,6 +2116,7 @@ long base64dec(char *b64)
 	else
 		return 0;
 }
+#ifdef UDB
 void dale_cosas(Cliente *cl)
 {
 	Udb *reg, *bloq;
@@ -2138,3 +2139,4 @@ void dale_cosas(Cliente *cl)
 	else
 		procesa_umodos(cl, "+S");
 }
+#endif

@@ -677,7 +677,7 @@ void inicia()
 	//sendto_serv(":%s PROTOCTL REQ :TOKEN", me.nombre);
 	ircstrdup(&me.trio, buf);
 	sendto_serv("PROTOCTL REQ :TOKEN");
-	sendto_serv("PASS :%s", conf_server->password->local);
+	sendto_serv("PASS :%s", conf_server->password.local);
 	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
 }
 SOCKFUNC(parsea)
@@ -959,12 +959,17 @@ IRCFUNC(m_nick)
 			p_kill(al, &me, "Nick protegido.");
 			renick_bot(parv[1]);
 		}
-		senyal2(SIGN_NICK, al, NULL);
+		senyal2(SIGN_POST_NICK, cl, 0);
+		if (parc > 9)
+			senyal2(SIGN_UMODE, cl, parv[6]);
 	}
 	else
 	{
-		senyal2(SIGN_NICK, cl, parv[1]);
+		senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		if (strcasecmp(parv[1], cl->nombre))
+			procesa_umodos(cl, "-r");
 		cambia_nick(cl, parv[1]);
+		senyal2(SIGN_POST_NICK, cl, 1);
 	}
 	return 0;
 }
@@ -1019,7 +1024,7 @@ IRCFUNC(m_ping)
 }
 IRCFUNC(m_pass)
 {
-	if (strcmp(parv[1], conf_server->password->remoto))
+	if (strcmp(parv[1], conf_server->password.remoto))
 	{
 		fecho(FERR, "Contraseñas incorrectas");
 		sockclose(sck, LOCAL);

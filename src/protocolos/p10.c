@@ -937,8 +937,11 @@ IRCFUNC(m_nick)
 	}
 	else
 	{
-		senyal2(SIGN_NICK, cl, parv[1]);
+		senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		if (strcasecmp(parv[1], cl->nombre))
+			procesa_umodos(cl, "-r");
 		cambia_nick(cl, parv[1]);
+		senyal2(SIGN_POST_NICK, cl, 1);
 	}
 	return 0;
 }

@@ -1,10 +1,10 @@
-## $Id: Makefile.in,v 1.2 2005-02-19 00:20:52 Trocotronic Exp $
+## $Id: Makefile.in,v 1.3 2005-03-14 14:32:22 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
 	../include/sprintf_irc.h ../include/struct.h
-R_MODULES=unreal.so p10.so
-COMMANDS=unreal.o p10.o
+R_MODULES=unreal.so p10.so redhispana.so
+COMMANDS=unreal.o p10.o redhispana.o
 MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@
 all: build
@@ -15,6 +15,8 @@ unreal.so: unreal.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o unreal.so unreal.c
 p10.so: p10.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o p10.so p10.c
+redhispana.so: redhispana.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o redhispana.so redhispana.c
 
 clean:
 	$(RM) -f *.o *.so *~ core
