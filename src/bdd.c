@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.10 2004-10-01 19:47:04 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.11 2004-10-01 19:57:05 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -388,7 +388,7 @@ u_long obtiene_hash(Udb *bloq)
 u_long lee_hash(int id)
 {
 	FILE *fp;
-	u_long hash = 0L;
+	u_int hash = 0;
 	char lee[9];
 	if (!(fp = fopen(DB_DIR "hash", "r")))
 		return 0L;
@@ -396,9 +396,9 @@ u_long lee_hash(int id)
 	bzero(lee, 9);
 	fread(lee, 1, 8, fp);
 	fclose(fp);
-	if (!sscanf(lee, "%X", (u_int *)&hash))
+	if (!sscanf(lee, "%X", &hash))
 		return 0L;
-	return hash;
+	return (u_long)hash;
 }
 int actualiza_hash(Udb *bloque)
 {

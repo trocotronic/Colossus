@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.20 2004-10-01 19:25:34 Trocotronic Exp $ 
+ * $Id: main.c,v 1.21 2004-10-01 19:59:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -873,6 +873,9 @@ int main(int argc, char *argv[])
 #endif
 #ifdef USA_ZLIB
 	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
+#endif
+#ifdef USA_SSL
+	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
 #endif
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
 	fprintf(stderr, "\t\t(c)2004\n");
