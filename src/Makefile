@@ -1,7 +1,7 @@
-## $Id: Makefile,v 1.6 2004-12-31 12:27:58 Trocotronic Exp $
+## $Id: Makefile,v 1.7 2004-12-31 19:25:49 Trocotronic Exp $
 
-OBJS=bdd.o flags.o hash.o ircd.o main.o match.o \
-	md5.o modulos.o mysql.o parseconf.o smtp.o sprintf_irc.o ssl.o zlib.o
+OBJS=bdd.o flags.o hash.o ircd.o main.o match.o md5.o \
+	modulos.o protocolos.o mysql.o parseconf.o smtp.o sprintf_irc.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'RM=${RM}'
@@ -41,6 +41,8 @@ md5.o: md5.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c md5.c
 modulos.o: modulos.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c modulos.c
+protocolos.o: protocolos.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c protocolos.c
 mysql.o: mysql.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c mysql.c
 parseconf.o: parseconf.c $(INCLUDES)

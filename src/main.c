@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.25 2004-12-31 12:27:57 Trocotronic Exp $ 
+ * $Id: main.c,v 1.26 2004-12-31 19:25:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1044,7 +1044,7 @@ void resuelve_host(char **destino, char *ip)
 #ifdef _WIN32
 	_beginthread(dominum, 0, aux);
 #else
-	pthread_create(&id, NULL, dominum, aux);
+	pthread_create(&id, NULL, (void *)dominum, (void *)aux);
 #endif
 }
 char *decode_ip(char *buf)
@@ -1176,15 +1176,13 @@ double microtime()
 void timer(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *args, size_t sizearg)
 {
 	Timer *aux;
-	aux = (Timer *)Malloc(sizeof(Timer));
+	da_Malloc(aux, Timer);
 	aux->nombre = strdup(nombre);
 	aux->sck = sck;
 	aux->cuando = microtime() + cada;
 	aux->veces = veces;
 	aux->cada = cada;
-	aux->lleva = 0;
 	aux->func = func;
-	aux->args = NULL;
 	if (args)
 	{
 		aux->args = Malloc(sizearg);
@@ -1216,17 +1214,19 @@ int timer_off(char *nombre, Sock *sck)
 void comprueba_timers()
 {
 	Timer *aux, *sig;
+	double ms;
+	ms = microtime();
 	for (aux = timers; aux; aux = sig)
 	{
 		sig = aux->sig;
-		if (aux->cuando < microtime())
+		if (aux->cuando < ms)
 		{
 			if (aux->args)
 				aux->func(aux->args);
 			else
 				aux->func();
 			aux->lleva++;
-			aux->cuando = microtime() + aux->cada;
+			aux->cuando = ms + aux->cada;
 			if (aux->lleva == aux->veces)
 				timer_off(aux->nombre, aux->sck);
 		}
@@ -1350,14 +1350,14 @@ typedef struct
 	double valors[MAX][MAX];
 	int ordre;
 }mat;
-double det(mat);
-void print_mat(mat A)
+double det(mat *);
+void print_mat(mat *A)
 {
 	int i, j;
-	for (i = 0; i < A.ordre; i++)
+	for (i = 0; i < A->ordre; i++)
 	{
-		for (j = 0; j < A.ordre; j++)
-			printf("%f ", A.valors[i][j]);
+		for (j = 0; j < A->ordre; j++)
+			printf("%f ", A->valors[i][j]);
 		printf("\n");
 	}
 	printf("------\n");
@@ -1379,17 +1379,17 @@ mat menor(mat A, int fila, int col)
 	print_mat(A);
 	return A;
 }
-double adjunt(mat A, int fila, int col)
+double adjunt(mat *A, int fila, int col)
 {
-	return ((fila + col) % 2 ? -1 : 1)*A.valors[fila][col]*det(menor(A, fila, col));
+	return ((fila + col) % 2 ? -1 : 1)*A->valors[fila][col]*det(menor(*A, fila, col));
 }
-double det(mat A)
+double det(mat *A)
 {
 	int i;
 	double determ = 0;
-	if (A.ordre == 2)
-		return A.valors[0][0] * A.valors[1][1] - A.valors[0][1] * A.valors[1][0];
-	for (i = 0; i < A.ordre; i++)
+	if (A->ordre == 2)
+		return A->valors[0][0] * A->valors[1][1] - A->valors[0][1] * A->valors[1][0];
+	for (i = 0; i < A->ordre; i++)
 		determ += adjunt(A, i, 0);
 	return determ;
 }
@@ -1409,8 +1409,8 @@ int mainn(int argc, char *argv[])
 	}
 	//printf("\n");
 	A.ordre = ordre;
-	print_mat(A);
-	printf("\nDeterminant: %f", det(A));
+	print_mat(&A);
+	printf("\nDeterminant: %f", det(&A));
 	return 1;
 }
 */
@@ -1439,7 +1439,7 @@ void fecho(char err, char *error, ...)
 {
 	char buf[BUFSIZE];
 #ifdef _WIN32
-	int opts;
+	int opts = MB_OK;
 #endif
 	va_list vl;
 	va_start(vl, error);
@@ -1449,14 +1449,14 @@ void fecho(char err, char *error, ...)
 	switch (err)
 	{
 		case FERR:
-			opts = MB_OK|MB_ICONERROR;
+			opts |= MB_ICONERROR;
 			break;
 		case FSQL:
 		case FADV:
-			opts = MB_OK|MB_ICONWARNING;
+			opts |= MB_ICONWARNING;
 			break;
 		case FOK:
-			opts = MB_OK|MB_ICONINFORMATION;
+			opts |= MB_ICONINFORMATION;
 			break;
 	}
 	MessageBox(NULL, buf, "Colossus", opts);
@@ -1657,32 +1657,6 @@ void parsea_comando(char *comando)
 		fecho(FERR, "Comando desconocido. Para mas informacion escriba AYUDA");
 }
 #endif
-/*
-int main(int argc, char *argv[])
-{
-	int i, j, k;
-	int l0, l1, l2;
-	u_long c1, c2, c3;
-	c1 = our_crc32("80.58", strlen("80.58"));
-	c2 = our_crc32("80.58.51", strlen("80.58.51"));
-	c3 = our_crc32("80.58.51.44", strlen("80.58.51.44"));
-	for (i = 10001; i < 2147483647; i++)
-	{
-		for (j = 10001; j < 2147483647; j++)
-		{
-			for (k = 10001; k < 2147483647; k++)
-			{
-				l0 = (((c1 + i) ^ j) + k) & 0x7FFFFFFF;
-				l1 = (((c2 ^ j) + k) ^ i) & 0xFFFFFFFF;
-				l2 = (((c3 + k) ^ i) + j) & 0x3FFFFFFF;
-				if (0x184B845B == l2 && 0x64580349 == l1 && 0x5F27B5DF == l0)
-					printf("%i %i %i\n", i, j, k);
-			}
-		}
-	}
-	return 0;
-}
-*/
 void Debug(char *formato, ...)
 {
 	char debugbuf[BUFSIZE];

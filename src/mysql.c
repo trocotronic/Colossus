@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.5 2004-12-31 12:27:58 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.6 2004-12-31 19:25:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"

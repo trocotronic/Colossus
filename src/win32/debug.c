@@ -1,15 +1,14 @@
 /*
- * $Id: debug.c,v 1.3 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.1 2004-12-31 19:25:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include <dbghelp.h>
-#include <Winbase.h>
-
 #define BUFFERSIZE   0x200
 
-__inline char *StackTrace(EXCEPTION_POINTERS *e) {
+__inline char *StackTrace(EXCEPTION_POINTERS *e) 
+{
 	static char buffer[5000];
 	char curmodule[32];
 	DWORD symOptions, dwDisp, frame;
@@ -37,28 +36,31 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e) {
 	pMod.SizeOfStruct = sizeof(IMAGEHLP_MODULE);
 	SymGetModuleInfo(hProcess, Stack.AddrPC.Offset, &pMod);
 	strcpy(curmodule, pMod.ModuleName);
-	sprintf(buffer, "\tMódulo: %s\n", pMod.ModuleName);
-	for (frame = 0; ; frame++) {
+	sprintf(buffer, "\tModulo: %s\n", pMod.ModuleName);
+	for (frame = 0; ; frame++) 
+	{
 		char buf[500];
 		if (!StackWalk(IMAGE_FILE_MACHINE_I386, GetCurrentProcess(), GetCurrentThread(),
 			&Stack, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL))
 			break;
 		SymGetModuleInfo(hProcess, Stack.AddrPC.Offset, &pMod);
-		if (strcmp(curmodule, pMod.ModuleName)) {
+		if (strcmp(curmodule, pMod.ModuleName)) 
+		{
 			strcpy(curmodule, pMod.ModuleName);
-			sprintf(buf, "\tMódulo: %s\n", pMod.ModuleName);
+			sprintf(buf, "\tModulo: %s\n", pMod.ModuleName);
 			strcat(buffer, buf);
 		}
 		SymGetLineFromAddr(hProcess, Stack.AddrPC.Offset, &dwDisp, &pLine);
 		SymGetSymFromAddr(hProcess, Stack.AddrPC.Offset, &dwDisp, pSym);
-		sprintf(buf, "\t\t#%d %s:%d: %s\n", frame, pLine.FileName, pLine.LineNumber, pSym->Name);
+		sprintf(buf, "\t\t#%d %s:%d: %s\n", frame, pLine.FileName, pLine.LineNumber, 
+		        pSym->Name);
 		strcat(buffer, buf);
 	}
 	return buffer;
 
 }
-
-__inline char *GetRegisters(CONTEXT *context) {
+__inline char *GetRegisters(CONTEXT *context) 
+{
 	static char buffer[1024];
 	sprintf(buffer, "\tEAX=0x%08x EBX=0x%08x ECX=0x%08x\n"
 			"\tEDX=0x%08x ESI=0x%08x EDI=0x%08x\n"
@@ -68,9 +70,10 @@ __inline char *GetRegisters(CONTEXT *context) {
 			context->Esp);
 	return buffer;
 }
-
-__inline char *GetException(DWORD code) {
-	switch (code) {
+__inline char *GetException(DWORD code) 
+{
+	switch (code) 
+	{
 		case EXCEPTION_ACCESS_VIOLATION:
 			return "Access Violation";
 		case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
@@ -114,9 +117,8 @@ __inline char *GetException(DWORD code) {
 	}
 	return "Unknown Exception";
 }
-
-
-LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e) {
+LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e) 
+{
 	MEMORYSTATUS memStats;
 	char file[512], text[1024];
 	FILE *fd;
@@ -141,7 +143,7 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e) {
 	CleanUp();
 	return EXCEPTION_EXECUTE_HANDLER;
 }
-
-void InitDebug(void) {
+void InitDebug(void) 
+{
 	SetUnhandledExceptionFilter(&ExceptionFilter);
 }

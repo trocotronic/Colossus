@@ -1,4 +1,4 @@
-## $Id: make,v 1.8 2004-12-31 12:27:50 Trocotronic Exp $
+## $Id: make,v 1.9 2004-12-31 19:25:48 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -93,13 +93,19 @@ CLEAN:
        -@erase .\*.pdb >NUL
        -@erase .\*.core >NUL
        -@erase .\*.exp >NUL
-       -@erase src\modulos\*.dll >NUL
-       -@erase src\modulos\*.obj >NUL
        -@erase colossus.lib >NUL
        -@erase src\modulos\*.exp >NUL
 	-@erase src\modulos\*.lib >NUL
 	-@erase src\modulos\*.pdb >NUL
 	-@erase src\modulos\*.ilk >NUL
+	-@erase src\modulos\*.dll >NUL
+       -@erase src\modulos\*.obj >NUL
+       -@erase src\protocolos\*.exp >NUL
+	-@erase src\protocolos\*.lib >NUL
+	-@erase src\protocolos\*.pdb >NUL
+	-@erase src\protocolos\*.ilk >NUL
+	-@erase src\protocolos\*.dll >NUL
+       -@erase src\protocolos\*.obj >NUL
 	-@erase src\win32\colossus.res >NUL
 
 ./COLOSSUS.EXE: $(OBJ_FILES)
@@ -114,8 +120,8 @@ CLEAN:
 src/bdd.obj: src/bdd.c $(INCLUDES)
         $(CC) $(CFLAGS) src/bdd.c
         
-src/debug.obj: src/debug.c $(INCLUDES)
-        $(CC) $(CFLAGS) src/debug.c
+src/debug.obj: src/win32/debug.c $(INCLUDES)
+        $(CC) $(CFLAGS) src/win32/debug.c
   
 src/hash.obj: src/hash.c $(INCLUDES)
         $(CC) $(CFLAGS) src/hash.c        
