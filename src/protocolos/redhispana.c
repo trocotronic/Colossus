@@ -538,7 +538,7 @@ Com comandos_especiales[] = {
 	{ MSG_NOTICE , TOK_NOTICE , (void *)p_notice } ,
 	{ MSG_INVITE , TOK_INVITE , (void *)p_invite } ,
 	{ MSG_NULL , TOK_NULL , (void *)p_msg_vl } ,
-	NULL 
+	COM_NULL 
 };
 int test(Conf *config, int *errores)
 {
