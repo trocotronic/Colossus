@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.11 2004-10-01 19:57:05 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.12 2004-10-10 21:07:31 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -743,11 +743,16 @@ int parsea_linea(int tipo, char *cur, int archivo)
 }
 void carga_bloque(int tipo)
 {
-	FILE *fp;
-	char buf[BUFSIZE], *cur, *ds;
+	char *cur, *ds, *p;
 	Udb *root;
 	u_long lee, obtiene;
 	char bloque = 0;
+	int len, fd;
+#ifdef _WIN32
+	HANDLE mapa, archivo;
+#else
+	struct stat sb;
+#endif
 	if (tipo == BDD_NICKS)
 		bloque = 'N';
 	else if (tipo == BDD_CHANS)
@@ -760,30 +765,51 @@ void carga_bloque(int tipo)
 	if ((lee = lee_hash(root->id)) != (obtiene = obtiene_hash(root)))
 	{
 		fecho(FADV, "El bloque %c está corrupto (%lu != %lu)", bloque, lee, obtiene);
-		if ((fp = fopen(root->item, "w")))
+		if ((fd = open(root->item, O_TRUNC)))
 		{
-			fclose(fp);
+			close(fd);
 			actualiza_hash(root);
 		}
 		if (linkado)
 			sendto_serv(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloque);
 		return;
 	}
-	if (!(fp = fopen(root->item, "a+b")))
+#ifdef _WIN32
+	if ((archivo = CreateFile(root->item, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+#else
+	if ((fd = open(root->item, O_RDONLY)) == -1)
+#endif
 		return;
-	while (!feof(fp))
+#ifdef _WIN32
+	len = GetFileSize(archivo, NULL);
+	if (!(mapa = CreateFileMapping(archivo, NULL, PAGE_READWRITE, 0, len, NULL)))
+		return;
+	p = cur = MapViewOfFile(mapa, FILE_MAP_COPY, 0, 0, 0);
+	if (!p)
+		return;
+#else
+	if (fstat(fd, &sb) == -1)
+		return;
+	len = sb.st_size
+	p = cur = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NORESERVE, fd, 0);
+#endif
+	while (cur < (p + len))
 	{
-		bzero(buf, BUFSIZE);
-		if (!fgets(buf, BUFSIZE, fp))
-			break;
-		cur = buf;
 		if ((ds = strchr(cur, '\r')))
 			*ds = '\0';
 		if ((ds = strchr(cur, '\n')))
 			*ds = '\0';
 		parsea_linea(tipo, cur, 0);
+		cur = ++ds;
 	}
-	fclose(fp);
+#ifdef _WIN32
+	UnmapViewOfFile(p);
+	CloseHandle(mapa);
+	CloseHandle(archivo);
+#else
+	munmap(p, len);
+	close(fd);
+#endif
 }
 void descarga_bloque(int tipo)
 {
