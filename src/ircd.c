@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.12 2004-09-27 11:24:22 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.13 2004-09-27 21:14:16 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,6 +8,9 @@
 #include "modulos.h"
 #ifdef UDB
 #include "bdd.h"
+#endif
+#ifdef USA_ZLIB
+#include "zlib.h"
 #endif
 
 Comando *comandos = NULL;

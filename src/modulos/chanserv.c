@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.7 2004-09-24 22:41:11 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.8 2004-09-27 21:14:16 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1000,7 +1000,7 @@ BOTFUNC(chanserv_identify)
 	}
 	if ((chanserv->opts & CS_SID) && !parv[parc])
 	{
-		sprintf_irc(buf, "Identificación incorrecta. /msg %s@%s IDENTIFY pass", chanserv->nick, me.nombre);
+		sprintf_irc(buf, "Identificación incorrecta. /msg %s@%s IDENTIFY #canal pass", chanserv->nick, me.nombre);
 		response(cl, chanserv->nick, CS_ERR_EMPT, buf);
 		return 1;
 	}	
@@ -1562,6 +1562,9 @@ BOTFUNC(chanserv_set)
 					else
 						opts &= ~CS_OPT_NODROP;
 					break;
+				default:
+					sprintf_irc(buf, "La opción %c es desconocida.", *modos);
+					response(cl, chanserv->nick, CS_ERR_EMPT, buf);
 			}
 			modos++;
 		}
@@ -2110,6 +2113,13 @@ BOTFUNC(chanserv_register)
 			{
 				char buf[512];
 				char *tok = param[params - i - 1];
+				tokbuf[0] = '\0';
+				if (strstr(tokbuf, tok)) /* ya había sido usado */
+				{
+					sprintf_irc(buf, "El token %s está repetido.", tok);
+					response(cl, chanserv->nick, CS_ERR_EMPT, buf);
+					return 1;
+				}
 				if (!(res = _mysql_query("SELECT item,nick,hora from %s%s where item='%s'", PREFIJO, CS_TOK, tok)))
 				{
 					sprintf_irc(buf, "El token %s no es válido o ha caducado.", tok);
@@ -2130,6 +2140,8 @@ BOTFUNC(chanserv_register)
 					response(cl, chanserv->nick, CS_ERR_EMPT, buf);
 					return 1;
 				}
+				strcat(tokbuf, tok);
+				strcat(tokbuf, " ");
 			}
 			desc = implode(param, params, 3, params - chanserv->necesarios - 1);
 		}
