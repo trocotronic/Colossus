@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.15 2004-10-02 22:46:59 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.16 2004-10-10 09:55:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1531,7 +1531,18 @@ void distribuye_me(Cliente *me, Sock **sck)
 	me->tipo = ES_SERVER;
 	me->numeric = conf_server->numeric;
 	me->protocol = PROTOCOL;
-	me->opts = strdup("ihWE");
+	me->opts = (char *)Malloc(sizeof(char) * 21); /* hay 20 flags posibles */
+	bzero(me->opts, 21);
+	strcat(me->opts, "hK");
+#ifdef _WIN32
+	strcat(me->opts, "W");
+#endif
+#ifdef USA_ZLIB
+	strcat(me->opts, "Z");
+#endif
+#ifdef USA_SSL
+	strcat(me->opts, "e");
+#endif
 	me->info = strdup(conf_server->info);
 	me->sck = *sck;
 	me->sig = clientes;
