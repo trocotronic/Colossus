@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.7 2004-09-17 23:46:42 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.8 2004-09-23 17:01:50 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -25,8 +25,7 @@ static int nickserv_list		(Cliente *, char *[], int, char *[], int);
 static int nickserv_ghost		(Cliente *, char *[], int, char *[], int);
 static int nickserv_suspend		(Cliente *, char *[], int, char *[], int);
 static int nickserv_liberar		(Cliente *, char *[], int, char *[], int);
-static int nickserv_addwhois	(Cliente *, char *[], int, char *[], int);
-static int nickserv_delwhois	(Cliente *, char *[], int, char *[], int);
+static int nickserv_swhois		(Cliente *, char *[], int, char *[], int);
 static int nickserv_rename 		(Cliente *, char *[], int, char *[], int);
 #ifdef UDB
 static int nickserv_migrar		(Cliente *, char *[], int, char *[], int);
@@ -72,8 +71,7 @@ static bCom nickserv_coms[] = {
 	{ "ghost" , nickserv_ghost , TODOS } ,
 	{ "suspender" , nickserv_suspend , OPERS } ,
 	{ "liberar" , nickserv_liberar , OPERS } ,
-	{ "addwhois" , nickserv_addwhois , PREOS } ,
-	{ "delwhois" , nickserv_delwhois , PREOS } ,
+	{ "swhois" , nickserv_swhois , PREOS } ,
 	{ "rename" , nickserv_rename , OPERS } ,
 #ifdef UDB
 	{ "migrar" , nickserv_migrar , USERS } ,
@@ -86,21 +84,15 @@ DLLFUNC ModInfo info = {
 	0.8 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
+	"nickserv.inc"
 };
 	
 DLLFUNC int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	char *file, *k;
-	file = (char *)Malloc(sizeof(char) * (strlen(mod->archivo) + 5));
-	strcpy(file, mod->archivo);
-	k = strrchr(file, '.') + 1;
-	*k = '\0';
-	strcat(file, "inc");
-	if (parseconf(file, &modulo, 1))
+	if (parseconf(mod->config, &modulo, 1))
 		return 1;
-	Free(file);
 	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
 	{
 		if (!test(modulo.seccion[0], &errores))
@@ -325,8 +317,7 @@ BOTFUNC(nickserv_help)
 		{
 			response(cl, nickserv->nick, "\00312DROP\003 Desregistra un usuario.");
 			response(cl, nickserv->nick, "\00312SENDPASS\003 Genera un password para el usuario y se lo envía a su correo.");
-			response(cl, nickserv->nick, "\00312ADDWHOIS\003 Añade un whois especial al nick especificado.");
-			response(cl, nickserv->nick, "\00312DELWHOIS\003 Borra un whois especial.");
+			response(cl, nickserv->nick, "\00312SWHOIS\003 Añade o borra un whois especial al nick especificado.");
 		}
 		if (IsOper(cl))
 		{
@@ -514,23 +505,16 @@ BOTFUNC(nickserv_help)
 		response(cl, nickserv->nick, " ");
 		response(cl, nickserv->nick, "Sintaxis: \00312SENDPASS nick");
 	}
-	else if (!strcasecmp(param[1], "ADDWHOIS") && IsPreo(cl))
+	else if (!strcasecmp(param[1], "SWHOIS") && IsPreo(cl))
 	{
-		response(cl, nickserv->nick, "\00312ADDWHOIS");
+		response(cl, nickserv->nick, "\00312SWHOIS");
 		response(cl, nickserv->nick, " ");
-		response(cl, nickserv->nick, "Añade un whois especial a un usuario.");
+		response(cl, nickserv->nick, "Añade o borra un whois especial a un usuario.");
 		response(cl, nickserv->nick, "Este whois se le añadirá cuando se identifique.");
 		response(cl, nickserv->nick, "Se mostrará con el comando WHOIS.");
 		response(cl, nickserv->nick, " ");
-		response(cl, nickserv->nick, "Sintaxis: \00312ADDWHOIS nick swhois");
-	}
-	else if (!strcasecmp(param[1], "DELWHOIS") && IsPreo(cl))
-	{
-		response(cl, nickserv->nick, "\00312DELWHOIS");
-		response(cl, nickserv->nick, " ");
-		response(cl, nickserv->nick, "Borra un whois especial.");
-		response(cl, nickserv->nick, " ");
-		response(cl, nickserv->nick, "Sintaxis: \00312DELWHOIS nick");
+		response(cl, nickserv->nick, "Sintaxis: \00312SWHOIS nick [swhois]");
+		response(cl, nickserv->nick, "Si no se especifica swhois, se borrará el que pudiera haber.");
 	}
 	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl))
 	{
@@ -1065,31 +1049,11 @@ BOTFUNC(nickserv_liberar)
 	response(cl, nickserv->nick, "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);			
 	return 0;
 }
-BOTFUNC(nickserv_addwhois)
-{
-	char *swhois;
-	if (params < 3)
-	{
-		response(cl, nickserv->nick, NS_ERR_PARA, "ADDWHOIS nick swhois");
-		return 1;
-	}
-	if (!IsReg(param[1]))
-	{
-		response(cl, nickserv->nick, NS_ERR_NURG);
-		return 1;
-	}
-	swhois = implode(param, params, 2, -1);
-	_mysql_add(NS_MYSQL, param[1], "swhois", swhois);
-	if ((busca_cliente(param[1], NULL)))
-		sendto_serv_us(&me, MSG_SWHOIS, TOK_SWHOIS, "%s :%s", param[1], swhois);
-	response(cl, nickserv->nick, "El swhois de \00312%s\003 ha sido cambiado.", param[1]);
-	return 0;
-}
-BOTFUNC(nickserv_delwhois)
+BOTFUNC(nickserv_swhois)
 {
 	if (params < 2)
 	{
-		response(cl, nickserv->nick, NS_ERR_PARA, "DELWHOIS nick");
+		response(cl, nickserv->nick, NS_ERR_PARA, "SWHOIS nick [swhois]");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -1097,10 +1061,25 @@ BOTFUNC(nickserv_delwhois)
 		response(cl, nickserv->nick, NS_ERR_NURG);
 		return 1;
 	}
-	_mysql_add(NS_MYSQL, param[1], "swhois", "");
-	if ((busca_cliente(param[1], NULL)))
-		sendto_serv_us(&me, MSG_SWHOIS, TOK_SWHOIS, "%s :", param[1]);
-	response(cl, nickserv->nick, "El swhois de \00312%s\003 ha sido borrado.", param[1]);
+	if (params == 3)
+	{
+		char *swhois;
+		swhois = implode(param, params, 2, -1);
+#ifdef UDB
+		if (IsNickUDB(param[1]))
+			envia_registro_bdd("N::%s::swhois %s", param[1], swhois);
+		else
+#endif
+		_mysql_add(NS_MYSQL, param[1], "swhois", swhois);
+		if ((busca_cliente(param[1], NULL)))
+			sendto_serv_us(&me, MSG_SWHOIS, TOK_SWHOIS, "%s :%s", param[1], swhois);
+		response(cl, nickserv->nick, "El swhois de \00312%s\003 ha sido cambiado.", param[1]);
+	}
+	else
+	{
+		envia_registro_bdd("N::%s::swhois", param[1]);
+		response(cl, nickserv->nick, "Se ha eliminado el swhois de \00312%s", param[1]);
+	}
 	return 0;
 }
 BOTFUNC(nickserv_rename)
@@ -1317,7 +1296,7 @@ int nickserv_sig_idok(Cliente *cl)
 		_mysql_add(NS_MYSQL, cl->nombre, "gecos", cl->info);
 		timer_off(cl->nombre, cl->sck);
 		cl->intentos = 0;
-		if ((swhois = _mysql_get_registro(NS_MYSQL, cl->nombre, "swhois")))
+		if (!IsNickUDB(cl->nombre) && (swhois = _mysql_get_registro(NS_MYSQL, cl->nombre, "swhois")))
 			sendto_serv_us(&me, MSG_SWHOIS, TOK_SWHOIS, "%s :%s", cl->nombre, swhois);
 		cl->nivel |= USER;
 	}

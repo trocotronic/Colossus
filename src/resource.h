@@ -1,5 +1,5 @@
 /*
- * $Id: resource.h,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ * $Id: resource.h,v 1.3 2004-09-23 17:01:50 Trocotronic Exp $ 
  */
 
 //{{NO_DEPENDENCIES}}
@@ -11,15 +11,17 @@
 #define CONFERROR			     3
 #define ICO_MAIN                        129
 #define MENU_SYSTRAY                    130
+#define MENU_CONFIG			     131
 #define BT_CON                          1103
 #define BT_REHASH                       1104
 #define BT_AYUDA                        1105
 #define BT_CONF                         1106
 #define EDT_ERR			     1107
 #define IDM_REHASH                      40029
-#define IDM_CONF                        40030
+#define IDM_CONF                        60000
 #define IDM_AYUDA                       40031
 #define IDM_SHUTDOWN                    40032
+#define IDM_CONFIG                      40033
 
 // Next default values for new objects
 // 

@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.3 2004-09-17 19:05:31 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.4 2004-09-23 17:01:50 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -56,6 +56,7 @@ int crea_modulo(char *archivo)
 	if ((modulo = irc_dlopen(tmppath, RTLD_NOW)))
 	{
 		Modulo *mod;
+		char *file, *k;
 		irc_dlsym(modulo, "carga", mod_carga);
 		if (!mod_carga)
 		{
@@ -86,6 +87,12 @@ int crea_modulo(char *archivo)
 		mod->descarga = mod_descarga;
 		mod->cargado = 1; /* está en conf */
 		mod->info = inf;
+		file = strdup(mod->archivo);
+		if (!(k = strrchr(file, '/')))
+			k = strrchr(file, '\\');
+		*k = '\0';
+		sprintf_irc(buf, "%s/%s", file, inf->config);
+		mod->config = strdup(buf);
 		mod->sig = modulos;
 		modulos = mod;
 		id *= 2;

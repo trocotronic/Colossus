@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.7 2004-09-17 19:12:48 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.8 2004-09-23 17:01:50 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -52,20 +52,14 @@ DLLFUNC ModInfo info = {
 	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
+	"statserv.inc"
 };
 DLLFUNC int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	char *file, *k;
-	file = (char *)Malloc(sizeof(char) * (strlen(mod->archivo) + 5));
-	strcpy(file, mod->archivo);
-	k = strrchr(file, '.') + 1;
-	*k = '\0';
-	strcat(file, "inc");
-	if (parseconf(file, &modulo, 1))
+	if (parseconf(mod->config, &modulo, 1))
 		return 1;
-	Free(file);
 	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
 	{
 		if (!test(modulo.seccion[0], &errores))

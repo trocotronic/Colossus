@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.6 2004-09-17 22:09:13 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.7 2004-09-23 17:01:50 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -36,6 +36,7 @@ static int operserv_clones	(Cliente *, char *[], int, char *[], int);
 static int operserv_close	(Cliente *, char *[], int, char *[], int);
 #ifdef UDB
 static int operserv_modos	(Cliente *, char *[], int, char *[], int);
+static int operserv_snomask	(Cliente *, char *[], int, char *[], int);
 #endif
 
 static bCom operserv_coms[] = {
@@ -57,6 +58,7 @@ static bCom operserv_coms[] = {
 	{ "clones" , operserv_clones , ADMINS } ,
 #ifdef UDB
 	{ "modos" , operserv_modos , ADMINS } ,
+	{ "snomask" , operserv_snomask , ADMINS } ,
 #endif
 	{ 0x0 , 0x0 , 0x0 }
 };
@@ -87,21 +89,15 @@ DLLFUNC ModInfo info = {
 	0.6 ,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net" ,
+	"operserv.inc"
 };
 	
 DLLFUNC int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	char *file, *k;
-	file = (char *)Malloc(sizeof(char) * (strlen(mod->archivo) + 5));
-	strcpy(file, mod->archivo);
-	k = strrchr(file, '.') + 1;
-	*k = '\0';
-	strcat(file, "inc");
-	if (parseconf(file, &modulo, 1))
+	if (parseconf(mod->config, &modulo, 1))
 		return 1;
-	Free(file);
 	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
 	{
 		if (!test(modulo.seccion[0], &errores))
@@ -329,6 +325,10 @@ BOTFUNC(operserv_help)
 		{
 			response(cl, operserv->nick, "\00312OPERS\003 Administra los operadores de la red.");
 			response(cl, operserv->nick, "\00312CLONES\003 Administra la lista de ips con más clones.");
+#ifdef UDB
+			response(cl, operserv->nick, "\00312MODOS\003 Fija los modos de operador que se obtiene automáticamente (BDD).");
+			response(cl, operserv->nick, "\00312SNOMASK\003 Fija las máscaras de operador que se obtiene automáticamente (BDD).");
+#endif
 		}
 		if (IsRoot(cl))
 		{
@@ -468,6 +468,29 @@ BOTFUNC(operserv_help)
 		response(cl, operserv->nick, "Sintaxis: \00312CLONES -{ip|host}");
 		response(cl, operserv->nick, "Borra una ip|host.");
 	}
+#ifdef UDB
+	else if (!strcasecmp(param[1], "MODOS") && IsAdmin(cl))
+	{
+		response(cl, operserv->nick, "\00312MODOS");
+		response(cl, operserv->nick, " ");
+		response(cl, operserv->nick, "Fija los modos de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
+		response(cl, operserv->nick, "Estos modos son: \00312ohAOkNCWqHX");
+		response(cl, operserv->nick, "Serán otorgados de forma automática cada vez que el operador use su nick vía /nick nick:pass");
+		response(cl, operserv->nick, " ");
+		response(cl, operserv->nick, "Sintaxis: \00312MODOS operador [modos]");
+		response(cl, operserv->nick, "Si no se especifican modos, se borrarán los que pueda haber.");
+	}
+	else if (!strcasecmp(param[1], "SNOMASK") && IsAdmin(cl))
+	{
+		response(cl, operserv->nick, "\00312SNOMASK");
+		response(cl, operserv->nick, " ");
+		response(cl, operserv->nick, "Fija las máscaras de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
+		response(cl, operserv->nick, "Serán otorgadas de forma automática cada vez que el operador use su nick vía /nick nick:pass");
+		response(cl, operserv->nick, " ");
+		response(cl, operserv->nick, "Sintaxis: \00312SNOMASK operador [snomasks]");
+		response(cl, operserv->nick, "Si no se especifican máscaras, se borrarán las que pueda haber.");
+	}
+#endif
 	else if (!strcasecmp(param[1], "RESTART") && IsRoot(cl))
 	{
 		response(cl, operserv->nick, "\00312RESTART");
@@ -1032,6 +1055,40 @@ BOTFUNC(operserv_modos)
 	{
 		envia_registro_bdd("N::%s::modos", param[1]);
 		response(cl, operserv->nick, "Se han eliminado los modos de operador para \00312%s", param[1]);
+	}
+	return 0;
+}
+BOTFUNC(operserv_snomask)
+{
+	if (params < 2)
+	{
+		response(cl, operserv->nick, OS_ERR_PARA, "SNOMASK nick [máscaras]");
+		return 1;
+	}
+	if (!IsNickUDB(param[1]))
+	{
+		response(cl, operserv->nick, OS_ERR_EMPT, "Este nick no está migrado.");
+		return 1;
+	}
+	if (params == 3)
+	{
+		char *modos;
+		for (modos = param[2]; !BadPtr(modos); modos++)
+		{
+			if (!strchr("cefFGjknNoqsSv", *modos))
+			{
+				sprintf_irc(buf, "La máscara %c está prohibido. Sólo se permiten las máscaras cefFGjknNoqsSv.", *modos);
+				response(cl, operserv->nick, OS_ERR_EMPT, buf);
+				return 1;
+			}
+		}
+		envia_registro_bdd("N::%s::snomasks %s", param[1], param[2]);
+		response(cl, operserv->nick, "Las máscaras de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
+	}
+	else
+	{
+		envia_registro_bdd("N::%s::snomasks", param[1]);
+		response(cl, operserv->nick, "Se han eliminado las máscaras de operador para \00312%s", param[1]);
 	}
 	return 0;
 }

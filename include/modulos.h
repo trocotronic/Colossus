@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.4 2004-09-17 19:05:31 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.5 2004-09-23 17:01:49 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -49,6 +49,7 @@ typedef struct _modinfo
 	double version;
 	char *autor;
 	char *email;
+	char *config;
 }ModInfo;
 typedef struct _mod
 {
@@ -72,6 +73,7 @@ typedef struct _mod
 	bCom **comandos;
 	int (*carga)(struct _mod *);
 	int (*descarga)(struct _mod *);
+	char *config;
 }Modulo;
 	
 extern MODVAR Modulo *modulos;

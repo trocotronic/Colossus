@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $
+// $Id: colossus.rc,v 1.3 2004-09-23 17:01:49 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -134,17 +134,25 @@ END
 // Menu
 //
 
+MENU_CONFIG MENU DISCARDABLE 
+BEGIN
+    POPUP "Configuración"
+    BEGIN
+        MENUITEM "colossus.&conf",                  IDM_CONF
+        MENUITEM SEPARATOR
+    END
+END
+
 MENU_SYSTRAY MENU DISCARDABLE 
 BEGIN
     POPUP "Systray"
     BEGIN
         MENUITEM "&Refrescar",                  IDM_REHASH
-        MENUITEM "&Configuración",              IDM_CONF
+        MENUITEM "&Configuración",              IDM_CONFIG
         MENUITEM "&Ayuda",                      IDM_AYUDA
         MENUITEM "&Detener",                    IDM_SHUTDOWN
     END
 END
-
 
 /////////////////////////////////////////////////////////////////////////////
 //
