@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.32 2005-03-18 21:26:52 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.33 2005-03-21 12:38:01 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -333,15 +333,17 @@ extern char *encode_ip(char *);
 extern int b64_decode(char const *src, u_char *, size_t);
 extern int b64_encode(u_char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
-#define creditos() 															\
-	response(cl, bl, "\00312Colossus v%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);					\
-	response(cl, bl, " ");													\
-	response(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");			\
-	response(cl, bl, "Si no es perfecto, ¿qué más da?");									\
-	response(cl, bl, "Sé feliz. Paz.");											\
-	response(cl, bl, " "); 													\
-	response(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.rallados.net", 31); 	\
-	response(cl, bl, "Gracias a todos por usar este programa :) (estáis locos)")
+#define creditos() 																\
+	response(cl, bl, "\00312%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);								\
+	response(cl, bl, " ");															\
+	response(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");						\
+	response(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\
+		"aportando su semilla, a que este programa vea la luz.");									\
+	response(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
+	response(cl, bl, "Y, en especial, a MaD y a Davidlig por las ayudas de infrastructuras prestadas altruístamente."); 			\
+	response(cl, bl, " "); 															\
+	response(cl, bl, "Puedes descargar este programa de forma gratuíta en %c\00312http://www.rallados.net", 31); 				\
+	response(cl, bl, "Sé feliz. Paz.")
 extern void resuelve_host(char **, char *);
 extern void cloak_crc(char *);
 

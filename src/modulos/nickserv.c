@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.19 2005-03-19 12:48:52 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.20 2005-03-21 12:38:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -838,14 +838,15 @@ BOTFUNC(nickserv_drop)
 int nickserv_baja(char *nick, char opt)
 {
 	Cliente *al;
-	if (!opt && atoi(_mysql_get_registro(NS_MYSQL, nick, "opts")) & NS_OPT_NODROP)
+	int opts;
+	if (!opt && (opts = atoi(_mysql_get_registro(NS_MYSQL, nick, "opts"))) & NS_OPT_NODROP)
 		return 1;
 	al = busca_cliente(nick, NULL);
 	senyal1(NS_SIGN_DROP, nick);
 	if (al)
 		port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
 #ifdef UDB
-	if (IsNickUDB(nick))
+	if (opts & NS_OPT_UDB)
 		envia_registro_bdd("N::%s", nick);
 #endif
 	_mysql_del(NS_MYSQL, nick);

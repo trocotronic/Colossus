@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.37 2005-03-18 21:26:52 Trocotronic Exp $ 
+ * $Id: main.c,v 1.38 2005-03-21 12:38:01 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1003,6 +1003,9 @@ void parsea_comando(char *comando)
 #endif
 void Debug(char *formato, ...)
 {
+#ifndef DEBUG
+	return;
+#else
 	char debugbuf[BUFSIZE];
 	va_list vl;
 #ifdef _WIN32
@@ -1025,6 +1028,7 @@ void Debug(char *formato, ...)
 	WriteFile(*conh, debugbuf, strlen(debugbuf), len, NULL);
 #else
 	fprintf(stderr, debugbuf);
+#endif
 #endif
 }
 void ircd_log(int opt, char *formato, ...)

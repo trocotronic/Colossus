@@ -1,4 +1,4 @@
-## $Id: make,v 1.15 2005-03-18 21:26:51 Trocotronic Exp $
+## $Id: make,v 1.16 2005-03-21 12:38:00 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -6,20 +6,20 @@ RC=rc
 DEBUG=1
 
 #### SOPORTE ZLIB ####
-ZLIB=1
+#ZLIB=1
 #
 ###### FIN ZLIB ######
 
 #### SOPORTE UDB ####
-UDB=1
+#UDB=1
 #
 ###### FIN UDB ######
 
 #### SOPORTE SSL ####
-SSL=1
+#SSL=1
 #
-OPENSSL_INC_DIR="c:\openssl\include"
-OPENSSL_LIB_DIR="c:\openssl\lib"
+#OPENSSL_INC_DIR="c:\openssl\include"
+#OPENSSL_LIB_DIR="c:\openssl\lib"
 #
 ###### FIN SSL ######
 
