@@ -365,6 +365,5 @@ LIBS="$LIBS -lresolv "
 ;;
 esac
 
-cd $cur_dir
 AC_OUTPUT(Makefile src/modulos/Makefile servicios)
 chmod 0700 servicios
