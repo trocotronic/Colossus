@@ -1,11 +1,11 @@
-; $Id: colossusinst.iss,v 1.3 2005-03-14 14:18:12 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.4 2005-03-21 13:49:48 Trocotronic Exp $
 
 ; Instalador de Colossus
 
 ; Definiciones de soporte
-; #define USA_SSL
+#define USA_SSL
 ; Uncomment the above line to package an SSL build
-; #define USA_ZLIB
+#define USA_ZLIB
 
 [Setup]
 AppName=Colossus
