@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.11 2005-02-20 15:34:09 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.12 2005-02-20 16:23:54 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1188,10 +1188,14 @@ void conferror(char *formato, ...)
 	strcat(buf, "\r\n");
 	fprintf(stderr, buf);	
 }
-void Info(char *Info)
+void Info(char *formato, ...)
 {
 	char buf[BUFSIZE], txt[BUFSIZE];
+	struct tm *timeptr;
+	time_t ts;
 	va_list vl;
+	ts = time(0);
+	timeptr = localtime(&ts);
 	va_start(vl, formato);
 	sprintf_irc(txt, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
 	vsprintf_irc(buf, txt, vl);
