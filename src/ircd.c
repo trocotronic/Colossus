@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.3 2004-09-11 22:47:33 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1037,7 +1037,7 @@ Canal *info_canal(char *canal, int crea)
 			canales->prev = cn;
 		canales = cn;
 		inserta_canal_en_hash(cn, canal);
-		signal1(SIGN_CREATE_CHAN, cn);
+		senyal1(SIGN_CREATE_CHAN, cn);
 	}
 	return cn;
 }
@@ -1445,7 +1445,7 @@ IRCFUNC(sincroniza)
 	//tkls
 	//sqlines
 	sendto_serv_us(&me, MSG_EOS, TOK_EOS, "");
-	signal(SIGN_EOS);
+	senyal(SIGN_EOS);
 	return 0;
 }
 IRCFUNC(m_105)
@@ -1508,7 +1508,7 @@ void envia_umodos(Cliente *cl, char *emisor, char *modos)
 #else
 	sendto_serv(":%s %s %s %s %lu", emisor, TOK_SVS2MODE, cl->nombre, modos, time(0));
 #endif
-	signal2(SIGN_UMODE, cl, modos);
+	senyal2(SIGN_UMODE, cl, modos);
 }
 void envia_cmodos(Canal *cn, char *emisor, char *modos, ...)
 {
@@ -1535,7 +1535,7 @@ void irckill(Cliente *cl, char *emisor, char *msg, ...)
 	vsprintf_irc(buf, msg, vl);
 	va_end(vl);
 	sendto_serv(":%s %s %s :%s", emisor, TOK_KILL, cl->nombre, buf);
-	signal2(SIGN_QUIT, cl, buf);
+	senyal2(SIGN_QUIT, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		borra_cliente_de_canal(lk->chan, cl);
 	libera_cliente_de_memoria(cl);
@@ -1797,29 +1797,8 @@ void libera_canal_de_memoria(Canal *cn)
 		Free(aux);
 	}
 	Free(cn);
-	signal1(SIGN_DESTROY_CHAN, nombre);
+	senyal1(SIGN_DESTROY_CHAN, nombre);
 	Free(nombre);
-}
-int reinicia()
-{
-	sendto_serv(":%s %s :Los servicios se están reiniciando...", me.nombre, TOK_WALLOPS);
-	sendto_serv("SQUIT %s :Reiniciando", me.nombre);
-	reset = 1;
-	return 0;
-}
-int refresca()
-{
-	Conf config;
-	descarga_modulos();
-	parseconf("colossus.conf", &config, 1);
-	distribuye_conf(&config);
-	carga_modulos();
-#ifdef UDB
-	carga_bloques();
-#endif
-	if (SockIrcd)
-		conecta_bots();
-	return 0;
 }
 Cliente *botnick(char *nick, char *ident, char *host, char *server, char *modos, char *realname)
 {

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -130,12 +130,12 @@ DLLFUNC int descarga()
 	borra_comando(MSG_NICK, nickserv_nick);
 	borra_comando(MSG_QUIT, nickserv_quit);
 	borra_comando(MSG_UMODE2, nickserv_umode);
-	signal_del(SIGN_MYSQL, nickserv_sig_mysql);
-	signal_del(SIGN_QUIT, nickserv_sig_quit);
+	borra_senyal(SIGN_MYSQL, nickserv_sig_mysql);
+	borra_senyal(SIGN_QUIT, nickserv_sig_quit);
 #ifdef UDB
-	signal_del(SIGN_EOS, nickserv_sig_eos);
+	borra_senyal(SIGN_EOS, nickserv_sig_eos);
 #endif
-	signal_del(NS_SIGN_IDOK, nickserv_sig_idok);
+	borra_senyal(NS_SIGN_IDOK, nickserv_sig_idok);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -261,12 +261,12 @@ void set(Conf *config, Modulo *mod)
 	inserta_comando(MSG_NICK, TOK_NICK, nickserv_nick, INI);
 	inserta_comando(MSG_QUIT, TOK_QUIT, nickserv_quit, INI);
 	inserta_comando(MSG_UMODE2, TOK_UMODE2, nickserv_umode, INI);
-	signal_add(SIGN_MYSQL, nickserv_sig_mysql);
-	signal_add(SIGN_QUIT, nickserv_sig_quit);
+	inserta_senyal(SIGN_MYSQL, nickserv_sig_mysql);
+	inserta_senyal(SIGN_QUIT, nickserv_sig_quit);
 #ifdef UDB
-	signal_add(SIGN_EOS, nickserv_sig_eos);
+	inserta_senyal(SIGN_EOS, nickserv_sig_eos);
 #endif
-	signal_add(NS_SIGN_IDOK, nickserv_sig_idok);
+	inserta_senyal(NS_SIGN_IDOK, nickserv_sig_idok);
 	proc(nickserv_dropanicks);
 	mod->nick = nickserv->nick;
 	mod->ident = nickserv->ident;
@@ -649,7 +649,7 @@ BOTFUNC(nickserv_reg)
 		cambia_nick_inv(parv[0]);
 	}
 #endif
-	signal1(NS_SIGN_REG, parv[0]);
+	senyal1(NS_SIGN_REG, parv[0]);
 	return 0;
 }
 BOTFUNC(nickserv_identify)
@@ -684,7 +684,7 @@ BOTFUNC(nickserv_identify)
 	{
 		envia_umodos(cl, nickserv->nick, "+r");
 		response(cl, nickserv->nick, "Ok \00312%s\003, bienvenid@ a casa :)", parv[0]);
-		signal1(NS_SIGN_IDOK, cl);
+		senyal1(NS_SIGN_IDOK, cl);
 	}
 	else
 	{
@@ -843,7 +843,7 @@ int nickserv_baja(char *nick, char opt)
 	if (!opt && atoi(_mysql_get_registro(NS_MYSQL, nick, "opts")) & NS_OPT_NODROP)
 		return 1;
 	al = busca_cliente(nick, NULL);
-	signal1(NS_SIGN_DROP, nick);
+	senyal1(NS_SIGN_DROP, nick);
 	if (al)
 		envia_umodos(al, nickserv->nick, "-r");
 #ifdef UDB
@@ -1182,12 +1182,12 @@ IRCFUNC(nickserv_umode)
 	if (conf_set->modos && conf_set->modos->usuarios)
 		envia_umodos(cl, nickserv->nick, conf_set->modos->usuarios);
 	if (strchr(parc < 3 ? parv[1] : parv[7], 'r') && (cl->modos & UMODE_REGNICK))
-		signal1(NS_SIGN_IDOK, cl);
+		senyal1(NS_SIGN_IDOK, cl);
 	return 0;
 }
 IRCFUNC(nickserv_quit)
 {
-	signal2(SIGN_QUIT, cl, parv[1]);
+	senyal2(SIGN_QUIT, cl, parv[1]);
 	return 0;
 }
 IRCFUNC(nickserv_nick)

@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -128,10 +128,10 @@ DLLFUNC int descarga()
 	borra_comando(MSG_JOIN, operserv_join);
 	borra_comando(MSG_NICK, operserv_nick);
 #ifndef UDB
-	signal_del(NS_SIGN_IDOK, operserv_idok);
+	borra_senyal(NS_SIGN_IDOK, operserv_idok);
 #endif
-	signal_del(SIGN_MYSQL, operserv_sig_mysql);
-	signal_del(SIGN_EOS, operserv_sig_eos);
+	borra_senyal(SIGN_MYSQL, operserv_sig_mysql);
+	borra_senyal(SIGN_EOS, operserv_sig_eos);
 	return 0;
 }	
 int test(Conf *config, int *errores)
@@ -219,10 +219,10 @@ void set(Conf *config, Modulo *mod)
 	inserta_comando(MSG_JOIN, TOK_JOIN, operserv_join, INI);
 	inserta_comando(MSG_NICK, TOK_NICK, operserv_nick, INI);
 #ifndef UDB
-	signal_add(NS_SIGN_IDOK, operserv_idok);
+	inserta_senyal(NS_SIGN_IDOK, operserv_idok);
 #endif
-	signal_add(SIGN_MYSQL, operserv_sig_mysql);
-	signal_add(SIGN_EOS, operserv_sig_eos);
+	inserta_senyal(SIGN_MYSQL, operserv_sig_mysql);
+	inserta_senyal(SIGN_EOS, operserv_sig_eos);
 	mod->nick = operserv->nick;
 	mod->ident = operserv->ident;
 	mod->host = operserv->host;

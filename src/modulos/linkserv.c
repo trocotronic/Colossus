@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -85,8 +85,8 @@ DLLFUNC int carga(Modulo *mod)
 }
 DLLFUNC int descarga()
 {
-	signal_del(SIGN_MYSQL, linkserv_sig_mysql);
-	signal_del(SIGN_EOS, linkserv_sig_eos);
+	borra_senyal(SIGN_MYSQL, linkserv_sig_mysql);
+	borra_senyal(SIGN_EOS, linkserv_sig_eos);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -159,8 +159,8 @@ void set(Conf *config, Modulo *mod)
 		Free(linkserv->mascara);
 	linkserv->mascara = (char *)Malloc(sizeof(char) * (strlen(linkserv->nick) + 1 + strlen(linkserv->ident) + 1 + strlen(linkserv->host) + 1));
 	sprintf_irc(linkserv->mascara, "%s!%s@%s", linkserv->nick, linkserv->ident, linkserv->host);
-	signal_add(SIGN_MYSQL, linkserv_sig_mysql);
-	signal_add(SIGN_EOS, linkserv_sig_eos);
+	inserta_senyal(SIGN_MYSQL, linkserv_sig_mysql);
+	inserta_senyal(SIGN_EOS, linkserv_sig_eos);
 	mod->nick = linkserv->nick;
 	mod->ident = linkserv->ident;
 	mod->host = linkserv->host;

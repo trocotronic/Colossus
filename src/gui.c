@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,7 +14,10 @@ UINT WM_TASKBARCREATED;
 OSVERSIONINFO VerInfo;
 char SO[256];
 HANDLE hThreadPrincipal;
-
+void CleanUpSegv(int sig)
+{
+	Shell_NotifyIcon(NIM_DELETE ,&SysTray);
+}
 void CleanUp(void)
 {
 	Shell_NotifyIcon(NIM_DELETE ,&SysTray);
@@ -89,7 +92,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
 	InitDebug();
-	carga_programa();
+	carga_programa(__argc, __argv);
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{
 		MessageBox(hWnd, "No se ha podido inicializar winsock.", "Error", MB_OK|MB_ICONERROR);

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -163,21 +163,21 @@ extern char *random_ex(char *);
 extern int randomiza(int, int);
 extern char *coge_mx(char *);
 
-/* signals */
-typedef struct _signal Signal;
-struct _signal
+/* senyals */
+typedef struct _senyal Senyal;
+struct _senyal
 {
-	short signal;
+	short senyal;
 	int (*func)();
-	struct _signal *sig;
+	struct _senyal *sig;
 };
 #define MAXSIGS 256
-extern MODVAR Signal *signals[MAXSIGS];
-extern void signal_add(short, int (*)());
-extern int signal_del(short, int (*)());
-#define signal(s) do { Signal *aux; for (aux = signals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
-#define signal1(s,x) do { Signal *aux; for (aux = signals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
-#define signal2(s,x,y) do { Signal *aux; for (aux = signals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
+extern MODVAR Senyal *senyals[MAXSIGS];
+extern void inserta_senyal(short, int (*)());
+extern int borra_senyal(short, int (*)());
+#define senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
+#define senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
+#define senyal2(s,x,y) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
 
 /* timers */
 typedef struct _timer Timer;
@@ -292,6 +292,11 @@ extern void conferror(char *, ...);
 extern void sockwritev(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1
-extern void cierra_colossus(int);
+extern int cierra_colossus(int);
 extern void ircd_log(int, char *, ...);
 #define ircfree(x) if (x) Free(x); x = NULL
+#define PID "colossus.pid"
+#ifdef _WIN32
+extern void CleanUpSegv(int);
+#endif
+extern int reinicia();

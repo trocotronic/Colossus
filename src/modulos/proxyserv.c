@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -69,7 +69,7 @@ DLLFUNC int carga(Modulo *mod)
 DLLFUNC int descarga()
 {
 	borra_comando(MSG_NICK, proxyserv_nick);
-	signal_del(SIGN_MYSQL, proxyserv_sig_mysql);
+	borra_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -175,7 +175,7 @@ void set(Conf *config, Modulo *mod)
 	proxyserv->mascara = (char *)Malloc(sizeof(char) * (strlen(proxyserv->nick) + 1 + strlen(proxyserv->ident) + 1 + strlen(proxyserv->host) + 1));
 	sprintf_irc(proxyserv->mascara, "%s!%s@%s", proxyserv->nick, proxyserv->ident, proxyserv->host);
 	inserta_comando(MSG_NICK, TOK_NICK, proxyserv_nick, INI);
-	signal_add(SIGN_MYSQL, proxyserv_sig_mysql);
+	inserta_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
 	proc(proxyserv_dropacache);
 	mod->nick = proxyserv->nick;
 	mod->ident = proxyserv->ident;

@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.3 2004-09-14 04:25:25 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -87,11 +87,11 @@ DLLFUNC int descarga()
 	borra_comando(MSG_SQUIT, statserv_squit);
 	borra_comando("351", statserv_version);
 	borra_comando(MSG_EOS, statserv_eos);
-	signal_del(SIGN_UMODE, statserv_umode);
-	signal_del(SIGN_QUIT, statserv_quit);
-	signal_del(SIGN_CREATE_CHAN, statserv_create_channel);
-	signal_del(SIGN_DESTROY_CHAN, statserv_destroy_channel);
-	signal_del(SIGN_MYSQL, statserv_mysql);
+	borra_senyal(SIGN_UMODE, statserv_umode);
+	borra_senyal(SIGN_QUIT, statserv_quit);
+	borra_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
+	borra_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
+	borra_senyal(SIGN_MYSQL, statserv_mysql);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -227,11 +227,11 @@ void set(Conf *config, Modulo *mod)
 	inserta_comando(MSG_SQUIT, TOK_SQUIT, statserv_squit, INI);
 	inserta_comando("351", "351", statserv_version, INI);
 	inserta_comando(MSG_EOS, TOK_EOS, statserv_eos, INI);
-	signal_add(SIGN_UMODE, statserv_umode);
-	signal_add(SIGN_QUIT, statserv_quit);
-	signal_add(SIGN_CREATE_CHAN, statserv_create_channel);
-	signal_add(SIGN_DESTROY_CHAN, statserv_destroy_channel);
-	signal_add(SIGN_MYSQL, statserv_mysql);
+	inserta_senyal(SIGN_UMODE, statserv_umode);
+	inserta_senyal(SIGN_QUIT, statserv_quit);
+	inserta_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
+	inserta_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
+	inserta_senyal(SIGN_MYSQL, statserv_mysql);
 	mod->nick = statserv->nick;
 	mod->ident = statserv->ident;
 	mod->host = statserv->host;

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.2 2004-09-11 16:08:03 Trocotronic Exp $ 
+ * $Id: main.c,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,6 +9,7 @@
 #include "bdd.h"
 #endif
 #include <fcntl.h>
+#include <signal.h>
 #include <sys/stat.h>
 #undef USA_CONSOLA
 #ifndef _WIN32
@@ -29,7 +30,7 @@ struct Sockets
 
 Sock *SockActual;
 MYSQL *mysql = NULL;
-Signal *signals[MAXSIGS];
+Senyal *senyals[MAXSIGS];
 Timer *timers = NULL;
 Proc *procs = NULL;
 char tokbuf[BUFSIZE];
@@ -40,6 +41,7 @@ HANDLE hStdin;
 int listens[MAX_LISTN];
 int listenS = 0;
 char reth = 0;
+MODVAR char **margv;
 
 void encola(DBuf *, char *, int);
 int desencola(DBuf *, char *, int);
@@ -746,10 +748,72 @@ void inicia_procesos()
 	ChkBtCon(0, 0);
 #endif
 }
+void escribe_pid()
+{
+#ifdef PID
+	int  fd;
+	char buff[20];
+	if ((fd = open(PID, O_CREAT | O_WRONLY, 0600)) >= 0)
+	{
+		bzero(buff, sizeof(buff));
+		sprintf_irc(buff, "%5d\n", (int)getpid());
+		if (write(fd, buff, strlen(buff)) == -1)
+			Debug("No se puede escribir el archivo pid %s", PID);
+		close(fd);
+		return;
+	}
+#ifdef	DEBUG
+	else
+		Debug("No se puede abrir el archivo pid %s", PID);
+#endif
+#endif
+}
+void destruye_temporales()
+{
+	Modulo *mod;
+	for (mod = modulos; mod; mod = mod->sig)
+	{
+		//fecho(FOK,"eliminando %s",mod->tmparchivo);
+		unlink(mod->tmparchivo);
+	}
+}
+void cierra_todo()
+{
+	cierra_socks();
+	destruye_temporales();
 #ifdef _WIN32
-void carga_programa()
+	DestroyWindow(hwMain);
+	WSACleanup();
+#endif
+}
+int refresca()
+{
+	Conf config;
+	descarga_modulos();
+	parseconf("colossus.conf", &config, 1);
+	distribuye_conf(&config);
+	carga_modulos();
+#ifdef UDB
+	carga_bloques();
+#endif
+	if (SockIrcd)
+		conecta_bots();
+	return 0;
+}
+int reinicia()
+{
+	cierra_todo();
+#ifdef _WIN32
+	execv(margv[0], margv);
 #else
-int main(char argv[], int argc)
+	execv(".", margv);
+#endif
+	exit(-1);
+}
+#ifdef _WIN32
+void carga_programa(int argc, char *argv[])
+#else
+int main(int argc, char *argv[])
 #endif
 {
 	Conf config;
@@ -760,7 +824,7 @@ int main(char argv[], int argc)
 	ListaSocks.abiertos = 0;
 	for (i = 0; i < MAXSOCKS; i++)
 		ListaSocks.socket[i] = NULL;
-	memset(signals, (int)NULL, sizeof(signals));
+	memset(senyals, (int)NULL, sizeof(senyals));
 #ifdef _WIN32	
 	mkdir("tmp");
 #else
@@ -809,6 +873,7 @@ int main(char argv[], int argc)
 			}
 		}
 	}
+	margv = argv;
 	carga_cache();
 #ifdef UDB
 	bdd_init();
@@ -824,10 +889,20 @@ int main(char argv[], int argc)
 		cTab[i].item = NULL;
 		cTab[i].items = 0;
 	}
+	escribe_pid();
+#ifdef _WIN32
+	signal(SIGSEGV, CleanUpSegv);
+#else
+	signal(SIGHUP, refresca);
+	signal(SIGTERM, cierra_colossus, 0);
+	signal(SIGINT, reinicia);
+#endif
 #ifndef _WIN32
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
 	if (setrlimit(RLIMIT_CORE, &corelim))
 		printf("unlimit core size failed; errno = %d\n", errno);
+	if (fork())
+		exit(0);
 	programa_loop_principal(NULL);
 #else
 	if (!EscuchaIrcd)
@@ -854,8 +929,7 @@ int EsIp(char *ip)
 		return 0;
 	if ((oct = strrchr(ip, '.')))
 	{
-		oct++;
-		if (*oct < 65) /* es ip */
+		if (*(++oct) < 65) /* es ip */
 			return 1;
 	}
 	return 0;
@@ -931,31 +1005,31 @@ char *random_ex(char *patron)
 	*ptr = '\0';
 	return buf;
 }
-void signal_add(short signal, int (*func)())
+void inserta_senyal(short senyal, int (*func)())
 {
-	Signal *sign, *aux;
-	for (aux = signals[signal]; aux; aux = aux->sig)
+	Senyal *sign, *aux;
+	for (aux = senyals[senyal]; aux; aux = aux->sig)
 	{
 		if (aux->func == func)
 			return;
 	}
-	sign = (Signal *)Malloc(sizeof(Signal));
-	sign->signal = signal;
+	sign = (Senyal *)Malloc(sizeof(Senyal));
+	sign->senyal = senyal;
 	sign->func = func;
-	sign->sig = signals[signal];
-	signals[signal] = sign;
+	sign->sig = senyals[senyal];
+	senyals[senyal] = sign;
 }
-int signal_del(short signal, int (*func)())
+int borra_senyal(short senyal, int (*func)())
 {
-	Signal *aux, *prev = NULL;
-	for (aux = signals[signal]; aux; aux = aux->sig)
+	Senyal *aux, *prev = NULL;
+	for (aux = senyals[senyal]; aux; aux = aux->sig)
 	{
-		if (aux->signal == signal)
+		if (aux->senyal == senyal)
 		{
 			if (prev)
 				prev->sig = aux->sig;
 			else
-				signals[signal] = aux->sig;
+				senyals[senyal] = aux->sig;
 			Free(aux);
 			return 1;
 		}
@@ -1525,22 +1599,9 @@ void Debug(char *formato, ...)
 	fprintf(stderr, debugbuf);
 #endif
 }
-void destruye_temporales()
+int cierra_colossus(int excode)
 {
-	Modulo *mod;
-	for (mod = modulos; mod; mod = mod->sig)
-	{
-		//fecho(FOK,"eliminando %s",mod->tmparchivo);
-		unlink(mod->tmparchivo);
-	}
-}
-void cierra_colossus(int excode)
-{
-	destruye_temporales();
-#ifdef _WIN32
-	DestroyWindow(hwMain);
-	WSACleanup();
-#endif
+	cierra_todo();
 	exit(excode);
 }
 void ircd_log(int opt, char *formato, ...)

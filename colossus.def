@@ -12,9 +12,9 @@ EXPORTS
 	conf_set
 	parseconf
 	proc
-	signal_add
-	signals
-	signal_del
+	inserta_senyal
+	borra_senyal
+	senyals
 	timer
 	timer_off
 	inserta_comando

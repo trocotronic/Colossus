@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -159,9 +159,9 @@ DLLFUNC int descarga()
 	borra_comando(MSG_TOPIC, chanserv_topic);
 	borra_comando(MSG_JOIN, chanserv_join);
 	borra_comando(MSG_KICK, chanserv_kick);
-	signal_del(SIGN_MYSQL, chanserv_sig_mysql);
-	signal_del(NS_SIGN_DROP, chanserv_dropanick);
-	signal_del(SIGN_EOS, chanserv_sig_eos);
+	borra_senyal(SIGN_MYSQL, chanserv_sig_mysql);
+	borra_senyal(NS_SIGN_DROP, chanserv_dropanick);
+	borra_senyal(SIGN_EOS, chanserv_sig_eos);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -268,9 +268,9 @@ void set(Conf *config, Modulo *mod)
 	inserta_comando(MSG_TOPIC, TOK_TOPIC, chanserv_topic, INI);
 	inserta_comando(MSG_JOIN, TOK_JOIN, chanserv_join, INI);
 	inserta_comando(MSG_KICK, TOK_KICK, chanserv_kick, INI);
-	signal_add(SIGN_MYSQL, chanserv_sig_mysql);
-	signal_add(NS_SIGN_DROP, chanserv_dropanick);
-	signal_add(SIGN_EOS, chanserv_sig_eos);
+	inserta_senyal(SIGN_MYSQL, chanserv_sig_mysql);
+	inserta_senyal(NS_SIGN_DROP, chanserv_dropanick);
+	inserta_senyal(SIGN_EOS, chanserv_sig_eos);
 	proc(chanserv_dropachans);
 	mod->nick = chanserv->nick;
 	mod->ident = chanserv->ident;

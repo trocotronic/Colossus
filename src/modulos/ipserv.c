@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -80,11 +80,11 @@ DLLFUNC int descarga()
 #ifndef UDB
 	borra_comando(MSG_NICK, ipserv_nick);
 	borra_comando(MSG_UMODE2, ipserv_umode);
-	signal_del(NS_SIGN_IDOK, ipserv_idok);
+	borra_senyal(NS_SIGN_IDOK, ipserv_idok);
 #endif
-	signal_del(SIGN_MYSQL, ipserv_sig_mysql);
-	signal_del(NS_SIGN_DROP, ipserv_sig_drop);
-	signal_del(SIGN_EOS, ipserv_sig_eos);
+	borra_senyal(SIGN_MYSQL, ipserv_sig_mysql);
+	borra_senyal(NS_SIGN_DROP, ipserv_sig_drop);
+	borra_senyal(SIGN_EOS, ipserv_sig_eos);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -164,11 +164,11 @@ void set(Conf *config, Modulo *mod)
 #ifndef UDB
 	inserta_comando(MSG_NICK, TOK_NICK, ipserv_nick, INI);
 	inserta_comando(MSG_UMODE2, TOK_UMODE2, ipserv_umode, INI);
-	signal_add(NS_SIGN_IDOK, ipserv_idok);
+	inserta_senyal(NS_SIGN_IDOK, ipserv_idok);
 #endif
-	signal_add(SIGN_MYSQL, ipserv_sig_mysql);
-	signal_add(NS_SIGN_DROP, ipserv_sig_drop);
-	signal_add(SIGN_EOS, ipserv_sig_eos);
+	inserta_senyal(SIGN_MYSQL, ipserv_sig_mysql);
+	inserta_senyal(NS_SIGN_DROP, ipserv_sig_drop);
+	inserta_senyal(SIGN_EOS, ipserv_sig_eos);
 	proc(ipserv_dropaips);
 	mod->nick = ipserv->nick;
 	mod->ident = ipserv->ident;

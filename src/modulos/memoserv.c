@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.3 2004-09-14 04:25:24 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.4 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -101,12 +101,12 @@ DLLFUNC int descarga()
 {
 	borra_comando(MSG_AWAY, memoserv_away);
 	borra_comando(MSG_JOIN, memoserv_join);
-	signal_del(NS_SIGN_IDOK, memoserv_idok);
-	signal_del(SIGN_MYSQL, memoserv_sig_mysql);
-	signal_del(NS_SIGN_DROP, memoserv_sig_drop);
-	signal_del(NS_SIGN_REG, memoserv_sig_reg);
-	signal_del(CS_SIGN_DROP, memoserv_sig_drop);
-	signal_del(CS_SIGN_REG, memoserv_sig_reg);
+	borra_senyal(NS_SIGN_IDOK, memoserv_idok);
+	borra_senyal(SIGN_MYSQL, memoserv_sig_mysql);
+	borra_senyal(NS_SIGN_DROP, memoserv_sig_drop);
+	borra_senyal(NS_SIGN_REG, memoserv_sig_reg);
+	borra_senyal(CS_SIGN_DROP, memoserv_sig_drop);
+	borra_senyal(CS_SIGN_REG, memoserv_sig_reg);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -185,12 +185,12 @@ void set(Conf *config, Modulo *mod)
 	sprintf_irc(memoserv->mascara, "%s!%s@%s", memoserv->nick, memoserv->ident, memoserv->host);
 	inserta_comando(MSG_AWAY, TOK_AWAY, memoserv_away, INI);
 	inserta_comando(MSG_JOIN, TOK_JOIN, memoserv_join, INI);
-	signal_add(NS_SIGN_IDOK, memoserv_idok);
-	signal_add(SIGN_MYSQL, memoserv_sig_mysql);
-	signal_add(NS_SIGN_DROP, memoserv_sig_drop);
-	signal_add(NS_SIGN_REG, memoserv_sig_reg);
-	signal_add(CS_SIGN_DROP, memoserv_sig_drop);
-	signal_add(CS_SIGN_REG, memoserv_sig_reg);
+	inserta_senyal(NS_SIGN_IDOK, memoserv_idok);
+	inserta_senyal(SIGN_MYSQL, memoserv_sig_mysql);
+	inserta_senyal(NS_SIGN_DROP, memoserv_sig_drop);
+	inserta_senyal(NS_SIGN_REG, memoserv_sig_reg);
+	inserta_senyal(CS_SIGN_DROP, memoserv_sig_drop);
+	inserta_senyal(CS_SIGN_REG, memoserv_sig_reg);
 	mod->nick = memoserv->nick;
 	mod->ident = memoserv->ident;
 	mod->host = memoserv->host;

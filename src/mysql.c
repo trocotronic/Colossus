@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.3 2004-09-16 21:18:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -40,7 +40,7 @@ int carga_mysql()
 		}
 	}
 	_mysql_carga_tablas();
-	signal(SIGN_MYSQL);
+	senyal(SIGN_MYSQL);
 	return 1;
 }
 MYSQL_RES *_mysql_query(char *formato, ...)
@@ -262,7 +262,7 @@ int _mysql_restaura()
 	}
 	fclose(fp);
 	_mysql_carga_tablas();
-	signal(SIGN_MYSQL);
+	senyal(SIGN_MYSQL);
 	return 0;
 }
 void _mysql_carga_tablas()

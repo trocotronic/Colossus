@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.3 2004-09-16 21:18:21 Trocotronic Exp $ 
  */
 
 #include "flags.h"
@@ -171,7 +171,6 @@ extern int intentos;
 extern void libera_cliente_de_memoria(Cliente *);
 extern void libera_canal_de_memoria(Canal *);
 extern char backupbuf[BUFSIZE];
-extern int reinicia(void);
 extern Cliente *botnick(char *, char *, char *, char *, char *, char *);
 extern MODVAR Cliente *clientes;
 extern Sock *SockIrcd, *EscuchaIrcd;
