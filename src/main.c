@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.19 2004-10-01 18:55:20 Trocotronic Exp $ 
+ * $Id: main.c,v 1.20 2004-10-01 19:25:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -339,11 +339,7 @@ Sock *sockaccept(Sock *list, int pres)
 	int len = sizeof(struct sockaddr);
 	if (getpeername(pres, (struct sockaddr *)&addr, &len) == -1)
 	{
-#ifdef _WIN32
-		closesocket(pres);
-#else
-		close(pres);
-#endif		
+		CLOSE_SOCK(pres);
 		return NULL;
 	}
 	da_Malloc(sck, Sock);
@@ -437,11 +433,7 @@ void sockclose(Sock *sck, char closef)
 #ifdef DEBUG
 	Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
 #endif
-#ifdef _WIN32
-	closesocket(sck->pres);
-#else
-	close(sck->pres);
-#endif
+	CLOSE_SOCK(sck->pres);
 #ifdef USA_SSL
 	if (EsSSL(sck) && sck->ssl) 
 	{
@@ -565,7 +557,7 @@ void envia_cola(Sock *sck)
 				ircd_SSL_write(sck, msg, len);
 			else
 #endif
-			send(sck->pres, msg, len, 0);
+			WRITE_SOCK(sck->pres, msg, len);
 			len = 0;
 			if (sck->writefunc)
 				sck->writefunc(sck, msg);
@@ -587,7 +579,7 @@ int lee_mensaje(Sock *sck)
 		len = ircd_SSL_read(sck, lee, BUFSIZE);
 	else
 #endif
-	len = recv(sck->pres, lee, BUFSIZE, 0);
+	len = READ_SOCK(sck->pres, lee, BUFSIZE);
 	if (len < 0 && ERRNO == P_EWOULDBLOCK)
 		return 1;
 #ifdef USA_ZLIB

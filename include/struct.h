@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.13 2004-10-01 18:55:20 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.14 2004-10-01 19:25:34 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -30,19 +30,7 @@
   #define MODVAR
  #endif
 #endif
-#ifdef _WIN32
-#define DLLFUNC __declspec(dllexport)
-#define irc_dlopen(x,y) LoadLibrary(x)
-#define irc_dlclose FreeLibrary
-#define irc_dlsym(x,y,z) z = (void *)GetProcAddress(x,y)
-#define irc_dlerror our_dlerror
-#else
-#define irc_dlopen dlopen
-#define irc_dlclose dlclose
-#define irc_dlsym(x,y,z) z = dlsym(x,y)
-#define irc_dlerror dlerror
-#define DLLFUNC 
-#endif
+
 #ifdef USA_SSL
 #include <openssl/rsa.h>       /* SSL stuff */
 #include <openssl/crypto.h>
@@ -59,60 +47,7 @@
 
 #include "sprintf_irc.h"
 #include "parseconf.h"
-
-/* 
- * Macros de portabilidad
- */
-#ifndef _WIN32
-#define SET_ERRNO(x) errno = x
-#define READ_SOCK(fd, buf, len) read((fd), (buf), (len))
-#define WRITE_SOCK(fd, buf, len) write((fd), (buf), (len))
-#define CLOSE_SOCK(fd) close(fd)
-#define IOCTL(x, y, z) ioctl((x), (y), (z))
-#define ERRNO errno
-#define STRERROR(x) strerror(x)
-
-#define P_EMFILE EMFILE
-#define P_ENOBUFS ENOBUFS
-#define P_EWOULDBLOCK EWOULDBLOCK
-#define P_EAGAIN EAGAIN
-#define P_EINPROGRESS EINPROGRESS
-#define P_EWORKING EINPROGRESS
-#define P_EINTR EINTR
-#define P_ETIMEDOUT ETIMEDOUT
-#define P_ENOTSOCK ENOTSOCK
-#define P_EIO	EIO
-#define P_ECONNABORTED ECONNABORTED
-#define P_ECONNRESET	ECONNRESET
-#define P_ENOTCONN ENOTCONN
-#define P_EMSGSIZE EMSGSIZE
-#else
-#define NETDB_INTERNAL -1
-#define NETDB_SUCCESS 0 
-
-#define READ_SOCK(fd, buf, len) recv((fd), (buf), (len), 0)
-#define WRITE_SOCK(fd, buf, len) send((fd), (buf), (len), 0)
-#define CLOSE_SOCK(fd) closesocket(fd)
-#define IOCTL(x, y, z) ioctlsocket((x), (y), (z))
-#define ERRNO WSAGetLastError()
-#define STRERROR(x) sock_strerror(x)
-#define SET_ERRNO(x) WSASetLastError(x)
-
-#define P_EMFILE WSAEMFILE
-#define P_ENOBUFS WSAENOBUFS
-#define P_EWOULDBLOCK WSAEWOULDBLOCK
-#define P_EAGAIN WSAEWOULDBLOCK
-#define P_EINPROGRESS WSAEINPROGRESS
-#define P_EWORKING WSAEWOULDBLOCK
-#define P_EINTR WSAEINTR
-#define P_ETIMEDOUT WSAETIMEDOUT
-#define P_ENOTSOCK WSAENOTSOCK
-#define P_EIO	EIO
-#define P_ECONNABORTED WSAECONNABORTED
-#define P_ECONNRESET	WSAECONNRESET
-#define P_ENOTCONN WSAENOTCONN
-#define P_EMSGSIZE WSAEMSGSIZE
-#endif
+#include "sistema.h" /* portabilidades */
 
 extern void carga_socks(void);
 extern int strcasecmp(const char *, const char *);
@@ -125,13 +60,7 @@ extern void ircstrdup(char **, const char *);
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data)
 #define MAXSOCKS 1024
 #define BUFSIZE 8192
-#define ToLower(c) (NTL_tolower_tab[(int)(c)])
-#define ToUpper(c) (NTL_toupper_tab[(int)(c)])
-#define u_long unsigned long
-#define u_char unsigned char
-#define u_int unsigned int
-#define u_short unsigned short
-#define BadPtr(x) (!(x) || (*(x) == '\0'))
+
 typedef struct _dbuf DBuf;
 
 struct _dbuf
@@ -191,11 +120,11 @@ extern void inserta_canal_en_hash(struct _canal *, char *);
 extern int borra_cliente_de_hash(struct _cliente *, char *);
 extern int borra_canal_de_hash(struct _canal *, char *);
 extern int match(char *, char *);
-#define bzero(x,y) memset(x,0,y)
+
 extern char *_asctime(time_t *);
 #define PROTOCOL 2304
 extern u_long our_crc32(const u_char *, u_int);
-#define abs(x) (x < 0) ? -x : x
+
 
 extern int carga_mysql();
 extern MODVAR MYSQL *mysql;
