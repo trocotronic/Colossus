@@ -80,11 +80,6 @@ AC_MSG_CHECKING(para zlib)
         if test -f "$dir/include/zlib.h"; then
 	    AC_MSG_RESULT(encontrado en $zlibdir)
             found_zlib="yes";
-	    if test "$zlibdir" = "/usr" ; then
-		CFLAGS="$CFLAGS -DUSA_ZLIB";
-	    else
-	        CFLAGS="$CFLAGS -I$zlibdir/include -DUSA_ZLIB";
-	    fi
             break;
         fi
     done
@@ -105,6 +100,5 @@ AC_MSG_CHECKING(para zlib)
 AC_DEFUN([CHECK_MYSQL],
 [
 AC_MSG_CHECKING(para mysql)
-LDFLAGS="$LDFLAGS -L/usr/lib/mysql";
-IRCDLIBS="$IRCDLIBS-lmysqlclient ";
+IRCDLIBS="$IRCDLIBS-L/usr/lib/mysql -lmysqlclient ";
 ])
