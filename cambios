@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.2 2004-09-11 15:44:54 Trocotronic Exp $
+ * $Id: cambios,v 1.3 2004-09-16 21:29:46 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -160,3 +160,6 @@
 100904118 - Arreglado un fallo al enviar toda una cola.
 110904119 - Arreglado un fallo al volver a escuchar una conexión previamente cerrada.
 110904120 - Añadida una función para no consumir recursos si no hay ninguna conexión establecida.
+160904121 - Añadido el fork() (*nix).
+160904122 - Añadido el uso de signals (*nix).
+160904123 - Se añade un script en bash para controlar los servicios en consola (*nix).
