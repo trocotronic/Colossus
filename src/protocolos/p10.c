@@ -645,7 +645,7 @@ void inicia()
 	int2b64(buf, me.numeric, sizeof(buf));
 	//sendto_serv(":%s PROTOCTL REQ :TOKEN", me.nombre);
 	ircstrdup(&me.trio, buf);
-	sendto_serv("PASS :%s", conf_server->password->local);
+	sendto_serv("PASS :%s", conf_server->password.local);
 #ifdef HUB
 	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
 #else
@@ -931,7 +931,9 @@ IRCFUNC(m_nick)
 			p_kill(al, &me, "Nick protegido.");
 			renick_bot(parv[1]);
 		}
-		senyal2(SIGN_NICK, al, NULL);
+		senyal2(SIGN_POST_NICK, cl, 0);
+		if (parc > 9)
+			senyal2(SIGN_UMODE, cl, parv[6]);
 	}
 	else
 	{
@@ -991,7 +993,7 @@ IRCFUNC(m_ping)
 }
 IRCFUNC(m_pass)
 {
-	if (strcmp(parv[1], conf_server->password->remoto))
+	if (strcmp(parv[1], conf_server->password.remoto))
 	{
 		fecho(FERR, "Contraseñas incorrectas");
 		sockclose(sck, LOCAL);

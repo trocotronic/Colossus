@@ -1,4 +1,4 @@
-## $Id: make,v 1.13 2005-03-14 14:18:05 Trocotronic Exp $
+## $Id: make,v 1.14 2005-03-14 14:26:45 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -11,7 +11,7 @@ ZLIB=1
 ###### FIN ZLIB ######
 
 #### SOPORTE UDB ####
-UDB=1
+#UDB=1
 #
 ###### FIN UDB ######
 
