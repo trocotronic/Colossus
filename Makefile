@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.5 2004-09-17 23:30:58 Trocotronic Exp $
+## $Id: Makefile,v 1.6 2004-09-17 23:33:52 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
@@ -19,3 +19,10 @@ build:
 	@echo ' __________________________________________________ '
 	@echo '| Compilación terminada.                           |'
 	@echo '|__________________________________________________|'
+clean:
+	$(RM) -f *~ \#* core *.orig include/*.orig
+	@for i in $(SUBDIRS); do \
+		echo "Cleaning $$i";\
+		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
+	done
+	fi
