@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.7 2004-10-01 18:55:20 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.8 2004-10-23 22:42:21 Trocotronic Exp $ 
  */
 
 #include "flags.h"
@@ -25,8 +25,9 @@ struct _cliente
 {
 	char *nombre;
 	char *ident;
-	char *host; /* siempre apunta al host del cliente que conecta */
+	char *host; /* siempre apunta al host del cliente que conecta (puede ser ip o host) */
 	char *rvhost; /* *SIEMPRE* apunta al host resuelto: a host si ya es host o a un strdup del host resuelto */
+	char *ip; /* *SIEMPRE* apunta a la ip */
 	Cliente *server;
 	char *vhost;
 	char *mask;
@@ -107,7 +108,7 @@ extern Canal *busca_canal(char *, Canal *);
 extern Canal *info_canal(char *, int);
 extern void sendto_serv(char *, ...);
 extern void sendto_serv_us(Cliente *, char *, char *, char *, ...);
-Cliente *nuevo_cliente(char *, char *, char *, char *, char *, char *, char *);
+Cliente *nuevo_cliente(char *, char *, char *, char *, char *, char *, char *, char *);
 extern void cambia_nick(Cliente *, char *);
 extern void inserta_usuario_en_canal(Canal *, Cliente *);
 extern void inserta_canal_en_usuario(Cliente *, Canal *);

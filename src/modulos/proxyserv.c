@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.6 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.7 2004-10-23 22:42:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -282,15 +282,20 @@ IRCFUNC(proxyserv_nick)
 	if (parc > 4)
 	{
 		Proxys *px;
-		if (_mysql_get_registro(MYSQL_CACHE, parv[4], "hora") || _mysql_get_registro(XS_MYSQL, parv[4], NULL))
+		char *host;
+		if (cl->ip && *(cl->ip) != '*')
+			host = cl->ip;
+		else
+			host = cl->host;
+		if (_mysql_get_registro(MYSQL_CACHE, host, "hora") || _mysql_get_registro(XS_MYSQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
 		{
-			if (!strcasecmp(px->host, parv[4]))
+			if (!strcasecmp(px->host, host))
 				return 1;
 		}
 		sendto_serv(":%s %s %s :Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.", proxyserv->nick, TOK_NOTICE, cl->nombre);
-		escanea(parv[4]);
+		escanea(host);
 	}
 	return 0;
 }

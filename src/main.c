@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.23 2004-10-10 09:56:34 Trocotronic Exp $ 
+ * $Id: main.c,v 1.24 2004-10-23 22:42:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1013,6 +1013,15 @@ char *dominum(char *ip)
 	}
 	else /* es host */
 		return ip;
+	return NULL;
+}
+char *decode_ip(char *buf)
+{
+	int len = strlen(buf);
+	char targ[25];
+	b64_decode(buf, targ, 25);
+	if (len == 8)
+		return inet_ntoa(*(struct in_addr *)targ);
 	return NULL;
 }
 int randomiza(int ini, int fin)
