@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.7 2004-09-23 17:01:50 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.8 2004-10-23 22:39:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -480,9 +480,10 @@ int ipserv_dropaips(Proc *proc)
 	{
 		if (!(res = _mysql_query("SELECT item from %s%s where caduca != '0' && caduca < %i LIMIT %i,30", PREFIJO, IS_MYSQL, time(0), proc->proc)) || !mysql_num_rows(res))
 		{
+			if (proc->time) /* no es la primera llamada de ese proc */
+				comprueba_cifrado();
 			proc->proc = 0;
 			proc->time = time(0);
-			comprueba_cifrado();
 			return 1;
 		}
 		while ((row = mysql_fetch_row(res)))
