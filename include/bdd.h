@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.5 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.6 2004-10-23 22:42:30 Trocotronic Exp $ 
  */
  
 extern u_int base64toint(const char *);
@@ -23,14 +23,16 @@ struct _udb
 };
 
 extern MODVAR Udb *nicks, *chans, *ips, *sets;
-
-#define BDD_NICKS 0
-#define BDD_CHANS 1
-#define BDD_IPS 2
-#define BDD_SET 3
+#ifdef MODULE_COMPILE
+extern MODVAR u_int BDD_NICKS, BDD_CHANS, BDD_IPS, BDD_SET;
+#else
+DLLFUNC extern MODVAR u_int BDD_NICKS, BDD_CHANS, BDD_IPS, BDD_SET;
+#endif
 
 DLLFUNC extern Udb *busca_registro(int, char *), *busca_bloque(char *, Udb *);
 DLLFUNC int level_oper_bdd(char *);
+extern char bloques[];
+extern int BDD_TOTAL;
 
 #define BDD_PREO 0x1
 #define BDD_OPER 0x2

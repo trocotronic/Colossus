@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.12 2004-10-10 21:07:31 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.13 2004-10-23 22:41:48 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -297,14 +297,43 @@ char *cifranick(char *nickname, char *pass)
 
 #ifdef UDB
 #include "bdd.h"
+#ifndef _WIN32
+#define O_BINARY 0x0
+#endif
 Udb *nicks = NULL;
 Udb *chans = NULL;
 Udb *ips = NULL;
 Udb *sets = NULL;
-Udb *hash[4][2048];
+DLLFUNC u_int BDD_NICKS, BDD_CHANS, BDD_IPS, BDD_SET;
+Udb ***hash;
+Udb *ultimo = NULL;
 #define da_Udb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 #define atoul(x) strtoul(x, NULL, 10)
-
+char bloques[128];
+int BDD_TOTAL = 0;
+void alta_bloque(char letra, char *ruta, Udb **reg, u_int *id)
+{
+	static u_int ids = 0;
+	da_Udb(*reg);
+	(*reg)->id |= (u_int)letra;
+	(*reg)->id |= (ids << 8);
+	(*reg)->item = ruta;
+	(*reg)->mid = ultimo;
+	*id = ids;
+	ultimo = *reg;
+	bloques[BDD_TOTAL++] = letra;
+	ids++;
+}
+void alta_hash()
+{
+	Udb *reg;
+	hash = (Udb ***)Malloc(sizeof(Udb **) * BDD_TOTAL);
+	for (reg = ultimo; reg; reg = reg->mid)
+	{
+		hash[(reg->id >> 8)] = (Udb **)Malloc(sizeof(Udb *) * 2048);
+		bzero(hash[(reg->id >> 8)], sizeof(Udb *) * 2048);
+	}
+}
 void bdd_init()
 {
 	FILE *fh;
@@ -313,36 +342,18 @@ void bdd_init()
 #else
 	mkdir(DB_DIR, 0744);
 #endif
+	bzero(bloques, sizeof(bloques));
 	if (!nicks)
-	{
-		da_Udb(nicks);
-		nicks->id = BDD_NICKS;
-		nicks->item = DB_DIR "nicks.udb";
-	}
+		alta_bloque('N', DB_DIR "nicks.udb", &nicks, &BDD_NICKS);
 	if (!chans)
-	{
-		da_Udb(chans);
-		chans->mid = nicks;
-		chans->id = BDD_CHANS;
-		chans->item = DB_DIR "canales.udb";
-	}
+		alta_bloque('C', DB_DIR "canales.udb", &chans, &BDD_CHANS);
 	if (!ips)
-	{
-		da_Udb(ips);
-		ips->mid = chans;
-		ips->id = BDD_IPS;
-		ips->item = DB_DIR "ips.udb";
-	}
+		alta_bloque('I', DB_DIR "ips.udb", &ips, &BDD_IPS);
 	if (!sets)
-	{
-		da_Udb(sets);
-		sets->mid = ips;
-		sets->id = BDD_SET;
-		sets->item = DB_DIR "set.udb";
-	}
-	if ((fh = fopen(DB_DIR "hash", "a")))
+		alta_bloque('S', DB_DIR "set.udb", &sets, &BDD_SET);
+	alta_hash();
+	if ((fh = fopen(DB_DIR "crcs", "a")))
 		fclose(fh);
-	bzero(hash, sizeof(Udb *) * 4 * 2048);
 	carga_bloques();
 }
 void cifrado_str(char *origen, char *destino, int len)
@@ -362,11 +373,7 @@ u_long obtiene_hash(Udb *bloq)
 	char *par;
 	u_long hashl = 0L;
 	struct stat inode;
-#ifdef _WIN32
-	if ((fp = open(bloq->item, O_RDONLY|O_BINARY|O_CREAT, _S_IWRITE)) == -1)
-#else
-	if ((fp = open(bloq->item, O_RDONLY|O_CREAT, 0644)) == -1)
-#endif
+	if ((fp = open(bloq->item, O_RDONLY|O_BINARY|O_CREAT, S_IREAD|S_IWRITE)) == -1)
 		return 0;
 	if (fstat(fp, &inode) == -1)
 	{
@@ -390,7 +397,7 @@ u_long lee_hash(int id)
 	FILE *fp;
 	u_int hash = 0;
 	char lee[9];
-	if (!(fp = fopen(DB_DIR "hash", "r")))
+	if (!(fp = fopen(DB_DIR "crcs", "r")))
 		return 0L;
 	fseek(fp, 8 * id, SEEK_SET);
 	bzero(lee, 9);
@@ -406,46 +413,44 @@ int actualiza_hash(Udb *bloque)
 	FILE *fh;
 	u_long lo;
 	bzero(lee, 9);
-	if (!(fh = fopen(DB_DIR "hash", "r+")))
+	if (!(fh = fopen(DB_DIR "crcs", "r+")))
 		return -1;
 	lo = obtiene_hash(bloque);
-	fseek(fh, 8 * bloque->id, SEEK_SET);
+	fseek(fh, 8 * (bloque->id >> 8), SEEK_SET);
 	sprintf_irc(lee, "%X", lo);
 	fwrite(lee, 1, 8, fh);
 	fclose(fh);
 	return 0;
 }
+/* devuelve el puntero a todo el bloque a partir de su id o letra */
 Udb *coge_de_id(int id)
 {
-	switch (id)
+	Udb *reg;
+	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		case BDD_NICKS:
-		case 'N':
-			return nicks;
-		case BDD_CHANS:
-		case 'C':
-			return chans;
-		case BDD_IPS:
-		case 'I':
-			return ips;
-		case BDD_SET:
-		case 'S':
-			return sets;
+		if (((reg->id & 0xFF) == id) || ((reg->id >> 8) == id))
+			return reg;
 	}
 	return NULL;
 }
+/* devuelve su id a partir de una letra */
 int coge_de_char(char tipo)
 {
-	switch(tipo)
+	Udb *reg;
+	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		case 'N':
-			return BDD_NICKS;
-		case 'C':
-			return BDD_CHANS;
-		case 'I':
-			return BDD_IPS;
-		case 'S':
-			return BDD_SET;
+		if ((reg->id & 0xFF) == tipo)
+			return (reg->id >> 8);
+	}
+	return tipo;
+}
+char coge_de_tipo(int tipo)
+{
+	Udb *reg;
+	for (reg = ultimo; reg; reg = reg->mid)
+	{
+		if ((reg->id >> 8) == tipo)
+			return (reg->id & 0xFF);
 	}
 	return tipo;
 }
@@ -753,19 +758,12 @@ void carga_bloque(int tipo)
 #else
 	struct stat sb;
 #endif
-	if (tipo == BDD_NICKS)
-		bloque = 'N';
-	else if (tipo == BDD_CHANS)
-		bloque = 'C';
-	else if (tipo == BDD_IPS)
-		bloque = 'I';
-	else if (tipo == BDD_SET)
-		bloque = 'S';
+	bloque = coge_de_tipo(tipo);
 	root = coge_de_id(tipo);
-	if ((lee = lee_hash(root->id)) != (obtiene = obtiene_hash(root)))
+	if ((lee = lee_hash(root->id >> 8)) != (obtiene = obtiene_hash(root)))
 	{
 		fecho(FADV, "El bloque %c está corrupto (%lu != %lu)", bloque, lee, obtiene);
-		if ((fd = open(root->item, O_TRUNC)))
+		if ((fd = open(root->item, O_WRONLY|O_TRUNC)))
 		{
 			close(fd);
 			actualiza_hash(root);
@@ -790,8 +788,8 @@ void carga_bloque(int tipo)
 #else
 	if (fstat(fd, &sb) == -1)
 		return;
-	len = sb.st_size
-	p = cur = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_NORESERVE, fd, 0);
+	len = sb.st_size;
+	p = cur = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
 #endif
 	while (cur < (p + len))
 	{
@@ -825,9 +823,9 @@ void descarga_bloque(int tipo)
 void carga_bloques()
 {
 	int i;
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < BDD_TOTAL; i++)
 		descarga_bloque(i);
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < BDD_TOTAL; i++)
 		carga_bloque(i);
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.16 2004-10-10 09:55:02 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.17 2004-10-23 22:41:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -178,6 +178,7 @@ int abre_sock_ircd()
 }
 void escucha_ircd()
 {
+	SockIrcd = NULL;
 	if (!EscuchaIrcd)
 	{
 		EscuchaIrcd = socklisten(conf_server->escucha, escucha_abre, NULL, NULL, NULL);
@@ -231,12 +232,11 @@ SOCKFUNC(inicia_ircd)
 	inicio = time(0);
 	timer_off("rircd", NULL);
 	canales = NULL;
+	sendto_serv("PROTOCTL UDB3 NICKv2 VHP VL TOKEN UMODE2 NICKIP");
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
-		sendto_serv("PROTOCTL UDB3 NICKv2 VHP VL TOKEN UMODE2 ZIP");
-	else
+		sendto_serv("PROTOCTL ZIP");
 #endif
-	sendto_serv("PROTOCTL UDB3 NICKv2 VHP VL TOKEN UMODE2");
 	sendto_serv("PASS :%s", conf_server->password->local);
 	sendto_serv("SERVER %s 1 :U%i-%s-%i %s", me.nombre, me.protocol, me.opts, me.numeric, me.info);
 	return 0;
@@ -319,6 +319,7 @@ SOCKFUNC(cierra_ircd)
 			ChkBtCon(0, 0);
 #endif
 			intentos = 0;
+			escucha_ircd();
 			return 1;
 		}
 		//fecho(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
@@ -328,7 +329,6 @@ SOCKFUNC(cierra_ircd)
 	else /* es local */
 		ChkBtCon(0, 0);
 #endif
-	SockIrcd = NULL;
 	escucha_ircd();
 	return 0;
 }
@@ -448,11 +448,19 @@ IRCFUNC(m_nick)
 	{
 		Cliente *cl = NULL;
 		if (parc == 7) /* NICKv1 */
-			cl = nuevo_cliente(parv[0], parv[3], parv[4], parv[5], parv[4], NULL, parv[6]);
+			cl = nuevo_cliente(parv[0], parv[3], parv[4], NULL, parv[5], parv[4], NULL, parv[6]);
 		else if (parc == 8) /* nickv1 también (¿?) */
-			cl = nuevo_cliente(parv[0], parv[3], parv[4], parv[5], parv[4], NULL, parv[7]);
+			cl = nuevo_cliente(parv[0], parv[3], parv[4], NULL, parv[5], parv[4], NULL, parv[7]);
 		else if (parc == 10) /* NICKv2 */
-			cl = nuevo_cliente(parv[0], parv[3], parv[4], parv[5], parv[8], parv[7], parv[9]);
+			cl = nuevo_cliente(parv[0], parv[3], parv[4], NULL, parv[5], parv[8], parv[7], parv[9]);
+		else if (parc == 11)
+			cl = nuevo_cliente(parv[0], parv[3], parv[4], decode_ip(parv[9]), parv[5], parv[8], parv[7], parv[10]);
+		else /* protocolo desconocido !! */
+		{
+			ircd_log(LOG_ERROR, "Protocolo para nicks desconocido (%s)", backupbuf);
+			fecho(FERR, "Se ha detectado un error en el protocolo de nicks.\nEl programa se ha cerrado para evitar daños.");
+			cierra_colossus(-1);
+		}
 		if (conf_set->modos && conf_set->modos->usuarios)
 			envia_umodos(cl, me.nombre, conf_set->modos->usuarios);
 		if (conf_set->autojoin && conf_set->autojoin->usuarios)
@@ -650,6 +658,7 @@ IRCFUNC(m_tkl)
 #ifdef UDB
 IRCFUNC(m_db)
 {
+	static int bloqs = 0;
 	if (parc < 5)
 	{
 		sendto_serv(":%s DB %s ERR 0 %i", me.nombre, cl->nombre, E_UDB_PARAMS);
@@ -663,6 +672,11 @@ IRCFUNC(m_db)
 		bloq = coge_de_id(*parv[3]);
 		if (strcmp(parv[4], bloq->data_char))
 			sendto_serv(":%s DB %s RES %c %lu", me.nombre, parv[0], *parv[3], bloq->data_long);
+		else
+		{
+			if (++bloqs == BDD_TOTAL)
+				sendto_serv_us(&me, MSG_EOS, TOK_EOS, "");
+		}
 	}
 	else if (!strcasecmp(parv[2], "RES"))
 	{
@@ -694,6 +708,8 @@ IRCFUNC(m_db)
 				}
 			}
 		}
+		if (++bloqs == BDD_TOTAL)
+				sendto_serv_us(&me, MSG_EOS, TOK_EOS, "");
 	}
 	else if (!strcasecmp(parv[2], "INS"))
 	{
@@ -701,7 +717,7 @@ IRCFUNC(m_db)
 		u_long bytes;
 		Udb *bloq;
 		tipo = *r;
-		if (!strchr("NCIS", tipo))
+		if (!strchr(bloques, tipo))
 		{
 			sendto_serv(":%s DB %s ERR INS %i %c", me.nombre, cl->nombre, E_UDB_NODB, tipo);
 			return 1;
@@ -723,7 +739,7 @@ IRCFUNC(m_db)
 		u_long bytes;
 		Udb *bloq;
 		tipo = *r;
-		if (!strchr("NCIS", tipo))
+		if (!strchr(bloques, tipo))
 		{
 			sendto_serv(":%s DB %s ERR DEL %i %c", me.nombre, cl->nombre, E_UDB_NODB, tipo);
 			return 1;
@@ -744,7 +760,7 @@ IRCFUNC(m_db)
 		Udb *bloq;
 		char *contenido = NULL;
 		u_long bytes;
-		if (!strchr("NCIS", *parv[3]))
+		if (!strchr(bloques, *parv[3]))
 		{
 			sendto_serv(":%s DB %s ERR DRP %i %c", me.nombre, cl->nombre, E_UDB_NODB, *parv[3]);
 			return 1;
@@ -900,7 +916,7 @@ IRCFUNC(m_server)
 		sockclose(sck, LOCAL);
 		return 1;
 	}
-	al = nuevo_cliente(cl ? parv[1] : parv[0], NULL, NULL, NULL, NULL, NULL, inf);
+	al = nuevo_cliente(cl ? parv[1] : parv[0], NULL, NULL, NULL, NULL, NULL, NULL, inf);
 	al->protocol = protocol ? atoi(protocol + 1) : 0;
 	al->numeric = numeric ? atoi(numeric) : 0;
 	al->tipo = ES_SERVER;
@@ -1024,7 +1040,7 @@ Canal *busca_canal(char *canal, Canal *lugar)
 		lugar = busca_canal_en_hash(canal, lugar);
 	return lugar;
 }
-Cliente *nuevo_cliente(char *nombre, char *ident, char *host, char *server, char *vhost, char *umodos, char *info)
+Cliente *nuevo_cliente(char *nombre, char *ident, char *host, char *ip, char *server, char *vhost, char *umodos, char *info)
 {
 	Cliente *cl;
 	cl = (Cliente *)Malloc(sizeof(Cliente));
@@ -1035,6 +1051,7 @@ Cliente *nuevo_cliente(char *nombre, char *ident, char *host, char *server, char
 		cl->rvhost = dominum(host);
 	else /* ya es host, apuntamos a host */
 		cl->rvhost = cl->host;
+	cl->ip = ip ? strdup(ip) : NULL;	
 	cl->server = server ? busca_cliente(server, NULL) : NULL;
 	cl->vhost = vhost ? strdup(vhost) : NULL;
 	cl->mask = NULL;
@@ -1489,7 +1506,6 @@ IRCFUNC(sincroniza)
 	//topics
 	//tkls
 	//sqlines
-	sendto_serv_us(&me, MSG_EOS, TOK_EOS, "");
 	senyal(SIGN_EOS);
 	return 0;
 }
@@ -1778,6 +1794,7 @@ void libera_cliente_de_memoria(Cliente *cl)
 	if (cl->host != cl->rvhost) /* hay que liberarlo */
 		ircfree(cl->rvhost);
 	ircfree(cl->host);
+	ircfree(cl->ip);
 	ircfree(cl->vhost);
 	ircfree(cl->mask);
 	ircfree(cl->vmask);
@@ -1860,7 +1877,7 @@ Cliente *botnick(char *nick, char *ident, char *host, char *server, char *modos,
 	Cliente *al;
 	if ((al = busca_cliente(nick, NULL)) && !EsBot(al))
 		irckill(al, me.nombre, "Nick protegido.");
-	al = nuevo_cliente(nick, ident, host, server, host, modos, realname);
+	al = nuevo_cliente(nick, ident, host, NULL, server, host, modos, realname);
 	al->tipo = ES_BOT;
 	sendto_serv("%s %s 1 %lu %s %s %s 0 +%s %s :%s", TOK_NICK, nick, time(0), ident, host, server, modos, host, realname);
 	return al;
