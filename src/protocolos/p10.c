@@ -195,7 +195,7 @@ int b642int(char *num)
 	char *fin = strchr(num, '\0');
 	for (fin--; fin >= num; fin--)
 	{
-		numero += factor*i64[*fin];
+		numero += factor*i64[(int)*fin];
 		factor *= 64;
 	}
 	return numero;
@@ -399,7 +399,7 @@ int p_gline(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *m
 		sendto_serv("%s %s * -%s@%s", me.trio, TOK_GLINE, ident, host);
 	return 0;
 }
-int p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
+void p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
 {
 	if (motivo)
 	{
@@ -409,7 +409,6 @@ int p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
 	}
 	else
 		sendto_serv("%s %s %s %s :Usuario expulsado", bl->trio, TOK_KICK, cn->nombre, cl->trio);
-	return 0;
 }
 int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {

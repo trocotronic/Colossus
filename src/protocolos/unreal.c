@@ -615,7 +615,7 @@ int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *mot
 		sendto_serv(":%s TKL - G %s %s %s", me.nombre, ident, host, bl->mask);
 	return 0;
 }
-int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo)
+int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
 	if (!cl || !cn)
 		return 1;
@@ -1247,7 +1247,7 @@ IRCFUNC(m_sjoin)
 	char *q, *p, tmp[BUFSIZE], mod[6];
 	cn = info_canal(parv[2], !0);
 	strcpy(tmp, parv[parc-1]);
-	for (p = tmp; q = strchr(p, ' '); p = q)
+	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
 		q = strchr(p, ' ');
 		if (q)
