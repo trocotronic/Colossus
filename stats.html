@@ -1,0 +1,64 @@
+<html><head>
+<style type="text/css">
+BODY {background: #3B5690; color: #FFFFFF; font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 11px;}
+TR {background: #3B5690; color: #FFFFFF; font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 11px;}
+</style>
+</head><body>
+<table cellspacing="5" cellpadding="2" bgcolor="#3B5690" text="#FFFFFF">
+<tr><td colspan="3" bgcolor="#22223F">Estadísticas generales</td></tr>
+<tr><td colspan="3">Usuarios</td></tr>
+<tr><td> </td><td>Actual:</td><td>$(USERS_AHORA)</td></tr>
+<tr><td> </td><td>Máximo:</td><td>$(USERS_MAX)</td></tr>
+<tr><td> </td><td>Hoy:</td><td>$(USERS_HOY)</td></tr>
+<tr><td> </td><td>Semana:</td><td>$(USERS_SEMANA)</td></tr>
+<tr><td> </td><td>Mes:</td><td>$(USERS_MES)</td></tr>
+<tr><td> </td><td>Fecha máximo usuarios:</td><td>$(USERS_TIME)</td></tr>
+<tr><td colspan="3"> </td></tr>
+<tr><td colspan="3">Canales</td></tr>
+<tr><td> </td><td>Actual:</td><td>$(CANALES_AHORA)</td></tr>
+<tr><td> </td><td>Máximo:</td><td>$(CANALES_MAX)</td></tr>
+<tr><td> </td><td>Hoy:</td><td>$(CANALES_HOY)</td></tr>
+<tr><td> </td><td>Semana:</td><td>$(CANALES_SEMANA)</td></tr>
+<tr><td> </td><td>Mes:</td><td>$(CANALES_MES)</td></tr>
+<tr><td> </td><td>Fecha máximo canales:</td><td>$(CANALES_TIME)</td></tr>
+<tr><td colspan="3"> </td></tr>
+<tr><td colspan="3">Servidores</td></tr>
+<tr><td> </td><td>Actual:</td><td>$(SERVERS_AHORA)</td></tr>
+<tr><td> </td><td>Máximo:</td><td>$(SERVERS_MAX)</td></tr>
+<tr><td> </td><td>Hoy:</td><td>$(SERVERS_HOY)</td></tr>
+<tr><td> </td><td>Semana:</td><td>$(SERVERS_SEMANA)</td></tr>
+<tr><td> </td><td>Mes:</td><td>$(SERVERS_MES)</td></tr>
+<tr><td> </td><td>Fecha máximo servidores:</td><td>$(SERVERS_TIME)</td></tr>
+<tr><td colspan="3"> </td></tr>
+<tr><td colspan="3">Operadores</td></tr>
+<tr><td> </td><td>Actual:</td><td>$(OPERS_AHORA)</td></tr>
+<tr><td> </td><td>Máximo:</td><td>$(OPERS_MAX)</td></tr>
+<tr><td> </td><td>Hoy:</td><td>$(OPERS_HOY)</td></tr>
+<tr><td> </td><td>Semana:</td><td>$(OPERS_SEMANA)</td></tr>
+<tr><td> </td><td>Mes:</td><td>$(OPERS_MES)</td></tr>
+<tr><td> </td><td>Fecha máximo operadores:</td><td>$(OPERS_TIME)</td></tr>
+<tr><td colspan="3"> </td></tr>
+<tr><td colspan="3" bgcolor="#22223F">Estadísticas de cada servidor</td></tr>
+<!--$(SERVERS)//-->
+<tr><td colspan="3">Servidor: $(SERVER_NOMBRE)</td></tr>
+<tr><td> </td><td>Usuarios:</td><td>$(SERVER_USERS)</td></tr>
+<tr><td> </td><td>Operadores:</td><td>$(SERVER_OPERS)</td></tr>
+<tr><td> </td><td>Máximo usuarios:</td><td>$(SERVER_MAX)</td></tr>
+<tr><td> </td><td>Lag:</td><td>$(SERVER_LAG) segs</td></tr>
+<tr><td> </td><td>Version:</td><td>$(SERVER_VERSION)</td></tr>
+<tr><td> </td><td>Uptime:</td><td>$(SERVER_UPTIME)</td></tr>
+<tr><td colspan="3"> </td></tr>
+<!--$(FIN)//-->
+<tr><td colspan="3" bgcolor="#22223F">Estadísticas de los clientes utilizados</td></tr>
+<!--$(CLIENTES)//-->
+<tr><td colspan="2">$(CLIENTE_NOMBRE)</td><td>$(CLIENTE_USERS)</td></tr>
+<!--$(FIN)//-->
+<tr><td colspan="3"> </td></tr>
+<tr><td colspan="3" bgcolor="#22223F">Lugar de los usuarios</td></tr>
+<!--$(DOMINUMS)//-->
+<tr><td>$(DOMINUMS_DOM)</td><td>$(DOMINUMS_LUGAR)</td><td>$(DOMINUMS_USERS)</td></tr>
+<!--$(FIN)//-->
+<tr><td colspan="3"> </td></tr>
+<tr><td colspan="3" bgcolor="#22223F">Estadísticas realizadas en $(CARGA) segs</td></tr>
+</table>
+</body></html>

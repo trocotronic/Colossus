@@ -1,0 +1,160 @@
+/*
+ * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
+ * 10/06/2004 Trocotronic
+ */
+
+100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
+100604xxx - Añado el comando AYUDA en consola.
+120604xxx - Añado la estructura ModInfo a Modulo.
+120604xxx - Añado la carga de la variable info de cada módulo.
+120604xxx - Añado el comando /modules servidor.colossus para visualizar los módulos cargados.
+120604xxx - Migro todos los extern IRCFUNC al archivo de ircd, puesto que no es necesario que sean externos.
+140204xxx - Empiezo StatServ.
+150604xxx - Añado un par de debugs y el define DEBUG.
+150604xxx - Creo las funciones socklisten y sockaccept para escuchar puertos.
+150604xxx - Añado el proceso de funciones abre, lee, escribe y cierra para los sockets en escucha.
+150604xxx - Cambio el motor de proceso de sockets para aceptar las conexiones en escucha.
+150604xxx - Añado el extern socklisten(). El uso de sockaccept es interno.
+150604xxx - Añado una caché a los dominios MX del envío de emails, para agilizar el proceso.
+170604xxx - Quito el token getinfo puesto que ya no viene de serie.
+170604xxx - Quito los comandos f_* para fecho con parámetro.
+200604xxx - Cambio la estructura del cliente: serv contiene la estructura del servidor al que linka, no el nombre como hasta ahora.
+200604xxx - Añado la variable rvhost a la estructura de cliente que *siempre* contiene el host resuelto.
+200604xxx - Exporto la función is_file.
+200604xxx - Añado close al parseconf.
+210604xxx - Paso los sockwrites del ircd a sendto_serv.
+210604xxx - Añado las opciones OPT_CR y OPT_LF para añadir \r y \n en un sockwrite.
+210604xxx - Exporto microtime.
+290604xxx - Mejoro el cierre de sockets vaciando las colas.
+290604xxx - Arreglo un core al reconectar en throttle.
+290604xxx - Arreglo un fallo de intentos al enviar un email.
+300604xxx - Añado la opción para listar en ProxyServ.
+300604xxx - Añado un resource al programa (icono y versión).
+010704xxx - Añado el ctcpreply del version.
+010704xxx - Arreglado un fallo en comentarios en achivos de configuración.
+010704xxx - *** Primera release pública: 0.7 ***
+030704001 - Arreglado un posible core al no poner ciertos valores de la configuración.
+030704002 - Paso de consola a GUI cambiando todo lo que supone. Este nuevo GUI incluye cuatro botones (de funcionalidad obvia) y
+	la opción de minimizar el programa al SysTray.
+040704003 - Arreglados unos fallos al refrescar los servicios.
+050704004 - Añadida comprobación de sockets locales.
+050704005 - Añadida opción en sockclose para un cierre local o remoto.
+060704006 - Debido al GUI, ahora sólo los sistemas XP/2K/NT* pueden emular el servidor smtp. Los sistemas 9x/ME deberán usar obligatoriamente
+	el bloque smtp { } de la configuración. El resto deberá usar la función exportada a mx.dll.
+090704007 - Añado un errno para coger el fallo al cargar un módulo.
+110704008 - Arreglado un fallo al crear una base de datos.
+110704009 - Recarga de tablas cada vez que se crea una.
+110704010 - Modifico el código para generar las máscaras de usuario mask y vmask.
+110704011 - Emitido signal MySQL al restaurar una base de datos.
+110704012 - Rehabilitada la función rehash de OperServ.
+110704013 - Optimizada la carga de bdds.
+110704014 - Cambido los atols a atouls.
+120704015 - Actualizada la documentación.
+120704016 - Añado un diálogo para mostrar los fallos de configuración.
+120704017 - Rehecho todo el parseo de la configuración.
+120704018 - Cambiado las cloak al nuevo cifrado del unreal.
+120704019 - Añadida la directriz red.
+120704020 - Actualizados docs.
+120704021 - He depurado el código para crear tablas MySQL.
+120704022 - Añadida comprobación si una tabla no se crea.
+120704023 - Añadido el archivo mysql.tablas para crearlas de forma manual.
+120704024 - Añadido protocolo de compresión para MySQL en conexiones remotas.
+120704025 - Ahora la contraseña de MySQL es opcional.
+120704026 - Añadida directriz puerto en el bloque db.
+120704027 - La directriz port del bloque server pasa a llamarse puerto.
+120704028 - La directriz name del bloque db pasa a llamarse nombre.
+120704029 - Arreglado un fallo al registrar un nick sin la opción secure.
+140704030 - Arreglado un fallo que colgaba el programa cuando se añadía un acceso.
+140704031 - Arreglado un fallo al dar acceso a un nick que le borraba sus privilegios si no se especificaba ningún flag.
+140704032 - Arreglado cuelgue al reentrar numerosas veces en un canal migrado.
+140704033 - A partir de ahora, los topics no se mandan al canal si son idénticos al que hay.
+140704034 - Arreglado un fallo al reentrar en un canal con bots residentes.
+140704035 - Arreglado un fallo al registrar el nick con una cuenta de correo no válida.
+140704036 - Arreglado un cuelge al hacer deauth en un canal.
+150704037 - Arreglado cuelgue al eliminar un akick.
+150704038 - Añadidas un par de rutinas para eliminar los registros y akicks de un canal.
+150704039 - Arreglado un fallo que añadía más de una vez los registros y akicks de un canal en memoria.
+160704040 - Los akicks se ponen a la máscara real.
+160704041 - Arreglado un fallo al tracear un fallo.
+160704042 - Arreglado un cuelge que raras veces se daba.
+160704043 - Empiezo el módulo LinkServ.
+160704044 - Ahora los campos del ModInfo son opcionales, menos el nombre del módulo.
+180704045 - Arreglado un cuelgue si los privados empezaban por ':'.
+190704046 - Arreglado un fallo en MemoServ al enviar memos a canales.
+190704047 - Arreglado un fallo al descargar un señal de MemoServ.
+190704048 - Arreglado un fallo al entrar registros existentes a la BDD.
+190704049 - Arreglado un fallo que podía colgar el programa si no era fundador de un canal y se requería.
+200704050 - Arreglado un fallo que suprimía el caracter %.
+210704051 - Arreglado un fallo en NickServ que no permitía dropar nicks con NODROP siendo administrador.
+240704052 - Arreglado un cuelge que se producía si se cerraba un socket que no había recibido datos.
+250704053 - Arreglado un cuelgue al refrescar los comandos.
+250704054 - Quito la directriz red del bloque set puesto que la coge del version del servidor (raw 105).
+260704055 - *** Segunda release pública: 0.8 ***
+260704056 - Recarga de tablas al crear la cache.
+270704057 - Arreglados un par de cuelges si se omitían los modos en el bloque set.
+270704058 - Arreglado un fallo al cargar la configuración SMTP.
+270704059 - Arreglado un cuelgue al refrescar los servicios y solicitar un whois o version.
+270704060 - Arreglado un cuelgue al vaciar la cola.
+270704061 - Cambiado el sistema de colas.
+270704062 - Arreglado un fallo al resolver hosts.
+270704063 - Arreglados numerosos fallos de desconexión y liberación de memoria.
+270704064 - Consigo reducir el tamaño del motor un 40%.
+270704065 - Arreglado un fallo de obliguetoriedad en algunos bloques (ej: smtp).
+270704066 - Arreglado un cuelgue al ejecutar funciones de ultima posición (quit, part, etc).
+270704067 - Cambiado el sistema de debug e implantado un parámetro para depurar mejor los errores y con más precisión.
+280704068 - Arreglado un cuelgue si se tenían los modos de canales por defecto.
+280704069 - Arreglado un fallo al eliminar un swhois.
+280704070 - Los canales registrados reciben +r y el topic por defecto en el instante en el que se registran.
+280704071 - Al dropar un canal se borran los accesos y los akicks de memoria (no se visualizan en INFO).
+280704072 - Añadida una comprobación de modos no permitidos en set::modos::canal.
+280704073 - Arreglado un fallo que permitía entrar en canales prohibidos.
+280704074 - Si un canal está en forbid se muestra al hacerle un INFO.
+280704075 - Si un canal se prohibe, se expulsa a todos los usuarios que pueda haber en él.
+290704076 - Añadidas varias rutinas para eliminar memoria al salir de un canal y/o quitar un modo y desconectar un bot.
+290704077 - Arreglado un fallo al sacar un bot del canal.
+300704078 - Ahora se compila usando MSVC7.0, con lo que arregla algunas advertencias y se consigue reducir aún más el tamaño 
+	del ejecutable y sus módulos.
+300704079 - Arreglado un fallo al hacer chghost.
+300704080 - Cambiado el sistema interno de registros UDB por indexación.
+310704081 - Cambiado el sistema de colas por uno más acurado y más preciso que trata los datos de forma binaria.
+	Además se evitan desbordamientos de memoria.
+310704082 - Arreglado un fallo de detección de tablas corruptas.
+310704083 - Cambio el sistema de actualización de hashes por uno más rápido.
+310704084 - Arreglado un cuelgue al ejecutar un cronómetro.
+010804085 - Añadida una opción para mostrar "(null)" en campos nulos en vez de colgarse.
+010804086 - Añadido el parámetro opts al conectar un servidor.
+010804087 - Arreglado un fallo al separar la información correspondiente de cada servidor al conectar.
+010804088 - Añadido un sistema completo de logueo de eventos mediante el bloque log { }.
+010804089 - Actualizada doc para bloque log.
+010804090 - Ahora los registros MX devuelven el host del SMTP si está bajo Win9x/Me. Así se evita que no resuelva dominios.
+010804091 - Instalación realizada en castellano.
+010804092 - *** Tercera release pública: 0.9 ***
+020804093 - Arreglado un fallo estético al hacer /version servidor.bots.
+020804094 - Arreglado un desbordamiento de memoria en _asctime (en septiembre, actualizad!).
+040804095 - Ahora las cuentas que se registran bajo NickServ sólo será necesario que el dominio resuelva (hasta ahora era necesario
+	que también lo hiciera a un host MX).
+130804096 - Colossus también es compatible con sistemas Linux.
+130804097 - Si se detecta un error durante una petición MySQL devuelve dicho error.
+130804098 - Los hosts de intranets no se escanean.
+160804099 - Arreglado un fallo al quitar una block.
+220804100 - *** Cuarta release pública: 0.9.1 ***
+230804101 - Arreglado una descoordinación en ChanServ.
+240804102 - Añadida una comprobación al desconectar los servicios.
+240804103 - Terminada toda la integración del UDB3.
+270804104 - Arreglado un fallo en ChanServ que daba +q si el nick no estaba identificado.
+310804105 - Añadida la directriz debug en el bloque set para hacer debug del irc en un canal.
+310804106 - Mejorado el sistema de refresco.
+010904107 - Mejorado la comprobación de emails al registrar un nick.
+050904108 - Arreglado un fallo en ChanServ al dropar un nick.
+060904109 - Añadido un cleanup.
+070904110 - Añadido el comando CLOSE en OperServ.
+070904111 - Mejorado y cambiado íntegramente el sistema forbid y suspenso de canales.
+090904112 - Ahora se puede conectar a los bots mediante /connect.
+090904113 - Añadida directriz puerto_escucha en server { } para escuchar otro puerto y poder hacer /connect.
+090904114 - Añadido el comando MODOS en OperServ.
+100904115 - Se cambia el sistema de threads. Se quita el archivo pthreadVC.dll.
+100904116 - Se mejora el sistema de conexiones en escucha.
+100904117 - Detección de un socket cerrado mejorada.
+100904118 - Arreglado un fallo al enviar toda una cola.
+110904119 - Arreglado un fallo al volver a escuchar una conexión previamente cerrada.
+110904120 - Añadida una función para no consumir recursos si no hay ninguna conexión establecida.
