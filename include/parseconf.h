@@ -1,3 +1,7 @@
+/*
+ * $Id: parseconf.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 #define MAXSECS 128
 #define AUTOBOP 0x1
 #define REKILL 0x2

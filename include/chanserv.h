@@ -1,3 +1,7 @@
+/*
+ * $Id: chanserv.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #define CS_MAX_COMS 256
 #define CS_SID 0x1
 #define CS_AUTOMIGRAR 0x2

@@ -1,3 +1,7 @@
+/*
+ * $Id: struct.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 #ifdef _WIN32
 #include <Winsock.h>
 #include <direct.h>

@@ -1,4 +1,7 @@
-/* $Id: md5.h,v 1.2 2004-09-11 15:49:52 Trocotronic Exp $ */
+/*
+ * $Id: md5.h,v 1.3 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 /* MD5.H - header file for MD5C.C
  */
 

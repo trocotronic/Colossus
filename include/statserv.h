@@ -1,3 +1,7 @@
+/*
+ * $Id: statserv.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 #define SS_MAX_COMS 256
 #define DOMINUMS 258 /* no tocar */
 

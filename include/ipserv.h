@@ -1,3 +1,7 @@
+/*
+ * $Id: ipserv.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #define IS_MAX_COMS 256
 
 typedef struct _is IpServ;

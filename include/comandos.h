@@ -1,3 +1,7 @@
+/*
+ * $Id: comandos.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #define MSG_PRIVATE	"PRIVMSG"	/* PRIV */
 #define TOK_PRIVATE	"!"	/* 33 */
 #define MSG_WHOIS	"WHOIS"	/* WHOI */

@@ -1,3 +1,7 @@
+/*
+ * $Id: sprintf_irc.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 #if !defined(SPRINTF_IRC)
 #define SPRINTF_IRC
 

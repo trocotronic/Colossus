@@ -1,3 +1,7 @@
+/*
+ * $Id: modulos.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
    El ultimo bit se reserva al uso de tener el nick registrado.
    Este bit es obligatorio. Si aparece como estado, debe aparecer como nivel.

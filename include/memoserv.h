@@ -1,3 +1,7 @@
+/*
+ * $Id: memoserv.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #define MS_MAX_COMS 256
 typedef struct _ms MemoServ;
 struct _ms

@@ -1,3 +1,7 @@
+/*
+ * $Id: zip.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 /************************************************************************
  *   IRC - Internet Relay Chat, include/s_zip.h
  *   Copyright (C) 1992 Darren Reed
@@ -15,11 +19,6 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- *
- * "s_zip.h". - Headers file.
- *
- * $Id: zip.h,v 1.1.1.1 2004-09-11 15:22:50 Trocotronic Exp $
  *
  */
 #ifndef INCLUDED_s_zip_h

@@ -1,3 +1,7 @@
+/*
+ * $Id: flags.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #define ADD 1
 #define DEL 2
 

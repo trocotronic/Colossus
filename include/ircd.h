@@ -1,3 +1,7 @@
+/*
+ * $Id: ircd.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #include "flags.h"
 extern SOCKFUNC(inicia_ircd);
 extern SOCKFUNC(procesa_ircd);

@@ -1,3 +1,7 @@
+/*
+ * $Id: proxyserv.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 #define XS_MAX_COMS 256
 #define XS_MAX_PORTS 32
 

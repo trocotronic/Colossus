@@ -1,3 +1,7 @@
+/*
+ * $Id: linkserv.h,v 1.2 2004-09-11 15:54:07 Trocotronic Exp $ 
+ */
+
 #define LS_MAX_COMS 256
 
 typedef struct _ls LinkServ;

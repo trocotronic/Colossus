@@ -1,3 +1,7 @@
+/*
+ * $Id: operserv.h,v 1.2 2004-09-11 15:54:08 Trocotronic Exp $ 
+ */
+
 #define OS_MAX_COMS 256
 
 #define OS_OPTS_AOP 0x1
