@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.28 2005-02-18 22:12:17 Trocotronic Exp $ 
+ * $Id: main.c,v 1.29 2005-02-19 16:09:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -54,42 +54,6 @@ void parsea_comando(char *);
 void programa_loop_principal(void *);
 #endif
 
-const char NTL_tolower_tab[] = {
-       /* x00-x07 */ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
-       /* x08-x0f */ '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f',
-       /* x10-x17 */ '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
-       /* x18-x1f */ '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f',
-       /* ' '-x27 */    ' ',    '!',    '"',    '#',    '$',    '%',    '&', '\x27',
-       /* '('-'/' */    '(',    ')',    '*',    '+',    ',',    '-',    '.',    '/',
-       /* '0'-'7' */    '0',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-       /* '8'-'?' */    '8',    '9',    ':',    ';',    '<',    '=',    '>',    '?',
-       /* '@'-'G' */    '@',    'a',    'b',    'c',    'd',    'e',    'f',    'g',
-       /* 'H'-'O' */    'h',    'i',    'j',    'k',    'l',    'm',    'n',    'o',
-       /* 'P'-'W' */    'p',    'q',    'r',    's',    't',    'u',    'v',    'w',
-       /* 'X'-'_' */    'x',    'y',    'z',    '{',    '|',    '}',    '~',    '_',
-       /* '`'-'g' */    '`',    'a',    'b',    'c',    'd',    'e',    'f',    'g',
-       /* 'h'-'o' */    'h',    'i',    'j',    'k',    'l',    'm',    'n',    'o',
-       /* 'p'-'w' */    'p',    'q',    'r',    's',    't',    'u',    'v',    'w',
-       /* 'x'-x7f */    'x',    'y',    'z',    '{',    '|',    '}',    '~', '\x7f'
-};
-const char NTL_toupper_tab[] = {
-       /* x00-x07 */ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
-       /* x08-x0f */ '\x08', '\x09', '\x0a', '\x0b', '\x0c', '\x0d', '\x0e', '\x0f',
-       /* x10-x17 */ '\x10', '\x11', '\x12', '\x13', '\x14', '\x15', '\x16', '\x17',
-       /* x18-x1f */ '\x18', '\x19', '\x1a', '\x1b', '\x1c', '\x1d', '\x1e', '\x1f',
-       /* ' '-x27 */    ' ',    '!',    '"',    '#',    '$',    '%',    '&', '\x27',
-       /* '('-'/' */    '(',    ')',    '*',    '+',    ',',    '-',    '.',    '/',
-       /* '0'-'7' */    '0',    '1',    '2',    '3',    '4',    '5',    '6',    '7',
-       /* '8'-'?' */    '8',    '9',    ':',    ';',    '<',    '=',    '>',    '?',
-       /* '@'-'G' */    '@',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-       /* 'H'-'O' */    'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-       /* 'P'-'W' */    'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-       /* 'X'-'_' */    'X',    'Y',    'Z',    '[', '\x5c',    ']',    '^',    '_',
-       /* '`'-'g' */    '`',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
-       /* 'h'-'o' */    'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
-       /* 'p'-'w' */    'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-       /* 'x'-x7f */    'X',    'Y',    'Z',    '[', '\x5c',    ']',    '^', '\x7f'
-};
 #ifndef _WIN32
 const char logo[] = {
 	32 , 32 , 95 , 95 , 95 , 95 , 95 , 32 , 32 , 32 , 32 , 32 , 32 , 95 , 10 ,
@@ -115,51 +79,7 @@ char *StsMalloc(size_t size, char *file, long line)
 	}
 	return x;
 }
-int strcasecmp(const char *a, const char *b)
-{
-	const char *ra = a;
-	const char *rb = b;
-	while (ToLower(*ra) == ToLower(*rb)) 
-	{
-		if (!*ra++)
-			return 0;
-		else
-			++rb;
-	}
-	return (*ra - *rb);
-}
-int strncasecmp(const char *a, const char *b, int len)
-{
-	const char *ra = a;
-	const char *rb = b;
-	int l = 0;
-	while (ToLower(*ra) == ToLower(*rb) && l++ < len) 
-	{
-		if (!*ra++)
-			return 0;
-		else
-			++rb;
-	}
-	return (*ra - *rb);
-}
-void ircstrdup(char **dest, const char *orig)
-{
-	ircfree(*dest);
-	if (!orig)
-		*dest = NULL;
-	else
-		*dest = strdup(orig);
-}
-char *my_itoa(int i)
-{
-	static char buf[128];
-#ifndef _WIN32	
-	sprintf_irc(buf, "%d", i);
-#else
-	_itoa(i, buf, 10);
-#endif
-	return (buf);
-}
+
 /* 
  * print_r
  * Imprime una estructura de forma legible
