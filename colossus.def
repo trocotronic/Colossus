@@ -69,7 +69,7 @@ EXPORTS
 	clientes
 	genera_mask
 	busca_modulo
-	link
+	linkado
 	EsIp
 	is_file
 	conferror

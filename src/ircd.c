@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.7 2004-09-17 18:31:22 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.8 2004-09-17 18:34:20 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -16,7 +16,7 @@ char backupbuf[BUFSIZE];
 Cliente me;
 Modulo *modulos;
 double tburst;
-Cliente *link = NULL;
+Cliente *linkado = NULL;
 int intentos = 0;
 Cliente *clientes = NULL;
 Canal *canales;
@@ -848,7 +848,7 @@ IRCFUNC(m_stats)
 }
 IRCFUNC(m_eos)
 {
-	if (cl == link)
+	if (cl == linkado)
 	{
 		sendto_serv(":%s VERSION", me.nombre);
 		sendto_serv(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
@@ -906,7 +906,7 @@ IRCFUNC(m_server)
 			sck->zip->first = 1;
 		}
 #endif
-		link = al;
+		linkado = al;
 		sincroniza(sck, al, parv, parc);
 	}
 	else
