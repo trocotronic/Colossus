@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.11 2004-09-17 23:51:05 Trocotronic Exp $
+## $Id: Makefile,v 1.12 2004-09-17 23:52:10 Trocotronic Exp $
 
 CC=gcc
 INCLUDEDIR=../include
@@ -9,6 +9,7 @@ SUBDIRS=src
 LDFLAGS=
 RM=/bin/rm
 INSTALL=/usr/bin/install
+TOUCH=/bin/touch
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'RM=${RM}' 'LDFLAGS=$(LDFLAGS)'
 all:	build
