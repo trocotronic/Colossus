@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.13 2004-10-23 22:41:48 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.14 2004-10-31 17:07:14 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -299,6 +299,7 @@ char *cifranick(char *nickname, char *pass)
 #include "bdd.h"
 #ifndef _WIN32
 #define O_BINARY 0x0
+#include <sys/mman.h>
 #endif
 Udb *nicks = NULL;
 Udb *chans = NULL;
