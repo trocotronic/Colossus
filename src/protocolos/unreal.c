@@ -60,7 +60,7 @@ ProtInfo info = {
 	"Protocolo UnrealIRCd" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net" 
+	"trocotronic@rallados.net" 
 };
 /*Com comandos[] = {
 	{ "CONNECT" , "7" } ,

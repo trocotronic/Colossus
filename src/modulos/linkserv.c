@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.8 2004-12-31 12:28:00 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.9 2005-03-19 12:48:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -45,7 +45,7 @@ ModInfo info = {
 	"LinkServ" ,
 	0.2 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net" ,
+	"trocotronic@rallados.net" ,
 	"linkserv.inc"
 };
 int carga(Modulo *mod)

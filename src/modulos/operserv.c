@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.15 2005-03-18 21:26:55 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.16 2005-03-19 12:48:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,6 +18,7 @@
 #endif
 
 OperServ operserv;
+#define exfunc(x) busca_funcion(operserv.hmod, x, NULL)
 Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
 char *confirm = NULL;
@@ -89,9 +90,9 @@ int test(Conf *, int *);
 
 ModInfo info = {
 	"OperServ" ,
-	0.7 ,
+	0.9 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net"
+	"trocotronic@rallados.net"
 };
 	
 int carga(Modulo *mod)
@@ -290,35 +291,35 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Esta gestión permite tener un control exhaustivo sobre las actividades de la red para su buen funcionamiento.");
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Comandos disponibles:");
-		response(cl, CLI(operserv), "\00312RAW\003 Manda un raw al servidor.");
-		response(cl, CLI(operserv), "\00312GLINE\003 Gestiona las glines de la red.");
-		response(cl, CLI(operserv), "\00312SAJOIN\003 Ejecuta SAJOIN sobre un usuario.");
-		response(cl, CLI(operserv), "\00312SAPART\003 Ejecuta SAPART sobre un usuario.");
-		response(cl, CLI(operserv), "\00312REJOIN\003 Obliga a un usuario a reentrar a un canal.");
-		response(cl, CLI(operserv), "\00312KILL\003 Desconecta a un usuario.");
-		response(cl, CLI(operserv), "\00312GLOBAL\003 Manda un mensaje global.");
-		response(cl, CLI(operserv), "\00312NOTICIAS\003 Administra las noticias de la red.");
+		func_resp(operserv, "RAW", "Manda un raw al servidor.");
+		func_resp(operserv, "GLINE", "Gestiona las glines de la red.");
+		func_resp(operserv, "SAJOIN", "Ejecuta SAJOIN sobre un usuario.");
+		func_resp(operserv, "SAPART", "Ejecuta SAPART sobre un usuario.");
+		func_resp(operserv, "REJOIN", "Obliga a un usuario a reentrar a un canal.");
+		func_resp(operserv, "KILL", "Desconecta a un usuario.");
+		func_resp(operserv, "GLOBAL", "Manda un mensaje global.");
+		func_resp(operserv, "NOTICIAS", "Administra las noticias de la red.");
 		if (IsAdmin(cl))
 		{
-			response(cl, CLI(operserv), "\00312OPERS\003 Administra los operadores de la red.");
+			func_resp(operserv, "OPERS", "Administra los operadores de la red.");
 #ifdef UDB
-			response(cl, CLI(operserv), "\00312MODOS\003 Fija los modos de operador que se obtiene automáticamente (BDD).");
-			response(cl, CLI(operserv), "\00312SNOMASK\003 Fija las máscaras de operador que se obtiene automáticamente (BDD).");
+			func_resp(operserv, "MODOS", "Fija los modos de operador que se obtiene automáticamente (BDD).");
+			func_resp(operserv, "SNOMASK", "Fija las máscaras de operador que se obtiene automáticamente (BDD).");
 #endif
 		}
 		if (IsRoot(cl))
 		{
-			response(cl, CLI(operserv), "\00312RESTART\003 Reinicia los servicios.");
-			response(cl, CLI(operserv), "\00312REHASH\003 Refresca los servicios.");
-			response(cl, CLI(operserv), "\00312BACKUP\003 Crea una copia de seguridad de la base de datos.");
-			response(cl, CLI(operserv), "\00312RESTAURA\003 Restaura la base de datos.");
-			response(cl, CLI(operserv), "\00312CLOSE\003 Cierra el programa.");
-			response(cl, CLI(operserv), "\00312VACIAR\003 Elimina todos los registros de la base de datos.");
+			func_resp(operserv, "RESTART", "Reinicia los servicios.");
+			func_resp(operserv, "REHASH", "Refresca los servicios.");
+			func_resp(operserv, "BACKUP", "Crea una copia de seguridad de la base de datos.");
+			func_resp(operserv, "RESTAURA", "Restaura la base de datos.");
+			func_resp(operserv, "CLOSE", "Cierra el programa.");
+			func_resp(operserv, "VACIAR", "Elimina todos los registros de la base de datos.");
 		}
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Para más información, \00312/msg %s %s comando", operserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "RAW"))
+	else if (!strcasecmp(param[1], "RAW") && exfunc("RAW"))
 	{
 		response(cl, CLI(operserv), "\00312RAW");
 		response(cl, CLI(operserv), " ");
@@ -332,7 +333,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Ejemplo: \00312RAW %s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
 		response(cl, CLI(operserv), "Ejecutaría el comando \00312:%s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
 	}
-	else if (!strcasecmp(param[1], "GLINES"))
+	else if (!strcasecmp(param[1], "GLINE") && exfunc("GLINE"))
 	{
 		response(cl, CLI(operserv), "\00312GLINES");
 		response(cl, CLI(operserv), " ");
@@ -342,7 +343,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Para añadir una gline se antepone '+' antes de la gline. Para quitarla, '-'.");
 		response(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
 	}
-	else if (!strcasecmp(param[1], "SAJOIN"))
+	else if (!strcasecmp(param[1], "SAJOIN") && exfunc("SAJOIN"))
 	{
 		response(cl, CLI(operserv), "\00312SAJOIN");
 		response(cl, CLI(operserv), " ");
@@ -350,7 +351,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312SAJOIN usuario #canal");
 	}
-	else if (!strcasecmp(param[1], "SAPART"))
+	else if (!strcasecmp(param[1], "SAPART") && exfunc("SAPART"))
 	{
 		response(cl, CLI(operserv), "\00312SAPART");
 		response(cl, CLI(operserv), " ");
@@ -358,7 +359,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312SAPART usuario #canal");
 	}
-	else if (!strcasecmp(param[1], "REJOIN"))
+	else if (!strcasecmp(param[1], "REJOIN") && exfunc("REJOIN"))
 	{
 		response(cl, CLI(operserv), "\00312REJOIN");
 		response(cl, CLI(operserv), " ");
@@ -366,7 +367,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312REJOIN usuario #canal");
 	}
-	else if (!strcasecmp(param[1], "KILL"))
+	else if (!strcasecmp(param[1], "KILL") && exfunc("KILL"))
 	{
 		response(cl, CLI(operserv), "\00312KILL");
 		response(cl, CLI(operserv), " ");
@@ -374,7 +375,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312KILL usuario [motivo]");
 	}
-	else if (!strcasecmp(param[1], "GLOBAL"))
+	else if (!strcasecmp(param[1], "GLOBAL") && exfunc("GLOBAL"))
 	{
 		response(cl, CLI(operserv), "\00312GLOBAL");
 		response(cl, CLI(operserv), " ");
@@ -390,7 +391,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Sintaxis: \00312GLOBAL [-parámetros [[bot]] mensaje");
 		response(cl, CLI(operserv), "Si no se especifican modos, se envía a todos los usuarios vía privmsg.");
 	}
-	else if (!strcasecmp(param[1], "NOTICIAS"))
+	else if (!strcasecmp(param[1], "NOTICIAS") && exfunc("NOTICIAS"))
 	{
 		response(cl, CLI(operserv), "\00312NOTICIAS");
 		response(cl, CLI(operserv), " ");
@@ -409,7 +410,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "\00312DEL nº");
 		response(cl, CLI(operserv), "\00312LIST");
 	}
-	else if (!strcasecmp(param[1], "OPERS") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "OPERS") && IsAdmin(cl) && exfunc("OPERS"))
 	{
 		response(cl, CLI(operserv), "\00312OPERS");
 		response(cl, CLI(operserv), " ");
@@ -426,7 +427,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Sintaxis: \00312OPERS {+|-}usuario rango");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "MODOS") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "MODOS") && IsAdmin(cl) && exfunc("MODOS"))
 	{
 		response(cl, CLI(operserv), "\00312MODOS");
 		response(cl, CLI(operserv), " ");
@@ -437,7 +438,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Sintaxis: \00312MODOS operador [modos]");
 		response(cl, CLI(operserv), "Si no se especifican modos, se borrarán los que pueda haber.");
 	}
-	else if (!strcasecmp(param[1], "SNOMASK") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "SNOMASK") && IsAdmin(cl) && exfunc("SNOMASK"))
 	{
 		response(cl, CLI(operserv), "\00312SNOMASK");
 		response(cl, CLI(operserv), " ");
@@ -448,7 +449,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "Si no se especifican máscaras, se borrarán las que pueda haber.");
 	}
 #endif
-	else if (!strcasecmp(param[1], "RESTART") && IsRoot(cl))
+	else if (!strcasecmp(param[1], "RESTART") && IsRoot(cl) && exfunc("RESTART"))
 	{
 		response(cl, CLI(operserv), "\00312RESTART");
 		response(cl, CLI(operserv), " ");
@@ -457,7 +458,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312RESTART");
 	}
-	else if (!strcasecmp(param[1], "REHASH") && IsRoot(cl))
+	else if (!strcasecmp(param[1], "REHASH") && IsRoot(cl) && exfunc("REHASH"))
 	{
 		response(cl, CLI(operserv), "\00312REHASH");
 		response(cl, CLI(operserv), " ");
@@ -466,7 +467,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312REHASH");
 	}
-	else if (!strcasecmp(param[1], "BACKUP") && IsRoot(cl))
+	else if (!strcasecmp(param[1], "BACKUP") && IsRoot(cl) && exfunc("BACKUP"))
 	{
 		response(cl, CLI(operserv), "\00312BACKUP");
 		response(cl, CLI(operserv), " ");
@@ -475,7 +476,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312BACKUPP");
 	}
-	else if (!strcasecmp(param[1], "RESTAURAR") && IsRoot(cl))
+	else if (!strcasecmp(param[1], "RESTAURAR") && IsRoot(cl) && exfunc("RESTAURAR"))
 	{
 		response(cl, CLI(operserv), "\00312RESTAURAR");
 		response(cl, CLI(operserv), " ");
@@ -483,7 +484,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR");
 	}
-	else if (!strcasecmp(param[1], "CLOSE") && IsRoot(cl))
+	else if (!strcasecmp(param[1], "CLOSE") && IsRoot(cl) && exfunc("CLOSE"))
 	{
 		response(cl, CLI(operserv), "\00312CLOSE");
 		response(cl, CLI(operserv), " ");
@@ -492,7 +493,7 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), " ");
 		response(cl, CLI(operserv), "Sintaxis: \00312CLOSE");
 	}
-	else if (!strcasecmp(param[1], "VACIAR") && IsRoot(cl))
+	else if (!strcasecmp(param[1], "VACIAR") && IsRoot(cl) && exfunc("VACIAR"))
 	{
 		response(cl, CLI(operserv), "\00312VACIAR");
 		response(cl, CLI(operserv), " ");

@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.12 2005-03-14 14:18:11 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.13 2005-03-19 12:48:50 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,6 +11,7 @@
 #include "modulos/nickserv.h"
 
 IpServ ipserv;
+#define exfunc(x) busca_funcion(ipserv.hmod, x, NULL)
 
 static int ipserv_help		(Cliente *, char *[], int, char *[], int);
 static int ipserv_setipv		(Cliente *, char *[], int, char *[], int);
@@ -50,9 +51,9 @@ int test(Conf *, int *);
 
 ModInfo info = {
 	"IpServ" ,
-	0.8 ,
+	0.9 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net"
+	"trocotronic@rallados.net"
 };
 	
 int carga(Modulo *mod)
@@ -162,20 +163,20 @@ BOTFUNC(ipserv_help)
 		response(cl, CLI(ipserv), "Según esté configurado, cambiará la clave de cifrado cada \00312%i\003 horas.", ipserv.cambio / 3600);
 		response(cl, CLI(ipserv), " ");
 		response(cl, CLI(ipserv), "Comandos disponibles:");
-		response(cl, CLI(ipserv), "\00312SETIPV\003 Agrega o elimina una ip virtual.");
-		response(cl, CLI(ipserv), "\00312SETIPV2\003 Agrega o elimina una ip virtual de tipo 2.");
-		response(cl, CLI(ipserv), "\00312TEMPHOST\003 Cambia el host de un usuario.");
+		func_resp(ipserv, "SETIPV", "Agrega o elimina una ip virtual.");
+		func_resp(ipserv, "SETIPV2", "Agrega o elimina una ip virtual de tipo 2.");
+		func_resp(ipserv, "TEMPHOST", "Cambia el host de un usuario.");
 		if (IsAdmin(cl))
 		{
-			response(cl, CLI(ipserv), "\00312CLONES\003 Administra la lista de ips con más clones.");
+			func_resp(ipserv, "CLONES", "Administra la lista de ips con más clones.");
 #ifdef UDB
-			response(cl, CLI(ipserv), "\00312SET\003 Fija algunos parámetros de la red.");
+			func_resp(ipserv, "SET", "Fija algunos parámetros de la red.");
 #endif
 		}
 		response(cl, CLI(ipserv), " ");
 		response(cl, CLI(ipserv), "Para más información, \00312/msg %s %s comando", ipserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "SETIPV"))
+	else if (!strcasecmp(param[1], "SETIPV") && exfunc("SETIPV"))
 	{
 		response(cl, CLI(ipserv), "\00312SETIPV");
 		response(cl, CLI(ipserv), " ");
@@ -189,7 +190,7 @@ BOTFUNC(ipserv_help)
 		response(cl, CLI(ipserv), " ");
 		response(cl, CLI(ipserv), "Sintaxis: \00312SETIPV {+|-}nick [ipv [caducidad]]");
 	}
-	else if (!strcasecmp(param[1], "SETIPV2"))
+	else if (!strcasecmp(param[1], "SETIPV2") && exfunc("SETIPV2"))
 	{
 		response(cl, CLI(ipserv), "\00312SETIPV2");
 		response(cl, CLI(ipserv), " ");
@@ -200,7 +201,7 @@ BOTFUNC(ipserv_help)
 		response(cl, CLI(ipserv), " ");
 		response(cl, CLI(ipserv), "Sintaxis: \00312SETIPV2 {+|-}nick [ipv [caducidad]]");
 	}
-	else if (!strcasecmp(param[1], "TEMPHOST"))
+	else if (!strcasecmp(param[1], "TEMPHOST") && exfunc("TEMPHOST"))
 	{
 		response(cl, CLI(ipserv), "\00312TEMPHOST");
 		response(cl, CLI(ipserv), " ");
@@ -210,7 +211,7 @@ BOTFUNC(ipserv_help)
 		response(cl, CLI(ipserv), " ");
 		response(cl, CLI(ipserv), "Sintaxis: \00312TEMPHOST nick host");
 	}
-	else if (!strcasecmp(param[1], "CLONES") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "CLONES") && IsAdmin(cl) && exfunc("CLONES"))
 	{
 		response(cl, CLI(ipserv), "\00312CLONES");
 		response(cl, CLI(ipserv), " ");
@@ -225,7 +226,7 @@ BOTFUNC(ipserv_help)
 		response(cl, CLI(ipserv), "Borra una ip|host.");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "SET") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "SET") && IsAdmin(cl) && exfunc("SET"))
 	{
 		response(cl, CLI(ipserv), "\00312SET");
 		response(cl, CLI(ipserv), " ");

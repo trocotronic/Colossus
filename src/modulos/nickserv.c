@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.18 2005-03-18 21:26:54 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.19 2005-03-19 12:48:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -17,6 +17,7 @@
 #endif
 
 NickServ nickserv;
+#define exfunc(x) busca_funcion(nickserv.hmod, x, NULL)
 
 static int nickserv_help		(Cliente *, char *[], int, char *[], int);
 static int nickserv_reg		(Cliente *, char *[], int, char *[], int);
@@ -88,9 +89,9 @@ static bCom nickserv_coms[] = {
 };
 ModInfo info = {
 	"NickServ" ,
-	0.9 ,
+	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net"
+	"trocotronic@rallados.net"
 };
 	
 int carga(Modulo *mod)
@@ -281,30 +282,30 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), "\00312GHOST\003 Desconecta a un usuario que utilice su nick.");
 		if (IsId(cl))
 		{
-			response(cl, CLI(nickserv), "\00312SET\003 Permite fijar distintas opciones para tu nick.");
+			func_resp(nickserv, "SET", "Permite fijar distintas opciones para tu nick.");
 #ifdef UDB
-			response(cl, CLI(nickserv), "\00312MIGRAR\003 Migra tu nick a la BDD.");
-			response(cl, CLI(nickserv), "\00312DEMIGRAR\003 Demigra tu nick de la BDD.");
+			func_resp(nickserv, "MIGRAR", "Migra tu nick a la BDD.");
+			func_resp(nickserv, "DEMIGRAR", "Demigra tu nick de la BDD.");
 #endif			
 		}
 		if (IsPreo(cl))
 		{
-			response(cl, CLI(nickserv), "\00312DROP\003 Desregistra un usuario.");
-			response(cl, CLI(nickserv), "\00312SENDPASS\003 Genera un password para el usuario y se lo envía a su correo.");
-			response(cl, CLI(nickserv), "\00312SWHOIS\003 Añade o borra un whois especial al nick especificado.");
+			func_resp(nickserv, "DROP", "Desregistra un usuario.");
+			func_resp(nickserv, "SENDPASS", "Genera un password para el usuario y se lo envía a su correo.");
+			func_resp(nickserv, "SWHOIS", "Añade o borra un whois especial al nick especificado.");
 		}
 		if (IsOper(cl))
 		{
-			response(cl, CLI(nickserv), "\00312SUSPENDER\003 Suspende los privilegios de un nick.");
-			response(cl, CLI(nickserv), "\00312LIBERAR\003 Libera un nick de su suspenso.");
-			response(cl, CLI(nickserv), "\00312RENAME\003 Cambia el nick a un usuario.");
+			func_resp(nickserv, "SUSPENDER", "Suspende los privilegios de un nick.");
+			func_resp(nickserv, "LIBERAR", "Libera un nick de su suspenso.");
+			func_resp(nickserv, "RENAME" ,"Cambia el nick a un usuario.");
 		}
 		if (IsAdmin(cl))
-			response(cl, CLI(nickserv), "\00312FORBID\003 Prohibe o permite un determinado nick.");
+			func_resp(nickserv, "FORBID", "Prohibe o permite un determinado nick.");
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Para más información, \00312/msg %s %s comando", nickserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "REGISTER"))
+	else if (!strcasecmp(param[1], "REGISTER") && exfunc("REGISTER"))
 	{
 		response(cl, CLI(nickserv), "\00312REGISTER");
 		response(cl, CLI(nickserv), " ");
@@ -319,7 +320,7 @@ BOTFUNC(nickserv_help)
 		else
 			response(cl, CLI(nickserv), "Sintaxis: \00312REGISTER tupass tu@email");
 	}
-	else if (!strcasecmp(param[1], "IDENTIFY"))
+	else if (!strcasecmp(param[1], "IDENTIFY") && exfunc("IDENTIFY"))
 	{
 		response(cl, CLI(nickserv), "\00312IDENTIFY");
 		response(cl, CLI(nickserv), " ");
@@ -329,7 +330,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312IDENTIFY tupass");
 	}
-	else if (!strcasecmp(param[1], "INFO"))
+	else if (!strcasecmp(param[1], "INFO") && exfunc("INFO"))
 	{
 		response(cl, CLI(nickserv), "\00312INFO");
 		response(cl, CLI(nickserv), " ");
@@ -337,7 +338,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312INFO nick");
 	}
-	else if (!strcasecmp(param[1], "LIST"))
+	else if (!strcasecmp(param[1], "LIST") && exfunc("LIST"))
 	{
 		response(cl, CLI(nickserv), "\00312LIST");
 		response(cl, CLI(nickserv), " ");
@@ -347,7 +348,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312LIST patron");
 	}
-	else if (!strcasecmp(param[1], "GHOST"))
+	else if (!strcasecmp(param[1], "GHOST") && exfunc("GHOST"))
 	{
 		response(cl, CLI(nickserv), "\00312GHOST");
 		response(cl, CLI(nickserv), " ");
@@ -357,7 +358,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312GHOST nick contraseña");
 	}
-	else if (!strcasecmp(param[1], "SET") && IsId(cl))
+	else if (!strcasecmp(param[1], "SET") && IsId(cl) && exfunc("SET"))
 	{
 		if (params < 3)
 		{
@@ -440,7 +441,7 @@ BOTFUNC(nickserv_help)
 			response(cl, CLI(nickserv), NS_ERR_EMPT, "Opción desconocida.");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl))
+	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl) && exfunc("MIGRAR"))
 	{
 		response(cl, CLI(nickserv), "\00312MIGRAR");
 		response(cl, CLI(nickserv), " ");
@@ -452,7 +453,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312MIGRAR tupass");
 	}
-	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl))
+	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl) && exfunc("DEMIGRAR"))
 	{
 		response(cl, CLI(nickserv), "\00312DEMIGRAR");
 		response(cl, CLI(nickserv), " ");
@@ -462,7 +463,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), "Sintaxis: \00312DEMIGRAR tupass");
 	}
 #endif
-	else if (!strcasecmp(param[1], "DROP") && IsPreo(cl))
+	else if (!strcasecmp(param[1], "DROP") && IsPreo(cl) && exfunc("DROP"))
 	{
 		response(cl, CLI(nickserv), "\00312DROP");
 		response(cl, CLI(nickserv), " ");
@@ -472,7 +473,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312DROP nick");
 	}
-	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl))
+	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl) && exfunc("SENDPASS"))
 	{
 		response(cl, CLI(nickserv), "\00312SENDPASS");
 		response(cl, CLI(nickserv), " ");
@@ -481,7 +482,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312SENDPASS nick");
 	}
-	else if (!strcasecmp(param[1], "SWHOIS") && IsPreo(cl))
+	else if (!strcasecmp(param[1], "SWHOIS") && IsPreo(cl) && exfunc("SWHOIS"))
 	{
 		response(cl, CLI(nickserv), "\00312SWHOIS");
 		response(cl, CLI(nickserv), " ");
@@ -492,7 +493,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), "Sintaxis: \00312SWHOIS nick [swhois]");
 		response(cl, CLI(nickserv), "Si no se especifica swhois, se borrará el que pudiera haber.");
 	}
-	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl))
+	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl) && exfunc("SUSPENDER"))
 	{
 		response(cl, CLI(nickserv), "\00312SUSPENDER");
 		response(cl, CLI(nickserv), " ");
@@ -501,7 +502,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312SUSPENDER nick motivo");
 	}
-	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl))
+	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl) && exfunc("LIBERAR"))
 	{
 		response(cl, CLI(nickserv), "\00312LIBERAR");
 		response(cl, CLI(nickserv), " ");
@@ -509,7 +510,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312LIBERAR nick");
 	}
-	else if (!strcasecmp(param[1], "RENAME") && IsOper(cl))
+	else if (!strcasecmp(param[1], "RENAME") && IsOper(cl) && exfunc("RENAME"))
 	{
 		response(cl, CLI(nickserv), "\00312RENAME");
 		response(cl, CLI(nickserv), " ");
@@ -517,7 +518,7 @@ BOTFUNC(nickserv_help)
 		response(cl, CLI(nickserv), " ");
 		response(cl, CLI(nickserv), "Sintaxis: \00312RENAME nick nuevonick");
 	}
-	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl) && exfunc("FOBRID"))
 	{
 		response(cl, CLI(nickserv), "\00312FORBID");
 		response(cl, CLI(nickserv), " ");

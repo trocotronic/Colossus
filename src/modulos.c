@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.6 2004-12-31 12:27:58 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.7 2005-03-19 12:48:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -150,3 +150,19 @@ const char *our_dlerror(void)
 	return errbuf;
 }
 #endif
+Mod_Func busca_funcion(Modulo *mod, char *nombre, int *nivel)
+{
+	int i;
+	for (i = 0; i < mod->comandos; i++)
+	{
+		if (!strcasecmp(mod->comando[i]->com, nombre))
+		{
+			if (nivel)
+				*nivel = mod->comando[i]->nivel;
+			return mod->comando[i]->func;
+		}
+	}
+	if (nivel)
+		*nivel = 0;
+	return NULL;
+}

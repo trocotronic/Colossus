@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.12 2005-03-14 20:04:51 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.13 2005-03-19 12:48:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,6 +14,7 @@
 #endif
 
 MemoServ memoserv;
+#define exfunc(x) busca_funcion(memoserv.hmod, x, NULL)
 
 static int memoserv_help	(Cliente *, char *[], int, char *[], int);
 static int memoserv_memo	(Cliente *, char *[], int, char *[], int);
@@ -58,9 +59,9 @@ int test(Conf *, int *);
 
 ModInfo info = {
 	"MemoServ" ,
-	0.7 ,
+	0.8 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net"
+	"trocotronic@rallados.net"
 };
 	
 int carga(Modulo *mod)
@@ -183,17 +184,17 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), "Este servicio sólo es para usuarios y canales registrados.");
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Comandos disponibles:");
-		response(cl, CLI(memoserv), "\00312SEND\003 Envía un mensaje.");
-		response(cl, CLI(memoserv), "\00312READ\003 Lee un mensaje.");
-		response(cl, CLI(memoserv), "\00312DEL\003 Borra un mensaje.");
-		response(cl, CLI(memoserv), "\00312LIST\003 Lista los mensajes.");
-		response(cl, CLI(memoserv), "\00312SET\003 Fija tus opciones.");
-		response(cl, CLI(memoserv), "\00312INFO\003 Muestra información de tu configuración.");
-		response(cl, CLI(memoserv), "\00312CANCELAR\003 Cancela el último mensaje.");
+		func_resp(memoserv, "SEND", "Envía un mensaje.");
+		func_resp(memoserv, "READ", "Lee un mensaje.");
+		func_resp(memoserv, "DEL", "Borra un mensaje.");
+		func_resp(memoserv, "LIST", "Lista los mensajes.");
+		func_resp(memoserv, "SET", "Fija tus opciones.");
+		func_resp(memoserv, "INFO", "Muestra información de tu configuración.");
+		func_resp(memoserv, "CANCELAR", "Cancela el último mensaje.");
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Para más información, \00312/msg %s %s comando", memoserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "SEND"))
+	else if (!strcasecmp(param[1], "SEND") && exfunc("SEND"))
 	{
 		response(cl, CLI(memoserv), "\00312SEND");
 		response(cl, CLI(memoserv), " ");
@@ -206,7 +207,7 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Sintaxis: \00312SEND nick|#canal mensaje");
 	}
-	else if (!strcasecmp(param[1], "READ"))
+	else if (!strcasecmp(param[1], "READ") && exfunc("READ"))
 	{
 		response(cl, CLI(memoserv), "\00312READ");
 		response(cl, CLI(memoserv), " ");
@@ -217,7 +218,7 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Sintaxis: \00312READ [#canal] nº|NEW|LAST");
 	}
-	else if (!strcasecmp(param[1], "DEL"))
+	else if (!strcasecmp(param[1], "DEL") && exfunc("DEL"))
 	{
 		response(cl, CLI(memoserv), "\00312DEL");
 		response(cl, CLI(memoserv), " ");
@@ -228,7 +229,7 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Sintxis: \00312DEL [#canal] nº|ALL");
 	}
-	else if (!strcasecmp(param[1], "LIST"))
+	else if (!strcasecmp(param[1], "LIST") && exfunc("LIST"))
 	{
 		response(cl, CLI(memoserv), "\00312LIST");
 		response(cl, CLI(memoserv), " ");
@@ -238,7 +239,7 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Sintaxis: \00312LIST [#canal]");
 	}
-	else if (!strcasecmp(param[1], "INFO"))
+	else if (!strcasecmp(param[1], "INFO") && exfunc("INFO"))
 	{
 		response(cl, CLI(memoserv), "\00312INFO");
 		response(cl, CLI(memoserv), " ");
@@ -246,7 +247,7 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Sintaxis: \00312INFO [#canal]");
 	}
-	else if (!strcasecmp(param[1], "CANCELAR"))
+	else if (!strcasecmp(param[1], "CANCELAR") && exfunc("CANCELAR"))
 	{
 		response(cl, CLI(memoserv), "\00312CANCELAR");
 		response(cl, CLI(memoserv), " ");
@@ -256,7 +257,8 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), " ");
 		response(cl, CLI(memoserv), "Sintaxis: \00312CANCELAR nick|#canal");
 	}
-	else if (!strcasecmp(param[1], "SET"))
+#ifdef UDB
+	else if (!strcasecmp(param[1], "SET") && exfunc("SET"))
 	{
 		response(cl, CLI(memoserv), "\00312SET");
 		response(cl, CLI(memoserv), " ");
@@ -273,6 +275,7 @@ BOTFUNC(memoserv_help)
 		response(cl, CLI(memoserv), "-\00312w\003 Te notifica de mensajes nuevos cuando vuevles del estado de away.");
 		response(cl, CLI(memoserv), "NOTA: El tener el modo +w deshabilita los demás. Esto es así porque sólo se quiere ser informado cuando no se está away.");
 	}
+#endif
 	else
 		response(cl, CLI(memoserv), NS_ERR_EMPT, "Opción desconocida.");
 	return 0;

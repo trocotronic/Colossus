@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.17 2005-03-18 21:26:50 Trocotronic Exp $
+ * $Id: cambios,v 1.18 2005-03-19 12:48:45 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -256,3 +256,4 @@
 180305214 - Se mejora el sistema de reseteo.
 180305215 - Arreglados varios fallos en los backups i restauraciones de la base de datos.
 180305216 - Se crea el comando VACIAR en OperServ.
+190305217 - En los HELP de cada módulo sólo se muestra ayuda para los comandos cargados.

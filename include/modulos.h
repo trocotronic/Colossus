@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.6 2004-12-31 12:27:51 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.7 2005-03-19 12:48:47 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -33,11 +33,12 @@
 #define ADMINS (BOT | ROOT | ADMIN)
 #define ROOTS (BOT | ROOT)
 #define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params)
+typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int);
 typedef struct _bcom bCom;
 struct _bcom
 {
 	char *com;
-	int (*func)(Cliente *, char *[], int, char *[], int);
+	Mod_Func func;
 	int nivel;
 };
 typedef struct _info
@@ -91,3 +92,5 @@ extern const char *our_dlerror(void);
 
 #define CLI(x) x.hmod->cl
 #define bot_set(x) x.hmod = mod; mod->conf = &(x)
+extern Mod_Func busca_funcion(Modulo *, char *, int *);
+#define func_resp(x,y,z) do { if (busca_funcion(x.hmod,y,NULL)) { response(cl, CLI(x), "\00312" y "\003 " z); }}while(0)

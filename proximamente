@@ -8,11 +8,12 @@ Versión 1.1:
 [ ] Hacer modulable el protocolo.
 	[X] Incluir el protocolo de UnrealIRCd
 	[X] Incluir el protocolo p10
-	[X] Incluir el protocolo de redhispana
+	[/] Incluir el protocolo de redhispana
 	[ ] Incluir el protocolo de irc-hispano
 	
 [X] Versatilizar la caché
 
+[/] Extender la ayuda de los módulos
 
 Versión 1.1.1:
 
@@ -44,8 +45,6 @@ Versión 1.4:
 	[ ] Soporte para catalán
 	[ ] Soporte para inglés
 	
-[ ] Modularizar la ayuda de cada módulo o bot
-
 
 Versión 1.5:
 

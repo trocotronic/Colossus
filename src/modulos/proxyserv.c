@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.11 2005-03-18 21:26:56 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.12 2005-03-19 12:48:53 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,6 +12,7 @@
 #include "modulos/proxyserv.h"
 
 ProxyServ proxyserv;
+#define exfunc(x) busca_funcion(proxyserv.hmod, x, NULL)
 
 static int proxyserv_help	(Cliente *, char *[], int, char *[], int);
 static int proxyserv_host	(Cliente *, char *[], int, char *[], int);
@@ -38,9 +39,9 @@ int test(Conf *, int *);
 
 ModInfo info = {
 	"ProxyServ" ,
-	0.7 ,
+	0.8 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net"
+	"trocotronic@rallados.net"
 };
 	
 int carga(Modulo *mod)
@@ -191,11 +192,11 @@ BOTFUNC(proxyserv_help)
 		response(cl, CLI(proxyserv), "El tiempo de desconexión es de \00312%i\003 minutos.", proxyserv.tiempo / 60);
 		response(cl, CLI(proxyserv), " ");
 		response(cl, CLI(proxyserv), "Comandos disponibles:");
-		response(cl, CLI(proxyserv), "\00312HOST\003 Host que omiten el escán.");
+		func_resp(proxyserv, "HOST", "Host que omiten el escán.");
 		response(cl, CLI(proxyserv), " ");
 		response(cl, CLI(proxyserv), "Para más información, \00312/msg %s %s comando", proxyserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "HOST"))
+	else if (!strcasecmp(param[1], "HOST") && exfunc("HOST"))
 	{
 		response(cl, CLI(proxyserv), "\00312HOST");
 		response(cl, CLI(proxyserv), " ");

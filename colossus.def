@@ -160,6 +160,8 @@ EXPORTS
 
 	busca_entrada
 
+	busca_funcion
+
 	busca_modulo
 
 	busca_registro

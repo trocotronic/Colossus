@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.17 2005-03-18 21:26:53 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.18 2005-03-19 12:48:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,6 +14,7 @@
 #include "modulos/nickserv.h"
 
 ChanServ chanserv;
+#define exfunc(x) busca_funcion(chanserv.hmod, x, NULL)
 Hash csregs[UMAX];
 Hash akicks[CHMAX];
 
@@ -133,9 +134,9 @@ mTab cFlags[] = {
 
 ModInfo info = {
 	"ChanServ" ,
-	0.8 ,
+	0.9 ,
 	"Trocotronic" ,
-	"trocotronic@telefonica.net" 
+	"trocotronic@rallados.net" 
 };
 	
 int carga(Modulo *mod)
@@ -437,54 +438,57 @@ BOTFUNC(chanserv_help)
 						"puedan tomar control de los mismos.");
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Comandos disponibles:");
-		response(cl, CLI(chanserv), "\00312INFO\003 Muestra distinta información de un canal.");
-		response(cl, CLI(chanserv), "\00312LIST\003 Lista canales según un determinado patrón.");
+		func_resp(chanserv, "INFO", "Muestra distinta información de un canal.");
+		func_resp(chanserv, "LIST", "Lista canales según un determinado patrón.");
 		if (IsId(cl))
 		{
-			response(cl, CLI(chanserv), "\00312IDENTIFY\003 Te identifica como fundador de un canal.");
-			response(cl, CLI(chanserv), "\00312DEAUTH\003 Te quita el estado de fundador.");
-			response(cl, CLI(chanserv), "\00312INVITE\003 Invita a un usuario al canal.");
-			if (MODE_ADM)
+			func_resp(chanserv, "IDENTIFY", "Te identifica como fundador de un canal.");
+			func_resp(chanserv, "DEAUTH", "Te quita el estado de fundador.");
+			func_resp(chanserv, "INVITE", "Invita a un usuario al canal.");
+			if (MODE_ADM && (exfunc("ADMIN") || exfunc("DEADMIN")))
 				response(cl, CLI(chanserv), "\00312ADMIN/DEADMIN\003 Da o quita &.");
-			response(cl, CLI(chanserv), "\00312OP/DEOP\003 Da o quita @.");
-			if (MODE_HALF)
+			if (exfunc("OP") || exfunc("DEOP"))
+				response(cl, CLI(chanserv), "\00312OP/DEOP\003 Da o quita @.");
+			if (MODE_HALF && (exfunc("HALF") || exfunc("DEHALF")))
 				response(cl, CLI(chanserv), "\00312HALF/DEHALF\003 Da o quita %%.");
-			response(cl, CLI(chanserv), "\00312VOICE/DEVOICE\003 Da o quita +.");
-			response(cl, CLI(chanserv), "\00312BAN/UNBAN\003 Pone o quita bans.");
-			response(cl, CLI(chanserv), "\00312KICK\003 Expulsa a un usuario.");
-			response(cl, CLI(chanserv), "\00312CLEAR\003 Resetea distintas opciones del canal.");
-			response(cl, CLI(chanserv), "\00312SET\003 Fija distintas opciones del canal.");
-			response(cl, CLI(chanserv), "\00312AKICK\003 Gestiona la lista de auto-kick del canal.");
-			response(cl, CLI(chanserv), "\00312ACCESS\003 Gestiona la lista de accesos.");
-			response(cl, CLI(chanserv), "\00312JOIN\003 Introduce distintos servicios.");
-			response(cl, CLI(chanserv), "\00312REGISTER\003 Registra un canal.");
-			response(cl, CLI(chanserv), "\00312TOKEN\003 Te entrega un token para las operaciones que lo requieran.");
+			if (exfunc("VOICE") || exfunc("DEVOICE"))
+				response(cl, CLI(chanserv), "\00312VOICE/DEVOICE\003 Da o quita +.");
+			if (exfunc("BAN") || exfunc("UNBAN"))
+				response(cl, CLI(chanserv), "\00312BAN/UNBAN\003 Pone o quita bans.");
+			func_resp(chanserv, "KICK", "Expulsa a un usuario.");
+			func_resp(chanserv, "CLEAR", "Resetea distintas opciones del canal.");
+			func_resp(chanserv, "SET", "Fija distintas opciones del canal.");
+			func_resp(chanserv, "AKICK", "Gestiona la lista de auto-kick del canal.");
+			func_resp(chanserv, "ACCESS", "Gestiona la lista de accesos.");
+			func_resp(chanserv, "JOIN", "Introduce distintos servicios.");
+			func_resp(chanserv, "REGISTER", "Registra un canal.");
+			func_resp(chanserv, "TOKEN", "Te entrega un token para las operaciones que lo requieran.");
 #ifdef UDB
-			response(cl, CLI(chanserv), "\00312MIGRAR\003 Migra un canal a la base de datos de la red.");
-			response(cl, CLI(chanserv), "\00312DEMIGRAR\003 Demigra un canal de la base de datos de la red.");
-			response(cl, CLI(chanserv), "\00312PROTEGER\003 Protege un canal para que sólo ciertos nicks puedan entrar.");
+			func_resp(chanserv, "MIGRAR", "Migra un canal a la base de datos de la red.");
+			func_resp(chanserv, "DEMIGRAR", "Demigra un canal de la base de datos de la red.");
+			func_resp(chanserv, "PROTEGER", "Protege un canal para que sólo ciertos nicks puedan entrar.");
 #endif
 		}
 		if (IsPreo(cl))
 		{
-			response(cl, CLI(chanserv), "\00312SENDPASS\003 Genera y manda una clave al email del fundador.");
-			response(cl, CLI(chanserv), "\00312BLOCK\003 Bloquea y paraliza un canal.");
+			func_resp(chanserv, "SENDPASS", "Genera y manda una clave al email del fundador.");
+			func_resp(chanserv, "BLOCK", "Bloquea y paraliza un canal.");
 		}
 		if (IsOper(cl))
 		{
-			response(cl, CLI(chanserv), "\00312DROP\003 Desregistra un canal.");
-			response(cl, CLI(chanserv), "\00312SUSPENDER\003 Suspende un canal.");
-			response(cl, CLI(chanserv), "\00312LIBERAR\003 Quita el suspenso de un canal.");
+			func_resp(chanserv, "DROP", "Desregistra un canal.");
+			func_resp(chanserv, "SUSPENDER", "Suspende un canal.");
+			func_resp(chanserv, "LIBERAR", "Quita el suspenso de un canal.");
 		}
 		if (IsAdmin(cl))
 		{
-			response(cl, CLI(chanserv), "\00312FORBID\003 Prohibe el uso de un canal.");
-			response(cl, CLI(chanserv), "\00312UNFORBID\003 Quita la prohibición de utilizar un canal.");
+			func_resp(chanserv, "FORBID", "Prohibe el uso de un canal.");
+			func_resp(chanserv, "UNFORBID", "Quita la prohibición de utilizar un canal.");
 		}
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Para más información, \00312/msg %s %s comando", chanserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "INFO"))
+	else if (!strcasecmp(param[1], "INFO") && exfunc("INFO"))
 	{
 		response(cl, CLI(chanserv), "\00312INFO");
 		response(cl, CLI(chanserv), " ");
@@ -492,7 +496,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312INFO #canal");
 	}
-	else if (!strcasecmp(param[1], "LIST"))
+	else if (!strcasecmp(param[1], "LIST") && exfunc("LIST"))
 	{
 		response(cl, CLI(chanserv), "\00312LIST");
 		response(cl, CLI(chanserv), " ");
@@ -502,7 +506,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312LIST [-r] patrón");
 	}
-	else if (!strcasecmp(param[1], "IDENTIFY") && IsId(cl))
+	else if (!strcasecmp(param[1], "IDENTIFY") && IsId(cl) && exfunc("IDENTIFY"))
 	{
 		response(cl, CLI(chanserv), "\00312IDENTIFY");
 		response(cl, CLI(chanserv), " ");
@@ -514,7 +518,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312IDENTIFY #canal pass");
 	}
-	else if (!strcasecmp(param[1], "DEAUTH") && IsId(cl))
+	else if (!strcasecmp(param[1], "DEAUTH") && IsId(cl) && exfunc("DEAUTH"))
 	{
 		response(cl, CLI(chanserv), "\00312DEAUTH");
 		response(cl, CLI(chanserv), " ");
@@ -523,7 +527,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312DEAUTH #canal");
 	}
-	else if (!strcasecmp(param[1], "INVITE") && IsId(cl))
+	else if (!strcasecmp(param[1], "INVITE") && IsId(cl) && exfunc("INVITE"))
 	{
 		response(cl, CLI(chanserv), "\00312INVITE");
 		response(cl, CLI(chanserv), " ");
@@ -534,9 +538,17 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312INVITE #canal [nick]");
 	}
-	else if ((!strcasecmp(param[1], "OP") || !strcasecmp(param[1], "DEOP") || !strcasecmp(param[1], "HALF") || !strcasecmp(param[1], "DEHALF")
-		|| !strcasecmp(param[1], "VOICE") || !strcasecmp(param[1], "DEVOICE") || !strcasecmp(param[1], "BAN") || !strcasecmp(param[1], "UNBAN"))
-		&& IsId(cl))
+	else if (((!strcasecmp(param[1], "OP") && exfunc("OP")) ||
+		(!strcasecmp(param[1], "DEOP") && exfunc("DEOP")) || 
+		(!strcasecmp(param[1], "HALF") && MODE_HALF && exfunc("HALF")) || 
+		(!strcasecmp(param[1], "DEHALF") && MODE_HALF && exfunc("DEHALF")) ||
+		(!strcasecmp(param[1], "VOICE") && exfunc("VOICE")) || 
+		(!strcasecmp(param[1], "DEVOICE") && exfunc("DEVOICE")) || 
+		(!strcasecmp(param[1], "BAN") && exfunc("BAN")) || 
+		(!strcasecmp(param[1], "UNBAN") && exfunc("UNBAN")) ||
+		(!strcasecmp(param[1], "ADMIN") && MODE_ADM && exfunc("ADMIN")) ||
+		(!strcasecmp(param[1], "DEADMIN") && MODE_ADM && exfunc("DEADMIN"))
+		)&& IsId(cl))
 	{
 		response(cl, CLI(chanserv), "\00312%s", strtoupper(param[1]));
 		response(cl, CLI(chanserv), " ");
@@ -545,7 +557,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312%s #canal nick1 [nick2 [nick3 [...nickN]]]", strtoupper(param[1]));
 	}
-	else if (!strcasecmp(param[1], "KICK") && IsId(cl))
+	else if (!strcasecmp(param[1], "KICK") && IsId(cl) && exfunc("KICK"))
 	{
 		response(cl, CLI(chanserv), "\00312KICK");
 		response(cl, CLI(chanserv), " ");
@@ -554,7 +566,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312KICK #canal nick [motivo]");
 	}
-	else if (!strcasecmp(param[1], "CLEAR") && IsId(cl))
+	else if (!strcasecmp(param[1], "CLEAR") && IsId(cl) && exfunc("CLEAR"))
 	{
 		response(cl, CLI(chanserv), "\00312CLEAR");
 		response(cl, CLI(chanserv), " ");
@@ -581,7 +593,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312opcion #canal %s", IsOper(cl) ? "[tiempo]" : "");
 	}
-	else if (!strcasecmp(param[1], "SET") && IsId(cl))
+	else if (!strcasecmp(param[1], "SET") && IsId(cl) && exfunc("SET"))
 	{
 		if (params < 3)
 		{
@@ -709,7 +721,7 @@ BOTFUNC(chanserv_help)
 		else
 			response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 	}
-	else if (!strcasecmp(param[1], "AKICK"))
+	else if (!strcasecmp(param[1], "AKICK") && IsId(cl) && exfunc("AKICK"))
 	{
 		response(cl, CLI(chanserv), "\00312AKICK");
 		response(cl, CLI(chanserv), " ");
@@ -726,7 +738,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal");
 		response(cl, CLI(chanserv), "Lista las diferentes entradas.");
 	}
-	else if (!strcasecmp(param[1], "ACCESS") && IsId(cl))
+	else if (!strcasecmp(param[1], "ACCESS") && IsId(cl) && exfunc("ACCESS"))
 	{
 		response(cl, CLI(chanserv), "\00312ACCESS");
 		response(cl, CLI(chanserv), " ");
@@ -764,7 +776,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal");
 		response(cl, CLI(chanserv), "Lista todos los usuarios con acceso al canal.");
 	}
-	else if (!strcasecmp(param[1], "JOIN") && IsId(cl))
+	else if (!strcasecmp(param[1], "JOIN") && IsId(cl) && exfunc("JOIN"))
 	{
 		response(cl, CLI(chanserv), "\00312JOIN");
 		response(cl, CLI(chanserv), " ");
@@ -775,7 +787,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312JOIN #canal [servicio1 [servicio2 [...servicioN]]]");
 	}
-	else if (!strcasecmp(param[1], "REGISTER") && IsId(cl))
+	else if (!strcasecmp(param[1], "REGISTER") && IsId(cl) && exfunc("REGISTER"))
 	{
 		response(cl, CLI(chanserv), "\00312REGISTER");
 		response(cl, CLI(chanserv), " ");
@@ -809,7 +821,7 @@ BOTFUNC(chanserv_help)
 			response(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal pass descripción tokens");
 		}
 	}
-	else if (!strcasecmp(param[1], "TOKEN") && IsId(cl))
+	else if (!strcasecmp(param[1], "TOKEN") && IsId(cl) && exfunc("TOKEN"))
 	{
 		response(cl, CLI(chanserv), "\00312TOKEN");
 		response(cl, CLI(chanserv), " ");
@@ -823,7 +835,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "Sintaxis: \00312TOKEN");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl))
+	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl) && exfunc("MIGRAR"))
 	{
 		response(cl, CLI(chanserv), "\00312MIGRAR");
 		response(cl, CLI(chanserv), " ");
@@ -837,7 +849,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312MIGRAR #canal pass");
 	}
-	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl))
+	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl) && exfunc("DEMIGRAR"))
 	{
 		response(cl, CLI(chanserv), "\0012DEMIGRAR");
 		response(cl, CLI(chanserv), " ");
@@ -847,7 +859,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312DEMIGRAR #canal pass");
 	}
-	else if (!strcasecmp(param[1], "PROTEGER") && IsId(cl))
+	else if (!strcasecmp(param[1], "PROTEGER") && IsId(cl) && exfunc("PROTEGER"))
 	{
 		response(cl, CLI(chanserv), "\00312PROTEGER");
 		response(cl, CLI(chanserv), " ");
@@ -862,7 +874,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), "Sintaxis: \00312PROTEGER #canal [+|-[máscara]]");
 	}
 #endif
-	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl))
+	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl) && exfunc("SENDPASS"))
 	{
 		response(cl, CLI(chanserv), "\00312SENDPASS");
 		response(cl, CLI(chanserv), " ");
@@ -871,7 +883,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312SENDPASS #canal");
 	}
-	else if (!strcasecmp(param[1], "BLOCK") && IsPreo(cl))
+	else if (!strcasecmp(param[1], "BLOCK") && IsPreo(cl) && exfunc("BLOCK"))
 	{
 		response(cl, CLI(chanserv), "\00312BLOCK");
 		response(cl, CLI(chanserv), " ");
@@ -881,7 +893,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312BLOCK #canal");
 	}
-	else if (!strcasecmp(param[1], "DROP") && IsOper(cl))
+	else if (!strcasecmp(param[1], "DROP") && IsOper(cl) && exfunc("DROP"))
 	{
 		response(cl, CLI(chanserv), "\00312DROP");
 		response(cl, CLI(chanserv), " ");
@@ -891,7 +903,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312DROP #canal");
 	}
-	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl))
+	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl) && exfunc("SUSPENDER"))
 	{
 		response(cl, CLI(chanserv), "\00312SUSPENDER");
 		response(cl, CLI(chanserv), " ");
@@ -902,7 +914,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312SUSPENDER #canal motivo");
 	}
-	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl))
+	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl) && exfunc("LIBERAR"))
 	{
 		response(cl, CLI(chanserv), "\00312LIBERAR");
 		response(cl, CLI(chanserv), " ");
@@ -910,7 +922,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312LIBERAR #canal");
 	}
-	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl) && exfunc("FORBID"))
 	{
 		response(cl, CLI(chanserv), "\00312FORBID");
 		response(cl, CLI(chanserv), " ");
@@ -920,7 +932,7 @@ BOTFUNC(chanserv_help)
 		response(cl, CLI(chanserv), " ");
 		response(cl, CLI(chanserv), "Sintaxis: \00312FORBID #canal motivo");
 	}
-	else if (!strcasecmp(param[1], "UNFORBID") && IsAdmin(cl))
+	else if (!strcasecmp(param[1], "UNFORBID") && IsAdmin(cl) && exfunc("UNFORBID"))
 	{
 		response(cl, CLI(chanserv), "\00312UNFORBID");
 		response(cl, CLI(chanserv), " ");
