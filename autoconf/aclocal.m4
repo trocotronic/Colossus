@@ -14,7 +14,7 @@ dnl Macro: unet_CHECK_TYPE_SIZES
 dnl
 dnl Check the size of several types and define a valid int16_t and int32_t.
 dnl
-AC_DEFUN(colossus_CHECK_TYPE_SIZES,
+AC_DEFUN(CHECK_TYPE_SIZES,
 [dnl Check type sizes
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)

@@ -33,7 +33,7 @@ ARG="$ARG--with-dpath=$DPATH "
 ARG="$ARG--with-spath=$SPATH "
 ARG="$ARG--with-permissions=$DEFPERM "
 ARG="$ARG--with-fd-setsize=$MAXCONNECTIONS "
-ARG="$ARG--enable-link-dinamico "
+ARG="$ARG--enable-dynamic-linking "
 ARG="$ARG $EXTRAPARA "
 CONF="./configure $ARG"
 echo $CONF
