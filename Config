@@ -29,7 +29,6 @@ if [ "$UDB" = "1" ]; then
 	ARG="$ARG--enable-udb "
 fi
 ARG="$ARG--with-listen=$LISTEN_SIZE "
-ARG="$ARG--with-spath=$SPATH "
 ARG="$ARG--with-permissions=$DEFPERM "
 ARG="$ARG--with-fd-setsize=$MAXCONNECTIONS "
 ARG="$ARG--enable-dynamic-linking "
@@ -52,7 +51,6 @@ fi
 c=""
 n=""
 HUB="1"
-SPATH="`pwd`/bin/colossus"
 DEFPERM="0600"
 CRYPTOIRCD=""
 SSLDIR=""
@@ -117,17 +115,6 @@ clear
         read cc
         clear
     fi
-
-TEST="$SPATH"
-echo ""
-echo "En que directorio se encuentra el programa?"
-echo $n "[$TEST] -> $c"
-    read cc
-if [ -z "$cc" ] ; then
-    SPATH=$TEST
-else 
-    SPATH=`eval echo $cc` # modified
-fi
 
 TEST=""
 while [ -z "$TEST" ] ; do
@@ -385,7 +372,6 @@ read EXTRAPARA
 rm -f config.settings
 cat > config.settings << __EOF__
 #
-SPATH="$SPATH"
 INET6="$INET6"
 UDB="$UDB"
 LISTEN_SIZE="$LISTEN_SIZE"

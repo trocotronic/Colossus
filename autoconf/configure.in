@@ -29,6 +29,7 @@ AC_PATH_PROG(INSTALL,install)
 dnl Checks for libraries.
 AC_CHECK_LIB(socket, socket,IRCDLIBS="$IRCDLIBS-lsocket " SOCKLIB="-lsocket")
 AC_CHECK_LIB(nsl, inet_ntoa,IRCDLIBS="$IRCDLIBS-lnsl " INETLIB="-lnsl")
+AC_CHECK_LIB(pthread, pthread_create,IRCDLIBS="$IRCDLIBS-lpthreads ")
 
 AC_SUBST(IRCDLIBS)
 
