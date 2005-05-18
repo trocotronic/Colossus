@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.9 2005-03-19 12:48:51 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.10 2005-05-18 18:51:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -122,15 +122,15 @@ void set(Conf *config, Modulo *mod)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "nick"))
-			ircstrdup(&linkserv->nick, config->seccion[i]->data);
+			ircstrdup(linkserv->nick, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "ident"))
-			ircstrdup(&linkserv->ident, config->seccion[i]->data);
+			ircstrdup(linkserv->ident, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&linkserv->host, config->seccion[i]->data);
+			ircstrdup(linkserv->host, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "realname"))
-			ircstrdup(&linkserv->realname, config->seccion[i]->data);
+			ircstrdup(linkserv->realname, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "modos"))
-			ircstrdup(&linkserv->modos, config->seccion[i]->data);
+			ircstrdup(linkserv->modos, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -150,7 +150,7 @@ void set(Conf *config, Modulo *mod)
 			}
 		}
 		if (!strcmp(config->seccion[i]->item, "residente"))
-			ircstrdup(&linkserv->residente, config->seccion[i]->data);
+			ircstrdup(linkserv->residente, config->seccion[i]->data);
 	}
 	if (linkserv->mascara)
 		Free(linkserv->mascara);

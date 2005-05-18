@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.11 2005-03-14 14:18:06 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.12 2005-05-18 18:51:01 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(inicia_ircd);
@@ -22,6 +22,7 @@ typedef struct _linkcanal LinkCanal;
 typedef struct _ban Ban;
 struct _cliente
 {
+	struct _cliente *sig, *hsig, *prev;
 	char *nombre;
 	char *ident;
 	char *host; /* siempre apunta al host del cliente que conecta (puede ser ip o host) */
@@ -33,7 +34,6 @@ struct _cliente
 	char *mask;
 	char *vmask;
 	u_long modos;
-	struct _cliente *sig, *hsig, *prev;
 	Sock *sck;
 	char tipo;
 	LinkCanal *canal;
@@ -56,17 +56,17 @@ struct _linkcliente
 };
 struct _ban
 {
+	struct _ban *sig;
 	Cliente *quien;
 	char *ban;
-	struct _ban *sig;
 };
 struct _canal
 {
+	struct _canal *sig, *hsig, *prev;
 	char *nombre;
 	u_long modos;
 	char *topic;
 	Cliente *ntopic;
-	struct _canal *sig, *hsig, *prev;
 	char *clave;
 	u_int limite;
 	char *flood;
@@ -90,13 +90,13 @@ typedef struct _comando Comando;
 extern Comando *comandos;
 struct _comando
 {
+	struct _comando *sig;
 	char *cmd;
 	char *tok;
 	IRCFUNC(*funcion[MAXMODULOS]);
 	int funciones;
 	int cuando;
 	u_char params;
-	struct _comando *sig;
 };
 #define MAXPARA 15
 #define HOSTLEN 63

@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.9 2005-03-18 21:26:53 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.10 2005-05-18 18:51:04 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -82,6 +82,7 @@ char *_mysql_get_registro(char *tabla, char *registro, char *campo)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
+	static char resultado[BUFSIZE];
 	char *reg_corr, *cam_corr = NULL;
 	reg_corr = _mysql_escapa(registro);
 	if (campo)
@@ -105,7 +106,10 @@ char *_mysql_get_registro(char *tabla, char *registro, char *campo)
 		return NULL;
 	if (!campo)
 		return (u_char *)!NULL;
-	return BadPtr(row[0]) ? NULL : row[0];
+	if (BadPtr(row[0]))
+		return NULL;
+	strncpy(resultado, row[0], sizeof(resultado));
+	return resultado;
 }
 char *_mysql_get_num(MYSQL *mysql, char *tabla, int registro, char *campo)
 {
@@ -308,7 +312,7 @@ void _mysql_carga_tablas()
 	{
 		pthread_mutex_unlock(&mutex);
 		for (i = 0; (row = mysql_fetch_row(res)); i++)
-			ircstrdup(&mysql_tablas.tabla[i], row[0]);
+			ircstrdup(mysql_tablas.tabla[i], row[0]);
 		mysql_tablas.tablas = i;
 		mysql_free_result(res);
 	}

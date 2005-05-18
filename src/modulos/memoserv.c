@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.13 2005-03-19 12:48:51 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.14 2005-05-18 18:51:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -16,14 +16,14 @@
 MemoServ memoserv;
 #define exfunc(x) busca_funcion(memoserv.hmod, x, NULL)
 
-static int memoserv_help	(Cliente *, char *[], int, char *[], int);
-static int memoserv_memo	(Cliente *, char *[], int, char *[], int);
-static int memoserv_read	(Cliente *, char *[], int, char *[], int);
-static int memoserv_del		(Cliente *, char *[], int, char *[], int);
-static int memoserv_list	(Cliente *, char *[], int, char *[], int);
-static int memoserv_set		(Cliente *, char *[], int, char *[], int);
-static int memoserv_info	(Cliente *, char *[], int, char *[], int);
-static int memoserv_cancelar	(Cliente *, char *[], int, char *[], int);
+BOTFUNC(memoserv_help);
+BOTFUNC(memoserv_memo);
+BOTFUNC(memoserv_read);
+BOTFUNC(memoserv_del);
+BOTFUNC(memoserv_list);
+BOTFUNC(memoserv_set);
+BOTFUNC(memoserv_info);
+BOTFUNC(memoserv_cancelar);
 
 static bCom memoserv_coms[] = {
 	{ "help" , memoserv_help , TODOS } ,
@@ -126,6 +126,7 @@ int descarga()
 	borra_senyal(NS_SIGN_REG, memoserv_sig_reg);
 	borra_senyal(CS_SIGN_DROP, memoserv_sig_drop);
 	borra_senyal(CS_SIGN_REG, memoserv_sig_reg);
+	bot_unset(memoserv);
 	return 0;
 }
 int test(Conf *config, int *errores)

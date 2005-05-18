@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.9 2005-03-14 18:55:57 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.10 2005-05-18 18:51:01 Trocotronic Exp $ 
  */
 
 #ifdef UDB
@@ -34,6 +34,9 @@ DLLFUNC int level_oper_bdd(char *);
 MODFUNC extern MODVAR char bloques[];
 MODFUNC extern MODVAR u_int BDD_TOTAL;
 
+#define ID(x) (x->id >> 8)
+#define LETRA(x) (x->id & 0xFF)
+
 #define BDD_PREO 0x1
 #define BDD_OPER 0x2
 #define BDD_DEVEL 0x4
@@ -58,4 +61,6 @@ DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);
 #define E_UDB_PARAMS 4
 #define E_UDB_NOOPEN 5
 #define E_UDB_FATAL 6
+#define E_UDB_RPROG 7 
+#define E_UDB_NORES 8 
 #endif

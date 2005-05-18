@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.13 2005-03-19 12:48:50 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.14 2005-05-18 18:51:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,12 +13,12 @@
 IpServ ipserv;
 #define exfunc(x) busca_funcion(ipserv.hmod, x, NULL)
 
-static int ipserv_help		(Cliente *, char *[], int, char *[], int);
-static int ipserv_setipv		(Cliente *, char *[], int, char *[], int);
-static int ipserv_temphost		(Cliente *, char *[], int, char *[], int);
-static int ipserv_clones		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(ipserv_help);
+BOTFUNC(ipserv_setipv);
+BOTFUNC(ipserv_temphost);
+BOTFUNC(ipserv_clones);
 #ifdef UDB
-static int ipserv_set		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(ipserv_set);
 #endif
 
 int ipserv_sig_mysql	();
@@ -104,6 +104,8 @@ int descarga()
 	borra_senyal(SIGN_MYSQL, ipserv_sig_mysql);
 	borra_senyal(NS_SIGN_DROP, ipserv_sig_drop);
 	borra_senyal(SIGN_EOS, ipserv_sig_eos);
+	proc_stop(ipserv_dropaips);
+	bot_unset(ipserv);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -140,7 +142,7 @@ void set(Conf *config, Modulo *mod)
 			ipserv.clones = atoi(config->seccion[i]->data);
 #endif
 		if (!strcmp(config->seccion[i]->item, "sufijo"))
-			ircstrdup(&ipserv.sufijo, config->seccion[i]->data);
+			ircstrdup(ipserv.sufijo, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "cambio"))
 			ipserv.cambio = atoi(config->seccion[i]->data) * 3600;
 	}

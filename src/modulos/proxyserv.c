@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.12 2005-03-19 12:48:53 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.13 2005-05-18 18:51:09 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,8 +14,8 @@
 ProxyServ proxyserv;
 #define exfunc(x) busca_funcion(proxyserv.hmod, x, NULL)
 
-static int proxyserv_help	(Cliente *, char *[], int, char *[], int);
-static int proxyserv_host	(Cliente *, char *[], int, char *[], int);
+BOTFUNC(proxyserv_help);
+BOTFUNC(proxyserv_host);
 
 int proxyserv_sig_mysql();
 #ifdef USA_THREADS
@@ -39,7 +39,7 @@ int test(Conf *, int *);
 
 ModInfo info = {
 	"ProxyServ" ,
-	0.8 ,
+	0.9 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
@@ -86,6 +86,7 @@ int descarga()
 {
 	borra_senyal(SIGN_POST_NICK, proxyserv_nick);
 	borra_senyal(SIGN_MYSQL, proxyserv_sig_mysql);
+	bot_unset(proxyserv);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -162,7 +163,10 @@ void escanea(char *host)
 	Proxys *px;
 	int i;
 	if (!strncmp("192.168.", host, 8) || !strcmp("127.0.0.1", host))
+	{
+		Free(host);
 		return;
+	}
 	da_Malloc(px, Proxys);
 	for (i = 0; i < proxyserv.puertos; i++)
 	{
@@ -177,9 +181,8 @@ void escanea(char *host)
 			px->puertos++;
 		}
 	}
-	px->host = strdup(host);
-	px->sig = proxys;
-	proxys = px;
+	px->host = host; /* ya es un strdup */
+	AddItem(px, proxys);
 }
 BOTFUNC(proxyserv_help)
 {
@@ -256,9 +259,9 @@ int proxyserv_nick(Cliente *cl, int nuevo)
 		Proxys *px;
 		char *host;
 		if (!BadPtr(cl->ip) && *(cl->ip) != '*')
-			host = cl->ip;
+			host = strdup(cl->ip);
 		else
-			host = cl->host;
+			host = strdup(cl->host);
 		if (coge_cache(CACHE_PROXY, host, proxyserv.hmod->id) || _mysql_get_registro(XS_MYSQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
@@ -308,7 +311,6 @@ SOCKFUNC(proxy_fin)
 	{
 		int i;
 		char abiertos[256];
-		Proxys *aux, *prev = NULL;
 		abiertos[0] = '\0';
 		for (i = 0; i < px->puertos; i++)
 		{
@@ -320,7 +322,6 @@ SOCKFUNC(proxy_fin)
 				strcat(abiertos, puerto);
 				sockclose(px->puerto[i]->sck, 0);
 			}
-			Free(px->puerto[i]);
 		}
 		if (abiertos[0] != '\0')
 		{
@@ -330,18 +331,7 @@ SOCKFUNC(proxy_fin)
 		}
 		else
 			inserta_cache(CACHE_PROXY, px->host, 86400, proxyserv.hmod->id, px->host);
-		for (aux = proxys; aux; aux = aux->sig)
-		{
-			if (aux == px)
-			{
-				if (prev)
-					prev->sig = aux->sig;
-				else
-					proxys = aux->sig;
-				break;
-			}
-			prev = aux;
-		}
+		BorraItem(px, proxys);
 		Free(px->host);
 		Free(px);
 	}

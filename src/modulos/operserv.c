@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.16 2005-03-19 12:48:52 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.17 2005-05-18 18:51:08 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,26 +23,27 @@ Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
 char *confirm = NULL;
 
-static int operserv_help		(Cliente *, char *[], int, char *[], int);
-static int operserv_raw			(Cliente *, char *[], int, char *[], int);
-static int operserv_restart		(Cliente *, char *[], int, char *[], int);
-static int operserv_rehash		(Cliente *, char *[], int, char *[], int);
-static int operserv_backup		(Cliente *, char *[], int, char *[], int);
-static int operserv_restaura		(Cliente *, char *[], int, char *[], int);
-static int operserv_gline		(Cliente *, char *[], int, char *[], int);
-static int operserv_opers		(Cliente *, char *[], int, char *[], int);
-static int operserv_sajoin		(Cliente *, char *[], int, char *[], int);
-static int operserv_sapart		(Cliente *, char *[], int, char *[], int);
-static int operserv_rejoin		(Cliente *, char *[], int, char *[], int);
-static int operserv_kill		(Cliente *, char *[], int, char *[], int);
-static int operserv_global		(Cliente *, char *[], int, char *[], int);
-static int operserv_noticias		(Cliente *, char *[], int, char *[], int);
-static int operserv_close		(Cliente *, char *[], int, char *[], int);
-static int operserv_vaciar		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(operserv_help);
+BOTFUNC(operserv_raw);
+BOTFUNC(operserv_restart);
+BOTFUNC(operserv_rehash);
+BOTFUNC(operserv_backup);
+BOTFUNC(operserv_restaura);
+BOTFUNC(operserv_gline);
+BOTFUNC(operserv_opers);
+BOTFUNC(operserv_sajoin);
+BOTFUNC(operserv_sapart);
+BOTFUNC(operserv_rejoin);
+BOTFUNC(operserv_kill);
+BOTFUNC(operserv_global);
+BOTFUNC(operserv_noticias);
+BOTFUNC(operserv_close);
+BOTFUNC(operserv_vaciar);
 #ifdef UDB
-static int operserv_modos		(Cliente *, char *[], int, char *[], int);
-static int operserv_snomask		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(operserv_modos);
+BOTFUNC(operserv_snomask);
 #endif
+BOTFUNC(operserv_akill);
 
 static bCom operserv_coms[] = {
 	{ "help" , operserv_help , OPERS } ,
@@ -65,6 +66,7 @@ static bCom operserv_coms[] = {
 	{ "modos" , operserv_modos , ADMINS } ,
 	{ "snomask" , operserv_snomask , ADMINS } ,
 #endif
+	{ "akill" , operserv_akill , OPERS } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 
@@ -73,6 +75,8 @@ int operserv_idok	(Cliente *);
 #endif
 int operserv_sig_mysql	();
 int operserv_sig_synch	();
+void operserv_carga_noticias();
+void descarga_noticias();
 
 int operserv_join(Cliente *, Canal *);
 int operserv_nick(Cliente *, int);
@@ -90,7 +94,7 @@ int test(Conf *, int *);
 
 ModInfo info = {
 	"OperServ" ,
-	0.9 ,
+	0.10 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
@@ -143,6 +147,8 @@ int carga(Modulo *mod)
 		}
 	}
 #endif	
+	if (mysql)
+		operserv_carga_noticias();
 	return errores;
 }
 int descarga()
@@ -154,6 +160,8 @@ int descarga()
 #endif
 	borra_senyal(SIGN_MYSQL, operserv_sig_mysql);
 	borra_senyal(SIGN_SYNCH, operserv_sig_synch);
+	descarga_noticias();
+	bot_unset(operserv);
 	return 0;
 }	
 int test(Conf *config, int *errores)
@@ -164,6 +172,7 @@ void set(Conf *config, Modulo *mod)
 {
 	int i, p;
 	bCom *os;
+	operserv.maxlist = 30;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
@@ -187,6 +196,8 @@ void set(Conf *config, Modulo *mod)
 		}
 		if (!strcmp(config->seccion[i]->item, "autoop"))
 			operserv.opts |= OS_OPTS_AOP;
+		if (!strcmp(config->seccion[i]->item, "maxlist"))
+			operserv.maxlist = atoi(config->seccion[i]->data);
 	}
 	inserta_senyal(SIGN_JOIN, operserv_join);
 	inserta_senyal(SIGN_POST_NICK, operserv_nick);
@@ -206,6 +217,72 @@ Noticia *es_bot_noticia(char *botname)
 			return gnoticia[i];
 	}
 	return NULL;
+}
+void carga_noticia(int id)
+{
+	int i;
+	Noticia *not, *gn;
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+	time_t aux;
+	for (i = 0; i < gnoticias; i++)
+	{
+		if (gnoticia[i]->id == id)
+		{
+			not = gnoticia[i];
+			goto sigue;
+		}
+	}
+	da_Malloc(not, Noticia);
+	if ((res = _mysql_query("SELECT bot,noticia,fecha FROM %s%s WHERE n=%i", PREFIJO, OS_NOTICIAS, id)))
+	{
+		row = mysql_fetch_row(res);
+		not->botname = strdup(row[0]);
+		not->noticia = strdup(row[1]);
+		aux = atoul(row[2]);
+		strftime(not->fecha, sizeof(not->fecha), "%d/%m/%Y", localtime(&aux));
+		not->id = id;
+		gnoticia[gnoticias++] = not;
+	}
+	sigue:
+	if (!(gn = es_bot_noticia(not->botname)))
+		not->cl = botnick(not->botname, operserv.hmod->ident, operserv.hmod->host, me.nombre, "kdBq", operserv.hmod->realname);
+	else
+		not->cl = gn->cl;
+}
+int descarga_noticia(int id)
+{
+	int i;
+	Noticia *not = NULL;
+	for (i = 0; i < gnoticias; i++)
+	{
+		if (gnoticia[i]->id == id)
+		{
+			not = gnoticia[i];
+			i++;
+			while (i < gnoticias)
+				gnoticia[i] = gnoticia[i+1];
+			gnoticias--;
+			break;
+		}
+	}
+	if (!not)
+		return 0;
+	if (!es_bot_noticia(not->botname))
+	{
+		Cliente *bl = busca_cliente(not->botname, NULL);
+		if (bl)
+			port_func(P_QUIT_USUARIO_LOCAL)(bl, "Mensajería global %s", conf_set->red);
+	}
+	ircfree(not->botname);
+	ircfree(not->noticia);
+	Free(not);
+	return 1;
+}
+void descarga_noticias()
+{
+	while (gnoticias)
+		descarga_noticia(gnoticia[0]->id);
 }
 int inserta_noticia(char *botname, char *noticia, time_t fecha, int id)
 {
@@ -242,30 +319,8 @@ int inserta_noticia(char *botname, char *noticia, time_t fecha, int id)
 }
 int borra_noticia(int id)
 {
-	int i;
-	char *botname;
-	for (i = 0; i < gnoticias; i++)
-	{
-		if (gnoticia[i]->id == id)
-		{
-			botname = strdup(gnoticia[i]->botname);
-			Free(gnoticia[i]->botname);
-			Free(gnoticia[i]->noticia);
-			Free(gnoticia[i]);
-			_mysql_query("DELETE from %s%s where n='%i'", PREFIJO, OS_NOTICIAS, id);
-			for (; i < gnoticias; i++)
-				gnoticia[i] = gnoticia[i+1];
-			gnoticias--;
-			if (!es_bot_noticia(botname))
-			{
-				Cliente *bl = busca_cliente(botname, NULL);
-				port_func(P_QUIT_USUARIO_LOCAL)(bl, "Mensajería global %s", conf_set->red);
-			}
-			Free(botname);
-			return 1;
-		}
-	}
-	return 0;
+	_mysql_query("DELETE from %s%s where n='%i'", PREFIJO, OS_NOTICIAS, id);
+	return descarga_noticia(id);
 }
 void operserv_carga_noticias()
 {
@@ -274,7 +329,7 @@ void operserv_carga_noticias()
 	if ((res = _mysql_query("SELECT * from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
 		while ((row = mysql_fetch_row(res)))
-			inserta_noticia(row[1], row[2], atol(row[3]), atoul(row[0]));
+			carga_noticia(atoi(row[0]));
 		mysql_free_result(res);
 	}
 }
@@ -299,6 +354,7 @@ BOTFUNC(operserv_help)
 		func_resp(operserv, "KILL", "Desconecta a un usuario.");
 		func_resp(operserv, "GLOBAL", "Manda un mensaje global.");
 		func_resp(operserv, "NOTICIAS", "Administra las noticias de la red.");
+		func_resp(operserv, "AKILL", "Prohibe la conexión de una ip/host o usuario permanentemente.");
 		if (IsAdmin(cl))
 		{
 			func_resp(operserv, "OPERS", "Administra los operadores de la red.");
@@ -409,6 +465,24 @@ BOTFUNC(operserv_help)
 		response(cl, CLI(operserv), "\00312ADD bot noticia");
 		response(cl, CLI(operserv), "\00312DEL nº");
 		response(cl, CLI(operserv), "\00312LIST");
+	}
+	else if (!strcasecmp(param[1], "AKILL") && exfunc("AKILL"))
+	{
+		response(cl, CLI(operserv), "\00312AKILL");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Prohibe la conexión de una ip/host o un usuario de forma permanente.");
+		response(cl, CLI(operserv), "La principal ventaja es que estas prohibiciones nunca se pierden, aunque se reinicie el servidor.");
+		response(cl, CLI(operserv), "Su entrada siempre será prohibida, aunque los servicios no estén conectados.");
+		response(cl, CLI(operserv), "Si no se especifica ninguna acción (+ o -) se listarán los host que coincidan con el patrón.");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Sintaxis:");
+		response(cl, CLI(operserv), "AKILL {+|-}[user@]{host|ip} [motivo]");
+		response(cl, CLI(operserv), " ");
+		response(cl, CLI(operserv), "Ejemplos:");
+		response(cl, CLI(operserv), "AKILL +pepito@palotes.com largo");
+		response(cl, CLI(operserv), "AKILL +127.0.0.1 largo");
+		response(cl, CLI(operserv), "AKILL -google.com");
+		response(cl, CLI(operserv), "AKILL *@*.aol.com");
 	}
 	else if (!strcasecmp(param[1], "OPERS") && IsAdmin(cl) && exfunc("OPERS"))
 	{
@@ -587,12 +661,12 @@ BOTFUNC(operserv_gline)
 	}
 	if (*param[1] == '+')
 	{
-		port_func(P_GLINE)(CLI(operserv), ADD, user, host, atoi(param[2]), implode(param, params, 3, -1));
+		port_func(P_GLINE)(cl, ADD, user, host, atoi(param[2]), implode(param, params, 3, -1));
 		response(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
 	}
 	else if (*param[1] == '-')
 	{
-		port_func(P_GLINE)(CLI(operserv), ADD, user, host, 0, NULL);
+		port_func(P_GLINE)(cl, DEL, user, host, 0, NULL);
 		response(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
 	}
 	return 0;
@@ -868,12 +942,20 @@ BOTFUNC(operserv_noticias)
 	}
 	if (!strcasecmp(param[1], "ADD"))
 	{
+		MYSQL_RES *res;
+		MYSQL_ROW row;
+		char *noticia;
 		if (params < 4)
 		{
 			response(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS ADD botname noticia");
 			return 1;
 		}
-		inserta_noticia(param[2], implode(param, params, 3, -1), 0, 0);
+		noticia = implode(param, params, 3, -1);
+		_mysql_query("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, param[2], noticia, time(0));
+		res = _mysql_query("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, noticia, param[2]);
+		row = mysql_fetch_row(res);
+		carga_noticia(atoi(row[0]));
+		mysql_free_result(res);
 		response(cl, CLI(operserv), "Noticia añadida.");
 	}
 	else if (!strcasecmp(param[1], "DEL"))
@@ -915,6 +997,77 @@ BOTFUNC(operserv_noticias)
 	{
 		response(cl, CLI(operserv), OS_ERR_SNTX, "NOTICIAS ADD|DEL|LIST parámetros");
 		return 1;
+	}
+	return 0;
+}
+BOTFUNC(operserv_akill)
+{
+	if (params < 2)
+	{
+		response(cl, CLI(operserv), OS_ERR_PARA, "AKILL [+|-]{mascara|patron} [motivo]");
+		return 1;
+	}
+	if (*param[1] == '+')
+	{
+		char *c, *motivo;
+		if (params < 3)
+		{
+			response(cl, CLI(operserv), OS_ERR_PARA, "AKILL +mascara motivo");
+			return 1;
+		}
+		param[1]++;
+		if (strchr(param[1], '!'))
+		{
+			response(cl, CLI(operserv), OS_ERR_SNTX, "La máscara no debe contener el nick ('!').");
+			return 1;
+		}
+		if (strchr(param[1], '@'))
+			strcpy(buf, param[1]);
+		else
+			sprintf_irc(buf, "*@%s", param[1]);
+		motivo = implode(param, params, 2, -1);
+		_mysql_add(OS_AKILL, buf, "motivo", motivo);
+		c = strchr(buf, '@');
+		*c++ = '\0';
+		port_func(P_GLINE)(CLI(operserv), ADD, buf, c, 0, motivo);
+		response(cl, CLI(operserv), "Se ha insertado un AKILL para \00312%s\003 indefinido.", param[1]);
+	}
+	else if (*param[1] == '-')
+	{
+		char *c;
+		param[1]++;
+		if (strchr(param[1], '@'))
+			strcpy(buf, param[1]);
+		else
+			sprintf_irc(buf, "*@%s", param[1]);
+		if (!_mysql_get_registro(OS_AKILL, buf, "motivo"))
+		{
+			response(cl, CLI(operserv), OS_ERR_EMPT, "Esta máscara no tiene akill.");
+			return 1;
+		}
+		_mysql_del(OS_AKILL, buf);
+		c = strchr(buf, '@');
+		*c++ = '\0';
+		port_func(P_GLINE)(CLI(operserv), DEL, buf, c, 0, NULL);
+		response(cl, CLI(operserv), "Se ha retirado el AKILL a \00312%s", param[1]);
+	}
+	else
+	{
+		MYSQL_RES *res;
+		MYSQL_ROW row;
+		u_int i;
+		char *rep;
+		rep = str_replace(param[1], '*', '%');
+		if (!(res = _mysql_query("SELECT item from %s%s where item LIKE '%s'", PREFIJO, OS_AKILL, rep)))
+		{
+			response(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+		response(cl, CLI(operserv), "*** AKILLS que coinciden con \00312%s\003 ***", param[1]);
+		for (i = 0; i < operserv.maxlist && (row = mysql_fetch_row(res)); i++)
+			response(cl, CLI(operserv), "\00312%s", row[0]);
+		response(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
+		mysql_free_result(res);
 	}
 	return 0;
 }
@@ -1112,6 +1265,15 @@ int operserv_sig_mysql()
 				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_MYSQL);
 	}
 #endif
+	if (!_mysql_existe_tabla(OS_AKILL))
+	{
+		if (_mysql_query("CREATE TABLE `%s%s` ( "
+			"`item` varchar(255) default NULL, "
+			"`motivo` varchar(255) default NULL, "
+			"KEY `item` (`item`) "
+			") TYPE=MyISAM COMMENT='Tabla de akills';", PREFIJO, OS_AKILL))
+				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
+	}
 	_mysql_carga_tablas();
 	operserv_carga_noticias();
 	return 1;
@@ -1122,6 +1284,7 @@ int operserv_sig_synch()
 	int i = 0;
 	MYSQL_RES *res;
 	MYSQL_ROW row;
+	char *c;
 	if ((res = _mysql_query("SELECT DISTINCT bot from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
 		while ((row = mysql_fetch_row(res)))
@@ -1132,6 +1295,16 @@ int operserv_sig_synch()
 				if (!strcmp(row[0], gnoticia[i]->botname))
 					gnoticia[i]->cl = bl;
 			}
+		}
+		mysql_free_result(res);
+	}
+	if ((res = _mysql_query("SELECT item,motivo from %s%s ", PREFIJO, OS_AKILL)))
+	{
+		while ((row = mysql_fetch_row(res)))
+		{
+			if ((c = strchr(row[0], '@')))
+				*c++ = '\0';
+			port_func(P_GLINE)(CLI(operserv), ADD, row[0], c, 0, row[1]);
 		}
 		mysql_free_result(res);
 	}

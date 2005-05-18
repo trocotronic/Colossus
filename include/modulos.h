@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.7 2005-03-19 12:48:47 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.8 2005-05-18 18:51:02 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -50,6 +50,7 @@ typedef struct _info
 }ModInfo, ProtInfo;
 typedef struct _mod
 {
+	struct _mod *sig;
 #ifdef _WIN32
 	HMODULE hmod;
 #else
@@ -57,7 +58,6 @@ typedef struct _mod
 #endif
 	char *archivo;
 	char *tmparchivo;
-	struct _mod *sig;
 	char *nick;
 	char *ident;
 	char *realname;
@@ -92,5 +92,6 @@ extern const char *our_dlerror(void);
 
 #define CLI(x) x.hmod->cl
 #define bot_set(x) x.hmod = mod; mod->conf = &(x)
+#define bot_unset(x) x.hmod->conf = NULL; x.hmod = NULL; 
 extern Mod_Func busca_funcion(Modulo *, char *, int *);
 #define func_resp(x,y,z) do { if (busca_funcion(x.hmod,y,NULL)) { response(cl, CLI(x), "\00312" y "\003 " z); }}while(0)

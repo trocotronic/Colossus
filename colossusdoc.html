@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.9 2005-03-18 21:26:51 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.10 2005-05-18 18:51:00 Trocotronic Exp $ -->
 
 <body>
 
@@ -589,6 +589,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p>Requiere: <b>chanserv</b>, <b>memoserv</b>. </p>
 <pre>OperServ {
 	autoop;
+	maxlist n&ordm;; 
 	funciones {
 		help;
 		raw;
@@ -608,6 +609,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		modos; // S&oacute;lo en soporte UDB
 		snomask; // S&oacute;lo en soporte UDB
 		vaciar;
+		akill;
 	};
 };</pre>
 <p><b>autoop</b><br>Los operadores de red obtienen @ al entrar en un canal autom&aacute;ticamente no registrado (en un registrado deber&aacute; tener su correspondiente acceso). </p>
@@ -615,6 +617,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p>Ejemplo:</p>
 <pre>OperServ {
 	autoop;
+	maxlist 30;
 	funciones {
 		raw;
 		help;
@@ -634,6 +637,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		modos;
 		snomask;
 		vaciar;
+		akill;
 	};
 };</pre>
 <p>&nbsp;</p>

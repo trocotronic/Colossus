@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.23 2005-03-14 14:20:39 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.24 2005-05-18 18:51:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -76,8 +76,7 @@ void inserta_comando(char *cmd, char *tok, IRCFUNC(*func), int cuando, u_char pa
 	com->funcion[0] = func;
 	com->params = params;
 	com->cuando = cuando;
-	com->sig = comandos;
-	comandos = com;
+	AddItem(com, comandos);
 }
 int borra_comando(char *cmd, IRCFUNC(*func))
 {
@@ -95,22 +94,7 @@ int borra_comando(char *cmd, IRCFUNC(*func))
 					i++;
 				}
 				if (!--com->funciones)
-				{
-					Comando *prev = NULL, *sig;
-					for (sig = comandos; sig; sig = sig->sig)
-					{
-						if (sig == com) /* lo tenemos */
-						{
-							if (prev)
-								prev->sig = sig->sig;
-							else
-								comandos = sig->sig;
-							Free(sig);
-							break;
-						}
-						prev = sig;
-					}
-				}
+					LiberaItem(com, comandos);
 				return 1;
 			}
 		}
@@ -170,7 +154,7 @@ SOCKFUNC(procesa_ircd)
 		canal_debug = busca_canal(conf_set->debug, NULL);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
 		port_func(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
-	protocolo->parsea(sck, data);
+	return protocolo->parsea(sck, data);
 	/*parc = tokeniza_irc(data, parv, &com, &sender);
 	//for (i = 0; i < parc; i++)
 	//	printf("%s (%i)\n",parv[i], strlen(parv[i]));
@@ -198,7 +182,6 @@ SOCKFUNC(procesa_ircd)
 			}
 		}
 	}*/
-	return 0;
 }
 SOCKFUNC(cierra_ircd)
 {
@@ -336,10 +319,9 @@ Cliente *nuevo_cliente(char *nombre, char *ident, char *host, char *ip, char *se
 	cl->sck = SockActual;
 	cl->tipo = ES_CLIENTE;
 	genera_mask(cl);
-	cl->sig = clientes;
 	if (clientes)
 		clientes->prev = cl;
-	clientes = cl;
+	AddItem(cl, clientes);
 	inserta_cliente_en_hash(cl, nombre, uTab);
 	return cl;
 }
@@ -348,7 +330,7 @@ void cambia_nick(Cliente *cl, char *nuevonick)
 	if (!cl)
 		return;
 	borra_cliente_de_hash(cl, cl->nombre, uTab);
-	ircstrdup(&cl->nombre, nuevonick);
+	ircstrdup(cl->nombre, nuevonick);
 	genera_mask(cl);
 	inserta_cliente_en_hash(cl, nuevonick, uTab);
 }
@@ -361,10 +343,9 @@ Canal *info_canal(char *canal, int crea)
 	{
 		da_Malloc(cn, Canal);
 		cn->nombre = strdup(canal);
-		cn->sig = canales;
 		if (canales)
 			canales->prev = cn;
-		canales = cn;
+		AddItem(cn, canales);
 		inserta_canal_en_hash(cn, canal, cTab);
 	}
 	return cn;
@@ -376,8 +357,7 @@ void inserta_canal_en_usuario(Cliente *cl, Canal *cn)
 		return;
 	lk = (LinkCanal *)Malloc(sizeof(LinkCanal));
 	lk->chan = cn;
-	lk->sig = cl->canal;
-	cl->canal = lk;
+	AddItem(lk, cl->canal);
 	cl->canales++;
 }
 void inserta_usuario_en_canal(Canal *cn, Cliente *cl)
@@ -387,8 +367,7 @@ void inserta_usuario_en_canal(Canal *cn, Cliente *cl)
 		return;
 	lk = (LinkCliente *)Malloc(sizeof(LinkCliente));
 	lk->user = cl;
-	lk->sig = cn->miembro;
-	cn->miembro = lk;
+	AddItem(lk, cn->miembro);
 	cn->miembros++;
 }
 int borra_canal_de_usuario(Cliente *cl, Canal *cn)
@@ -452,8 +431,7 @@ void inserta_ban_en_canal(Cliente *cl, Canal *cn, char *ban)
 	banid = (Ban *)Malloc(sizeof(Ban));
 	banid->quien = cl;
 	banid->ban = strdup(ban);
-	banid->sig = cn->ban;
-	cn->ban = banid;
+	AddItem(banid, cn->ban);
 }
 int borra_ban_de_canal(Canal *cn, char *ban)
 {
@@ -484,8 +462,7 @@ void inserta_exc_en_canal(Cliente *cl, Canal *cn, char *exc)
 	excid = (Ban *)Malloc(sizeof(Ban));
 	excid->quien = cl;
 	excid->ban = strdup(exc);
-	excid->sig = cn->exc;
-	cn->exc = excid;
+	AddItem(excid, cn->exc);
 }
 int borra_exc_de_canal(Canal *cn, char *exc)
 {
@@ -515,8 +492,7 @@ void inserta_modo_cliente_en_canal(LinkCliente **link, Cliente *cl)
 		return;
 	lk = (LinkCliente *)Malloc(sizeof(LinkCliente));
 	lk->user = cl;
-	lk->sig = *link;
-	*link = lk;
+	AddItem(lk, *link);
 }
 int borra_modo_cliente_de_canal(LinkCliente **link, Cliente *cl)
 {
@@ -560,7 +536,7 @@ void genera_mask(Cliente *cl)
 }
 void distribuye_me(Cliente *me, Sock **sck)
 {
-	ircstrdup(&me->nombre, conf_server->host);
+	ircstrdup(me->nombre, conf_server->host);
 	me->tipo = ES_SERVER;
 	me->numeric = conf_server->numeric;
 	me->protocol = PROTOCOL;
@@ -577,8 +553,8 @@ void distribuye_me(Cliente *me, Sock **sck)
 #ifdef USA_SSL
 	strcat(me->trio, "e");
 #endif
-	ircstrdup(&me->info, conf_server->info);
-	ircstrdup(&me->host, "0.0.0.0");
+	ircstrdup(me->info, conf_server->info);
+	ircstrdup(me->host, "0.0.0.0");
 	me->sck = *sck;
 	me->sig = me->prev = NULL;
 	if (!clientes)
@@ -732,8 +708,9 @@ void libera_cliente_de_memoria(Cliente *cl)
 	ircfree(cl->ident);
 	if (cl->host != cl->rvhost) /* hay que liberarlo */
 		ircfree(cl->rvhost);
+	if (cl->host != cl->ip)
+		ircfree(cl->ip);
 	ircfree(cl->host);
-	ircfree(cl->ip);
 	ircfree(cl->vhost);
 	ircfree(cl->mask);
 	ircfree(cl->vmask);
@@ -752,7 +729,6 @@ void libera_canal_de_memoria(Canal *cn)
 {
 	Ban *ban, *tmpb;
 	LinkCliente *aux, *tmp;
-	char *nombre = strdup(cn->nombre);
 	borra_canal_de_hash(cn, cn->nombre, cTab);
 	if (cn->prev)
 		cn->prev->sig = cn->sig;
@@ -760,7 +736,6 @@ void libera_canal_de_memoria(Canal *cn)
 		canales = cn->sig;
 	if (cn->sig)
 		cn->sig->prev = cn->prev;
-	ircfree(cn->nombre);
 	ircfree(cn->topic);
 	ircfree(cn->clave);
 	ircfree(cn->flood);
@@ -807,8 +782,10 @@ void libera_canal_de_memoria(Canal *cn)
 		tmp = aux->sig;
 		Free(aux);
 	}
+	if (canal_debug && !strcasecmp(cn->nombre, canal_debug->nombre))
+		canal_debug = NULL;
+	ircfree(cn->nombre);
 	Free(cn);
-	Free(nombre);
 }
 Cliente *botnick(char *nick, char *ident, char *host, char *server, char *modos, char *realname)
 {

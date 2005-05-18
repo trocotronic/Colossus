@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.5 2005-03-24 12:10:56 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.6 2005-05-18 18:51:10 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.1a
+AppVerName=Colossus 1.2
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.rallados.net
 AppSupportURL=http://www.rallados.net
@@ -41,7 +41,9 @@ Source: "..\..\pthreadVC1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
 Source: "..\..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\*.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.dll"; DestDir: "{app}\protocolos"; Flags: ignoreversion
+Source: "..\..\protocolos\*.pdb"; DestDir: "{app}"; Flags: ignoreversion
 #ifdef USA_SSL
 Source: "c:\openssl\bin\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\openssl\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion

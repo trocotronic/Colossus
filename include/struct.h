@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.35 2005-03-24 12:10:54 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.36 2005-05-18 18:51:02 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -58,7 +58,8 @@ extern void carga_socks(void);
 #ifdef NEED_STRCASECMP
 extern int strcasecmp(const char *, const char *);
 #endif
-extern void ircstrdup(char **, const char *);
+#define ircstrdup(destino, origen) strcopia(&destino, origen)
+extern void strcopia(char **, const char *);
 #ifdef DEBUG
 #define Free(x) free(x); Debug("Liberando %X", x)
 #else
@@ -83,9 +84,9 @@ struct _dbuf
 typedef struct _dbufdata DbufData;
 struct _dbufdata
 {
+	struct _dbufdata *sig;
 	char data[DBUF];
 	u_int len;
-	struct _dbufdata *sig;
 };
 typedef struct _sock Sock;
 struct _sock
@@ -183,9 +184,9 @@ extern char *coge_mx(char *);
 typedef struct _senyal Senyal;
 struct _senyal
 {
+	struct _senyal *sig;
 	short senyal;
 	int (*func)();
-	struct _senyal *sig;
 };
 #define MAXSIGS 256
 extern MODVAR Senyal *senyals[MAXSIGS];
@@ -202,6 +203,7 @@ extern int borra_senyal(short, int (*)());
 typedef struct _timer Timer;
 struct _timer
 {
+	struct _timer *sig;
 	char *nombre;
 	int (*func)();
 	void *args;
@@ -210,7 +212,6 @@ struct _timer
 	int veces;
 	int lleva;
 	int cada;
-	struct _timer *sig;
 };
 extern void timer(char *, Sock *, int, int, int (*)(), void *, size_t);
 extern int timer_off(char *, Sock *);
@@ -224,13 +225,14 @@ extern char *gettok(char *, int, char);
 typedef struct _proc Proc;
 struct _proc
 {
+	struct _proc *sig;
 	int (*func)();
 	int proc;
 	time_t time;
-	struct _proc *sig;
 };
 extern void procesos_auxiliares(void);
 extern void proc(int(*)());
+extern int proc_stop(int (*)());
 #define CHMAX 2048
 #define UMAX 2048
 #define INI_FACT 8
@@ -239,7 +241,7 @@ extern u_int hash_cliente(char *);
 extern u_int hash_canal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
-#define COLOSSUS_VERNUM "1.1a"
+#define COLOSSUS_VERNUM "1.2"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 extern char **margv;
 #define Malloc(x) StsMalloc(x, __FILE__, __LINE__)
@@ -251,11 +253,11 @@ extern char **margv;
 #define EST_CERR 4
 #define STAT_SSL_CONNECT_HANDSHAKE 5
 #define STAT_SSL_ACCEPT_HANDSHAKE 6
-#define EsDesc(x) (x->estado == EST_DESC)
-#define EsConn(x) (x->estado == EST_CONN)
-#define EsList(x) (x->estado == EST_LIST)
-#define EsOk(x)   (x->estado == EST_OK)
-#define EsCerr(x) (x->estado == EST_CERR)
+#define EsDesc(x) (x && x->estado == EST_DESC)
+#define EsConn(x) (x && x->estado == EST_CONN)
+#define EsList(x) (x && x->estado == EST_LIST)
+#define EsOk(x)   (x && x->estado == EST_OK)
+#define EsCerr(x) (x && x->estado == EST_CERR)
 #define SockDesc(x) x->estado = EST_DESC
 #define SockConn(x) x->estado = EST_CONN
 #define SockList(x) x->estado = EST_LIST
@@ -370,3 +372,13 @@ extern MODVAR char spath[MAX_PATH];
 extern MODVAR char spath[PATH_MAX];
 #endif
 #define SPATH spath
+typedef struct item Item;
+struct item
+{
+	Item *sig;
+};
+void add_item(Item *, Item **);
+Item *del_item(Item *, Item **, char);
+#define AddItem(item, lista) add_item((Item *)item, (Item **)&lista)
+#define BorraItem(item, lista) del_item((Item *)item, (Item **)&lista, 0)
+#define LiberaItem(item, lista) del_item((Item *)item, (Item **)&lista, 1)

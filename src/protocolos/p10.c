@@ -448,7 +448,7 @@ int p_topic(Cliente *bl, Canal *cn, char *topic)
 	if (!cn->topic || strcmp(cn->topic, topic))
 	{
 		sendto_serv("%s %s %s :%s", bl->trio, TOK_TOPIC, cn->nombre, topic);
-		ircstrdup(&cn->topic, topic);
+		ircstrdup(cn->topic, topic);
 	}
 	return 0;
 }
@@ -559,7 +559,7 @@ void set(Conf *config)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "red"))
-			ircstrdup(&conf_set->red, config->seccion[i]->data);
+			ircstrdup(conf_set->red, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "nicklen"))
 			conf_set->nicklen = abs(atoi(config->seccion[i]->data));
 		else if (!strcmp(config->seccion[i]->item, "modos"))
@@ -567,7 +567,7 @@ void set(Conf *config)
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
-					ircstrdup(&modcanales, config->seccion[i]->seccion[p]->data);
+					ircstrdup(modcanales, config->seccion[i]->seccion[p]->data);
 			}
 		}
 	}
@@ -644,7 +644,7 @@ void inicia()
 	char buf[3];
 	int2b64(buf, me.numeric, sizeof(buf));
 	//sendto_serv(":%s PROTOCTL REQ :TOKEN", me.nombre);
-	ircstrdup(&me.trio, buf);
+	ircstrdup(me.trio, buf);
 	sendto_serv("PASS :%s", conf_server->password.local);
 #ifdef HUB
 	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
@@ -951,7 +951,7 @@ IRCFUNC(m_topic)
 	if (parc == 3)
 	{
 		cn = info_canal(parv[1], !0);
-		ircstrdup(&cn->topic, parv[2]);
+		ircstrdup(cn->topic, parv[2]);
 		cn->ntopic = cl;
 		senyal3(SIGN_TOPIC, cl, cn, parv[2]);
 	}
@@ -1253,7 +1253,7 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					break;
 				if (modo == ADD)
 				{
-					ircstrdup(&cn->clave, parv[param]);
+					ircstrdup(cn->clave, parv[param]);
 					cn->modos |= flag2mode('k', cmodos);
 				}
 				else

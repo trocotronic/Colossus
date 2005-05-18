@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.13 2005-03-14 14:18:09 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.14 2005-05-18 18:51:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -139,7 +139,8 @@ void libera_set()
 		return;
 	ircfree(conf_set->root);
 	ircfree(conf_set->admin);
-	ircfree(conf_set->red);
+	if (!SockIrcd)
+		ircfree(conf_set->red);
 	ircfree(conf_set->debug);
 	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
 	bzero(conf_set, sizeof(struct Conf_set));
@@ -634,7 +635,7 @@ void _conf_server(Conf *config)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "addr"))
-			ircstrdup(&conf_server->addr, config->seccion[i]->data);
+			ircstrdup(conf_server->addr, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "puerto"))
 			conf_server->puerto = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "password"))
@@ -642,15 +643,15 @@ void _conf_server(Conf *config)
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "local"))
-					ircstrdup(&conf_server->password.local, config->seccion[i]->seccion[p]->data);
+					ircstrdup(conf_server->password.local, config->seccion[i]->seccion[p]->data);
 				else if (!strcmp(config->seccion[i]->seccion[p]->item, "remoto"))
-					ircstrdup(&conf_server->password.remoto, config->seccion[i]->seccion[p]->data);
+					ircstrdup(conf_server->password.remoto, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&conf_server->host, config->seccion[i]->data);
+			ircstrdup(conf_server->host, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "info"))
-			ircstrdup(&conf_server->info, config->seccion[i]->data);
+			ircstrdup(conf_server->info, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "numeric"))
 			conf_server->numeric = atoi(config->seccion[i]->data);
 #ifdef USA_ZLIB
@@ -762,15 +763,15 @@ void _conf_db(Conf *config)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&conf_db->host, config->seccion[i]->data);
+			ircstrdup(conf_db->host, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "login"))
-			ircstrdup(&conf_db->login, config->seccion[i]->data);
+			ircstrdup(conf_db->login, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "pass"))
-			ircstrdup(&conf_db->pass, config->seccion[i]->data);
+			ircstrdup(conf_db->pass, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "nombre"))
-			ircstrdup(&conf_db->bd, config->seccion[i]->data);
+			ircstrdup(conf_db->bd, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "prefijo"))
-			ircstrdup(&PREFIJO, config->seccion[i]->data);
+			ircstrdup(PREFIJO, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item ,"puerto"))
 			conf_db->puerto = atoi(config->seccion[i]->data);
 	}
@@ -830,11 +831,11 @@ void _conf_smtp(Conf *config)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&(conf_smtp->host), config->seccion[i]->data);
+			ircstrdup((conf_smtp->host), config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "login"))
-			ircstrdup(&(conf_smtp->login), config->seccion[i]->data);
+			ircstrdup((conf_smtp->login), config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "pass"))
-			ircstrdup(&(conf_smtp->pass), config->seccion[i]->data);
+			ircstrdup((conf_smtp->pass), config->seccion[i]->data);
 	}
 }
 int _test_set(Conf *config, int *errores)
@@ -950,9 +951,9 @@ void _conf_set(Conf *config)
 				conf_set->opts |= RESP_NOTICE;
 		}
 		else if (!strcmp(config->seccion[i]->item, "root"))
-			ircstrdup(&conf_set->root, config->seccion[i]->data);
+			ircstrdup(conf_set->root, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "admin"))
-			ircstrdup(&conf_set->admin, config->seccion[i]->data);
+			ircstrdup(conf_set->admin, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "reconectar"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -964,7 +965,7 @@ void _conf_set(Conf *config)
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "debug"))
-			ircstrdup(&conf_set->debug, config->seccion[i]->data);
+			ircstrdup(conf_set->debug, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "clave_cifrado"))
 			strncpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
 	}
@@ -1011,17 +1012,17 @@ void _conf_modulos(Conf *config)
 		for (i = 0; i < config->secciones; i++)
 		{
 			if (!strcmp(config->seccion[i]->item, "nick"))
-				ircstrdup(&mod->nick, config->seccion[i]->data);
+				ircstrdup(mod->nick, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "ident"))
-				ircstrdup(&mod->ident, config->seccion[i]->data);
+				ircstrdup(mod->ident, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "host"))
-				ircstrdup(&mod->host, config->seccion[i]->data);
+				ircstrdup(mod->host, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "realname"))
-				ircstrdup(&mod->realname, config->seccion[i]->data);
+				ircstrdup(mod->realname, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "modos"))
-				ircstrdup(&mod->modos, config->seccion[i]->data);
+				ircstrdup(mod->modos, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "residente"))
-				ircstrdup(&mod->residente, config->seccion[i]->data);
+				ircstrdup(mod->residente, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "config"))
 			{
 				char *path, *k;
@@ -1096,7 +1097,7 @@ void _conf_log(Conf *config)
 	Opts *ofl = NULL;
 	if (!conf_log)
 		da_Malloc(conf_log, struct Conf_log);
-	ircstrdup(&conf_log->archivo, config->data);
+	ircstrdup(conf_log->archivo, config->data);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "tamaño"))
@@ -1188,14 +1189,14 @@ void _conf_ssl(Conf *config)
 		{
 			conf_ssl->usa_egd = 1;
 			if (config->seccion[i]->data)
-				ircstrdup(&conf_ssl->egd_path, config->seccion[i]->data);
+				ircstrdup(conf_ssl->egd_path, config->seccion[i]->data);
 		}
 		else if (!strcmp(config->seccion[i]->item, "certificado"))	
-			ircstrdup(&conf_ssl->x_server_cert_pem, config->seccion[i]->data);
+			ircstrdup(conf_ssl->x_server_cert_pem, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "clave"))
-			ircstrdup(&conf_ssl->x_server_key_pem, config->seccion[i]->data);
+			ircstrdup(conf_ssl->x_server_key_pem, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "certificados-seguros"))
-			ircstrdup(&conf_ssl->trusted_ca_file, config->seccion[i]->data);
+			ircstrdup(conf_ssl->trusted_ca_file, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "opciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -1211,7 +1212,7 @@ void _conf_ssl(Conf *config)
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "cifrados"))
-			ircstrdup(&conf_ssl->cifrados, config->seccion[i]->data);
+			ircstrdup(conf_ssl->cifrados, config->seccion[i]->data);
 	}
 	init_ssl();
 }

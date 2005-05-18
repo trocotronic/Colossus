@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.19 2005-03-24 12:10:55 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.20 2005-05-18 18:51:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,37 +18,37 @@ ChanServ chanserv;
 Hash csregs[UMAX];
 Hash akicks[CHMAX];
 
-static int chanserv_help		(Cliente *, char *[], int, char *[], int);
-static int chanserv_deauth		(Cliente *, char *[], int, char *[], int);
-static int chanserv_drop		(Cliente *, char *[], int, char *[], int);
-static int chanserv_identify	(Cliente *, char *[], int, char *[], int);
-static int chanserv_info		(Cliente *, char *[], int, char *[], int);
-static int chanserv_invite		(Cliente *, char *[], int, char *[], int);
-static int chanserv_modos		(Cliente *, char *[], int, char *[], int);
-static int chanserv_clear		(Cliente *, char *[], int, char *[], int);
-static int chanserv_set		(Cliente *, char *[], int, char *[], int);
-static int chanserv_akick		(Cliente *, char *[], int, char *[], int);
-static int chanserv_access		(Cliente *, char *[], int, char *[], int);
-static int chanserv_list		(Cliente *, char *[], int, char *[], int);
-static int chanserv_jb		(Cliente *, char *[], int, char *[], int);
-static int chanserv_sendpass	(Cliente *, char *[], int, char *[], int);
-static int chanserv_suspender	(Cliente *, char *[], int, char *[], int);
-static int chanserv_liberar		(Cliente *, char *[], int, char *[], int);
-static int chanserv_forbid		(Cliente *, char *[], int, char *[], int);
-static int chanserv_unforbid	(Cliente *, char *[], int, char *[], int);
-static int chanserv_block		(Cliente *, char *[], int, char *[], int);
-static int chanserv_register 	(Cliente *, char *[], int, char *[], int);
-static int chanserv_token		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(chanserv_help);
+BOTFUNC(chanserv_deauth);
+BOTFUNC(chanserv_drop);
+BOTFUNC(chanserv_identify);
+BOTFUNC(chanserv_info);
+BOTFUNC(chanserv_invite);
+BOTFUNC(chanserv_modos);
+BOTFUNC(chanserv_clear);
+BOTFUNC(chanserv_set);
+BOTFUNC(chanserv_akick);
+BOTFUNC(chanserv_access);
+BOTFUNC(chanserv_list);
+BOTFUNC(chanserv_jb);
+BOTFUNC(chanserv_sendpass);
+BOTFUNC(chanserv_suspender);
+BOTFUNC(chanserv_liberar);
+BOTFUNC(chanserv_forbid);
+BOTFUNC(chanserv_unforbid);
+BOTFUNC(chanserv_block);
+BOTFUNC(chanserv_register);
+BOTFUNC(chanserv_token);
 #ifdef UDB
-static int chanserv_migrar		(Cliente *, char *[], int, char *[], int);
-static int chanserv_demigrar	(Cliente *, char *[], int, char *[], int);
-static int chanserv_proteger	(Cliente *, char *[], int, char *[], int);
+BOTFUNC(chanserv_migrar);
+BOTFUNC(chanserv_demigrar);
+BOTFUNC(chanserv_proteger);
 #endif
 
 int chanserv_sig_mysql	();
 int chanserv_sig_eos	();
 int chanserv_sig_synch	();
-int chanserv_sig_prenick (Cliente *);
+int chanserv_sig_prenick (Cliente *, char *);
 
 int chanserv_dropachans(Proc *);
 int chanserv_dropanick(char *);
@@ -189,6 +189,8 @@ int descarga()
 	borra_senyal(SIGN_SYNCH, chanserv_sig_synch);
 	borra_senyal(SIGN_PRE_NICK, chanserv_sig_prenick);
 	borra_senyal(SIGN_QUIT, chanserv_sig_prenick);
+	proc_stop(chanserv_dropachans);
+	bot_unset(chanserv);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -1102,6 +1104,8 @@ BOTFUNC(chanserv_info)
 		response(cl, CLI(chanserv), "Canal con \2SECUREOPS");
 	if (opts & CS_OPT_SEC)
 		response(cl, CLI(chanserv), "Canal \2SEGURO");
+	if (opts & CS_OPT_NODROP)
+		response(cl, CLI(chanserv), "Canal \2NO DROPABLE");
 	reg = (time_t)atol(row[10]);
 	response(cl, CLI(chanserv), "Último acceso: \00312%s", _asctime(&reg));
 	mysql_free_result(res);
@@ -1483,7 +1487,12 @@ BOTFUNC(chanserv_set)
 		_mysql_add(CS_MYSQL, param[1], "ntopic", params > 3 ? parv[0] : NULL);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
-			envia_registro_bdd("C::%s::topic %s", param[1], topic);
+		{
+			if (params > 3)
+				envia_registro_bdd("C::%s::topic %s", param[1], topic);
+			else
+				envia_registro_bdd("C::%s::topic", param[1]);
+		}
 #endif
 	}
 	else if (!strcasecmp(param[2], "BIENVENIDA"))
@@ -1515,7 +1524,8 @@ BOTFUNC(chanserv_set)
 			{
 				if (strchr(param[3], forb[i]))
 				{
-					response(cl, CLI(chanserv), CS_ERR_EMPT, "Los modos %s no se pueden especificar.", forb);
+					sprintf_irc(buf, "Los modos %s no se pueden especificar.", forb);
+					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
 			}
@@ -1588,8 +1598,9 @@ BOTFUNC(chanserv_set)
 	}
 	else if (!strcasecmp(param[2], "OPCIONES"))
 	{
-		char f = ADD, *modos = param[3];
+		char f = ADD, *modos = param[3], buenos[128];
 		int opts = atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts"));
+		buenos[0] = 0;
 		if (params < 4)
 		{
 			response(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal opciones +-modos");
@@ -1601,51 +1612,60 @@ BOTFUNC(chanserv_set)
 			{
 				case '+':
 					f = ADD;
+					chrcat(buenos, '+');
 					break;
 				case '-':
 					f = DEL;
+					chrcat(buenos, '-');
 					break;
 				case 'm':
 					if (f == ADD)
 						opts |= CS_OPT_RMOD;
 					else
 						opts &= ~CS_OPT_RMOD;
+					chrcat(buenos, 'm');
 					break;
 				case 'r':
 					if (f == ADD)
 						opts |= CS_OPT_RTOP;
 					else
 						opts &= ~CS_OPT_RTOP;
+					chrcat(buenos, 'r');
 					break;
 				case 'k':
 					if (f == ADD)
 						opts |= CS_OPT_KTOP;
 					else
 						opts &= ~CS_OPT_KTOP;
+					chrcat(buenos, 'k');
 					break;
 				case 's':
 					if (f == ADD)
 						opts |= CS_OPT_SEC;
 					else
 						opts &= ~CS_OPT_SEC;
+					chrcat(buenos, 's');
 					break;
 				case 'o':
 					if (f == ADD)
 						opts |= CS_OPT_SOP;
 					else
 						opts &= ~CS_OPT_SOP;
+					chrcat(buenos, 'o');
 					break;
 				case 'h':
 					if (f == ADD)
 						opts |= CS_OPT_HIDE;
 					else
 						opts &= ~CS_OPT_HIDE;
+					chrcat(buenos, 'h');
 					break;
 				case 'd':
 					if (f == ADD)
 						opts |= CS_OPT_DEBUG;
 					else
 						opts &= ~CS_OPT_DEBUG;
+					chrcat(buenos, 'd');
 					break;
 				case 'n':
 					if (!IsOper(cl))
@@ -1657,15 +1677,13 @@ BOTFUNC(chanserv_set)
 						opts |= CS_OPT_NODROP;
 					else
 						opts &= ~CS_OPT_NODROP;
+					chrcat(buenos, 'n');
 					break;
-				default:
-					sprintf_irc(buf, "La opción %c es desconocida.", *modos);
-					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 			}
 			modos++;
 		}
 		_mysql_add(CS_MYSQL, param[1], "opts", "%i", opts);
-		response(cl, CLI(chanserv), "Opciones cambiadas a \00312%s\003.", param[3]);
+		response(cl, CLI(chanserv), "Opciones cambiadas a \00312%s\003.", buenos);
 	}
 	else
 	{
@@ -1876,8 +1894,9 @@ BOTFUNC(chanserv_access)
 		}
 		else if (*param[2] == '-')
 		{
-			prev = borra_acceso(param[2] + 1, param[1]);
-			response(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2] + 1);
+			param[2]++;
+			prev = borra_acceso(param[2], param[1]);
+			response(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 			if (IsChanDebug(param[1]))
 			{
 				Canal *cn;
@@ -2701,19 +2720,27 @@ int chanserv_join(Cliente *cl, Canal *cn)
 		{
 			if (MODE_RGSTR)
 				chrcat(buf, MODEF_RGSTR);
-			if (opts & CS_OPT_RTOP)
-				port_func(P_TOPIC)(CLI(chanserv), cn, topic);
 			if (opts & CS_OPT_RMOD)
 			{
 				char *mod;
-				if ((mod = strtok(modos, " ")))
-					strcat(buf, mod);
-				if ((mod = strtok(NULL, " ")))
-					strcat(tokbuf, mod);
+				if ((mod = strtok(modos, strchr(modos, '-') ? "-": " ")))
+				{
+					strcat(buf, *mod == '+' ? mod+1 : mod);
+					if ((mod = strtok(NULL, "\0")))
+					{
+						char *p;
+						if ((p = strchr(mod, ' '))) 
+							strcat(tokbuf, p+1);
+						else
+							strcat(tokbuf, mod);
+					}
+				}
 			}
 		}
 		if (buf[0])
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%s %s", buf, tokbuf);
+		if (cn->miembros == 1 && opts & CS_OPT_RTOP)
+			port_func(P_TOPIC)(CLI(chanserv), cn, topic);
 		if (!BadPtr(entry))
 			port_func(P_NOTICE)(cl, CLI(chanserv), entry);
 		Free(entry);
@@ -2809,7 +2836,7 @@ int chanserv_sig_eos()
 	}
 	return 0;
 }
-int chanserv_sig_prenick(Cliente *cl)
+int chanserv_sig_prenick(Cliente *cl, char *nuevo)
 {
 	borra_cache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id);
 	return 0;
@@ -2893,8 +2920,7 @@ void inserta_cregistro(char *nick, char *canal, u_long flag)
 	creg->subs++;
 	if (!busca_cregistro(nick))
 	{
-		creg->sig = csregs[hash].item;
-		csregs[hash].item = creg;
+		AddItem(creg, csregs[hash].item);
 		csregs[hash].items++;
 	}
 }
@@ -2915,8 +2941,7 @@ Akick *inserta_akick(char *nick, char *canal, char *emisor, char *motivo)
 	akick->akicks++;
 	if (!busca_akicks(canal))
 	{
-		akick->sig = akicks[hash].item;
-		akicks[hash].item = akick;
+		AddItem(akick, akicks[hash].item);
 		akicks[hash].items++;
 	}
 	return akick;
@@ -2924,20 +2949,11 @@ Akick *inserta_akick(char *nick, char *canal, char *emisor, char *motivo)
 int borra_cregistro_de_hash(CsRegistros *creg, char *nick)
 {
 	u_int hash;
-	CsRegistros *aux, *prev = NULL;
 	hash = hash_cliente(nick);
-	for (aux = (CsRegistros *)csregs[hash].item; aux; aux = aux->sig)
+	if (BorraItem(creg, csregs[hash].item))
 	{
-		if (aux == creg)
-		{
-			if (prev)
-				prev->sig = aux->sig;
-			else
-				csregs[hash].item = aux->sig;
-			csregs[hash].items--;
-			return 1;
-		}
-		prev = aux;
+		csregs[hash].items--;
+		return 1;
 	}
 	return 0;
 }
@@ -2969,20 +2985,11 @@ void borra_cregistro(char *nick, char *canal)
 int borra_akick_de_hash(Akick *akick, char *canal)
 {
 	u_int hash;
-	Akick *aux, *prev = NULL;
 	hash = hash_canal(canal);
-	for (aux = (Akick *)akicks[hash].item; aux; aux = aux->sig)
+	if (BorraItem(akick, akicks[hash].item))
 	{
-		if (aux == akick)
-		{
-			if (prev)
-				prev->sig = aux->sig;
-			else
-				akicks[hash].item = aux->sig;
 			akicks[hash].items--;
 			return 1;
-		}
-		prev = aux;
 	}
 	return 0;
 }

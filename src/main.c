@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.39 2005-03-21 14:21:41 Trocotronic Exp $ 
+ * $Id: main.c,v 1.40 2005-05-18 18:51:04 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -413,7 +413,7 @@ void dominum(Host *aux)
 	addr = inet_addr(aux->ip);
 	if ((he = gethostbyaddr((char *)&addr, 4, AF_INET)))
 	{
-		ircstrdup(aux->destino, he->h_name);
+		*aux->destino = strdup(he->h_name);
 		inserta_cache(CACHE_HOST, aux->ip, 86400, 0, he->h_name);
 	}
 	else
@@ -595,8 +595,7 @@ void timer(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *ar
 		aux->args = Malloc(sizearg);
 		memcpy(aux->args, args, sizearg);
 	}
-	aux->sig = timers;
-	timers = aux;
+	AddItem(aux, timers);
 }
 int timer_off(char *nombre, Sock *sck)
 {
@@ -694,7 +693,6 @@ void procesos_auxiliares()
 	for (aux = procs; aux; aux = aux->sig)
 		aux->func(aux);
 }
-/* Los procs no se apagan */
 void proc(int (*func)())
 {
 	Proc *proc;
@@ -707,8 +705,25 @@ void proc(int (*func)())
 	proc->func = func;
 	proc->proc = 0;
 	proc->time = (time_t) 0;
-	proc->sig = procs;
-	procs = proc;
+	AddItem(proc, procs);
+}
+int proc_stop(int (*func)())
+{
+	Proc *proc, *prev = NULL;
+	for (proc = procs; proc; proc = proc->sig)
+	{
+		if (proc->func == func)
+		{
+			if (prev)
+				prev->sig = proc->sig;
+			else
+				procs = proc->sig;
+			Free(proc);
+			return 1;
+		}
+		prev = proc;
+	}
+	return 0;
 }
 /*
 #define MAX 32
@@ -1009,6 +1024,7 @@ void parsea_comando(char *comando)
 		fecho(FERR, "Comando desconocido. Para mas informacion escriba AYUDA");
 }
 #endif
+#define DEBUG
 void Debug(char *formato, ...)
 {
 #ifndef DEBUG
@@ -1262,6 +1278,30 @@ char *chrcat(char *dest, char car)
 		*c = car;
 		*(c + 1) = '\0';
 		return dest;
+	}
+	return NULL;
+}
+void add_item(Item *item, Item **lista)
+{
+	item->sig = *lista;
+	*lista = item;
+}
+Item *del_item(Item *item, Item **lista, char borra)
+{
+	Item *aux, *prev = NULL;
+	for (aux = *lista; aux; aux = aux->sig)
+	{
+		if (aux == item)
+		{
+			if (prev)
+				prev->sig = aux->sig;
+			else
+				*lista = aux->sig;
+			if (borra)
+				Free(item);
+			return (prev ? prev->sig : *lista);
+		}
+		prev = aux;
 	}
 	return NULL;
 }

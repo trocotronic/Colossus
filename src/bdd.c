@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.24 2005-03-14 18:55:56 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.25 2005-05-18 18:51:03 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -53,7 +53,7 @@ void alta_hash()
 	hash = (Udb ***)Malloc(sizeof(Udb **) * BDD_TOTAL);
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		id = (reg->id >> 8);
+		id = ID(reg);
 		hash[id] = (Udb **)Malloc(sizeof(Udb *) * 2048);
 		bzero(hash[id], sizeof(Udb *) * 2048);
 		gmts[id] = 0L;
@@ -109,7 +109,7 @@ u_long obtiene_hash(Udb *bloq)
 	par[inode.st_size] = '\0';
 	if (read(fp, par, inode.st_size) == inode.st_size)
 	{
-		ircstrdup(&bloq->data_char, MDString(par));
+		ircstrdup(bloq->data_char, MDString(par));
 		bloq->data_long = inode.st_size;
 		hashl = our_crc32(par, inode.st_size);
 	}
@@ -152,11 +152,11 @@ DLLFUNC int actualiza_gmt(Udb *bloque, time_t gm)
 	bzero(lee, 11);
 	if (!(fh = fopen(DB_DIR "crcs", "r+")))
 		return -1;
-	fseek(fh, BDD_TOTAL * 8 + 10 * (bloque->id >> 8), SEEK_SET);
+	fseek(fh, BDD_TOTAL * 8 + 10 * ID(bloque), SEEK_SET);
 	sprintf_irc(lee, "%ul", hora);
 	fwrite(lee, 1, 10, fh);
 	fclose(fh);
-	gmts[bloque->id >> 8] = hora;
+	gmts[ID(bloque)] = hora;
 	return 0;
 }
 DLLFUNC int actualiza_hash(Udb *bloque)
@@ -168,7 +168,7 @@ DLLFUNC int actualiza_hash(Udb *bloque)
 	if (!(fh = fopen(DB_DIR "crcs", "r+")))
 		return -1;
 	lo = obtiene_hash(bloque);
-	fseek(fh, 8 * (bloque->id >> 8), SEEK_SET);
+	fseek(fh, 8 * ID(bloque), SEEK_SET);
 	sprintf_irc(lee, "%X", lo);
 	fwrite(lee, 1, 8, fh);
 	fclose(fh);
@@ -180,7 +180,7 @@ DLLFUNC Udb *coge_de_id(int id)
 	Udb *reg;
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		if (((reg->id & 0xFF) == id) || ((reg->id >> 8) == id))
+		if ((LETRA(reg) == id) || (ID(reg) == id))
 			return reg;
 	}
 	return NULL;
@@ -191,8 +191,8 @@ DLLFUNC u_int coge_de_char(char tipo)
 	Udb *reg;
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		if ((reg->id & 0xFF) == tipo)
-			return (reg->id >> 8);
+		if (LETRA(reg) == tipo)
+			return ID(reg);
 	}
 	return tipo;
 }
@@ -201,8 +201,8 @@ u_char coge_de_tipo(int tipo)
 	Udb *reg;
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		if ((reg->id >> 8) == tipo)
-			return (reg->id & 0xFF);
+		if (ID(reg) == tipo)
+			return LETRA(reg);
 	}
 	return tipo;
 }
@@ -659,7 +659,7 @@ int trunca_bloque(Cliente *cl, Udb *bloq, u_long bytes)
 DLLFUNC int optimiza(Udb *bloq)
 {
 	FILE *fp;
-	int id = bloq->id >> 8;
+	int id = ID(bloq);
 	if ((fp = fopen(bloq->item, "wb")))
 		fclose(fp);
 	guarda_en_archivo_ex(bloq->down, id);

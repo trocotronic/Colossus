@@ -586,13 +586,13 @@ int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
 }
 int p_sethost(Cliente *bl, char *host)
 {
-	ircstrdup(&bl->host, host);
+	ircstrdup(bl->host, host);
 	sendto_serv(":%s %s %s", bl->nombre, TOK_SETHOST, host);
 	return 0;
 }
 int p_chghost(Cliente *cl, char *host)
 {
-	ircstrdup(&cl->vhost, host);
+	ircstrdup(cl->vhost, host);
 	genera_mask(cl);
 	sendto_serv(":%s %s %s %s", me.nombre, TOK_CHGHOST, cl->nombre, host);
 	return 0;
@@ -655,7 +655,7 @@ int p_topic(Cliente *bl, Canal *cn, char *topic)
 	if (!cn->topic || strcmp(cn->topic, topic))
 	{
 		sendto_serv(":%s %s %s :%s", bl->nombre, TOK_TOPIC, cn->nombre, topic);
-		ircstrdup(&cn->topic, topic);
+		ircstrdup(cn->topic, topic);
 	}
 	return 0;
 }
@@ -808,9 +808,9 @@ void set(Conf *config)
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
-					ircstrdup(&autousers, config->seccion[i]->seccion[p]->data);
+					ircstrdup(autousers, config->seccion[i]->seccion[p]->data);
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "opers"))
-					ircstrdup(&autousers, config->seccion[i]->seccion[p]->data);
+					ircstrdup(autousers, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "modos"))
@@ -818,9 +818,9 @@ void set(Conf *config)
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
-					ircstrdup(&modusers, config->seccion[i]->seccion[p]->data);
+					ircstrdup(modusers, config->seccion[i]->seccion[p]->data);
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
-					ircstrdup(&modcanales, config->seccion[i]->seccion[p]->data);
+					ircstrdup(modcanales, config->seccion[i]->seccion[p]->data);
 			}
 		}
 	}
@@ -912,6 +912,9 @@ int descarga()
 	borra_comando(MSG_SAPART, m_sapart);
 	borra_comando(MSG_MODULE, m_module);
 	borra_comando(MSG_SJOIN, m_sjoin);
+#ifdef UDB
+	proc_stop(comprueba_opts);
+#endif
 	return 0;
 }
 void inicia()
@@ -925,7 +928,7 @@ void inicia()
 	servidores = NULL;
 	sendto_serv("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64");
 #ifdef UDB
-	sendto_serv("PROTOCTL UDB3.1");
+	sendto_serv("PROTOCTL UDB3.2=%s", me.nombre);
 #endif
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
@@ -976,14 +979,15 @@ SOCKFUNC(parsea)
 			else
 			{
 				para[0] = sender;
-				cl = busca_cliente(para[0], NULL);
+				if (!(cl = busca_cliente(para[0], NULL)) && !strchr(para[0], '.'))
+					Info("PANIC!! %s %s %X", data, para[0], cl);
 			}
 		}
 		while (*p == ' ')
 			p++;
 	}
 	if (*p == '\0') /* mensaje vacío? */
-		return 0;
+		return 1;
 	s = strchr(p, ' ');
 	if (s)
 		*s++ = '\0';
@@ -1157,9 +1161,11 @@ IRCFUNC(m_nick)
 		if (strcasecmp(parv[1], cl->nombre))
 		{
 			procesa_umodos(cl, "-r");
-			cambia_nick(cl, parv[1]);
 #ifdef UDB
 			procesa_umodos(cl, "-ShXRk");
+#endif
+			cambia_nick(cl, parv[1]);
+#ifdef UDB
 			dale_cosas(cl);
 #endif
 		}
@@ -1175,13 +1181,13 @@ IRCFUNC(m_topic)
 	if (parc == 6)
 	{
 		cn = info_canal(parv[1], !0);
-		ircstrdup(&cn->topic, parv[4]);
+		ircstrdup(cn->topic, parv[4]);
 		cn->ntopic = cl;
 	}
 	else if (parc == 5)
 	{
 		cn = info_canal(parv[1], !0);
-		ircstrdup(&cn->topic, parv[3]);
+		ircstrdup(cn->topic, parv[3]);
 		cn->ntopic = cl;
 	}
 	senyal3(SIGN_TOPIC, cl, cn, parc == 6 ? parv[4] : parv[3]);
@@ -1315,7 +1321,11 @@ IRCFUNC(m_sjoin)
 		mod[0] = '\0';
 		while (*p)
 		{
+#ifdef UDB
+			if (*p == '.')
+#else
 			if (*p == '*')
+#endif
 				strcat(mod, "q");
 #ifdef UDB
 			else if (*p == '$')
@@ -1449,8 +1459,7 @@ IRCFUNC(m_server)
 	al->trio = strdup(opts);
 	da_Malloc(aux, LinkCliente);
 	aux->user = al;
-	aux->sig = servidores;
-	servidores = aux;
+	AddItem(aux, servidores);
 	if (!cl) /* primer link */
 	{
 #ifdef USA_ZLIB
@@ -1528,7 +1537,7 @@ IRCFUNC(m_105)
 		else if (!strncmp("NETWORK", parv[i], 7))
 		{
 			char *p = strchr(parv[i], '=') + 1;
-			ircstrdup(&conf_set->red, p);
+			ircstrdup(conf_set->red, p);
 			break;
 		}
 	}
@@ -1542,19 +1551,19 @@ IRCFUNC(m_rehash)
 }
 IRCFUNC(m_chghost)
 {
-	ircstrdup(&cl->vhost, parv[2]);
+	ircstrdup(cl->vhost, parv[2]);
 	genera_mask(cl);
 	return 0;
 }
 IRCFUNC(m_chgident)
 {
-	ircstrdup(&cl->ident, parv[2]);
+	ircstrdup(cl->ident, parv[2]);
 	genera_mask(cl);
 	return 0;
 }
 IRCFUNC(m_chgname)
 {
-	ircstrdup(&cl->info, parv[2]);
+	ircstrdup(cl->info, parv[2]);
 	return 0;
 }
 #ifdef UDB
@@ -1572,9 +1581,9 @@ IRCFUNC(m_db)
 	{
 		Udb *bloq;
 		bloq = coge_de_id(*parv[3]);
-		if (atoul(parv[5]) != gmts[bloq->id >> 8]) /* se ha efectuado un OPT en algún momento */
+		if (atoul(parv[5]) != gmts[ID(bloq)]) /* se ha efectuado un OPT en algún momento */
 		{
-			if ((time_t)atoul(parv[5]) > gmts[bloq->id >> 8])
+			if ((time_t)atoul(parv[5]) > gmts[ID(bloq)])
 			{
 				trunca_bloque(cl, bloq, 0);
 				sendto_serv(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
@@ -1616,6 +1625,7 @@ IRCFUNC(m_db)
 						sendto_serv(":%s DB * DEL %lu %c::%s", me.nombre, bytes, *parv[3], linea);
 					bytes = ftell(fp);
 				}
+				sendto_serv(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
 			}
 		}
 		if (++bloqs == BDD_TOTAL)
@@ -1823,10 +1833,10 @@ IRCFUNC(sincroniza)
 {
 	tburst = microtime();
 #ifdef UDB
-	sendto_serv(":%s DB %s INF N %s %lu", me.nombre, cl->nombre, nicks->data_char, gmts[nicks->id >> 8]);
-	sendto_serv(":%s DB %s INF C %s %lu", me.nombre, cl->nombre, chans->data_char, gmts[chans->id >> 8]);
-	sendto_serv(":%s DB %s INF I %s %lu", me.nombre, cl->nombre, ips->data_char, gmts[ips->id >> 8]);
-	sendto_serv(":%s DB %s INF S %s %lu", me.nombre, cl->nombre, sets->data_char, gmts[sets->id >> 8]);
+	sendto_serv(":%s DB %s INF N %s %lu", me.nombre, cl->nombre, nicks->data_char, gmts[ID(nicks)]);
+	sendto_serv(":%s DB %s INF C %s %lu", me.nombre, cl->nombre, chans->data_char, gmts[ID(chans)]);
+	sendto_serv(":%s DB %s INF I %s %lu", me.nombre, cl->nombre, ips->data_char, gmts[ID(ips)]);
+	sendto_serv(":%s DB %s INF S %s %lu", me.nombre, cl->nombre, sets->data_char, gmts[ID(sets)]);
 #endif	
 	senyal(SIGN_SYNCH);
 	return 0;
@@ -1868,7 +1878,7 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					break;
 				if (modo == ADD)
 				{
-					ircstrdup(&cn->clave, parv[param]);
+					ircstrdup(cn->clave, parv[param]);
 					cn->modos |= flag2mode('k', cmodos);
 				}
 				else
@@ -1885,7 +1895,7 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					break;
 				if (modo == ADD)
 				{
-					ircstrdup(&cn->flood, parv[param]);
+					ircstrdup(cn->flood, parv[param]);
 					cn->modos |= flag2mode('f', cmodos);
 				}
 				else
@@ -1917,7 +1927,7 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					break;
 				if (modo == ADD)
 				{
-					ircstrdup(&cn->link, parv[param]);
+					ircstrdup(cn->link, parv[param]);
 					cn->modos |= flag2mode('L', cmodos);
 				}
 				else

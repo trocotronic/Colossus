@@ -1,6 +1,16 @@
-; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
 	vsprintf_irc
+
+	BDD_IPS
+
+	BDD_NICKS
+
+	BDD_SET
+
+	BDD_TOTAL
+
+	ChkBtCon
 
 	CleanUp
 
@@ -18,12 +28,6 @@ EXPORTS
 
 	ListaSocks
 
-	MD5_Final
-
-	MD5_Init
-
-	MD5_Update
-
 	MDString
 
 	MainDLG
@@ -33,6 +37,14 @@ EXPORTS
 	NTL_toupper_tab
 
 	SO
+
+	SSLKeyPasswd
+
+	SSLPassDLG
+
+	SSL_set_nonblocking
+
+	SSL_smart_shutdown
 
 	SockActual
 
@@ -76,6 +88,16 @@ EXPORTS
 
 	abre_sock_ircd
 
+	actualiza_gmt
+
+	actualiza_hash
+
+	add_item
+
+	alta_bloque
+
+	alta_hash
+
 	atoi_tab
 
 	b64_decode
@@ -89,6 +111,10 @@ EXPORTS
 	base64_encode
 
 	base64toint
+
+	bdd_init
+
+	bloques
 
 	borra_ban_de_canal
 
@@ -110,6 +136,10 @@ EXPORTS
 
 	borra_modo_cliente_de_canal
 
+	borra_registro
+
+	borra_registro_de_hash
+
 	borra_senyal
 
 	borra_sock
@@ -117,6 +147,8 @@ EXPORTS
 	botnick
 
 	buf
+
+	busca_bloque
 
 	busca_canal
 
@@ -134,6 +166,10 @@ EXPORTS
 
 	busca_modulo
 
+	busca_registro
+
+	busca_udb_en_hash
+
 	cTab
 
 	cambia_nick
@@ -141,6 +177,10 @@ EXPORTS
 	canal_debug
 
 	canales
+
+	carga_bloque
+
+	carga_bloques
 
 	carga_cache
 
@@ -151,6 +191,8 @@ EXPORTS
 	carga_programa
 
 	carga_protocolo
+
+	chans
 
 	chrcat
 
@@ -164,6 +206,10 @@ EXPORTS
 
 	cierra_todo
 
+	cifra_ip
+
+	cifrado_str
+
 	cifranick
 
 	clientes
@@ -172,6 +218,12 @@ EXPORTS
 
 	coge_cache
 
+	coge_de_char
+
+	coge_de_id
+
+	coge_de_tipo
+
 	coge_mx
 
 	colasmtp
@@ -179,6 +231,8 @@ EXPORTS
 	comandos
 
 	completa_conexion
+
+	comprime
 
 	comprueba_timers
 
@@ -192,6 +246,8 @@ EXPORTS
 
 	conf_smtp
 
+	conf_ssl
+
 	conferror
 
 	conta
@@ -204,13 +260,27 @@ EXPORTS
 
 	crea_modulo
 
+	crea_registro
+
+	ctx_client
+
+	ctx_server
+
+	da_formato
+
 	decode_ip
+
+	del_item
+
+	descarga_bloque
 
 	descarga_conf
 
 	descarga_modulo
 
 	descarga_modulos
+
+	descomprime
 
 	desencola
 
@@ -240,6 +310,8 @@ EXPORTS
 
 	envia_email
 
+	envia_registro_bdd
+
 	es_link
 
 	es_linkcanal
@@ -262,9 +334,17 @@ EXPORTS
 
 	gettok
 
+	gmts
+
+	guarda_en_archivo
+
+	guarda_en_archivo_ex
+
 	hInst
 
 	hThreadPrincipal
+
+	hash
 
 	hash_canal
 
@@ -274,6 +354,8 @@ EXPORTS
 
 	hwMain
 
+	id
+
 	implode
 
 	info_canal
@@ -282,9 +364,17 @@ EXPORTS
 
 	inicia_procesos
 
+	inicia_zlib
+
 	iniciado
 
 	inicio
+
+	init_ctx_client
+
+	init_ctx_server
+
+	init_ssl
 
 	inserta_ban_en_canal
 
@@ -302,6 +392,10 @@ EXPORTS
 
 	inserta_modo_cliente_en_canal
 
+	inserta_registro
+
+	inserta_registro_en_hash
+
 	inserta_senyal
 
 	inserta_sock
@@ -312,19 +406,35 @@ EXPORTS
 
 	inttobase64
 
+	ips
+
+	ircd_SSL_accept
+
+	ircd_SSL_client_handshake
+
+	ircd_SSL_connect
+
+	ircd_SSL_read
+
+	ircd_SSL_write
+
 	ircd_log
 
 	ircdmask
-
-	ircstrdup
 
 	is_file
 
 	killbot
 
+	lee_gmt
+
+	lee_hash
+
 	lee_mensaje
 
 	lee_socks
+
+	level_oper_bdd
 
 	libera_canal_de_memoria
 
@@ -336,6 +446,8 @@ EXPORTS
 
 	libera_log
 
+	libera_memoria_udb
+
 	libera_protocolo
 
 	libera_server
@@ -343,6 +455,10 @@ EXPORTS
 	libera_set
 
 	libera_smtp
+
+	libera_ssl
+
+	libera_zlib
 
 	linkado
 
@@ -382,7 +498,13 @@ EXPORTS
 
 	mysql_tablas
 
+	nicks
+
 	nuevo_cliente
+
+	obtiene_hash
+
+	optimiza
 
 	our_crc32
 
@@ -392,11 +514,15 @@ EXPORTS
 
 	parse_smtp
 
+	parsea_linea
+
 	parseconf
 
 	print_r
 
 	proc
+
+	proc_stop
 
 	procesa_ircd
 
@@ -440,6 +566,8 @@ EXPORTS
 
 	setfilemodtime
 
+	sets
+
 	sockaccept
 
 	sockblock
@@ -454,11 +582,21 @@ EXPORTS
 
 	sockwritev
 
+	spath
+
 	sprintf_irc
+
+	ssl_error_str
+
+	ssl_get_cipher
+
+	ssl_pem_passwd_cb
 
 	str_replace
 
 	strcasecmp
+
+	strcopia
 
 	strncasecmp
 
@@ -480,9 +618,13 @@ EXPORTS
 
 	totalcola
 
+	trunca_bloque
+
 	uTab
+
+	ultimo
 
 	untea
 
-	ChkBtCon
+	BDD_CHANS
 

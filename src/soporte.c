@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.1 2005-02-20 16:26:45 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.2 2005-05-18 18:51:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -80,7 +80,7 @@ int strncasecmp(const char *a, const char *b, int len)
 	return (*ra - *rb);
 }
 #endif
-void ircstrdup(char **dest, const char *orig)
+void strcopia(char **dest, const char *orig)
 {
 	ircfree(*dest);
 	if (!orig)

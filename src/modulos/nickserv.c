@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.21 2005-03-21 12:40:26 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.22 2005-05-18 18:51:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -19,24 +19,24 @@
 NickServ nickserv;
 #define exfunc(x) busca_funcion(nickserv.hmod, x, NULL)
 
-static int nickserv_help		(Cliente *, char *[], int, char *[], int);
-static int nickserv_reg		(Cliente *, char *[], int, char *[], int);
-static int nickserv_identify	(Cliente *, char *[], int, char *[], int);	
-static int nickserv_set		(Cliente *, char *[], int, char *[], int);
-static int nickserv_drop		(Cliente *, char *[], int, char *[], int);
-static int nickserv_sendpass	(Cliente *, char *[], int, char *[], int);
-static int nickserv_info		(Cliente *, char *[], int, char *[], int);
-static int nickserv_list		(Cliente *, char *[], int, char *[], int);
-static int nickserv_ghost		(Cliente *, char *[], int, char *[], int);
-static int nickserv_suspend		(Cliente *, char *[], int, char *[], int);
-static int nickserv_liberar		(Cliente *, char *[], int, char *[], int);
-static int nickserv_swhois		(Cliente *, char *[], int, char *[], int);
-static int nickserv_rename 		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(nickserv_help);
+BOTFUNC(nickserv_reg);
+BOTFUNC(nickserv_identify);
+BOTFUNC(nickserv_set);
+BOTFUNC(nickserv_drop);
+BOTFUNC(nickserv_sendpass);
+BOTFUNC(nickserv_info);
+BOTFUNC(nickserv_list);
+BOTFUNC(nickserv_ghost);
+BOTFUNC(nickserv_suspend);
+BOTFUNC(nickserv_liberar);
+BOTFUNC(nickserv_swhois);
+BOTFUNC(nickserv_rename);
 #ifdef UDB
-static int nickserv_migrar		(Cliente *, char *[], int, char *[], int);
-static int nickserv_demigrar	(Cliente *, char *[], int, char *[], int);
+BOTFUNC(nickserv_migrar);
+BOTFUNC(nickserv_demigrar);
 #endif
-static int nickserv_forbid		(Cliente *, char *[], int, char *[], int);
+BOTFUNC(nickserv_forbid);
 
 int nickserv_sig_mysql	();
 int nickserv_pre_nick		(Cliente *, char *);
@@ -157,6 +157,8 @@ int descarga()
 	borra_senyal(SIGN_EOS, nickserv_sig_eos);
 #endif
 	borra_senyal(NS_SIGN_IDOK, nickserv_sig_idok);
+	proc_stop(nickserv_dropanicks);
+	bot_unset(nickserv);
 	return 0;
 }
 int test(Conf *config, int *errores)
@@ -168,8 +170,8 @@ void set(Conf *config, Modulo *mod)
 	int i, p;
 	bCom *ns;
 	nickserv.opts = NS_PROT_KILL;
-	ircstrdup(&nickserv.recovernick, "inv-%s-????");
-	ircstrdup(&nickserv.securepass,"******");
+	ircstrdup(nickserv.recovernick, "inv-%s-????");
+	ircstrdup(nickserv.securepass,"******");
 	nickserv.min_reg = 24;
 	nickserv.autodrop = 15;
 	nickserv.nicks = 3;
@@ -195,9 +197,9 @@ void set(Conf *config, Modulo *mod)
 			nickserv.opts |= NS_AUTOMIGRAR;
 #endif
 		else if (!strcmp(config->seccion[i]->item, "recovernick"))
-			ircstrdup(&nickserv.recovernick, config->seccion[i]->data);
+			ircstrdup(nickserv.recovernick, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "securepass"))
-			ircstrdup(&nickserv.securepass, config->seccion[i]->data);
+			ircstrdup(nickserv.securepass, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "min_reg"))
 			nickserv.min_reg = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "autodrop"))
@@ -211,7 +213,7 @@ void set(Conf *config, Modulo *mod)
 		else if (!strcmp(config->seccion[i]->item, "forbmails"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++, nickserv.forbmails++)
-				ircstrdup(&nickserv.forbmail[nickserv.forbmails], config->seccion[i]->seccion[p]->item);
+				ircstrdup(nickserv.forbmail[nickserv.forbmails], config->seccion[i]->seccion[p]->item);
 		}
 		else if (!strcmp(config->seccion[i]->item, "funciones"))
 		{
@@ -256,12 +258,6 @@ void envia_clave(char *nick)
 #ifdef UDB
 	if (IsNickUDB(nick))
 	{
-		char buf[256];
-		if (IsSusp(nick))
-		{
-			sprintf_irc(buf, "%s+", pass);
-			pass = buf;
-		}
 		envia_registro_bdd("N::%s::pass %s", nick, passmd5);
 		envia_registro_bdd("N::%s::desafio md5", nick);
 	}
@@ -930,7 +926,7 @@ BOTFUNC(nickserv_info)
 		{
 			response(cl, CLI(nickserv), "*** Niveles de acceso ***");
 			for (i = 0; i < regs->subs; i++)
-				response(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s\003 (\00312%lu\003)", regs->sub[i].canal, 
+				response(cl, CLI(nickserv), "Canal: \00312%s \003flags: \00312+%s\003 (\00312%lu\003)", regs->sub[i].canal, 
 					modes2flags(regs->sub[i].flags, cFlags_dl, NULL),
 					regs->sub[i].flags);
 		}

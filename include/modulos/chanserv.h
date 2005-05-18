@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.3 2005-03-18 21:26:52 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.4 2005-05-18 18:51:02 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -23,6 +23,7 @@ struct _cs
 typedef struct _csregistros CsRegistros;
 struct _csregistros
 {
+	struct _csregistros *sig;
 	char *nick;
 	struct _subc
 	{
@@ -30,11 +31,11 @@ struct _csregistros
 		u_long flags;
 	}sub[CS_MAX_REGS];
 	int subs;
-	struct _csregistros *sig;
 };
 typedef struct _akick Akick;
 struct _akick
 {
+	struct _akick *sig;
 	char *canal;
 	struct _akc
 	{
@@ -43,7 +44,6 @@ struct _akick
 		char *puesto;
 	}akick[CS_MAX_AKICK];
 	int akicks;
-	struct _akick *sig;
 };
 /* Opciones */
 #define CS_OPT_RMOD 0x1 /* candado de modos +m */
@@ -54,7 +54,9 @@ struct _akick
 #define CS_OPT_HIDE 0x20 /* canal oculto +h */
 #define CS_OPT_DEBUG 0x40 /* canal en debug +d */
 #define CS_OPT_NODROP 0x80 /* canal no dropable +n */
+#ifdef UDB
 #define CS_OPT_UDB 0x100
+#endif
 
 /* Niveles */
 
@@ -73,7 +75,7 @@ struct _akick
 #define CS_LEV_REV 0x1000 /* revenge +g */
 #define CS_LEV_MEM 0x2000 /* memo +m */
 #define CS_LEV_ALL (CS_LEV_SET | CS_LEV_EDT | CS_LEV_LIS | CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO | CS_LEV_RMO | CS_LEV_RES | CS_LEV_ACK | CS_LEV_INV | CS_LEV_JOB | CS_LEV_REV | CS_LEV_MEM)
-#define CS_LEV_MOD (CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO)
+#define CS_LEV_MOD (CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO | CS_LEV_REV) /* el kick revenge también */
 
 #define CS_SIGN_IDOK 50
 #define CS_SIGN_DROP 51

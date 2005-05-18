@@ -1,4 +1,4 @@
-## $Id: make,v 1.18 2005-03-24 12:10:53 Trocotronic Exp $
+## $Id: make,v 1.19 2005-05-18 18:51:01 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -26,7 +26,7 @@ OPENSSL_LIB_DIR="c:\openssl\lib"
 !IFDEF DEBUG
 DBGCFLAG=/MD /G5 /Zi /W3
 DBGLFLAG=/debug
-MODDBGCFLAG=/LDd $(DBGCFLAG)
+MODDBGCFLAG=/LD $(DBGCFLAG)
 !ELSE
 DBGCFLAG=/MD /O2 /G5
 MODDBGCFLAG=/LD /MD
@@ -188,7 +188,7 @@ src/gui.obj: src/win32/gui.c $(INCLUDES)
 # Modulos
 	
 CUSTOMMODULE: src/modulos/$(MODULEFILE).c
-	$(CC) $(MODCFLAGS) src/modulos/$(MODULEFILE).c $(MODLFLAGS) $(PARAMS) /OUT:src/modulos/$(MODULEFILE).dlk
+	$(CC) $(MODCFLAGS) src/modulos/$(MODULEFILE).c $(MODLFLAGS) $(PARAMS) /OUT:src/modulos/$(MODULEFILE).dll
 	
 DEF: 
 	$(CC) src/win32/def-clean.c
@@ -223,12 +223,10 @@ src/modulos/proxyserv.dll: src/modulos/proxyserv.c $(INCLUDES) ./include/modulos
 
 src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
-	-@copy src\modulos\statserv.dll modulos\statserv.dll >NUL
 	
 src/modulos/linkserv.dll: src/modulos/linkserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/linkserv.h
 	$(CC) $(MODCFLAGS) src/modulos/linkserv.c $(MODLFLAGS) src/modulos/chanserv.lib
-	-@copy src\modulos\linkserv.dll modulos\linkserv.dll >NUL
-	
+		
 src/protocolos/unreal.dll: src/protocolos/unreal.c $(INCLUDES) 
 	$(CC) $(PROTCFLAGS) src/protocolos/unreal.c $(PROTLFLAGS)
 	-@copy src\protocolos\unreal.dll protocolos\unreal.dll >NUL
@@ -246,4 +244,3 @@ src/protocolos/unreal_udb.dll: src/protocolos/unreal.c $(INCLUDES)
 	$(CC) $(PROTCFLAGS) src/protocolos/unreal_udb.c $(PROTLFLAGS)
 	-@copy src\protocolos\unreal_udb.dll protocolos\unreal_udb.dll >NUL
 	-@erase src\protocolos\unreal_udb.c >NUL
-	

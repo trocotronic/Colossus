@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.11 2005-03-19 12:48:53 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.12 2005-05-18 18:51:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -161,15 +161,15 @@ void set(Conf *config, Modulo *mod)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "nick"))
-			ircstrdup(&statserv->nick, config->seccion[i]->data);
+			ircstrdup(statserv->nick, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "ident"))
-			ircstrdup(&statserv->ident, config->seccion[i]->data);
+			ircstrdup(statserv->ident, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(&statserv->host, config->seccion[i]->data);
+			ircstrdup(statserv->host, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "realname"))
-			ircstrdup(&statserv->realname, config->seccion[i]->data);
+			ircstrdup(statserv->realname, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "modos"))
-			ircstrdup(&statserv->modos, config->seccion[i]->data);
+			ircstrdup(statserv->modos, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "laguea"))
 			statserv->laguea = atoi(config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "funciones"))
@@ -198,17 +198,17 @@ void set(Conf *config, Modulo *mod)
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "puerto"))
 					statserv->puerto = atoi(config->seccion[i]->seccion[p]->data);
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "template"))
-					ircstrdup(&statserv->template, config->seccion[i]->seccion[p]->data);
+					ircstrdup(statserv->template, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		if (!strcmp(config->seccion[i]->item, "residente"))
-			ircstrdup(&statserv->residente, config->seccion[i]->data);
+			ircstrdup(statserv->residente, config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "clientes"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
-				ircstrdup(&statserv->clientes[p].cliente, config->seccion[i]->seccion[p]->item);
-				ircstrdup(&statserv->clientes[p].patron, config->seccion[i]->seccion[p]->data);
+				ircstrdup(statserv->clientes[p].cliente, config->seccion[i]->seccion[p]->item);
+				ircstrdup(statserv->clientes[p].patron, config->seccion[i]->seccion[p]->data);
 				statserv->clientes[p].usuarios = 0;
 			}
 			statserv->clientes[p].cliente = statserv->clientes[p].patron = NULL;
@@ -558,7 +558,7 @@ IRCFUNC(statserv_squit)
 }
 IRCFUNC(statserv_version)
 {
-	ircstrdup(&statserv->servidor[cl->numeric].version, parv[2]);
+	ircstrdup(statserv->servidor[cl->numeric].version, parv[2]);
 	return 0;
 }
 IRCFUNC(statserv_notice)

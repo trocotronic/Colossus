@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.h,v 1.3 2005-02-18 22:12:15 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.4 2005-05-18 18:51:03 Trocotronic Exp $ 
  */
 
 #define OS_OPTS_AOP 0x1
@@ -9,6 +9,7 @@ struct _os
 {
 	int opts;
 	Modulo *hmod;
+	u_int maxlist;
 };
 
 extern OperServ operserv;
@@ -22,6 +23,7 @@ extern OperServ operserv;
 #define OS_MYSQL "opers"
 #endif
 #define OS_NOTICIAS "noticias"
+#define OS_AKILL "akill"
 typedef struct _not Noticia;
 struct _not
 {

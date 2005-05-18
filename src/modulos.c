@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.7 2005-03-19 12:48:48 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.8 2005-05-18 18:51:04 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,12 +12,12 @@
 #ifdef _WIN32
 const char *our_dlerror(void);
 #endif
+int id = 1;
 
 Modulo *modulos = NULL;
 Modulo *crea_modulo(char *archivo)
 {
 	char tmppath[128];
-	static int id = 0;
 #ifdef _WIN32
 	HMODULE modulo;
 #else
@@ -82,8 +82,7 @@ Modulo *crea_modulo(char *archivo)
 		mod->cargado = 1; /* está en conf */
 		mod->info = inf;
 		id <<= 1;
-		mod->sig = modulos;
-		modulos = mod;
+		AddItem(mod, modulos);
 		return mod;
 	}
 	else
@@ -97,9 +96,14 @@ void descarga_modulo(Modulo *ex)
 	{
 		if (ex->descarga)
 			(*ex->descarga)(ex);
+		ircfree(ex->archivo);
+		ircfree(ex->tmparchivo);
+		BorraItem(ex, modulos);
+		ex->cargado = 0;
+		ex->comandos = 0; /* hay que vaciarlo! */
+		irc_dlclose(ex->hmod);
+		Free(ex);
 	}
-	ex->cargado = 0;
-	ex->comandos = 0; /* hay que vaciarlo! */
 }
 void carga_modulos()
 {
@@ -122,12 +126,14 @@ void carga_modulos()
 }
 void descarga_modulos()
 {
-	Modulo *ex;
-	for (ex = modulos; ex; ex = ex->sig)
+	Modulo *ex, *sig;
+	for (ex = modulos; ex; ex = sig)
 	{
+		sig = ex->sig;
 		if (ex->cargado)
 			descarga_modulo(ex);
 	}
+	id = 1;
 }
 Modulo *busca_modulo(char *nick, Modulo *donde)
 {
