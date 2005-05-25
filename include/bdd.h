@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.10 2005-05-18 18:51:01 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.11 2005-05-25 21:47:24 Trocotronic Exp $ 
  */
 
 #ifdef UDB
@@ -63,4 +63,56 @@ DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);
 #define E_UDB_FATAL 6
 #define E_UDB_RPROG 7 
 #define E_UDB_NORES 8 
+
+#define C_FUN "fundador"
+#define C_FUN_TOK "F"
+#define C_MOD "modos"
+#define C_MOD_TOK "M"
+#define C_TOP "topic"
+#define C_TOP_TOK "T"
+#define C_ACC "accesos"
+#define C_ACC_TOK "A"
+#define C_FOR "forbid"
+#define C_FOR_TOK "B"
+#define C_SUS "suspendido"
+#define C_SUS_TOK "S"
+#define N_PAS "pass"
+#define N_PAS_TOK "P"
+#define N_VHO "vhost"
+#define N_VHO_TOK "V"
+#define N_FOR "forbid"
+#define N_FOR_TOK "B"
+#define N_SUS "suspendido"
+#define N_SUS_TOK "S"
+#define N_OPE "oper"
+#define N_OPE_TOK "O"
+#define N_DES "desafio"
+#define N_DES_TOK "D"
+#define N_MOD "modos"
+#define N_MOD_TOK "M"
+#define N_SNO "snomasks"
+#define N_SNO_TOK "K"
+#define N_SWO "swhois"
+#define N_SWO_TOK "W"
+#define I_CLO "clones"
+#define I_CLO_TOK "C"
+#define I_NOL "nolines"
+#define I_NOL_TOK "E"
+#define S_CLA "clave_cifrado"
+#define S_CLA_TOK "L"
+#define S_SUF "sufijo"
+#define S_SUF_TOK "J"
+#define S_NIC "NickServ"
+#define S_NIC_TOK "N"
+#define S_CHA "ChanServ"
+#define S_CHA_TOK "C"
+#define S_IPS "IpServ"
+#define S_IPS_TOK "I"
+#define S_CLO "clones"
+#define S_CLO_TOK "C"
+#define S_QIP "quit_ips"
+#define S_QIP_TOK "T"
+#define S_QCL "quit_clones"
+#define S_QCL_TOK "L"
+
 #endif

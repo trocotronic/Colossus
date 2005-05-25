@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.12 2005-05-18 18:51:01 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.13 2005-05-25 21:47:24 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(inicia_ircd);
@@ -22,7 +22,7 @@ typedef struct _linkcanal LinkCanal;
 typedef struct _ban Ban;
 struct _cliente
 {
-	struct _cliente *sig, *hsig, *prev;
+	struct _cliente *sig, *prev, *hsig;
 	char *nombre;
 	char *ident;
 	char *host; /* siempre apunta al host del cliente que conecta (puede ser ip o host) */
@@ -197,3 +197,16 @@ extern u_long flags2modes(u_long *, char *, mTab []);
 extern char *modes2flags(u_long, mTab [], Canal *);
 
 #define RedOverride		(conf_set->opts & NO_OVERRIDE)
+
+/* TKLines y demás */
+typedef struct _tkl
+{
+	struct _tkl *sig;
+	int tipo;
+	char *mascara;
+	char *autor;
+	char *motivo;
+	time_t inicio, fin;
+}Tkl;
+Tkl *inserta_tkl(int, char *, char *, char *, char *, time_t, time_t);
+int borra_tkl(Tkl **, char *, char *);

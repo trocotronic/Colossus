@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.14 2005-05-18 18:51:06 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.15 2005-05-25 21:47:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -285,7 +285,7 @@ BOTFUNC(ipserv_setipv)
 		if (params == 4)
 			_mysql_add(IS_MYSQL, param[1], "caduca", "%lu", time(0) + atol(param[3]) * 8600);
 #ifdef UDB
-		envia_registro_bdd("N::%s::vhost %s", param[1], ipv);
+		envia_registro_bdd("N::%s::V %s", param[1], ipv);
 #endif
 		response(cl, CLI(ipserv), "Se ha añadido la ip virtual a \00312%s\003.", ipv);
 		if (params == 4)
@@ -296,7 +296,7 @@ BOTFUNC(ipserv_setipv)
 		param[1]++;
 		_mysql_del(IS_MYSQL, param[1]);
 #ifdef UDB
-		envia_registro_bdd("N::%s::vhost", param[1]);
+		envia_registro_bdd("N::%s::V", param[1]);
 #endif
 		response(cl, CLI(ipserv), "La ip virtual de \00312%s\003 ha sido eliminada.", param[1]);
 	}
@@ -339,12 +339,12 @@ BOTFUNC(ipserv_set)
 	}
 	if (!strcasecmp(param[1], "QUIT_IPS"))
 	{
-		envia_registro_bdd("S::quit_ips %s", implode(param, params, 2, -1));
+		envia_registro_bdd("S::T %s", implode(param, params, 2, -1));
 		response(cl, CLI(ipserv), "Se ha cambiado el mensaje de desconexión para ips con número personal de clones.");
 	}
 	else if (!strcasecmp(param[1], "QUIT_CLONES"))
 	{
-		envia_registro_bdd("S::quit_clones %s", implode(param, params, 2, -1));
+		envia_registro_bdd("S::L %s", implode(param, params, 2, -1));
 		response(cl, CLI(ipserv), "Se ha cambiado el mensaje de desconexión al rebasar el número de clones permitidos en la red.");
 	}
 	else if (!strcasecmp(param[1], "CLONES"))
@@ -355,7 +355,7 @@ BOTFUNC(ipserv_set)
 			response(cl, CLI(ipserv), IS_ERR_EMPT, "El número de clones debe estar entre 1 y 1024.");
 			return 1;
 		}
-		envia_registro_bdd("S::clones %c%s", CHAR_NUM, param[2]);
+		envia_registro_bdd("S::C %c%s", CHAR_NUM, param[2]);
 		response(cl, CLI(ipserv), "El número de clones permitidos en la red se ha cambiado a \00312%s", param[2]);
 	}
 	else
@@ -387,7 +387,7 @@ BOTFUNC(ipserv_clones)
 		}
 		param[1]++;
 #ifdef UDB
-		envia_registro_bdd("I::%s %c%s", param[1], CHAR_NUM, param[2]);
+		envia_registro_bdd("I::%s::C %c%s", param[1], CHAR_NUM, param[2]);
 #else
 		_mysql_add(IS_CLONS, param[1], "clones", param[2]);
 #endif
@@ -397,7 +397,7 @@ BOTFUNC(ipserv_clones)
 	{
 		param[1]++;
 #ifdef UDB
-		envia_registro_bdd("I::%s", param[1]);
+		envia_registro_bdd("I::%s::C", param[1]);
 #else
 		_mysql_del(IS_CLONS, param[1]);
 #endif
@@ -480,7 +480,7 @@ int comprueba_cifrado()
 #endif
 	sprintf_irc(clave, "a%lu", our_crc32(conf_set->clave_cifrado, strlen(conf_set->clave_cifrado)) + (time(0) / ipserv.cambio));
 #ifdef UDB
-	envia_registro_bdd("S::clave_cifrado %s", clave);
+	envia_registro_bdd("S::L %s", clave);
 #else
 	if ((fp = fopen("ts", "r")))
 	{
@@ -516,8 +516,8 @@ int ipserv_sig_drop(char *nick)
 int ipserv_sig_eos()
 {
 #ifdef UDB
-	envia_registro_bdd("S::IpServ %s", ipserv.hmod->mascara);
-	envia_registro_bdd("S::sufijo %s", ipserv.sufijo);
+	envia_registro_bdd("S::I %s", ipserv.hmod->mascara);
+	envia_registro_bdd("S::J %s", ipserv.sufijo);
 #endif
 	comprueba_cifrado();
 	return 0;
@@ -608,7 +608,7 @@ int ipserv_dropaips(Proc *proc)
 		{
 			_mysql_del(IS_MYSQL, row[0]);
 #ifdef UDB
-			envia_registro_bdd("N::%s::vhost", row[0]);
+			envia_registro_bdd("N::%s::V", row[0]);
 #endif
 		}
 		proc->proc += 30;

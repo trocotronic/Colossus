@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.25 2005-05-18 18:51:03 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.26 2005-05-25 21:47:25 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -239,7 +239,7 @@ Udb *busca_udb_en_hash(char *clave, int donde, Udb *lugar)
 	hashv = hash_cliente(clave) % 2048;
 	for (aux = hash[donde][hashv]; aux; aux = aux->hsig)
 	{
-		if (!strcasecmp(clave, aux->item))
+		if ((*(clave+1) == '\0' && aux->id == *clave) || !strcasecmp(clave, aux->item))
 			return aux;
 	}
 	return lugar;
@@ -258,7 +258,7 @@ DLLFUNC Udb *busca_bloque(char *clave, Udb *bloque)
 		return NULL;
 	for (aux = bloque->down; aux; aux = aux->mid)
 	{
-		if (!strcasecmp(clave, aux->item))
+		if ((*(clave+1) == '\0' && aux->id == *clave) || !strcasecmp(clave, aux->item))
 			return aux;
 	}
 	return NULL;
@@ -282,7 +282,10 @@ Udb *da_formato(char *form, Udb *reg)
 		root = da_formato(form, reg->up);
 	else
 		return reg;
-	strcat(form, reg->item);
+	if (reg->id)
+		chrcat(form, reg->id);
+	else
+		strcat(form, reg->item);
 	if (reg->down)
 		strcat(form, "::");
 	else
@@ -393,7 +396,13 @@ Udb *inserta_registro(int tipo, Udb *bloque, char *item, char *data_char, u_long
 	if (!(reg = busca_bloque(item, bloque)))
 	{
 		reg = crea_registro(bloque);
-		reg->item = strdup(item);
+		if (*(item+1) == '\0')
+		{
+			reg->id = *item;
+			reg->item = strdup("\0");
+		}
+		else
+			reg->item = strdup(item);
 		inserta_registro_en_hash(reg, tipo, item);
 	}
 	else
@@ -417,7 +426,7 @@ DLLFUNC int level_oper_bdd(char *oper)
 	if ((reg = busca_registro(BDD_NICKS, oper)))
 	{
 		Udb *aux;
-		if ((aux = busca_bloque("oper", reg)))
+		if ((aux = busca_bloque(N_OPE_TOK, reg)))
 			return aux->data_long;
 	}
 	return 0;
@@ -430,7 +439,7 @@ char *cifra_ip(char *ipreal)
 	Udb *bloq;
 	unsigned int ourcrc, v[2], k[2], x[2];
 	ourcrc = our_crc32(ipreal, strlen(ipreal));
-	if ((bloq = busca_registro(BDD_SET, "clave_cifrado")))
+	if ((bloq = busca_registro(BDD_SET, S_CLA_TOK)))
 		clavec = bloq->data_char;
 	else
 		clavec = conf_set->clave_cifrado;

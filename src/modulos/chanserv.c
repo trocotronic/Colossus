@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.20 2005-05-18 18:51:05 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.21 2005-05-25 21:47:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -408,9 +408,9 @@ void envia_canal_bdd(char *canal)
 		modos = c+1;
 	if ((c = strchr(modos, '-')))
 		*c = 0;
-	envia_registro_bdd("C::%s::fundador %s", canal, row[0]);
-	envia_registro_bdd("C::%s::modos %s", canal, modos);
-	envia_registro_bdd("C::%s::topic %s", canal, row[2]);
+	envia_registro_bdd("C::%s::F %s", canal, row[0]);
+	envia_registro_bdd("C::%s::M %s", canal, modos);
+	envia_registro_bdd("C::%s::T %s", canal, row[2]);
 	mysql_free_result(res);
 }
 #endif
@@ -1489,9 +1489,9 @@ BOTFUNC(chanserv_set)
 		if (IsChanUDB(param[1]))
 		{
 			if (params > 3)
-				envia_registro_bdd("C::%s::topic %s", param[1], topic);
+				envia_registro_bdd("C::%s::T %s", param[1], topic);
 			else
-				envia_registro_bdd("C::%s::topic", param[1]);
+				envia_registro_bdd("C::%s::T", param[1]);
 		}
 #endif
 	}
@@ -1553,7 +1553,7 @@ BOTFUNC(chanserv_set)
 				strcat(buf, " ");
 				strcat(buf, str);
 			}
-			envia_registro_bdd("C::%s::modos %s", param[1], buf);
+			envia_registro_bdd("C::%s::M %s", param[1], buf);
 		}
 #endif
 	}
@@ -1592,7 +1592,7 @@ BOTFUNC(chanserv_set)
 		_mysql_add(CS_MYSQL, param[1], "founder", param[3]);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
-			envia_registro_bdd("C::%s::fundador %s", param[1], param[3]);
+			envia_registro_bdd("C::%s::F %s", param[1], param[3]);
 #endif
 		response(cl, CLI(chanserv), "Fundador cambiado.");
 	}
@@ -2060,7 +2060,7 @@ BOTFUNC(chanserv_suspender)
 	}
 	motivo = implode(param, params, 2, -1);
 #ifdef UDB
-	envia_registro_bdd("C::%s::suspendido %s", param[1], motivo);
+	envia_registro_bdd("C::%s::S %s", param[1], motivo);
 #else
 	_mysql_add(CS_MYSQL, param[1], "suspend", motivo);
 #endif
@@ -2085,7 +2085,7 @@ BOTFUNC(chanserv_liberar)
 		return 1;
 	}
 #ifdef UDB
-	envia_registro_bdd("C::%s::suspendido", param[1]);
+	envia_registro_bdd("C::%s::S", param[1]);
 #else
 	_mysql_add(CS_MYSQL, param[1], "suspend", "");
 #endif
@@ -2112,7 +2112,7 @@ BOTFUNC(chanserv_forbid)
 		ircfree(al);
 	}
 #ifdef UDB
-	envia_registro_bdd("C::%s::forbid %s", param[1], motivo);
+	envia_registro_bdd("C::%s::B %s", param[1], motivo);
 #else
 	_mysql_add(CS_FORBIDS, param[1], "motivo", motivo);
 #endif
@@ -2132,7 +2132,7 @@ BOTFUNC(chanserv_unforbid)
 		return 1;
 	}
 #ifdef UDB
-	envia_registro_bdd("C::%s::forbid", param[1]);
+	envia_registro_bdd("C::%s::B", param[1]);
 #else
 	_mysql_del(CS_FORBIDS, param[1]);
 #endif
@@ -2479,12 +2479,12 @@ BOTFUNC(chanserv_proteger)
 	}
 	if (*param[2] == '+')
 	{
-		envia_registro_bdd("C::%s::accesos::%s -", param[1], param[2] + 1);
+		envia_registro_bdd("C::%s::A::%s -", param[1], param[2] + 1);
 		response(cl, CLI(chanserv), "La entrada \00312%s\003 ha sido añadida.", param[2] + 1);
 	}
 	else if (*param[2] == '-')
 	{
-		envia_registro_bdd("C::%s::accesos::%s", param[1], param[2] + 1);
+		envia_registro_bdd("C::%s::A::%s", param[1], param[2] + 1);
 		response(cl, CLI(chanserv), "La entrada \00312%s\003 ha sido eliminada.", param[2] + 1);
 	}
 	else
@@ -2814,7 +2814,7 @@ int chanserv_sig_eos()
 	int bjoins;
 	Cliente *bl;
 #ifdef UDB
-	envia_registro_bdd("S::ChanServ %s", chanserv.hmod->mascara);
+	envia_registro_bdd("S::C %s", chanserv.hmod->mascara);
 #endif
 	if ((res = _mysql_query("SELECT item,bjoins from %s%s where bjoins !='0'", PREFIJO, CS_MYSQL)))
 	{
@@ -3150,7 +3150,7 @@ char *IsChanSuspend(char *canal)
 	if (!canal)
 		return NULL;
 #ifdef UDB
-	if ((reg = busca_registro(BDD_CHANS, canal)) && (bloq = busca_bloque("suspendido", reg)))
+	if ((reg = busca_registro(BDD_CHANS, canal)) && (bloq = busca_bloque(C_SUS_TOK, reg)))
 		return bloq->data_char;
 #else
 	if ((motivo = _mysql_get_registro(CS_MYSQL, canal, "suspend")))
@@ -3168,7 +3168,7 @@ char *IsChanForbid(char *canal)
 	if (!canal)
 		return NULL;
 #ifdef UDB
-	if ((reg = busca_registro(BDD_CHANS, canal)) && (bloq = busca_bloque("forbid", reg)))
+	if ((reg = busca_registro(BDD_CHANS, canal)) && (bloq = busca_bloque(C_FOR_TOK, reg)))
 		return bloq->data_char;
 #else
 	if ((motivo = _mysql_get_registro(CS_FORBIDS, canal, "motivo")))

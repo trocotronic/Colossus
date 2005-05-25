@@ -10,6 +10,14 @@
 #include "zlib.h"
 #endif
 
+/* stuff de tklines. todas son globales */
+#define TKL_GLINE 0
+#define TKL_ZLINE 1
+#define TKL_SHUN 2
+#define TKL_SPAMF 3
+#define TKL_QLINE 4
+#define TKL_MAX 5 /* máximo! */
+
 double tburst;
 static char *modcanales = NULL;
 static char *modusers = NULL;
@@ -19,6 +27,7 @@ static char *autoopers = NULL;
 LinkCliente *servidores = NULL;
 long base64dec(char *);
 char *base64enc(long);
+Tkl *tklines[TKL_MAX];
 
 IRCFUNC(m_chghost);
 IRCFUNC(m_chgident);
@@ -55,10 +64,11 @@ IRCFUNC(m_105);
 IRCFUNC(m_rehash);
 IRCFUNC(sincroniza);
 IRCFUNC(m_sjoin);
+IRCFUNC(m_tkl);
 
 ProtInfo info = {
 	"Protocolo UnrealIRCd" ,
-	0.1 ,
+	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net" 
 };
@@ -291,6 +301,8 @@ ProtInfo info = {
 #define TOK_GLINE "}"
 #define MSG_SJOIN "SJOIN"
 #define TOK_SJOIN "~"
+#define MSG_TKL "TKL"
+#define TOK_TKL "BD"
 
 #define U_INVISIBLE 	0x1
 #define U_OPER 		0x2
@@ -824,6 +836,7 @@ void set(Conf *config)
 			}
 		}
 	}
+	bzero(tklines, sizeof(tklines));
 #ifdef UDB
 	proc(comprueba_opts);
 #endif
@@ -873,6 +886,7 @@ int carga(Conf *config)
 	inserta_comando(MSG_SAPART, TOK_SAPART, m_sapart, INI, MAXPARA);
 	inserta_comando(MSG_MODULE, TOK_MODULE, m_module, INI, MAXPARA);
 	inserta_comando(MSG_SJOIN, TOK_SJOIN, m_sjoin, INI, MAXPARA);
+	inserta_comando(MSG_TKL, TOK_TKL, m_tkl, INI, MAXPARA);
 	return 0;
 }
 int descarga()
@@ -912,6 +926,7 @@ int descarga()
 	borra_comando(MSG_SAPART, m_sapart);
 	borra_comando(MSG_MODULE, m_module);
 	borra_comando(MSG_SJOIN, m_sjoin);
+	borra_comando(MSG_TKL, m_tkl);
 #ifdef UDB
 	proc_stop(comprueba_opts);
 #endif
@@ -926,7 +941,7 @@ void inicia()
 		ircfree(aux);
 	}
 	servidores = NULL;
-	sendto_serv("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64");
+	sendto_serv("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64 TKLEXT");
 #ifdef UDB
 	sendto_serv("PROTOCTL UDB3.2=%s", me.nombre);
 #endif
@@ -1841,6 +1856,59 @@ IRCFUNC(sincroniza)
 	senyal(SIGN_SYNCH);
 	return 0;
 }
+int tipo_tkl(char tipo)
+{
+	switch(tipo)
+	{
+		case 'G':
+			return TKL_GLINE;
+		case 'Z':
+			return TKL_ZLINE;
+		case 's':
+			return TKL_SHUN;
+		case 'F':
+			return TKL_SPAMF;
+		case 'Q':
+			return TKL_QLINE;
+	}
+	Info("Se ha insertado una TKL desconocida. Diríjase a http://www.rallados.net e informe al desarrollador");
+	return -1; /* nunca debería pasar */
+}
+IRCFUNC(m_tkl)
+{
+	if (parc < 2)
+		return 1;
+	if (*parv[1] == '+')
+	{
+		Tkl *tkl;
+		if (parc < 9)
+			return 1;
+		if (*parv[2] == 'F')
+		{
+			if (parc > 9)
+				tkl = inserta_tkl(*parv[2], parv[10], NULL, parv[5], parv[9], atoul(parv[7]), atoul(parv[6]));
+			else
+				tkl = inserta_tkl(*parv[2], parv[8], NULL, parv[5], NULL, atoul(parv[7]), atoul(parv[6]));
+		}
+		else if (*parv[2] == 'Q')
+			tkl = inserta_tkl(*parv[2], parv[4], NULL, parv[5], parv[8], atoul(parv[7]), atoul(parv[6]));
+		else
+			tkl = inserta_tkl(*parv[2], parv[3], parv[4], parv[5], parv[8], atoul(parv[7]), atoul(parv[6]));
+		AddItem(tkl, tklines[tipo_tkl(*parv[2])]);
+	}
+	else if (*parv[1] == '-')
+	{
+		if (parc < 6)
+			return 1;
+		if (*parv[2] == 'F')
+			borra_tkl(&tklines[tipo_tkl(*parv[2])], parv[8], NULL);
+		else if (*parv[2] == 'Q')
+			borra_tkl(&tklines[tipo_tkl(*parv[2])], parv[4], NULL);
+		else
+			borra_tkl(&tklines[tipo_tkl(*parv[2])], parv[3], parv[4]);
+	}
+	return 0;
+}
 void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 {
 	int modo = ADD, param = 1;
@@ -2126,12 +2194,12 @@ void dale_cosas(Cliente *cl)
 	Udb *reg, *bloq;
 	if (!(reg = busca_registro(BDD_NICKS, cl->nombre)))
 		return;
-	if (!busca_bloque("suspendido", reg))
+	if (!busca_bloque(N_SUS_TOK, reg))
 	{
 		procesa_umodos(cl, "+r");
-		if ((bloq = busca_bloque("modos", reg)))
+		if ((bloq = busca_bloque(N_MOD_TOK, reg)))
 			procesa_umodos(cl, bloq->data_char);
-		if ((bloq = busca_bloque("oper", reg)))
+		if ((bloq = busca_bloque(N_OPE_TOK, reg)))
 		{
 			u_long nivel = bloq->data_long;
 			if (nivel & BDD_OPER)

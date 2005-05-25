@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.24 2005-05-18 18:51:03 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.25 2005-05-25 21:47:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -963,6 +963,56 @@ int mete_bots()
 	{
 		if (aux->cargado == 2)
 			aux->cl = botnick(aux->nick, aux->ident, aux->host, me.nombre, aux->modos, aux->realname);
+	}
+	return 0;
+}
+char *monta_mascara_tkl(char *user, char *host)
+{
+	char *s = NULL;
+	if (user)
+	{
+		s = (char *)Malloc(sizeof(char) * (strlen(user) + (host ? 1 + strlen(host) : 0) + 1));
+		strcpy(s, user);
+		if (host)
+		{
+			strcat(s, "@");
+			strcat(s, host);
+		}
+	}
+	return s;
+}
+Tkl *inserta_tkl(int tipo, char *user, char *host, char *autor, char *motivo, time_t inicio, time_t fin)
+{
+	Tkl *tkl;
+	da_Malloc(tkl, Tkl);
+	tkl->mascara = monta_mascara_tkl(user, host);
+	tkl->autor = strdup(autor);
+	tkl->motivo = strdup(motivo);
+	tkl->tipo = tipo;
+	tkl->inicio = inicio;
+	tkl->fin = fin;
+	return tkl;
+}
+int borra_tkl(Tkl **lugar, char *user, char *host)
+{
+	Tkl *aux, *prev = NULL;
+	char *s;
+	s = monta_mascara_tkl(user, host);
+	for (aux = *lugar; aux; aux = aux->sig)
+	{
+		if (!strcasecmp(s, aux->mascara))
+		{
+			if (prev)
+				prev->sig = aux->sig;
+			else
+				*lugar = aux->sig;
+			ircfree(aux->mascara);
+			ircfree(aux->motivo);
+			ircfree(aux->autor);
+			ircfree(aux);
+			return 1;
+		}
+		prev = aux;
 	}
 	return 0;
 }

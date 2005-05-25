@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.17 2005-05-18 18:51:08 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.18 2005-05-25 21:47:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -721,7 +721,7 @@ BOTFUNC(operserv_opers)
 			return 1;
 		}
 #ifdef UDB
-		envia_registro_bdd("N::%s::oper %c%s", param[1] + 1, CHAR_NUM, oper);
+		envia_registro_bdd("N::%s::O %c%s", param[1] + 1, CHAR_NUM, oper);
 #else
 		_mysql_add(OS_MYSQL, param[1] + 1, "nivel", oper);
 #endif		
@@ -730,7 +730,7 @@ BOTFUNC(operserv_opers)
 	else if (*param[1] == '-')
 	{
 #ifdef UDB
-		envia_registro_bdd("N::%s::oper", param[1] + 1);
+		envia_registro_bdd("N::%s::O", param[1] + 1);
 #else
 		if (!_mysql_get_registro(OS_MYSQL, param[1] + 1, "nivel"))
 		{
@@ -1102,12 +1102,12 @@ BOTFUNC(operserv_modos)
 				return 1;
 			}
 		}
-		envia_registro_bdd("N::%s::modos %s", param[1], param[2]);
+		envia_registro_bdd("N::%s::M %s", param[1], param[2]);
 		response(cl, CLI(operserv), "Los modos de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
 	}
 	else
 	{
-		envia_registro_bdd("N::%s::modos", param[1]);
+		envia_registro_bdd("N::%s::M", param[1]);
 		response(cl, CLI(operserv), "Se han eliminado los modos de operador para \00312%s", param[1]);
 	}
 	return 0;
@@ -1136,12 +1136,12 @@ BOTFUNC(operserv_snomask)
 				return 1;
 			}
 		}
-		envia_registro_bdd("N::%s::snomasks %s", param[1], param[2]);
+		envia_registro_bdd("N::%s::K %s", param[1], param[2]);
 		response(cl, CLI(operserv), "Las máscaras de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
 	}
 	else
 	{
-		envia_registro_bdd("N::%s::snomasks", param[1]);
+		envia_registro_bdd("N::%s::K", param[1]);
 		response(cl, CLI(operserv), "Se han eliminado las máscaras de operador para \00312%s", param[1]);
 	}
 	return 0;

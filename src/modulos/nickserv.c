@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.22 2005-05-18 18:51:07 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.23 2005-05-25 21:47:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -247,21 +247,21 @@ void set(Conf *config, Modulo *mod)
 	proc(nickserv_dropanicks);
 	bot_set(nickserv);
 }
-void envia_clave(char *nick)
+/* establece una nueva clave para el nick en cuestión */
+char *regenera_clave(char *nick)
 {
 	char *pass, *passmd5;
 	pass = random_ex(nickserv.securepass);
 	passmd5 = MDString(pass);
 	_mysql_add(NS_MYSQL, nick, "pass", passmd5);
-	email(_mysql_get_registro(NS_MYSQL, nick, "email"), "Reenvío de la contraseña", "Debido a la pérdida de tu contraseña, se te ha generado otra clave totalmente segura.\r\n"
-		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", pass, nickserv.hmod->nick, conf_set->red);
 #ifdef UDB
 	if (IsNickUDB(nick))
 	{
-		envia_registro_bdd("N::%s::pass %s", nick, passmd5);
-		envia_registro_bdd("N::%s::desafio md5", nick);
+		envia_registro_bdd("N::%s::P %s", nick, passmd5);
+		envia_registro_bdd("N::%s::D md5", nick);
 	}
 #endif
+	return pass;
 }
 BOTFUNC(nickserv_help)
 {
@@ -608,7 +608,8 @@ BOTFUNC(nickserv_reg)
 	_mysql_add(NS_MYSQL, parv[0], "reg", "%i", time(0));
 	_mysql_add(NS_MYSQL, parv[0], "last", "%i", time(0));
 	if (nickserv.opts & NS_SMAIL)
-		envia_clave(parv[0]);
+		email(_mysql_get_registro(NS_MYSQL, parv[0], "email"), "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
+		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", regenera_clave(parv[0]), nickserv.hmod->nick, conf_set->red);
 	else if (UMODE_REGNICK)
 		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
 	inserta_cache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, nickserv.hmod->id, "%lu", time(0));
@@ -618,8 +619,8 @@ BOTFUNC(nickserv_reg)
 	{
 		if (pass)
 		{
-			envia_registro_bdd("N::%s::pass %s", cl->nombre, MDString(pass));
-			envia_registro_bdd("N::%s::desafio md5", cl->nombre);
+			envia_registro_bdd("N::%s::P %s", cl->nombre, MDString(pass));
+			envia_registro_bdd("N::%s::D md5", cl->nombre);
 		}
 		cambia_nick_inv(cl);
 	}
@@ -670,8 +671,8 @@ BOTFUNC(nickserv_identify)
 			intentos = atoi(cache);
 		if (++intentos == nickserv.intentos)
 		{
-			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
 			borra_cache(CACHE_INTENTOS_ID, cl->nombre, nickserv.hmod->id);
+			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
 		}
 		else
 		{
@@ -737,7 +738,7 @@ BOTFUNC(nickserv_set)
 		_mysql_add(NS_MYSQL, parv[0], "pass", passmd5);
 #ifdef UDB
 		if (IsNickUDB(parv[0]))
-			envia_registro_bdd("N::%s::pass %s", parv[0], passmd5);
+			envia_registro_bdd("N::%s::P %s", parv[0], passmd5);
 #endif
 		response(cl, CLI(nickserv), "Tu contraseña se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
@@ -860,7 +861,8 @@ BOTFUNC(nickserv_sendpass)
 		response(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	envia_clave(param[1]);
+	email(_mysql_get_registro(NS_MYSQL, param[1], "email"), "Reenvío de la contraseña", "Debido a la pérdida de tu contraseña, se te ha generado otra clave totalmente segura.\r\n"
+		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", regenera_clave(param[1]), nickserv.hmod->nick, conf_set->red);
 	response(cl, CLI(nickserv), "Se ha generado y enviado otra contraseña al email de \00312%s\003.", param[1]);
 	return 0;
 }
@@ -1030,7 +1032,7 @@ BOTFUNC(nickserv_suspend)
 		response(al, CLI(nickserv), "Tu nick ha sido suspendido por \00312%s\003: %s", cl->nombre, motivo);
 	}
 	if (IsNickUDB(param[1]))
-		envia_registro_bdd("N::%s::suspendido %s", param[1], motivo);
+		envia_registro_bdd("N::%s::S %s", param[1], motivo);
 #endif
 	response(cl, CLI(nickserv), "El nick \00312%s\003 ha sido suspendido.", param[1]);
 	return 0;
@@ -1060,7 +1062,7 @@ BOTFUNC(nickserv_liberar)
 	if ((al = busca_cliente(param[1], NULL)))
 		port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-S");
 	if (IsNickUDB(param[1]))
-		envia_registro_bdd("N::%s::suspendido", param[1]);
+		envia_registro_bdd("N::%s::S", param[1]);
 #endif
 	response(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);			
 	return 0;
@@ -1089,7 +1091,7 @@ BOTFUNC(nickserv_swhois)
 		swhois = implode(param, params, 2, -1);
 #ifdef UDB
 		if (IsNickUDB(param[1]))
-			envia_registro_bdd("N::%s::swhois %s", param[1], swhois);
+			envia_registro_bdd("N::%s::W %s", param[1], swhois);
 		else
 #endif
 		_mysql_add(NS_MYSQL, param[1], "swhois", swhois);
@@ -1101,7 +1103,7 @@ BOTFUNC(nickserv_swhois)
 	{
 #ifdef UDB
 		if (IsNickUDB(param[1]))
-			envia_registro_bdd("N::%s::swhois", param[1]);
+			envia_registro_bdd("N::%s::W", param[1]);
 		else
 #endif		
 		_mysql_add(NS_MYSQL, param[1], "swhois", NULL);
@@ -1153,7 +1155,7 @@ BOTFUNC(nickserv_forbid)
 		}
 		motivo = implode(param, params, 1, -1);
 #ifdef UDB
-		envia_registro_bdd("N::%s::forbid %s", param[1] + 1, motivo);
+		envia_registro_bdd("N::%s::B %s", param[1] + 1, motivo);
 #else
 		if (!port_existe(P_FORB_NICK))
 		{
@@ -1168,7 +1170,7 @@ BOTFUNC(nickserv_forbid)
 	else if (*param[1] == '-')
 	{
 #ifdef UDB
-		envia_registro_bdd("N::%s::forbid", param[1] + 1);
+		envia_registro_bdd("N::%s::B", param[1] + 1);
 #else
 		_mysql_del(NS_FORBIDS, param[1] + 1);
 		if (!port_existe(P_FORB_NICK))
@@ -1208,8 +1210,8 @@ BOTFUNC(nickserv_migrar)
 		response(cl, CLI(nickserv), NS_ERR_EMPT, "Ya tienes el nick migrado.");
 		return 1;
 	}
-	envia_registro_bdd("N::%s::pass %s", parv[0], MDString(param[1]));
-	envia_registro_bdd("N::%s::desafio md5", parv[0]);
+	envia_registro_bdd("N::%s::P %s", parv[0], MDString(param[1]));
+	envia_registro_bdd("N::%s::D md5", parv[0]);
 	response(cl, CLI(nickserv), "Migración realizada.");
 	opts |= NS_OPT_UDB;
 	_mysql_add(NS_MYSQL, parv[0], "opts", "%i", opts);
@@ -1414,7 +1416,7 @@ void cambia_nick_inv(Cliente *cl)
 #ifdef UDB
 int nickserv_sig_eos()
 {
-	envia_registro_bdd("S::NickServ %s", nickserv.hmod->mascara);
+	envia_registro_bdd("S::N %s", nickserv.hmod->mascara);
 	return 0;
 }
 #endif

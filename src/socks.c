@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.10 2005-03-24 12:10:55 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.11 2005-05-25 21:51:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,6 +7,9 @@
 #include "zlib.h"
 #endif
 #include "ircd.h"
+#ifndef _WIN32
+#include <errno.h>
+#endif
 int listens[MAX_LISTN];
 int listenS = 0;
 

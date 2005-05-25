@@ -144,6 +144,8 @@ EXPORTS
 
 	borra_sock
 
+	borra_tkl
+
 	botnick
 
 	buf
@@ -400,6 +402,8 @@ EXPORTS
 
 	inserta_sock
 
+	inserta_tkl
+
 	inserta_usuario_en_canal
 
 	intentos
@@ -489,6 +493,8 @@ EXPORTS
 	modes2flags
 
 	modulos
+
+	monta_mascara_tkl
 
 	mutex
 
