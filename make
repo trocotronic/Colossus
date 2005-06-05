@@ -1,4 +1,4 @@
-## $Id: make,v 1.19 2005-05-18 18:51:01 Trocotronic Exp $
+## $Id: make,v 1.20 2005-06-05 13:45:50 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -56,7 +56,7 @@ OPENSSL_LIB=/LIBPATH:"$(OPENSSL_LIB_DIR)"
 !ENDIF
 
 CFLAGS=$(DBGCFLAG) /I ./INCLUDE /J $(OPENSSL_INC) /Fosrc/ /nologo $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /D _WIN32 /c 
-LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIBLIB) ./src/pthreadVC1.lib \
+LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIBLIB) ./src/pthreadVC2.lib \
 	$(OPENSSL_LIB) $(SSLLIBS) Dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:colossus.def /implib:colossus.lib
 EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ \
@@ -77,9 +77,9 @@ INCLUDES = ./include/ircd.h ./include/md5.h \
 	./include/sprintf_irc.h ./include/struct.h ./include/ssl.h ./include/zlib.h  \
 	./include/sistema.h make
 MODCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
-MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
+MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS) ws2_32.lib
 PROTCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /nologo /I ./INCLUDE $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
-PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS)
+PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib ./src/libmysql.lib $(OPENSSL_LIB) $(SSLLIBS) ws2_32.lib
 
 ALL: SETUP COLOSSUS.EXE MODULES
 

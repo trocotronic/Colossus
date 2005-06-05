@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.11 2005-05-25 21:47:24 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.12 2005-06-05 13:45:52 Trocotronic Exp $ 
  */
 
 #ifdef UDB
@@ -95,7 +95,7 @@ DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);
 #define N_SWO "swhois"
 #define N_SWO_TOK "W"
 #define I_CLO "clones"
-#define I_CLO_TOK "C"
+#define I_CLO_TOK "S"
 #define I_NOL "nolines"
 #define I_NOL_TOK "E"
 #define S_CLA "clave_cifrado"
@@ -109,10 +109,10 @@ DLLFUNC extern int trunca_bloque(Cliente *, Udb *, u_long);
 #define S_IPS "IpServ"
 #define S_IPS_TOK "I"
 #define S_CLO "clones"
-#define S_CLO_TOK "C"
+#define S_CLO_TOK "S"
 #define S_QIP "quit_ips"
 #define S_QIP_TOK "T"
 #define S_QCL "quit_clones"
-#define S_QCL_TOK "L"
+#define S_QCL_TOK "Q"
 
 #endif

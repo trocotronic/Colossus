@@ -37,8 +37,8 @@
  * See the README file for an explanation of the pthreads-win32 version
  * numbering scheme and how the DLL is named etc.
  */
-#define PTW32_VERSION 1,2,0,0
-#define PTW32_VERSION_STRING "1, 2, 0, 0\0"
+#define PTW32_VERSION 2,6,0,0
+#define PTW32_VERSION_STRING "2, 6, 0, 0\0"
 
 /* There are three implementations of cancel cleanup.
  * Note that pthread.h is included in both application
@@ -191,15 +191,6 @@
 
 /* Try to avoid including windows.h */
 #if defined(__MINGW32__) && defined(__cplusplus)
-/*
- * FIXME: The pthreadGCE.dll build gets linker unresolved errors
- * on pthread_key_create() unless windows.h is included here.
- * It appears to have something to do with an argument type mismatch.
- * Looking at tsd.o with 'nm' shows this line:
- * 00000000 T _pthread_key_create__FPP14pthread_key_t_PFPv_v
- * instead of
- * 00000000 T _pthread_key_create
- */
 #define PTW32_INCLUDE_WINDOWS_H
 #endif
 
@@ -222,26 +213,6 @@ typedef unsigned long DWORD_PTR;
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif /* HAVE_CONFIG_H */
-
-#if PTW32_LEVEL >= PTW32_LEVEL_MAX
-
-/* Try to avoid including windows.h */
-#if defined(__MINGW32__) && defined(__cplusplus)
-/*
- * FIXME: The pthreadGCE.dll build gets linker unresolved errors
- * on pthread_key_create() unless windows.h is included here.
- * It appears to have something to do with an argument type mismatch.
- * Looking at tsd.o with 'nm' shows this line:
- * 00000000 T _pthread_key_create__FPP14pthread_key_t_PFPv_v
- * instead of
- * 00000000 T _pthread_key_create
- */
-#define PTW32_INCLUDE_WINDOWS_H
-#endif
-
-#ifdef PTW32_INCLUDE_WINDOWS_H
-#include <windows.h>
-#endif
 
 #ifndef NEED_FTIME
 #include <time.h>
@@ -314,143 +285,7 @@ enum {
 #  endif
 #endif
 
-#ifndef _SCHED_H
-#define _SCHED_H
-
-#undef PTW32_LEVEL
-
-#if defined(_POSIX_SOURCE)
-#define PTW32_LEVEL 0
-/* Early POSIX */
-#endif
-
-#if defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 199309
-#undef PTW32_LEVEL
-#define PTW32_LEVEL 1
-/* Include 1b, 1c and 1d */
-#endif
-
-#if defined(INCLUDE_NP)
-#undef PTW32_LEVEL
-#define PTW32_LEVEL 2
-/* Include Non-Portable extensions */
-#endif
-
-#define PTW32_LEVEL_MAX 3
-
-#if !defined(PTW32_LEVEL)
-#define PTW32_LEVEL PTW32_LEVEL_MAX
-/* Include everything */
-#endif
-
-
-#if __GNUC__ && ! defined (__declspec)
-# error Please upgrade your GNU compiler to one that supports __declspec.
-#endif
-
-/*
- * When building the DLL code, you should define PTW32_BUILD so that
- * the variables/functions are exported correctly. When using the DLL,
- * do NOT define PTW32_BUILD, and then the variables/functions will
- * be imported correctly.
- */
-#ifdef PTW32_BUILD
-# define PTW32_DLLPORT __declspec (dllexport)
-#else
-# define PTW32_DLLPORT __declspec (dllimport)
-#endif
-
-/*
- * This is a duplicate of what is in the autoconf config.h,
- * which is only used when building the pthread-win32 libraries.
- */
-
-#ifndef PTW32_CONFIG_H
-#  if defined(WINCE)
-#    define NEED_ERRNO
-#    define NEED_SEM
-#  endif
-#  if defined(_UWIN) || defined(__MINGW32__)
-#    define HAVE_MODE_T
-#  endif
-#endif
-
-/*
- *
- */
-
-#if PTW32_LEVEL >= PTW32_LEVEL_MAX
-#ifdef NEED_ERRNO
-#include "need_errno.h"
-#else
-#include <errno.h>
-#endif
-#endif /* PTW32_LEVEL >= PTW32_LEVEL_MAX */
-
-#if defined(__MINGW32__) || defined(_UWIN)
-#if PTW32_LEVEL >= PTW32_LEVEL_MAX
-/* For pid_t */
-#  include <sys/types.h>
-/* Required by Unix 98 */
-#  include <time.h>
-#endif /* PTW32_LEVEL >= PTW32_LEVEL_MAX */
-#else
-typedef int pid_t;
-#endif
-
-/* Thread scheduling policies */
-
-enum {
-  SCHED_OTHER = 0,
-  SCHED_FIFO,
-  SCHED_RR,
-  SCHED_MIN   = SCHED_OTHER,
-  SCHED_MAX   = SCHED_RR
-};
-
-struct sched_param {
-  int sched_priority;
-};
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif                          /* __cplusplus */
-
-PTW32_DLLPORT int __cdecl sched_yield (void);
-
-PTW32_DLLPORT int __cdecl sched_get_priority_min (int policy);
-
-PTW32_DLLPORT int __cdecl sched_get_priority_max (int policy);
-
-PTW32_DLLPORT int __cdecl sched_setscheduler (pid_t pid, int policy);
-
-PTW32_DLLPORT int __cdecl sched_getscheduler (pid_t pid);
-
-/*
- * Note that this macro returns ENOTSUP rather than
- * ENOSYS as might be expected. However, returning ENOSYS
- * should mean that sched_get_priority_{min,max} are
- * not implemented as well as sched_rr_get_interval.
- * This is not the case, since we just don't support
- * round-robin scheduling. Therefore I have chosen to
- * return the same value as sched_setscheduler when
- * SCHED_RR is passed to it.
- */
-#define sched_rr_get_interval(_pid, _interval) \
-  ( errno = ENOTSUP, (int) -1 )
-
-
-#ifdef __cplusplus
-}                               /* End of extern "C" */
-#endif                          /* __cplusplus */
-
-#undef PTW32_LEVEL
-#undef PTW32_LEVEL_MAX
-
-#endif                          /* !_SCHED_H */
-
-
+#include <sched.h>
 
 /*
  * To avoid including windows.h we define only those things that we
@@ -467,8 +302,6 @@ PTW32_DLLPORT int __cdecl sched_getscheduler (pid_t pid);
 # define DWORD unsigned long
 #endif
 #endif
-
-#endif /* PTW32_LEVEL >= PTW32_LEVEL_MAX */
 
 #ifndef HAVE_STRUCT_TIMESPEC
 #define HAVE_STRUCT_TIMESPEC 1
@@ -646,40 +479,49 @@ extern "C"
  *                      Maximum number of threads supported per
  *                      process (must be at least 64).
  *
- * _POSIX_SEM_NSEMS_MAX
- *      The maximum number of semaphores a process can have.
- *      (only defined if not already defined)
+ * SEM_NSEMS_MAX
+ *                      The maximum number of semaphores a process can have.
+ *                      (must be at least 256)
  *
- * _POSIX_SEM_VALUE_MAX
- *      The maximum value a semaphore can have.
- *      (only defined if not already defined)
+ * SEM_VALUE_MAX
+ *                      The maximum value a semaphore can have.
+ *                      (must be at least 32767)
  *
  */
+#undef _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+#define _POSIX_THREAD_DESTRUCTOR_ITERATIONS     4
+
 #undef PTHREAD_DESTRUCTOR_ITERATIONS
-#define PTHREAD_DESTRUCTOR_ITERATIONS                          4
+#define PTHREAD_DESTRUCTOR_ITERATIONS           _POSIX_THREAD_DESTRUCTOR_ITERATIONS
+
+#undef _POSIX_THREAD_KEYS_MAX
+#define _POSIX_THREAD_KEYS_MAX                  128
 
 #undef PTHREAD_KEYS_MAX
-#define PTHREAD_KEYS_MAX                        64
+#define PTHREAD_KEYS_MAX                        _POSIX_THREAD_KEYS_MAX
 
 #undef PTHREAD_STACK_MIN
-#define PTHREAD_STACK_MIN                        0
+#define PTHREAD_STACK_MIN                       0
 
-#if PTW32_LEVEL < 2
-  /* Arbitrary value */
-#  undef PTHREAD_THREADS_MAX
-#  define PTHREAD_THREADS_MAX                   2019
-#endif
-
-  /* Arbitrary value */
 #undef _POSIX_THREAD_THREADS_MAX
-#define _POSIX_THREAD_THREADS_MAX               2019
+#define _POSIX_THREAD_THREADS_MAX               64
 
   /* Arbitrary value */
+#undef PTHREAD_THREADS_MAX
+#define PTHREAD_THREADS_MAX                     2019
+
 #undef _POSIX_SEM_NSEMS_MAX
-#define _POSIX_SEM_NSEMS_MAX                    1024
+#define _POSIX_SEM_NSEMS_MAX                    256
+
+  /* Arbitrary value */
+#undef SEM_NSEMS_MAX
+#define SEM_NSEMS_MAX                           1024
 
 #undef _POSIX_SEM_VALUE_MAX
-#define _POSIX_SEM_VALUE_MAX                    (INT_MAX/2)
+#define _POSIX_SEM_VALUE_MAX                    32767
+
+#undef SEM_VALUE_MAX
+#define SEM_VALUE_MAX                           INT_MAX
 
 
 #if __GNUC__ && ! defined (__declspec)
@@ -692,12 +534,14 @@ extern "C"
  * do NOT define PTW32_BUILD, and then the variables/functions will
  * be imported correctly.
  */
-#ifdef _DLL
+#ifndef PTW32_STATIC_LIB
 #  ifdef PTW32_BUILD
 #    define PTW32_DLLPORT __declspec (dllexport)
 #  else
 #    define PTW32_DLLPORT __declspec (dllimport)
 #  endif
+#else
+#  define PTW32_DLLPORT
 #endif
 
 /*
@@ -809,13 +653,14 @@ enum {
  * ====================
  * ====================
  */
-#define PTHREAD_ONCE_INIT       { PTW32_FALSE, -1 }
+#define PTHREAD_ONCE_INIT       { PTW32_FALSE, PTW32_FALSE, 0, 0}
 
 struct pthread_once_t_
 {
-  volatile int done;        /* indicates if user function executed  */
-  long started;             /* First thread to increment this value */
-                            /* to zero executes the user function   */
+  int          done;        /* indicates if user function has been executed */
+  int          started;
+  int          numSemaphoreUsers;
+  HANDLE       semaphore;
 };
 
 

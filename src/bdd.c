@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.26 2005-05-25 21:47:25 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.27 2005-06-05 13:45:53 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -68,14 +68,14 @@ void bdd_init()
 	mkdir(DB_DIR, 0744);
 #endif
 	bzero(bloques, sizeof(bloques));
+	if (!sets)
+		alta_bloque('S', DB_DIR "set.udb", &sets, &BDD_SET);
 	if (!nicks)
 		alta_bloque('N', DB_DIR "nicks.udb", &nicks, &BDD_NICKS);
 	if (!chans)
 		alta_bloque('C', DB_DIR "canales.udb", &chans, &BDD_CHANS);
 	if (!ips)
 		alta_bloque('I', DB_DIR "ips.udb", &ips, &BDD_IPS);
-	if (!sets)
-		alta_bloque('S', DB_DIR "set.udb", &sets, &BDD_SET);
 	alta_hash();
 	if ((fh = fopen(DB_DIR "crcs", "a")))
 		fclose(fh);

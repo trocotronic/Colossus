@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.36 2005-05-18 18:51:02 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.37 2005-06-05 13:45:52 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -330,8 +330,6 @@ extern int copyfile(char *, char *);
 #define SSLFLAG_DONOTACCEPTSELFSIGNED 0x4
 #endif
 extern char *my_itoa(int);
-extern char *decode_ip(char *);
-extern char *encode_ip(char *);
 extern int b64_decode(char const *src, u_char *, size_t);
 extern int b64_encode(u_char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;

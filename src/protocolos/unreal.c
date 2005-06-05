@@ -450,6 +450,25 @@ void entra_usuario(Cliente *, char *);
 void dale_cosas(Cliente *);
 int comprueba_opts(Proc *);
 #endif
+char *decode_ip(char *buf)
+{
+	int len = strlen(buf);
+	char targ[25];
+	b64_decode(buf, targ, 25);
+	if (len == 8)
+		return inet_ntoa(*(struct in_addr *)targ);
+	return NULL;
+}
+char *encode_ip(char *ip)
+{
+	struct in_addr ia;
+	static char buf[25];
+	u_char *cp;
+	ia.s_addr = inet_addr(ip);
+	cp = (u_char *)ia.s_addr;
+	b64_encode((char *)&cp, sizeof(struct in_addr), buf, 25);
+	return buf;
+}
 int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 
 char *p_trio(Cliente *cl)
@@ -581,7 +600,8 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 }
 int p_nuevonick(Cliente *al)
 {
-	sendto_serv("%s %s 1 %lu %s %s %s 0 +%s %s :%s", TOK_NICK, al->nombre, time(0), al->ident, al->host, al->server->nombre, modes2flags(al->modos, umodos, NULL), al->host, al->info);
+	gethostname(buf, sizeof(buf));
+	sendto_serv("%s %s 1 %lu %s %s %s 0 +%s %s %s :%s", TOK_NICK, al->nombre, time(0), al->ident, al->host, al->server->nombre, modes2flags(al->modos, umodos, NULL), al->host, encode_ip(buf), al->info);
 	return 0;
 }
 int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
@@ -1225,6 +1245,7 @@ IRCFUNC(m_kill)
 	if ((al = busca_cliente(parv[1], NULL)))
 	{
 		LinkCanal *lk;
+		senyal2(SIGN_QUIT, al, parv[1]);
 		for (lk = al->canal; lk; lk = lk->sig)
 			borra_cliente_de_canal(lk->chan, al);
 		libera_cliente_de_memoria(al);

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.40 2005-05-18 18:51:04 Trocotronic Exp $ 
+ * $Id: main.c,v 1.41 2005-06-05 13:45:53 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -420,7 +420,6 @@ void dominum(Host *aux)
 		ircfree(*aux->destino);
 	Free(aux->ip);
 	Free(aux);
-	pthread_exit(NULL);
 }
 void resuelve_host(char **destino, char *ip)
 {
@@ -441,25 +440,6 @@ void resuelve_host(char **destino, char *ip)
 	}
 	else
 		*destino = strdup(ip);
-}
-char *decode_ip(char *buf)
-{
-	int len = strlen(buf);
-	char targ[25];
-	b64_decode(buf, targ, 25);
-	if (len == 8)
-		return inet_ntoa(*(struct in_addr *)targ);
-	return NULL;
-}
-char *encode_ip(char *ip)
-{
-	struct in_addr ia;
-	static char buf[25];
-	u_char *cp;
-	ia.s_addr = inet_addr(ip);
-	cp = (u_char *)ia.s_addr;
-	b64_encode((char *)&cp, sizeof(struct in_addr), buf, 25);
-	return buf;
 }
 int randomiza(int ini, int fin)
 {

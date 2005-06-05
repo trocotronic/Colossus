@@ -270,8 +270,6 @@ EXPORTS
 
 	da_formato
 
-	decode_ip
-
 	del_item
 
 	descarga_bloque
@@ -301,8 +299,6 @@ EXPORTS
 	elimina_slot
 
 	email
-
-	encode_ip
 
 	encola
 
