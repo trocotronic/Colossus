@@ -1,6 +1,24 @@
 ; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
-	vsprintf_irc
+	untea
+
+	ActualizaGMT
+
+	ActualizaHash
+
+	Aleatorio
+
+	AleatorioEx
+
+	Alerta
+
+	AltaBloque
+
+	AltaHash
+
+	ApagaCrono
+
+	BDD_CHANS
 
 	BDD_IPS
 
@@ -10,51 +28,429 @@ EXPORTS
 
 	BDD_TOTAL
 
+	BddInit
+
+	BorraBanDeCanal
+
+	BorraCache
+
+	BorraCanalDeCliente
+
+	BorraCanalDeHash
+
+	BorraClienteDeCanal
+
+	BorraClienteDeHash
+
+	BorraComando
+
+	BorraModoCliente
+
+	BorraRegistro
+
+	BorraRegistroDeHash
+
+	BorraSenyal
+
+	BorraSock
+
+	BorraTKL
+
+	BorraTemporales
+
+	BuscaBloque
+
+	BuscaCanal
+
+	BuscaCanalEnHash
+
+	BuscaCliente
+
+	BuscaClienteEnHash
+
+	BuscaComando
+
+	BuscaEntrada
+
+	BuscaFuncion
+
+	BuscaModulo
+
+	BuscaRegistro
+
+	BuscaUdbEnHash
+
+	CTXInitCliente
+
+	CTXInitServer
+
+	CambiaNick
+
+	CargaBloque
+
+	CargaBloques
+
+	CargaCache
+
+	CargaModulos
+
+	CargaMySQL
+
+	CargaProtocolo
+
+	CharAId
+
 	ChkBtCon
+
+	CierraColossus
+
+	CierraIrcd
+
+	CierraSmtp
+
+	CierraSocks
+
+	CierraTodo
+
+	CifraCadenaAHex
+
+	CifraIpTEA
+
+	CifraNick
 
 	CleanUp
 
 	CleanUpSegv
 
+	Cmd
+
+	CogeCache
+
+	CompletaConexion
+
+	CompruebaCronos
+
 	ConfErrorDLG
+
+	CopiaSlot
+
+	Crc32
+
+	CreaBot
+
+	CreaMensaje
+
+	CreaModulo
+
+	CreaRegistro
+
+	DaFormato
 
 	Debug
 
+	DescargaBloque
+
+	DescargaConfiguracion
+
+	DescargaModulo
+
+	DescargaModulos
+
+	DesconectaBot
+
+	Desencola
+
+	DesencolaSmtp
+
+	DetieneProceso
+
+	DistribuyeConfiguracion
+
+	DistribuyeMe
+
+	Dominio
+
+	EliminaSlot
+
+	Email
+
+	Encola
+
+	EncolaSmtp
+
+	EntraBot
+
+	EntraBots
+
+	EntraResidentes
+
+	EnviaAServidor
+
+	EnviaCola
+
+	EnviaEmail
+
+	Error
+
+	ErrorDl
+
+	ErrorSSL
+
+	EsArchivo
+
 	EsIp
+
+	EsLink
+
+	EsLinkCanal
+
+	EscribePid
+
+	EscuchaAbre
 
 	EscuchaIrcd
 
+	ExMalloc
+
+	Fecha
+
+	FlagAModo
+
+	FlagsAModos
+
+	GeneraMascara
+
+	GuardaEnArchivo
+
+	GuardaEnArchivoInv
+
+	HashCanal
+
+	HashCliente
+
+	IdAChar
+
+	IdAUdb
+
 	Info
 
+	InfoCanal
+
+	IniciaCrono
+
+	IniciaIrcd
+
+	IniciaProceso
+
+	IniciaProcesos
+
+	IniciaPrograma
+
+	InsertaBan
+
+	InsertaCache
+
+	InsertaCanalEnCliente
+
+	InsertaCanalEnHash
+
+	InsertaClienteEnCanal
+
+	InsertaClienteEnHash
+
+	InsertaComando
+
+	InsertaModoCliente
+
+	InsertaRegistro
+
+	InsertaRegistroEnHash
+
+	InsertaSenyal
+
+	InsertaSock
+
+	InsertaTKL
+
+	IrcdEscucha
+
+	LeeGMT
+
+	LeeHash
+
+	LeeMensaje
+
+	LeeSocks
+
+	LiberaMemoriaCanal
+
+	LiberaMemoriaCliente
+
+	LiberaMemoriaConfiguracion
+
+	LiberaMemoriaDb
+
+	LiberaMemoriaLog
+
+	LiberaMemoriaMensaje
+
+	LiberaMemoriaProtocolo
+
+	LiberaMemoriaSSL
+
+	LiberaMemoriaServer
+
+	LiberaMemoriaSet
+
+	LiberaMemoriaSmtp
+
+	LiberaMemoriaUdb
+
 	ListaSocks
+
+	Loguea
+
+	LoopPrincipal
 
 	MDString
 
 	MainDLG
 
+	MascaraIrcd
+
+	MascaraTKL
+
+	ModoAFlag
+
+	ModosAFlags
+
+	Mx
+
+	MySQLBackup
+
+	MySQLBorra
+
+	MySQLCargaTablas
+
+	MySQLCogeNumero
+
+	MySQLCogeRegistro
+
+	MySQLEsTabla
+
+	MySQLEscapa
+
+	MySQLFetchArray
+
+	MySQLInserta
+
+	MySQLQuery
+
+	MySQLRestaura
+
 	NTL_tolower_tab
 
 	NTL_toupper_tab
 
+	NivelOperBdd
+
+	NuevoCliente
+
+	ObtieneHash
+
+	Optimiza
+
+	ParseSmtp
+
+	ParseaConfiguracion
+
+	ParseaLinea
+
+	ProcCache
+
+	ProcesaIrcd
+
+	ProcesaModosCliente
+
+	ProcesaSmtp
+
+	ProcesosAuxiliares
+
+	PropagaRegistro
+
+	ReconectaBot
+
+	Refresca
+
+	Reinicia
+
+	Repite
+
+	Responde
+
+	Resuelve
+
+	ResuelveHost
+
 	SO
+
+	SSLAccept
+
+	SSLCifrado
+
+	SSLClienteConexion
+
+	SSLConnect
+
+	SSLInit
 
 	SSLKeyPasswd
 
 	SSLPassDLG
 
-	SSL_set_nonblocking
+	SSLPemPasswd
 
-	SSL_smart_shutdown
+	SSLShutDown
+
+	SSLSockNoBlock
+
+	SSLSockRead
+
+	SSLSockWrite
+
+	SacaBot
+
+	SockAccept
 
 	SockActual
 
+	SockClose
+
 	SockIrcd
 
-	StsMalloc
+	SockListen
+
+	SockNoBlock
+
+	SockOpen
+
+	SockWrite
+
+	SockWriteVL
 
 	SysTray
 
 	TaskBarCreated
+
+	TipoMascara
+
+	Token
+
+	TruncaBloque
+
+	Unifica
+
+	VaciaHash
 
 	VerInfo
 
@@ -62,41 +458,15 @@ EXPORTS
 
 	WinMain
 
-	_asctime
+	ZLibComprime
 
-	_mysql_add
+	ZLibDescomprime
 
-	_mysql_backup
+	ZLibInit
 
-	_mysql_carga_tablas
-
-	_mysql_del
-
-	_mysql_escapa
-
-	_mysql_existe_tabla
-
-	_mysql_fetch_array
-
-	_mysql_get_num
-
-	_mysql_get_registro
-
-	_mysql_query
-
-	_mysql_restaura
-
-	abre_sock_ircd
-
-	actualiza_gmt
-
-	actualiza_hash
+	ZLibLibera
 
 	add_item
-
-	alta_bloque
-
-	alta_hash
 
 	atoi_tab
 
@@ -112,131 +482,27 @@ EXPORTS
 
 	base64toint
 
-	bdd_init
-
 	bloques
-
-	borra_ban_de_canal
-
-	borra_cache
-
-	borra_canal_de_hash
-
-	borra_canal_de_usuario
-
-	borra_cliente_de_canal
-
-	borra_cliente_de_hash
-
-	borra_comando
 
 	borra_exc_de_canal
 
-	borra_mensaje
-
-	borra_modo_cliente_de_canal
-
-	borra_registro
-
-	borra_registro_de_hash
-
-	borra_senyal
-
-	borra_sock
-
-	borra_tkl
-
-	botnick
-
 	buf
 
-	busca_bloque
-
-	busca_canal
-
-	busca_canal_en_hash
-
-	busca_cliente
-
-	busca_cliente_en_hash
-
-	busca_comando
-
-	busca_entrada
-
-	busca_funcion
-
-	busca_modulo
-
-	busca_registro
-
-	busca_udb_en_hash
-
 	cTab
-
-	cambia_nick
 
 	canal_debug
 
 	canales
 
-	carga_bloque
-
-	carga_bloques
-
-	carga_cache
-
-	carga_modulos
-
-	carga_mysql
-
-	carga_programa
-
-	carga_protocolo
-
 	chans
 
 	chrcat
 
-	cierra_colossus
-
-	cierra_ircd
-
-	cierra_smtp
-
-	cierra_socks
-
-	cierra_todo
-
-	cifra_ip
-
-	cifrado_str
-
-	cifranick
-
 	clientes
-
-	cmd
-
-	coge_cache
-
-	coge_de_char
-
-	coge_de_id
-
-	coge_de_tipo
-
-	coge_mx
 
 	colasmtp
 
 	comandos
-
-	completa_conexion
-
-	comprime
-
-	comprueba_timers
 
 	conf_db
 
@@ -250,83 +516,15 @@ EXPORTS
 
 	conf_ssl
 
-	conferror
-
 	conta
 
-	copia_slot
-
 	copyfile
-
-	crea_mensaje
-
-	crea_modulo
-
-	crea_registro
 
 	ctx_client
 
 	ctx_server
 
-	da_formato
-
 	del_item
-
-	descarga_bloque
-
-	descarga_conf
-
-	descarga_modulo
-
-	descarga_modulos
-
-	descomprime
-
-	desencola
-
-	desencola_smtp
-
-	destruye_temporales
-
-	distribuye_conf
-
-	distribuye_me
-
-	dominum
-
-	dropacache
-
-	elimina_slot
-
-	email
-
-	encola
-
-	encola_smtp
-
-	envia_cola
-
-	envia_email
-
-	envia_registro_bdd
-
-	es_link
-
-	es_linkcanal
-
-	escribe_pid
-
-	escucha_abre
-
-	escucha_ircd
-
-	fecho
-
-	flag2mode
-
-	flags2modes
-
-	genera_mask
 
 	getfilemodtime
 
@@ -334,19 +532,11 @@ EXPORTS
 
 	gmts
 
-	guarda_en_archivo
-
-	guarda_en_archivo_ex
-
 	hInst
 
 	hThreadPrincipal
 
 	hash
-
-	hash_canal
-
-	hash_cliente
 
 	hwConfError
 
@@ -354,53 +544,11 @@ EXPORTS
 
 	id
 
-	implode
-
-	info_canal
-
-	inicia_ircd
-
-	inicia_procesos
-
-	inicia_zlib
-
 	iniciado
 
 	inicio
 
-	init_ctx_client
-
-	init_ctx_server
-
-	init_ssl
-
-	inserta_ban_en_canal
-
-	inserta_cache
-
-	inserta_canal_en_hash
-
-	inserta_canal_en_usuario
-
-	inserta_cliente_en_hash
-
-	inserta_comando
-
 	inserta_exc_en_canal
-
-	inserta_modo_cliente_en_canal
-
-	inserta_registro
-
-	inserta_registro_en_hash
-
-	inserta_senyal
-
-	inserta_sock
-
-	inserta_tkl
-
-	inserta_usuario_en_canal
 
 	intentos
 
@@ -408,57 +556,9 @@ EXPORTS
 
 	ips
 
-	ircd_SSL_accept
+	ircsprintf
 
-	ircd_SSL_client_handshake
-
-	ircd_SSL_connect
-
-	ircd_SSL_read
-
-	ircd_SSL_write
-
-	ircd_log
-
-	ircdmask
-
-	is_file
-
-	killbot
-
-	lee_gmt
-
-	lee_hash
-
-	lee_mensaje
-
-	lee_socks
-
-	level_oper_bdd
-
-	libera_canal_de_memoria
-
-	libera_cliente_de_memoria
-
-	libera_conf
-
-	libera_db
-
-	libera_log
-
-	libera_memoria_udb
-
-	libera_protocolo
-
-	libera_server
-
-	libera_set
-
-	libera_smtp
-
-	libera_ssl
-
-	libera_zlib
+	ircvsprintf
 
 	linkado
 
@@ -468,29 +568,15 @@ EXPORTS
 
 	margv
 
-	mascara
-
 	match
 
 	me
 
-	mete_bot_en_canal
-
-	mete_bots
-
-	mete_residentes
-
 	microtime
-
-	mode2flag
 
 	modebuf
 
-	modes2flags
-
 	modulos
-
-	monta_mascara_tkl
 
 	mutex
 
@@ -502,67 +588,17 @@ EXPORTS
 
 	nicks
 
-	nuevo_cliente
-
-	obtiene_hash
-
-	optimiza
-
-	our_crc32
-
-	our_dlerror
-
 	parabuf
-
-	parse_smtp
-
-	parsea_linea
-
-	parseconf
 
 	print_r
 
-	proc
-
-	proc_stop
-
-	procesa_ircd
-
-	procesa_smtp
-
-	procesa_umodos
-
-	procesos_auxiliares
+	printea
 
 	procs
 
-	programa_loop_principal
-
 	protocolo
 
-	random_ex
-
-	randomiza
-
-	refresca
-
-	reinicia
-
-	renick_bot
-
 	reset
-
-	resolv
-
-	response
-
-	resuelve_host
-
-	saca_bot_de_canal
-
-	sendto_serv
-
-	sendto_serv_us
 
 	senyals
 
@@ -570,29 +606,7 @@ EXPORTS
 
 	sets
 
-	sockaccept
-
-	sockblock
-
-	sockclose
-
-	socklisten
-
-	sockopen
-
-	sockwrite
-
-	sockwritev
-
 	spath
-
-	sprintf_irc
-
-	ssl_error_str
-
-	ssl_get_cipher
-
-	ssl_pem_passwd_cb
 
 	str_replace
 
@@ -608,25 +622,15 @@ EXPORTS
 
 	tea
 
-	timer
-
-	timer_off
-
 	timers
 
 	tokbuf
 
-	token
-
 	totalcola
-
-	trunca_bloque
 
 	uTab
 
 	ultimo
 
-	untea
-
-	BDD_CHANS
+	AbreSockIrcd
 

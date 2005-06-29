@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.21 2005-05-25 21:47:25 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.22 2005-06-29 21:14:00 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,107 +14,103 @@
 #include "modulos/nickserv.h"
 
 ChanServ chanserv;
-#define exfunc(x) busca_funcion(chanserv.hmod, x, NULL)
+#define ExFunc(x) BuscaFuncion(chanserv.hmod, x, NULL)
 Hash csregs[UMAX];
 Hash akicks[CHMAX];
 
-BOTFUNC(chanserv_help);
-BOTFUNC(chanserv_deauth);
-BOTFUNC(chanserv_drop);
-BOTFUNC(chanserv_identify);
-BOTFUNC(chanserv_info);
-BOTFUNC(chanserv_invite);
-BOTFUNC(chanserv_modos);
-BOTFUNC(chanserv_clear);
-BOTFUNC(chanserv_set);
-BOTFUNC(chanserv_akick);
-BOTFUNC(chanserv_access);
-BOTFUNC(chanserv_list);
-BOTFUNC(chanserv_jb);
-BOTFUNC(chanserv_sendpass);
-BOTFUNC(chanserv_suspender);
-BOTFUNC(chanserv_liberar);
-BOTFUNC(chanserv_forbid);
-BOTFUNC(chanserv_unforbid);
-BOTFUNC(chanserv_block);
-BOTFUNC(chanserv_register);
-BOTFUNC(chanserv_token);
+BOTFUNC(CSHelp);
+BOTFUNC(CSDeauth);
+BOTFUNC(CSDrop);
+BOTFUNC(CSIdentify);
+BOTFUNC(CSInfo);
+BOTFUNC(CSInvite);
+BOTFUNC(CSModos);
+BOTFUNC(CSClear);
+BOTFUNC(CSOpts);
+BOTFUNC(CSAkick);
+BOTFUNC(CSAccess);
+BOTFUNC(CSList);
+BOTFUNC(CSJb);
+BOTFUNC(CSSendpass);
+BOTFUNC(CSSuspender);
+BOTFUNC(CSLiberar);
+BOTFUNC(CSForbid);
+BOTFUNC(CSUnforbid);
+BOTFUNC(CSBlock);
+BOTFUNC(CSRegister);
+BOTFUNC(CSToken);
 #ifdef UDB
-BOTFUNC(chanserv_migrar);
-BOTFUNC(chanserv_demigrar);
-BOTFUNC(chanserv_proteger);
+BOTFUNC(CSMigrar);
+BOTFUNC(CSDemigrar);
+BOTFUNC(CSProteger);
 #endif
 
-int chanserv_sig_mysql	();
-int chanserv_sig_eos	();
-int chanserv_sig_synch	();
-int chanserv_sig_prenick (Cliente *, char *);
+int CSSigMySQL	();
+int CSSigEOS	();
+int CSSigSynch	();
+int CSSigPreNick (Cliente *, char *);
 
-int chanserv_dropachans(Proc *);
-int chanserv_dropanick(char *);
-int chanserv_baja(char *, char);
+int CSDropachans(Proc *);
+int CSDropanick(char *);
+int CSBaja(char *, char);
 
-int chanserv_mode(Cliente *, Canal *, char *[], int);
-int chanserv_join(Cliente *, Canal *);
-int chanserv_kick(Cliente *, Cliente *, Canal *, char *);
-int chanserv_topic(Cliente *, Canal *, char *);
+int CSCmdMode(Cliente *, Canal *, char *[], int);
+int CSCmdJoin(Cliente *, Canal *);
+int CSCmdKick(Cliente *, Cliente *, Canal *, char *);
+int CSCmdTopic(Cliente *, Canal *, char *);
 
-void chanserv_carga_registros(void);
-void chanserv_carga_akicks(void);
-void inserta_cregistro(char *, char *, u_long);
-void borra_cregistro(char *, char *);
-Akick *inserta_akick(char *, char *, char *, char *);
-void borra_akick(char *, char *);
-Akick *busca_akicks(char *);
-int es_kick(char *, char *);
-int es_cregistro(char *, char *);
-int test(Conf *, int *);
-void set(Conf *, Modulo *);
+void CSCargaRegistros(void);
+void CSCargaAkicks(void);
+void CSInsertaRegistro(char *, char *, u_long);
+void CSBorraRegistro(char *, char *);
+Akick *CSInsertaAkick(char *, char *, char *, char *);
+void CSBorraAkick(char *, char *);
+Akick *CSBuscaAkicks(char *);
+int CSEsAkick(char *, char *);
+int CSEsRegistro(char *, char *);
+int CSTest(Conf *, int *);
+void CSSet(Conf *, Modulo *);
 
 static bCom chanserv_coms[] = {
-	{ "help" , chanserv_help , TODOS } ,
-	{ "deauth" , chanserv_deauth , USERS } ,
-	{ "drop" , chanserv_drop , OPERS } ,
-	{ "identify" , chanserv_identify , USERS } ,
-	{ "info" , chanserv_info , TODOS } ,
-	{ "invite" , chanserv_invite , USERS } ,
-	{ "admin" , chanserv_modos , USERS } ,
-	{ "deadmin" , chanserv_modos , USERS } ,
-	{ "op" , chanserv_modos , USERS } ,
-	{ "deop" , chanserv_modos , USERS } ,
-	{ "half" , chanserv_modos , USERS } ,
-	{ "dehalf" , chanserv_modos , USERS } ,
-	{ "voice" , chanserv_modos , USERS } ,
-	{ "devoice" , chanserv_modos , USERS } ,
-	{ "kick" , chanserv_modos , USERS } ,
-	{ "ban" , chanserv_modos , USERS } ,
-	{ "unban" , chanserv_modos , USERS } ,
-	{ "clear" , chanserv_clear , USERS } ,
-	{ "set" , chanserv_set , USERS } ,
-	{ "akick" , chanserv_akick , USERS } ,
-	{ "access" , chanserv_access , USERS } ,
-	{ "list" , chanserv_list , TODOS } ,
-	{ "join" , chanserv_jb , USERS } ,
-	{ "sendpass" , chanserv_sendpass , PREOS } ,
-	{ "suspender" , chanserv_suspender , OPERS } ,
-	{ "liberar" , chanserv_liberar , OPERS } ,
-	{ "forbid" , chanserv_forbid , ADMINS } ,
-	{ "unforbid" , chanserv_unforbid , ADMINS } ,
-	{ "block" , chanserv_block , PREOS } ,
-	{ "register" , chanserv_register , USERS } ,
-	{ "token" , chanserv_token , USERS } ,
+	{ "help" , CSHelp , TODOS } ,
+	{ "deauth" , CSDeauth , USERS } ,
+	{ "drop" , CSDrop , OPERS } ,
+	{ "identify" , CSIdentify , USERS } ,
+	{ "info" , CSInfo , TODOS } ,
+	{ "invite" , CSInvite , USERS } ,
+	{ "admin" , CSModos , USERS } ,
+	{ "deadmin" , CSModos , USERS } ,
+	{ "op" , CSModos , USERS } ,
+	{ "deop" , CSModos , USERS } ,
+	{ "half" , CSModos , USERS } ,
+	{ "dehalf" , CSModos , USERS } ,
+	{ "voice" , CSModos , USERS } ,
+	{ "devoice" , CSModos , USERS } ,
+	{ "kick" , CSModos , USERS } ,
+	{ "ban" , CSModos , USERS } ,
+	{ "unban" , CSModos , USERS } ,
+	{ "clear" , CSClear , USERS } ,
+	{ "set" , CSOpts , USERS } ,
+	{ "akick" , CSAkick , USERS } ,
+	{ "access" , CSAccess , USERS } ,
+	{ "list" , CSList , TODOS } ,
+	{ "join" , CSJb , USERS } ,
+	{ "sendpass" , CSSendpass , PREOS } ,
+	{ "suspender" , CSSuspender , OPERS } ,
+	{ "liberar" , CSLiberar , OPERS } ,
+	{ "forbid" , CSForbid , ADMINS } ,
+	{ "unforbid" , CSUnforbid , ADMINS } ,
+	{ "block" , CSBlock , PREOS } ,
+	{ "register" , CSRegister , USERS } ,
+	{ "token" , CSToken , USERS } ,
 #ifdef UDB
-	{ "migrar" , chanserv_migrar , USERS } ,
-	{ "demigrar" , chanserv_demigrar , USERS } ,
-	{ "proteger" , chanserv_proteger , USERS } ,
+	{ "migrar" , CSMigrar , USERS } ,
+	{ "demigrar" , CSDemigrar , USERS } ,
+	{ "proteger" , CSProteger , USERS } ,
 #endif
 	{ 0x0 , 0x0 , 0x0 }
 };
-#ifdef _WIN32
-__declspec(dllexport) mTab cFlags[] = {
-#else
-mTab cFlags[] = {
-#endif
+DLLFUNC mTab cFlags[] = {
 	{ CS_LEV_SET , 's' } ,
 	{ CS_LEV_EDT , 'e' } ,
 	{ CS_LEV_LIS , 'l' } ,
@@ -145,59 +141,59 @@ int carga(Modulo *mod)
 	int errores = 0;
 	if (!mod->config)
 	{
-		conferror("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
 		errores++;
 	}
 	else
 	{
-		if (parseconf(mod->config, &modulo, 1))
+		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			conferror("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
 			errores++;
 		}
 		else
 		{
 			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
 			{
-				if (!test(modulo.seccion[0], &errores))
-					set(modulo.seccion[0], mod);
+				if (!CSTest(modulo.seccion[0], &errores))
+					CSSet(modulo.seccion[0], mod);
 				else
 				{
-					conferror("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
 				errores++;
 			}
 		}
-		libera_conf(&modulo);
+		LiberaMemoriaConfiguracion(&modulo);
 	}
 	return errores;
 }
 int descarga()
 {
-	borra_senyal(SIGN_MODE, chanserv_mode);
-	borra_senyal(SIGN_TOPIC, chanserv_topic);
-	borra_senyal(SIGN_JOIN, chanserv_join);
-	borra_senyal(SIGN_KICK, chanserv_kick);
-	borra_senyal(SIGN_MYSQL, chanserv_sig_mysql);
-	borra_senyal(NS_SIGN_DROP, chanserv_dropanick);
-	borra_senyal(SIGN_EOS, chanserv_sig_eos);
-	borra_senyal(SIGN_SYNCH, chanserv_sig_synch);
-	borra_senyal(SIGN_PRE_NICK, chanserv_sig_prenick);
-	borra_senyal(SIGN_QUIT, chanserv_sig_prenick);
-	proc_stop(chanserv_dropachans);
-	bot_unset(chanserv);
+	BorraSenyal(SIGN_MODE, CSCmdMode);
+	BorraSenyal(SIGN_TOPIC, CSCmdTopic);
+	BorraSenyal(SIGN_JOIN, CSCmdJoin);
+	BorraSenyal(SIGN_KICK, CSCmdKick);
+	BorraSenyal(SIGN_MYSQL, CSSigMySQL);
+	BorraSenyal(NS_SIGN_DROP, CSDropanick);
+	BorraSenyal(SIGN_EOS, CSSigEOS);
+	BorraSenyal(SIGN_SYNCH, CSSigSynch);
+	BorraSenyal(SIGN_PRE_NICK, CSSigPreNick);
+	BorraSenyal(SIGN_QUIT, CSSigPreNick);
+	DetieneProceso(CSDropachans);
+	BotUnset(chanserv);
 	return 0;
 }
-int test(Conf *config, int *errores)
+int CSTest(Conf *config, int *errores)
 {
 	return 0;
 }
-void set(Conf *config, Modulo *mod)
+void CSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	bCom *cs;
@@ -236,7 +232,7 @@ void set(Conf *config, Modulo *mod)
 					cs++;
 				}
 				if (cs->com == 0x0)
-					conferror("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
+					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
 			}
 			mod->comando[mod->comandos] = NULL;
 		}
@@ -253,34 +249,34 @@ void set(Conf *config, Modulo *mod)
 			}
 		}
 	}
-	inserta_senyal(SIGN_MODE, chanserv_mode);
-	inserta_senyal(SIGN_TOPIC, chanserv_topic);
-	inserta_senyal(SIGN_JOIN, chanserv_join);
-	inserta_senyal(SIGN_KICK, chanserv_kick);
-	inserta_senyal(SIGN_MYSQL, chanserv_sig_mysql);
-	inserta_senyal(NS_SIGN_DROP, chanserv_dropanick);
-	inserta_senyal(SIGN_EOS, chanserv_sig_eos);
-	inserta_senyal(SIGN_SYNCH, chanserv_sig_synch);
-	inserta_senyal(SIGN_PRE_NICK, chanserv_sig_prenick);
-	inserta_senyal(SIGN_QUIT, chanserv_sig_prenick);
-	proc(chanserv_dropachans);
-	bot_set(chanserv);
+	InsertaSenyal(SIGN_MODE, CSCmdMode);
+	InsertaSenyal(SIGN_TOPIC, CSCmdTopic);
+	InsertaSenyal(SIGN_JOIN, CSCmdJoin);
+	InsertaSenyal(SIGN_KICK, CSCmdKick);
+	InsertaSenyal(SIGN_MYSQL, CSSigMySQL);
+	InsertaSenyal(NS_SIGN_DROP, CSDropanick);
+	InsertaSenyal(SIGN_EOS, CSSigEOS);
+	InsertaSenyal(SIGN_SYNCH, CSSigSynch);
+	InsertaSenyal(SIGN_PRE_NICK, CSSigPreNick);
+	InsertaSenyal(SIGN_QUIT, CSSigPreNick);
+	IniciaProceso(CSDropachans);
+	BotSet(chanserv);
 }
-int es_fundador(Cliente *al, char *canal)
+int CSEsFundador(Cliente *al, char *canal)
 {
 	char *fun;
 	if (!al)
 		return 0;
-	if (!(fun = _mysql_get_registro(CS_MYSQL, canal, "founder")))
+	if (!(fun = MySQLCogeRegistro(CS_MYSQL, canal, "founder")))
 		return 0;
 	if (!strcasecmp(fun, al->nombre))
 		return 1;
 	return 0;
 }
-char *es_fundador_cache(Cliente *al, char *canal)
+char *CSEsFundador_cache(Cliente *al, char *canal)
 {
 	char *cache;
-	if ((cache = coge_cache(CACHE_FUNDADORES, al->nombre, chanserv.hmod->id)))
+	if ((cache = CogeCache(CACHE_FUNDADORES, al->nombre, chanserv.hmod->id)))
 	{
 		sprintf(buf, "%s ", canal);
 		if (strstr(cache, buf))
@@ -288,7 +284,7 @@ char *es_fundador_cache(Cliente *al, char *canal)
 	}
 	return NULL;
 }
-int es_residente(Modulo *mod, char *canal)
+int CSEsResidente(Modulo *mod, char *canal)
 {
 	char *aux;
 	strcpy(tokbuf, mod->residente);
@@ -299,11 +295,11 @@ int es_residente(Modulo *mod, char *canal)
 	}
 	return 0;
 }
-u_long borra_acceso(char *usuario, char *canal)
+u_long CSBorraAcceso(char *usuario, char *canal)
 {
 	char *registros, *tok;
 	u_long prev = 0L;
-	if ((registros = _mysql_get_registro(CS_MYSQL, canal, "regs")))
+	if ((registros = MySQLCogeRegistro(CS_MYSQL, canal, "regs")))
 	{
 		buf[0] = '\0';
 		for (tok = strtok(registros, ":"); tok; tok = strtok(NULL, ":"))
@@ -318,15 +314,15 @@ u_long borra_acceso(char *usuario, char *canal)
 			strcat(buf, strtok(NULL, " "));
 			strcat(buf, " ");
 		}
-		borra_cregistro(usuario, canal);
-		_mysql_add(CS_MYSQL, canal, "regs", buf);
+		CSBorraRegistro(usuario, canal);
+		MySQLInserta(CS_MYSQL, canal, "regs", buf);
 	}
 	return prev;
 }
-void borra_akick_bd(char *nick, char *canal)
+void CSBorraAkickDb(char *nick, char *canal)
 {
 	char *registros, *tok;
-	if ((registros = _mysql_get_registro(CS_MYSQL, canal, "akick")))
+	if ((registros = MySQLCogeRegistro(CS_MYSQL, canal, "akick")))
 	{
 		buf[0] = '\0';
 		for (tok = strtok(registros, "\1"); tok; tok = strtok(NULL, "\1"))
@@ -344,32 +340,32 @@ void borra_akick_bd(char *nick, char *canal)
 			strcat(buf, strtok(NULL, "\t"));
 			strcat(buf, "\t");
 		}
-		borra_akick(nick, canal);
-		_mysql_add(CS_MYSQL, canal, "akick", buf);
+		CSBorraAkick(nick, canal);
+		MySQLInserta(CS_MYSQL, canal, "akick", buf);
 	}
 }
-void inserta_akick_bd(char *nick, char *canal, char *emisor, char *motivo)
+void CSInsertaAkickDb(char *nick, char *canal, char *emisor, char *motivo)
 {
 	Akick *aux;
 	int i;
-	aux = inserta_akick(nick, canal, emisor, motivo);
+	aux = CSInsertaAkick(nick, canal, emisor, motivo);
 	buf[0] = '\0';
-	sprintf_irc(buf, "%s\1%s\1%s", aux->akick[0].nick, aux->akick[0].motivo, aux->akick[0].puesto);
+	ircsprintf(buf, "%s\1%s\1%s", aux->akick[0].nick, aux->akick[0].motivo, aux->akick[0].puesto);
 	for (i = 1; i < aux->akicks; i++)
 	{
 		char *tmp;
 		tmp = (char *)Malloc(sizeof(char) * (strlen(aux->akick[i].nick) + strlen(aux->akick[i].motivo) + strlen(aux->akick[i].puesto) + 4));
-		sprintf_irc(tmp, "\t%s\1%s\1%s", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
+		ircsprintf(tmp, "\t%s\1%s\1%s", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
 		strcat(buf, tmp);
 		Free(tmp);
 	}
-	_mysql_add(CS_MYSQL, canal, "akick", buf);
+	MySQLInserta(CS_MYSQL, canal, "akick", buf);
 }
-int es_akick(char *nick, char *canal)
+int CSEsAkick(char *nick, char *canal)
 {
 	Akick *aux;
 	int i;
-	if ((aux = busca_akicks(canal)))
+	if ((aux = CSBuscaAkicks(canal)))
 	{
 		for (i = 0; i < aux->akicks; i++)
 		{
@@ -379,7 +375,7 @@ int es_akick(char *nick, char *canal)
 	}
 	return 0;
 }
-int es_cregistro(char *nick, char *canal)
+int CSEsRegistro(char *nick, char *canal)
 {
 	CsRegistros *aux;
 	int i;
@@ -394,12 +390,12 @@ int es_cregistro(char *nick, char *canal)
 	return 0;
 }
 #ifdef UDB
-void envia_canal_bdd(char *canal)
+void CSPropagaCanal(char *canal)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char *modos, *c;
-	res = _mysql_query("SELECT founder,modos,topic from %s%s where item='%s'", PREFIJO, CS_MYSQL, canal);
+	res = MySQLQuery("SELECT founder,modos,topic from %s%s where item='%s'", PREFIJO, CS_MYSQL, canal);
 	if (!res)
 		return;
 	row = mysql_fetch_row(res);
@@ -408,14 +404,14 @@ void envia_canal_bdd(char *canal)
 		modos = c+1;
 	if ((c = strchr(modos, '-')))
 		*c = 0;
-	envia_registro_bdd("C::%s::F %s", canal, row[0]);
-	envia_registro_bdd("C::%s::M %s", canal, modos);
-	envia_registro_bdd("C::%s::T %s", canal, row[2]);
+	PropagaRegistro("C::%s::F %s", canal, row[0]);
+	PropagaRegistro("C::%s::M %s", canal, modos);
+	PropagaRegistro("C::%s::T %s", canal, row[2]);
 	mysql_free_result(res);
 }
 #endif
 /* hace un empaquetamiento de los users de una determinada lista. No olvidar hacer Free() */
-Cliente **empaqueta_clientes(Canal *cn, LinkCliente *lista, u_char opers)
+Cliente **CSEmpaquetaClientes(Canal *cn, LinkCliente *lista, u_char opers)
 {
 	Cliente **al;
 	LinkCliente *lk;
@@ -431,613 +427,613 @@ Cliente **empaqueta_clientes(Canal *cn, LinkCliente *lista, u_char opers)
 	al[j] = NULL;
 	return al;
 }
-BOTFUNC(chanserv_help)
+BOTFUNC(CSHelp)
 {
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), "\00312%s\003 se encarga de gestionar los canales de la red para evitar robos o takeovers.", chanserv.hmod->nick);
-		response(cl, CLI(chanserv), "El registro de canales permite su apropiación y poder gestionarlos de tal forma que usuarios no deseados "
+		Responde(cl, CLI(chanserv), "\00312%s\003 se encarga de gestionar los canales de la red para evitar robos o takeovers.", chanserv.hmod->nick);
+		Responde(cl, CLI(chanserv), "El registro de canales permite su apropiación y poder gestionarlos de tal forma que usuarios no deseados "
 						"puedan tomar control de los mismos.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Comandos disponibles:");
-		func_resp(chanserv, "INFO", "Muestra distinta información de un canal.");
-		func_resp(chanserv, "LIST", "Lista canales según un determinado patrón.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Comandos disponibles:");
+		FuncResp(chanserv, "INFO", "Muestra distinta información de un canal.");
+		FuncResp(chanserv, "LIST", "Lista canales según un determinado patrón.");
 		if (IsId(cl))
 		{
-			func_resp(chanserv, "IDENTIFY", "Te identifica como fundador de un canal.");
-			func_resp(chanserv, "DEAUTH", "Te quita el estado de fundador.");
-			func_resp(chanserv, "INVITE", "Invita a un usuario al canal.");
-			if (MODE_ADM && (exfunc("ADMIN") || exfunc("DEADMIN")))
-				response(cl, CLI(chanserv), "\00312ADMIN/DEADMIN\003 Da o quita &.");
-			if (exfunc("OP") || exfunc("DEOP"))
-				response(cl, CLI(chanserv), "\00312OP/DEOP\003 Da o quita @.");
-			if (MODE_HALF && (exfunc("HALF") || exfunc("DEHALF")))
-				response(cl, CLI(chanserv), "\00312HALF/DEHALF\003 Da o quita %%.");
-			if (exfunc("VOICE") || exfunc("DEVOICE"))
-				response(cl, CLI(chanserv), "\00312VOICE/DEVOICE\003 Da o quita +.");
-			if (exfunc("BAN") || exfunc("UNBAN"))
-				response(cl, CLI(chanserv), "\00312BAN/UNBAN\003 Pone o quita bans.");
-			func_resp(chanserv, "KICK", "Expulsa a un usuario.");
-			func_resp(chanserv, "CLEAR", "Resetea distintas opciones del canal.");
-			func_resp(chanserv, "SET", "Fija distintas opciones del canal.");
-			func_resp(chanserv, "AKICK", "Gestiona la lista de auto-kick del canal.");
-			func_resp(chanserv, "ACCESS", "Gestiona la lista de accesos.");
-			func_resp(chanserv, "JOIN", "Introduce distintos servicios.");
-			func_resp(chanserv, "REGISTER", "Registra un canal.");
-			func_resp(chanserv, "TOKEN", "Te entrega un token para las operaciones que lo requieran.");
+			FuncResp(chanserv, "IDENTIFY", "Te identifica como fundador de un canal.");
+			FuncResp(chanserv, "DEAUTH", "Te quita el estado de fundador.");
+			FuncResp(chanserv, "INVITE", "Invita a un usuario al canal.");
+			if (MODE_ADM && (ExFunc("ADMIN") || ExFunc("DEADMIN")))
+				Responde(cl, CLI(chanserv), "\00312ADMIN/DEADMIN\003 Da o quita &.");
+			if (ExFunc("OP") || ExFunc("DEOP"))
+				Responde(cl, CLI(chanserv), "\00312OP/DEOP\003 Da o quita @.");
+			if (MODE_HALF && (ExFunc("HALF") || ExFunc("DEHALF")))
+				Responde(cl, CLI(chanserv), "\00312HALF/DEHALF\003 Da o quita %%.");
+			if (ExFunc("VOICE") || ExFunc("DEVOICE"))
+				Responde(cl, CLI(chanserv), "\00312VOICE/DEVOICE\003 Da o quita +.");
+			if (ExFunc("BAN") || ExFunc("UNBAN"))
+				Responde(cl, CLI(chanserv), "\00312BAN/UNBAN\003 Pone o quita bans.");
+			FuncResp(chanserv, "KICK", "Expulsa a un usuario.");
+			FuncResp(chanserv, "CLEAR", "Resetea distintas opciones del canal.");
+			FuncResp(chanserv, "SET", "Fija distintas opciones del canal.");
+			FuncResp(chanserv, "AKICK", "Gestiona la lista de auto-kick del canal.");
+			FuncResp(chanserv, "ACCESS", "Gestiona la lista de accesos.");
+			FuncResp(chanserv, "JOIN", "Introduce distintos servicios.");
+			FuncResp(chanserv, "REGISTER", "Registra un canal.");
+			FuncResp(chanserv, "TOKEN", "Te entrega un token para las operaciones que lo requieran.");
 #ifdef UDB
-			func_resp(chanserv, "MIGRAR", "Migra un canal a la base de datos de la red.");
-			func_resp(chanserv, "DEMIGRAR", "Demigra un canal de la base de datos de la red.");
-			func_resp(chanserv, "PROTEGER", "Protege un canal para que sólo ciertos nicks puedan entrar.");
+			FuncResp(chanserv, "MIGRAR", "Migra un canal a la base de datos de la red.");
+			FuncResp(chanserv, "DEMIGRAR", "Demigra un canal de la base de datos de la red.");
+			FuncResp(chanserv, "PROTEGER", "Protege un canal para que sólo ciertos nicks puedan entrar.");
 #endif
 		}
 		if (IsPreo(cl))
 		{
-			func_resp(chanserv, "SENDPASS", "Genera y manda una clave al email del fundador.");
-			func_resp(chanserv, "BLOCK", "Bloquea y paraliza un canal.");
+			FuncResp(chanserv, "SENDPASS", "Genera y manda una clave al email del fundador.");
+			FuncResp(chanserv, "BLOCK", "Bloquea y paraliza un canal.");
 		}
 		if (IsOper(cl))
 		{
-			func_resp(chanserv, "DROP", "Desregistra un canal.");
-			func_resp(chanserv, "SUSPENDER", "Suspende un canal.");
-			func_resp(chanserv, "LIBERAR", "Quita el suspenso de un canal.");
+			FuncResp(chanserv, "DROP", "Desregistra un canal.");
+			FuncResp(chanserv, "SUSPENDER", "Suspende un canal.");
+			FuncResp(chanserv, "LIBERAR", "Quita el suspenso de un canal.");
 		}
 		if (IsAdmin(cl))
 		{
-			func_resp(chanserv, "FORBID", "Prohibe el uso de un canal.");
-			func_resp(chanserv, "UNFORBID", "Quita la prohibición de utilizar un canal.");
+			FuncResp(chanserv, "FORBID", "Prohibe el uso de un canal.");
+			FuncResp(chanserv, "UNFORBID", "Quita la prohibición de utilizar un canal.");
 		}
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Para más información, \00312/msg %s %s comando", chanserv.hmod->nick, strtoupper(param[0]));
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Para más información, \00312/msg %s %s comando", chanserv.hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "INFO") && exfunc("INFO"))
+	else if (!strcasecmp(param[1], "INFO") && ExFunc("INFO"))
 	{
-		response(cl, CLI(chanserv), "\00312INFO");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Muestra distinta información de un canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312INFO #canal");
+		Responde(cl, CLI(chanserv), "\00312INFO");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Muestra distinta información de un canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312INFO #canal");
 	}
-	else if (!strcasecmp(param[1], "LIST") && exfunc("LIST"))
+	else if (!strcasecmp(param[1], "LIST") && ExFunc("LIST"))
 	{
-		response(cl, CLI(chanserv), "\00312LIST");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Lista los canales registrados que concuerdan con un patrón.");
-		response(cl, CLI(chanserv), "Puedes utilizar comodines (*) para ajustar la búsqueda.");
-		response(cl, CLI(chanserv), "Además, puedes especificar el parámetro -r para listar los canales en petición.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312LIST [-r] patrón");
+		Responde(cl, CLI(chanserv), "\00312LIST");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Lista los canales registrados que concuerdan con un patrón.");
+		Responde(cl, CLI(chanserv), "Puedes utilizar comodines (*) para ajustar la búsqueda.");
+		Responde(cl, CLI(chanserv), "Además, puedes especificar el parámetro -r para listar los canales en petición.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312LIST [-r] patrón");
 	}
-	else if (!strcasecmp(param[1], "IDENTIFY") && IsId(cl) && exfunc("IDENTIFY"))
+	else if (!strcasecmp(param[1], "IDENTIFY") && IsId(cl) && ExFunc("IDENTIFY"))
 	{
-		response(cl, CLI(chanserv), "\00312IDENTIFY");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Te identifica como fundador de un canal.");
-		response(cl, CLI(chanserv), "Este comando sólo debe usarse si el nick que llevas no es el de fundador. "
+		Responde(cl, CLI(chanserv), "\00312IDENTIFY");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Te identifica como fundador de un canal.");
+		Responde(cl, CLI(chanserv), "Este comando sólo debe usarse si el nick que llevas no es el de fundador. "
 						"En caso contrario, ya quedas identificado como tal si llevas nick identificado.");
-		response(cl, CLI(chanserv), "Esta identificación se pierde en caso que te desconectes.");
-		response(cl, CLI(chanserv), "Para proceder tienes que especificar la contraseña del canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312IDENTIFY #canal pass");
+		Responde(cl, CLI(chanserv), "Esta identificación se pierde en caso que te desconectes.");
+		Responde(cl, CLI(chanserv), "Para proceder tienes que especificar la contraseña del canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312IDENTIFY #canal pass");
 	}
-	else if (!strcasecmp(param[1], "DEAUTH") && IsId(cl) && exfunc("DEAUTH"))
+	else if (!strcasecmp(param[1], "DEAUTH") && IsId(cl) && ExFunc("DEAUTH"))
 	{
-		response(cl, CLI(chanserv), "\00312DEAUTH");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Te borra la identificación que pudieras tener.");
-		response(cl, CLI(chanserv), "Este comando sólo puede realizarse si previamente te habías identificado con el comando IDENTIFY.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312DEAUTH #canal");
+		Responde(cl, CLI(chanserv), "\00312DEAUTH");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Te borra la identificación que pudieras tener.");
+		Responde(cl, CLI(chanserv), "Este comando sólo puede realizarse si previamente te habías identificado con el comando IDENTIFY.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312DEAUTH #canal");
 	}
-	else if (!strcasecmp(param[1], "INVITE") && IsId(cl) && exfunc("INVITE"))
+	else if (!strcasecmp(param[1], "INVITE") && IsId(cl) && ExFunc("INVITE"))
 	{
-		response(cl, CLI(chanserv), "\00312INVITE");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Obliga a \00312%s\003 a mandar una invitación para un canal.", chanserv.hmod->nick);
-		response(cl, CLI(chanserv), "Si no especificas ningún nick, la invitación se te mandará a ti.");
-		response(cl, CLI(chanserv), "Por el contrario, si especificas un nick, se le será mandada.");
-		response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+i\003 para este canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312INVITE #canal [nick]");
+		Responde(cl, CLI(chanserv), "\00312INVITE");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Obliga a \00312%s\003 a mandar una invitación para un canal.", chanserv.hmod->nick);
+		Responde(cl, CLI(chanserv), "Si no especificas ningún nick, la invitación se te mandará a ti.");
+		Responde(cl, CLI(chanserv), "Por el contrario, si especificas un nick, se le será mandada.");
+		Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+i\003 para este canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312INVITE #canal [nick]");
 	}
-	else if (((!strcasecmp(param[1], "OP") && exfunc("OP")) ||
-		(!strcasecmp(param[1], "DEOP") && exfunc("DEOP")) || 
-		(!strcasecmp(param[1], "HALF") && MODE_HALF && exfunc("HALF")) || 
-		(!strcasecmp(param[1], "DEHALF") && MODE_HALF && exfunc("DEHALF")) ||
-		(!strcasecmp(param[1], "VOICE") && exfunc("VOICE")) || 
-		(!strcasecmp(param[1], "DEVOICE") && exfunc("DEVOICE")) || 
-		(!strcasecmp(param[1], "BAN") && exfunc("BAN")) || 
-		(!strcasecmp(param[1], "UNBAN") && exfunc("UNBAN")) ||
-		(!strcasecmp(param[1], "ADMIN") && MODE_ADM && exfunc("ADMIN")) ||
-		(!strcasecmp(param[1], "DEADMIN") && MODE_ADM && exfunc("DEADMIN"))
+	else if (((!strcasecmp(param[1], "OP") && ExFunc("OP")) ||
+		(!strcasecmp(param[1], "DEOP") && ExFunc("DEOP")) || 
+		(!strcasecmp(param[1], "HALF") && MODE_HALF && ExFunc("HALF")) || 
+		(!strcasecmp(param[1], "DEHALF") && MODE_HALF && ExFunc("DEHALF")) ||
+		(!strcasecmp(param[1], "VOICE") && ExFunc("VOICE")) || 
+		(!strcasecmp(param[1], "DEVOICE") && ExFunc("DEVOICE")) || 
+		(!strcasecmp(param[1], "BAN") && ExFunc("BAN")) || 
+		(!strcasecmp(param[1], "UNBAN") && ExFunc("UNBAN")) ||
+		(!strcasecmp(param[1], "ADMIN") && MODE_ADM && ExFunc("ADMIN")) ||
+		(!strcasecmp(param[1], "DEADMIN") && MODE_ADM && ExFunc("DEADMIN"))
 		)&& IsId(cl))
 	{
-		response(cl, CLI(chanserv), "\00312%s", strtoupper(param[1]));
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Ejecuta este comando de forma remota por \00312%s\003 al canal.", chanserv.hmod->nick);
-		response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+r\003 para este canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312%s #canal nick1 [nick2 [nick3 [...nickN]]]", strtoupper(param[1]));
+		Responde(cl, CLI(chanserv), "\00312%s", strtoupper(param[1]));
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Ejecuta este comando de forma remota por \00312%s\003 al canal.", chanserv.hmod->nick);
+		Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+r\003 para este canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312%s #canal nick1 [nick2 [nick3 [...nickN]]]", strtoupper(param[1]));
 	}
-	else if (!strcasecmp(param[1], "KICK") && IsId(cl) && exfunc("KICK"))
+	else if (!strcasecmp(param[1], "KICK") && IsId(cl) && ExFunc("KICK"))
 	{
-		response(cl, CLI(chanserv), "\00312KICK");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Fuerza a \00312%s\003 a expulsar a un usuario.", chanserv.hmod->nick);
-		response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+r\003 para este canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312KICK #canal nick [motivo]");
+		Responde(cl, CLI(chanserv), "\00312KICK");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Fuerza a \00312%s\003 a expulsar a un usuario.", chanserv.hmod->nick);
+		Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+r\003 para este canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312KICK #canal nick [motivo]");
 	}
-	else if (!strcasecmp(param[1], "CLEAR") && IsId(cl) && exfunc("CLEAR"))
+	else if (!strcasecmp(param[1], "CLEAR") && IsId(cl) && ExFunc("CLEAR"))
 	{
-		response(cl, CLI(chanserv), "\00312CLEAR");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Resetea distintas opciones de un canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Opciones disponibles:");
+		Responde(cl, CLI(chanserv), "\00312CLEAR");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Resetea distintas opciones de un canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Opciones disponibles:");
 		if (MODE_ADM)
-			response(cl, CLI(chanserv), "\00312ADMINS\003 Quita todos los +a del canal.");
-		response(cl, CLI(chanserv), "\00312OPS\003 Quita todos los +o del canal.");
+			Responde(cl, CLI(chanserv), "\00312ADMINS\003 Quita todos los +a del canal.");
+		Responde(cl, CLI(chanserv), "\00312OPS\003 Quita todos los +o del canal.");
 		if (MODE_HALF)
-			response(cl, CLI(chanserv), "\00312HALFS\003 Quita todos los +h del canal.");
-		response(cl, CLI(chanserv), "\00312VOICES\003 Quita todos los +v del canal.");
-		response(cl, CLI(chanserv), "\00312BANS\003 Quita todos los +b del canal.");
-		response(cl, CLI(chanserv), "\00312USERS\003 Expulsa a todos los usuarios del canal. Puede especificar un motivo.");
-		response(cl, CLI(chanserv), "\00312ACCESOS\003 Borra todos los accesos del canal.");
-		response(cl, CLI(chanserv), "\00312MODOS\003 Quita todos los modos del canal y lo deja en +nt.");
+			Responde(cl, CLI(chanserv), "\00312HALFS\003 Quita todos los +h del canal.");
+		Responde(cl, CLI(chanserv), "\00312VOICES\003 Quita todos los +v del canal.");
+		Responde(cl, CLI(chanserv), "\00312BANS\003 Quita todos los +b del canal.");
+		Responde(cl, CLI(chanserv), "\00312USERS\003 Expulsa a todos los usuarios del canal. Puede especificar un motivo.");
+		Responde(cl, CLI(chanserv), "\00312ACCESOS\003 Borra todos los accesos del canal.");
+		Responde(cl, CLI(chanserv), "\00312MODOS\003 Quita todos los modos del canal y lo deja en +nt.");
 		if (IsOper(cl))
 		{
-			response(cl, CLI(chanserv), "\00312KILL\003 Desconecta a todos los usuarios del canal. Puede especificar un motivo.");
-			response(cl, CLI(chanserv), "\00312GLINE\003 Pone una GLine a todos los usuarios del canal. Puede especificar un motivo.");
+			Responde(cl, CLI(chanserv), "\00312KILL\003 Desconecta a todos los usuarios del canal. Puede especificar un motivo.");
+			Responde(cl, CLI(chanserv), "\00312GLINE\003 Pone una GLine a todos los usuarios del canal. Puede especificar un motivo.");
 		}
 		else
-			response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+c\003.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312opcion #canal %s", IsOper(cl) ? "[tiempo]" : "");
+			Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+c\003.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312opcion #canal %s", IsOper(cl) ? "[tiempo]" : "");
 	}
-	else if (!strcasecmp(param[1], "SET") && IsId(cl) && exfunc("SET"))
+	else if (!strcasecmp(param[1], "SET") && IsId(cl) && ExFunc("SET"))
 	{
 		if (params < 3)
 		{
-			response(cl, CLI(chanserv), "\00312SET");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Fija distintas opciones del canal.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Opciones disponibles:");
-			response(cl, CLI(chanserv), "\00312DESC\003 Descripción del canal.");
-			response(cl, CLI(chanserv), "\00312URL\003 Página web.");
-			response(cl, CLI(chanserv), "\00312EMAIL\003 Dirección de correo.");
-			response(cl, CLI(chanserv), "\00312BIENVENIDA\003 Mensaje de bienvenida.");
-			response(cl, CLI(chanserv), "\00312MODOS\003 Modos por defecto.");
-			response(cl, CLI(chanserv), "\00312OPCIONES\003 Diferentes características.");
-			response(cl, CLI(chanserv), "\00312TOPIC\003 Topic por defecto.");
-			response(cl, CLI(chanserv), "\00312PASS\003 Cambia la contraseña.");
-			response(cl, CLI(chanserv), "\00312FUNDADOR\003 Cambia el fundador.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+s\003.");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal opcion [parámetros]");
-			response(cl, CLI(chanserv), "Para más información, \00312/msg %s %s SET opción", chanserv.hmod->nick, strtoupper(param[0]));
+			Responde(cl, CLI(chanserv), "\00312SET");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Fija distintas opciones del canal.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Opciones disponibles:");
+			Responde(cl, CLI(chanserv), "\00312DESC\003 Descripción del canal.");
+			Responde(cl, CLI(chanserv), "\00312URL\003 Página web.");
+			Responde(cl, CLI(chanserv), "\00312EMAIL\003 Dirección de correo.");
+			Responde(cl, CLI(chanserv), "\00312BIENVENIDA\003 Mensaje de bienvenida.");
+			Responde(cl, CLI(chanserv), "\00312MODOS\003 Modos por defecto.");
+			Responde(cl, CLI(chanserv), "\00312OPCIONES\003 Diferentes características.");
+			Responde(cl, CLI(chanserv), "\00312TOPIC\003 Topic por defecto.");
+			Responde(cl, CLI(chanserv), "\00312PASS\003 Cambia la contraseña.");
+			Responde(cl, CLI(chanserv), "\00312FUNDADOR\003 Cambia el fundador.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+s\003.");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal opcion [parámetros]");
+			Responde(cl, CLI(chanserv), "Para más información, \00312/msg %s %s SET opción", chanserv.hmod->nick, strtoupper(param[0]));
 		}
 		else if (!strcasecmp(param[2], "DESC"))
 		{
-			response(cl, CLI(chanserv), "\00312SET DESC");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Fija la descripción del canal.");
-			response(cl, CLI(chanserv), "Esta descripción debe ser clara y concisa. Debe reflejar la temática del canal con la máxima precisión.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal DESC descripción");
+			Responde(cl, CLI(chanserv), "\00312SET DESC");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Fija la descripción del canal.");
+			Responde(cl, CLI(chanserv), "Esta descripción debe ser clara y concisa. Debe reflejar la temática del canal con la máxima precisión.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal DESC descripción");
 		}
 		else if (!strcasecmp(param[2], "URL"))
 		{
-			response(cl, CLI(chanserv), "\00312SET URL");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Asocia una dirección web al canal.");
-			response(cl, CLI(chanserv), "Esta dirección es visualizada en el comando INFO.");
-			response(cl, CLI(chanserv), "Si no se especifica ninguna, es borrada.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal URL [http://pagina.web]");
+			Responde(cl, CLI(chanserv), "\00312SET URL");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Asocia una dirección web al canal.");
+			Responde(cl, CLI(chanserv), "Esta dirección es visualizada en el comando INFO.");
+			Responde(cl, CLI(chanserv), "Si no se especifica ninguna, es borrada.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal URL [http://pagina.web]");
 		}
 		else if (!strcasecmp(param[2], "EMAIL"))
 		{
-			response(cl, CLI(chanserv), "\00312SET EMAIL");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Asocia una dirección de correco al canal.");
-			response(cl, CLI(chanserv), "Esta dirección es visualizada en el comando INFO.");
-			response(cl, CLI(chanserv), "Si no se especifica ninguna, es borrada.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal EMAIL [direccion@de.correo]");
+			Responde(cl, CLI(chanserv), "\00312SET EMAIL");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Asocia una dirección de correco al canal.");
+			Responde(cl, CLI(chanserv), "Esta dirección es visualizada en el comando INFO.");
+			Responde(cl, CLI(chanserv), "Si no se especifica ninguna, es borrada.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal EMAIL [direccion@de.correo]");
 		}
 		else if (!strcasecmp(param[2], "BIENVENIDA"))
 		{
-			response(cl, CLI(chanserv), "\00312SET BIENVENIDA");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Asocia un mensaje de bienvenida al entrar al canal.");
-			response(cl, CLI(chanserv), "Cada vez que un usuario entre en el canal se le mandará este mensaje vía NOTICE.");
-			response(cl, CLI(chanserv), "Si no se especifica nada, es borrado.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal BIENVENIDA [mensaje]");
+			Responde(cl, CLI(chanserv), "\00312SET BIENVENIDA");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Asocia un mensaje de bienvenida al entrar al canal.");
+			Responde(cl, CLI(chanserv), "Cada vez que un usuario entre en el canal se le mandará este mensaje vía NOTICE.");
+			Responde(cl, CLI(chanserv), "Si no se especifica nada, es borrado.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal BIENVENIDA [mensaje]");
 		}
 		else if (!strcasecmp(param[2], "MODOS"))
 		{
-			response(cl, CLI(chanserv), "\00312SET MODOS");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Define los modos de canal.");
-			response(cl, CLI(chanserv), "Es altamente recomendable que se especifiquen con el siguiente formato: +modos1-modos2");
-			response(cl, CLI(chanserv), "Se aceptan parámetros para estos modos. No obstante, los modos oqveharb no se pueden utilizar.");
-			response(cl, CLI(chanserv), "Si no se especifica nada, son borrados.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal MODOS [+modos1-modos2]");
+			Responde(cl, CLI(chanserv), "\00312SET MODOS");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Define los modos de canal.");
+			Responde(cl, CLI(chanserv), "Es altamente recomendable que se especifiquen con el siguiente formato: +modos1-modos2");
+			Responde(cl, CLI(chanserv), "Se aceptan parámetros para estos modos. No obstante, los modos oqveharb no se pueden utilizar.");
+			Responde(cl, CLI(chanserv), "Si no se especifica nada, son borrados.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal MODOS [+modos1-modos2]");
 		}
 		else if (!strcasecmp(param[2], "OPCIONES"))
 		{
-			response(cl, CLI(chanserv), "\00312SET OPCIONES");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Fija las distintas características del canal.");
-			response(cl, CLI(chanserv), "Estas características se identifican por flags.");
-			response(cl, CLI(chanserv), "Así pues, en un mismo comando puedes subir y bajar distintos flags.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Flags disponibles:");
-			response(cl, CLI(chanserv), "\00312+m\003 Candado de modos: los modos no pueden modificarse.");
-			response(cl, CLI(chanserv), "\00312+r\003 Retención del topic: se guarda el último topic utilizado en el canal.");
-			response(cl, CLI(chanserv), "\00312+k\003 Candado de topic: el topic no puede cambiarse.");
-			response(cl, CLI(chanserv), "\00312+s\003 Canal seguro: sólo pueden entrar los que tienen acceso.");
-			response(cl, CLI(chanserv), "\00312+o\003 Secureops: sólo pueden tener +a, +o, +h o +v los usuarios con el correspondiente acceso.");
-			response(cl, CLI(chanserv), "\00312+h\003 Canal oculto: no se lista en el comando LIST.");
-			response(cl, CLI(chanserv), "\00312+d\003 Canal debug: activa el debug del canal para visualizar los eventos y su autor.");
+			Responde(cl, CLI(chanserv), "\00312SET OPCIONES");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Fija las distintas características del canal.");
+			Responde(cl, CLI(chanserv), "Estas características se identifican por flags.");
+			Responde(cl, CLI(chanserv), "Así pues, en un mismo comando puedes subir y bajar distintos flags.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Flags disponibles:");
+			Responde(cl, CLI(chanserv), "\00312+m\003 Candado de modos: los modos no pueden modificarse.");
+			Responde(cl, CLI(chanserv), "\00312+r\003 Retención del topic: se guarda el último topic utilizado en el canal.");
+			Responde(cl, CLI(chanserv), "\00312+k\003 Candado de topic: el topic no puede cambiarse.");
+			Responde(cl, CLI(chanserv), "\00312+s\003 Canal seguro: sólo pueden entrar los que tienen acceso.");
+			Responde(cl, CLI(chanserv), "\00312+o\003 Secureops: sólo pueden tener +a, +o, +h o +v los usuarios con el correspondiente acceso.");
+			Responde(cl, CLI(chanserv), "\00312+h\003 Canal oculto: no se lista en el comando LIST.");
+			Responde(cl, CLI(chanserv), "\00312+d\003 Canal debug: activa el debug del canal para visualizar los eventos y su autor.");
 			if (IsOper(cl))
-				response(cl, CLI(chanserv), "\00312+n\003 Canal no dropable: sólo puede droparlo la administración.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal OPCIONES +flags-flags");
-			response(cl, CLI(chanserv), "Ejemplo: \00312SET #canal OPCIONES +ors-mh");
-			response(cl, CLI(chanserv), "El canal #canal ahora posee las opciones de secureops, retención de topic y canal seguro. "
+				Responde(cl, CLI(chanserv), "\00312+n\003 Canal no dropable: sólo puede droparlo la administración.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal OPCIONES +flags-flags");
+			Responde(cl, CLI(chanserv), "Ejemplo: \00312SET #canal OPCIONES +ors-mh");
+			Responde(cl, CLI(chanserv), "El canal #canal ahora posee las opciones de secureops, retención de topic y canal seguro. "
 							"Se quitan las opciones de candado de modos y canal oculto si las tuviera.");
 		}
 		else if (!strcasecmp(param[2], "TOPIC"))
 		{
-			response(cl, CLI(chanserv), "\00312SET TOPIC");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Fija el topic por defecto del canal.");
-			response(cl, CLI(chanserv), "Si no se especifica nada, es borrado.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal TOPIC [topic]");
+			Responde(cl, CLI(chanserv), "\00312SET TOPIC");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Fija el topic por defecto del canal.");
+			Responde(cl, CLI(chanserv), "Si no se especifica nada, es borrado.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal TOPIC [topic]");
 		}
 		else if (!strcasecmp(param[2], "PASS"))
 		{
-			response(cl, CLI(chanserv), "\00312SET PASS");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Cambia la contraseña del canal.");
-			response(cl, CLI(chanserv), "Para poder realizar este comando necesitas ser el fundador o haberte identificado como tal con el comando IDENTIFY.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal PASS nuevopass");
+			Responde(cl, CLI(chanserv), "\00312SET PASS");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Cambia la contraseña del canal.");
+			Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas ser el fundador o haberte identificado como tal con el comando IDENTIFY.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal PASS nuevopass");
 		}
 		else if (!strcasecmp(param[2], "FUNDADOR"))
 		{
-			response(cl, CLI(chanserv), "\00312SET FUNDADOR");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Cambia el fundador del canal.");
-			response(cl, CLI(chanserv), "Para poder realizar este comando necesitas ser el fundador o haberte identificado como tal con el comando IDENTIFY.");
-			response(cl, CLI(chanserv), "Además, el nuevo nick deberá estar registrado.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312SET #canal FUNDADOR nick");
+			Responde(cl, CLI(chanserv), "\00312SET FUNDADOR");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Cambia el fundador del canal.");
+			Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas ser el fundador o haberte identificado como tal con el comando IDENTIFY.");
+			Responde(cl, CLI(chanserv), "Además, el nuevo nick deberá estar registrado.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312SET #canal FUNDADOR nick");
 		}
 		else
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 	}
-	else if (!strcasecmp(param[1], "AKICK") && IsId(cl) && exfunc("AKICK"))
+	else if (!strcasecmp(param[1], "AKICK") && IsId(cl) && ExFunc("AKICK"))
 	{
-		response(cl, CLI(chanserv), "\00312AKICK");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Gestiona la lista de auto-kick del canal.");
-		response(cl, CLI(chanserv), "Esta lista contiene las máscaras prohibidas.");
-		response(cl, CLI(chanserv), "Si un usuario entra al canal y su máscara coincide con una de ellas, immediatamente es expulsado "
+		Responde(cl, CLI(chanserv), "\00312AKICK");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Gestiona la lista de auto-kick del canal.");
+		Responde(cl, CLI(chanserv), "Esta lista contiene las máscaras prohibidas.");
+		Responde(cl, CLI(chanserv), "Si un usuario entra al canal y su máscara coincide con una de ellas, immediatamente es expulsado "
 						"y se le pone un ban para que no pueda entrar.");
-		response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+k\003.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal +nick|máscara [motivo]");
-		response(cl, CLI(chanserv), "Añade al nick o la máscara con el motivo opcional.");
-		response(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal -nick|máscara");
-		response(cl, CLI(chanserv), "Borra al nick o la máscara.");
-		response(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal");
-		response(cl, CLI(chanserv), "Lista las diferentes entradas.");
+		Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+k\003.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal +nick|máscara [motivo]");
+		Responde(cl, CLI(chanserv), "Añade al nick o la máscara con el motivo opcional.");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal -nick|máscara");
+		Responde(cl, CLI(chanserv), "Borra al nick o la máscara.");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal");
+		Responde(cl, CLI(chanserv), "Lista las diferentes entradas.");
 	}
-	else if (!strcasecmp(param[1], "ACCESS") && IsId(cl) && exfunc("ACCESS"))
+	else if (!strcasecmp(param[1], "ACCESS") && IsId(cl) && ExFunc("ACCESS"))
 	{
-		response(cl, CLI(chanserv), "\00312ACCESS");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Gestiona la lista de accesos del canal.");
-		response(cl, CLI(chanserv), "Esta lista da privilegios a los usuarios que estén en ella.");
-		response(cl, CLI(chanserv), "Estos privilegios se les llama accesos y permiten acceder a distintos comandos.");
-		response(cl, CLI(chanserv), "El fundador tiene acceso a todos ellos.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Accesos disponibles:");
-		response(cl, CLI(chanserv), "\00312+s\003 Fijar opciones (SET)");
-		response(cl, CLI(chanserv), "\00312+e\003 Editar la lista de accesos (ACCESS)");
-		response(cl, CLI(chanserv), "\00312+l\003 Listar la lista de accesos (ACCESS)");
+		Responde(cl, CLI(chanserv), "\00312ACCESS");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Gestiona la lista de accesos del canal.");
+		Responde(cl, CLI(chanserv), "Esta lista da privilegios a los usuarios que estén en ella.");
+		Responde(cl, CLI(chanserv), "Estos privilegios se les llama accesos y permiten acceder a distintos comandos.");
+		Responde(cl, CLI(chanserv), "El fundador tiene acceso a todos ellos.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Accesos disponibles:");
+		Responde(cl, CLI(chanserv), "\00312+s\003 Fijar opciones (SET)");
+		Responde(cl, CLI(chanserv), "\00312+e\003 Editar la lista de accesos (ACCESS)");
+		Responde(cl, CLI(chanserv), "\00312+l\003 Listar la lista de accesos (ACCESS)");
 		if (MODE_ADM)
-			response(cl, CLI(chanserv), "\00312+a\003 Tiene +a al entrar.");
-		response(cl, CLI(chanserv), "\00312+o\003 Tiene +o al entrar.");
+			Responde(cl, CLI(chanserv), "\00312+a\003 Tiene +a al entrar.");
+		Responde(cl, CLI(chanserv), "\00312+o\003 Tiene +o al entrar.");
 		if (MODE_HALF)
-			response(cl, CLI(chanserv), "\00312+h\003 Tiene +h al entrar.");
-		response(cl, CLI(chanserv), "\00312+v\003 Tiene +v al entrar.");
-		response(cl, CLI(chanserv), "\00312+r\003 Comandos remotos (OP/DEOP/...)");
-		response(cl, CLI(chanserv), "\00312+c\003 Resetear opciones (CLEAR)");
-		response(cl, CLI(chanserv), "\00312+k\003 Gestionar la lista de auto-kicks (AKICK)");
-		response(cl, CLI(chanserv), "\00312+i\003 Invitar (INVITE)");
-		response(cl, CLI(chanserv), "\00312+j\003 Entrar bots (JOIN)");
-		response(cl, CLI(chanserv), "\00312+g\003 Kick de venganza.");
-		response(cl, CLI(chanserv), "\00312+m\003 Gestión de memos al canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "El nick al que se le dan los accesos debe estar registrado previamente.");
-		response(cl, CLI(chanserv), "Un acceso no engloba otro. Por ejemplo, el tener +e no implica tener +l.");
-		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal +nick +flags-flags");
-		response(cl, CLI(chanserv), "Añade los accesos al nick.");
-		response(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal +pepito +o-lv");
-		response(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal y se le quitarían los privilegios de acceder a la lista y autovoz.");
-		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal -nick");
-		response(cl, CLI(chanserv), "Borra todos los accesos de este nick.");
-		response(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal");
-		response(cl, CLI(chanserv), "Lista todos los usuarios con acceso al canal.");
+			Responde(cl, CLI(chanserv), "\00312+h\003 Tiene +h al entrar.");
+		Responde(cl, CLI(chanserv), "\00312+v\003 Tiene +v al entrar.");
+		Responde(cl, CLI(chanserv), "\00312+r\003 Comandos remotos (OP/DEOP/...)");
+		Responde(cl, CLI(chanserv), "\00312+c\003 Resetear opciones (CLEAR)");
+		Responde(cl, CLI(chanserv), "\00312+k\003 Gestionar la lista de auto-kicks (AKICK)");
+		Responde(cl, CLI(chanserv), "\00312+i\003 Invitar (INVITE)");
+		Responde(cl, CLI(chanserv), "\00312+j\003 Entrar bots (JOIN)");
+		Responde(cl, CLI(chanserv), "\00312+g\003 Kick de venganza.");
+		Responde(cl, CLI(chanserv), "\00312+m\003 Gestión de memos al canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "El nick al que se le dan los accesos debe estar registrado previamente.");
+		Responde(cl, CLI(chanserv), "Un acceso no engloba otro. Por ejemplo, el tener +e no implica tener +l.");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal +nick +flags-flags");
+		Responde(cl, CLI(chanserv), "Añade los accesos al nick.");
+		Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal +pepito +o-lv");
+		Responde(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal y se le quitarían los privilegios de acceder a la lista y autovoz.");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal -nick");
+		Responde(cl, CLI(chanserv), "Borra todos los accesos de este nick.");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal");
+		Responde(cl, CLI(chanserv), "Lista todos los usuarios con acceso al canal.");
 	}
-	else if (!strcasecmp(param[1], "JOIN") && IsId(cl) && exfunc("JOIN"))
+	else if (!strcasecmp(param[1], "JOIN") && IsId(cl) && ExFunc("JOIN"))
 	{
-		response(cl, CLI(chanserv), "\00312JOIN");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Introduce los servicios al canal de forma permanente.");
-		response(cl, CLI(chanserv), "Primero se quitan los servicios que pudiera haber para luego meter los que se soliciten.");
-		response(cl, CLI(chanserv), "Si no se especifica nada, son borrados.");
-		response(cl, CLI(chanserv), "Para realizar este comando debes tener acceso \00312+j\003.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312JOIN #canal [servicio1 [servicio2 [...servicioN]]]");
+		Responde(cl, CLI(chanserv), "\00312JOIN");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Introduce los servicios al canal de forma permanente.");
+		Responde(cl, CLI(chanserv), "Primero se quitan los servicios que pudiera haber para luego meter los que se soliciten.");
+		Responde(cl, CLI(chanserv), "Si no se especifica nada, son borrados.");
+		Responde(cl, CLI(chanserv), "Para realizar este comando debes tener acceso \00312+j\003.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312JOIN #canal [servicio1 [servicio2 [...servicioN]]]");
 	}
-	else if (!strcasecmp(param[1], "REGISTER") && IsId(cl) && exfunc("REGISTER"))
+	else if (!strcasecmp(param[1], "REGISTER") && IsId(cl) && ExFunc("REGISTER"))
 	{
-		response(cl, CLI(chanserv), "\00312REGISTER");
-		response(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "\00312REGISTER");
+		Responde(cl, CLI(chanserv), " ");
 		if (IsOper(cl))
 		{
-			response(cl, CLI(chanserv), "Registra un canal para que sea controlado por los servicios.");
-			response(cl, CLI(chanserv), "Este registro permite el control absoluto sobre el mismo.");
-			response(cl, CLI(chanserv), "Con este comando puedes aceptar dos tipos de canales:");
-			response(cl, CLI(chanserv), "- Aceptar peticiones de canales presentadas por los usuarios.");
-			response(cl, CLI(chanserv), "- Registrar tus propios canales sin la necesidad de tokens.");
-			response(cl, CLI(chanserv), "Aceptar una petición significa que registras un canal presentado con su fundador para que pase a sus manos.");
-			response(cl, CLI(chanserv), "El canal expiará despues de \00312%i\003 días en los que no haya entrado ningún usuario con acceso.", chanserv.autodrop);
-			response(cl, CLI(chanserv), "Para listar los canales en petición utiliza el comando LIST.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal");
-			response(cl, CLI(chanserv), "Acepta la petición presentada por un usuario.");
-			response(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal pass descripción");
-			response(cl, CLI(chanserv), "Registra tu propio canal.");
+			Responde(cl, CLI(chanserv), "Registra un canal para que sea controlado por los servicios.");
+			Responde(cl, CLI(chanserv), "Este registro permite el control absoluto sobre el mismo.");
+			Responde(cl, CLI(chanserv), "Con este comando puedes aceptar dos tipos de canales:");
+			Responde(cl, CLI(chanserv), "- Aceptar peticiones de canales presentadas por los usuarios.");
+			Responde(cl, CLI(chanserv), "- Registrar tus propios canales sin la necesidad de tokens.");
+			Responde(cl, CLI(chanserv), "Aceptar una petición significa que registras un canal presentado con su fundador para que pase a sus manos.");
+			Responde(cl, CLI(chanserv), "El canal expiará despues de \00312%i\003 días en los que no haya entrado ningún usuario con acceso.", chanserv.autodrop);
+			Responde(cl, CLI(chanserv), "Para listar los canales en petición utiliza el comando LIST.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal");
+			Responde(cl, CLI(chanserv), "Acepta la petición presentada por un usuario.");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal pass descripción");
+			Responde(cl, CLI(chanserv), "Registra tu propio canal.");
 		}
 		else
 		{
 			
-			response(cl, CLI(chanserv), "Solicita el registro de un canal.");
-			response(cl, CLI(chanserv), "Para hacer una petición necesitas presentar como mínimo \00312%i\003 tokens.", chanserv.necesarios);
-			response(cl, CLI(chanserv), "Estos tokens actúan como unas firmas que dan el visto bueno para su registro.");
-			response(cl, CLI(chanserv), "Los tokens provienen de otros usuarios que los solicitan con el comando TOKEN.");
-			response(cl, CLI(chanserv), "Si solicitas un token, no podrás presentar una solicitud hasta que no pase un cierto tiempo.");
-			response(cl, CLI(chanserv), "El canal expiará despues de \00312%i\003 días en los que no haya entrado ningún usuario con acceso.", chanserv.autodrop);
-			response(cl, CLI(chanserv), "Para más información consulta la ayuda del comando TOKEN.");
-			response(cl, CLI(chanserv), " ");
-			response(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal pass descripción tokens");
+			Responde(cl, CLI(chanserv), "Solicita el registro de un canal.");
+			Responde(cl, CLI(chanserv), "Para hacer una petición necesitas presentar como mínimo \00312%i\003 tokens.", chanserv.necesarios);
+			Responde(cl, CLI(chanserv), "Estos tokens actúan como unas firmas que dan el visto bueno para su registro.");
+			Responde(cl, CLI(chanserv), "Los tokens provienen de otros usuarios que los solicitan con el comando TOKEN.");
+			Responde(cl, CLI(chanserv), "Si solicitas un token, no podrás presentar una solicitud hasta que no pase un cierto tiempo.");
+			Responde(cl, CLI(chanserv), "El canal expiará despues de \00312%i\003 días en los que no haya entrado ningún usuario con acceso.", chanserv.autodrop);
+			Responde(cl, CLI(chanserv), "Para más información consulta la ayuda del comando TOKEN.");
+			Responde(cl, CLI(chanserv), " ");
+			Responde(cl, CLI(chanserv), "Sintaxis: \00312REGISTER #canal pass descripción tokens");
 		}
 	}
-	else if (!strcasecmp(param[1], "TOKEN") && IsId(cl) && exfunc("TOKEN"))
+	else if (!strcasecmp(param[1], "TOKEN") && IsId(cl) && ExFunc("TOKEN"))
 	{
-		response(cl, CLI(chanserv), "\00312TOKEN");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Solicita un token.");
-		response(cl, CLI(chanserv), "Este token es necesario para acceder a comandos que requieran el acuerdo de varios usuarios.");
-		response(cl, CLI(chanserv), "Sólo puedes solicitar un token cada \00312%i\003 horas. Una vez hayan transcurrido, el token caduca y puedes solicitar otro.", chanserv.vigencia);
-		response(cl, CLI(chanserv), "Actúa como tu firma personal. Y es único.");
-		response(cl, CLI(chanserv), "Por ejemplo, si alguien solicita el registro de un canal y tu estás a favor, deberás darle tu token a quién lo solicite para presentarlos "
+		Responde(cl, CLI(chanserv), "\00312TOKEN");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Solicita un token.");
+		Responde(cl, CLI(chanserv), "Este token es necesario para acceder a comandos que requieran el acuerdo de varios usuarios.");
+		Responde(cl, CLI(chanserv), "Sólo puedes solicitar un token cada \00312%i\003 horas. Una vez hayan transcurrido, el token caduca y puedes solicitar otro.", chanserv.vigencia);
+		Responde(cl, CLI(chanserv), "Actúa como tu firma personal. Y es único.");
+		Responde(cl, CLI(chanserv), "Por ejemplo, si alguien solicita el registro de un canal y tu estás a favor, deberás darle tu token a quién lo solicite para presentarlos "
 						"para que así la administración confirme que cuenta con el mínimo de usuarios en acuerdo.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312TOKEN");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312TOKEN");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl) && exfunc("MIGRAR"))
+	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl) && ExFunc("MIGRAR"))
 	{
-		response(cl, CLI(chanserv), "\00312MIGRAR");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Migra un canal a la base de datos de la red.");
-		response(cl, CLI(chanserv), "Una vez migrado, el canal será permanente. Es decir, no se borrará aunque salga el último usuario.");
-		response(cl, CLI(chanserv), "Conservará los modos y el topic cuando entre el primer usuario. A su vez seguirá mostrándose en el comando /LIST.");
-		response(cl, CLI(chanserv), "Además, el founder cuando entré y tenga el modo +r siempre recibirá los modos +oq, acreditándole como tal.");
-		response(cl, CLI(chanserv), "Finalmente, cualquier usuario que entre en el canal y esté vacío, si no es el founder se le quitará el estado de @ (-o).");
-		response(cl, CLI(chanserv), "Este es independiente de los servicios de red, así pues asegura su funcionamiento siempre aunque no estén conectados.");
-		response(cl, CLI(chanserv), "NOTA: este comando sólo puede realizarlo el fundador del canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312MIGRAR #canal pass");
+		Responde(cl, CLI(chanserv), "\00312MIGRAR");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Migra un canal a la base de datos de la red.");
+		Responde(cl, CLI(chanserv), "Una vez migrado, el canal será permanente. Es decir, no se borrará aunque salga el último usuario.");
+		Responde(cl, CLI(chanserv), "Conservará los modos y el topic cuando entre el primer usuario. A su vez seguirá mostrándose en el comando /LIST.");
+		Responde(cl, CLI(chanserv), "Además, el founder cuando entré y tenga el modo +r siempre recibirá los modos +oq, acreditándole como tal.");
+		Responde(cl, CLI(chanserv), "Finalmente, cualquier usuario que entre en el canal y esté vacío, si no es el founder se le quitará el estado de @ (-o).");
+		Responde(cl, CLI(chanserv), "Este es independiente de los servicios de red, así pues asegura su funcionamiento siempre aunque no estén conectados.");
+		Responde(cl, CLI(chanserv), "NOTA: este comando sólo puede realizarlo el fundador del canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312MIGRAR #canal pass");
 	}
-	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl) && exfunc("DEMIGRAR"))
+	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl) && ExFunc("DEMIGRAR"))
 	{
-		response(cl, CLI(chanserv), "\0012DEMIGRAR");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Elimina este canal de la base de datos de la red.");
-		response(cl, CLI(chanserv), "El canal volverá a su administración anterior a través de los servicios de red.");
-		response(cl, CLI(chanserv), "NOTA: este comando sólo puede realizarlo el fundador del canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312DEMIGRAR #canal pass");
+		Responde(cl, CLI(chanserv), "\0012DEMIGRAR");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Elimina este canal de la base de datos de la red.");
+		Responde(cl, CLI(chanserv), "El canal volverá a su administración anterior a través de los servicios de red.");
+		Responde(cl, CLI(chanserv), "NOTA: este comando sólo puede realizarlo el fundador del canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312DEMIGRAR #canal pass");
 	}
-	else if (!strcasecmp(param[1], "PROTEGER") && IsId(cl) && exfunc("PROTEGER"))
+	else if (!strcasecmp(param[1], "PROTEGER") && IsId(cl) && ExFunc("PROTEGER"))
 	{
-		response(cl, CLI(chanserv), "\00312PROTEGER");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Protege un canal por BDD.");
-		response(cl, CLI(chanserv), "Esta protección consiste en permitir la entrada a determinados nicks.");
-		response(cl, CLI(chanserv), "Al ser por BDD, aunque los servicios estén caídos, sólo podrán entrar los nicks que coincidan con las máscaras especificadas.");
-		response(cl, CLI(chanserv), "Así pues, cualquier persona que no figure en esta lista de protegidos, no podrá acceder al canal.");
-		response(cl, CLI(chanserv), "Si la máscara especificada es un nick, se añadirá la máscara de forma nick!*@*");
-		response(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+e\003.");
-		response(cl, CLI(chanserv), "Si no especeificas ninguna máscara, toda la lista es borrada.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312PROTEGER #canal [+|-[máscara]]");
+		Responde(cl, CLI(chanserv), "\00312PROTEGER");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Protege un canal por BDD.");
+		Responde(cl, CLI(chanserv), "Esta protección consiste en permitir la entrada a determinados nicks.");
+		Responde(cl, CLI(chanserv), "Al ser por BDD, aunque los servicios estén caídos, sólo podrán entrar los nicks que coincidan con las máscaras especificadas.");
+		Responde(cl, CLI(chanserv), "Así pues, cualquier persona que no figure en esta lista de protegidos, no podrá acceder al canal.");
+		Responde(cl, CLI(chanserv), "Si la máscara especificada es un nick, se añadirá la máscara de forma nick!*@*");
+		Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+e\003.");
+		Responde(cl, CLI(chanserv), "Si no especeificas ninguna máscara, toda la lista es borrada.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312PROTEGER #canal [+|-[máscara]]");
 	}
 #endif
-	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl) && exfunc("SENDPASS"))
+	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl) && ExFunc("SENDPASS"))
 	{
-		response(cl, CLI(chanserv), "\00312SENDPASS");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Regenera una nueva clave para un canal y es enviada al email del fundador.");
-		response(cl, CLI(chanserv), "Este comando sólo debe utilizarse a petición del fundador.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312SENDPASS #canal");
+		Responde(cl, CLI(chanserv), "\00312SENDPASS");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Regenera una nueva clave para un canal y es enviada al email del fundador.");
+		Responde(cl, CLI(chanserv), "Este comando sólo debe utilizarse a petición del fundador.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312SENDPASS #canal");
 	}
-	else if (!strcasecmp(param[1], "BLOCK") && IsPreo(cl) && exfunc("BLOCK"))
+	else if (!strcasecmp(param[1], "BLOCK") && IsPreo(cl) && ExFunc("BLOCK"))
 	{
-		response(cl, CLI(chanserv), "\00312BLOCK");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Inhabilita temporalmente un canal.");
-		response(cl, CLI(chanserv), "Se quitan todos los privilegios de un canal (+qaohv) y se ponen los modos +imMRlN 1");
-		response(cl, CLI(chanserv), "Su durada es temporal y puede se quitado mediante el comando CLEAR.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312BLOCK #canal");
+		Responde(cl, CLI(chanserv), "\00312BLOCK");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Inhabilita temporalmente un canal.");
+		Responde(cl, CLI(chanserv), "Se quitan todos los privilegios de un canal (+qaohv) y se ponen los modos +imMRlN 1");
+		Responde(cl, CLI(chanserv), "Su durada es temporal y puede se quitado mediante el comando CLEAR.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312BLOCK #canal");
 	}
-	else if (!strcasecmp(param[1], "DROP") && IsOper(cl) && exfunc("DROP"))
+	else if (!strcasecmp(param[1], "DROP") && IsOper(cl) && ExFunc("DROP"))
 	{
-		response(cl, CLI(chanserv), "\00312DROP");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Borra un canal de la base de datos.");
-		response(cl, CLI(chanserv), "Este canal tiene que haber estado registrado previamente.");
-		response(cl, CLI(chanserv), "También puede utilizarse para denegar la petición de registro de un canal.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312DROP #canal");
+		Responde(cl, CLI(chanserv), "\00312DROP");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Borra un canal de la base de datos.");
+		Responde(cl, CLI(chanserv), "Este canal tiene que haber estado registrado previamente.");
+		Responde(cl, CLI(chanserv), "También puede utilizarse para denegar la petición de registro de un canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312DROP #canal");
 	}
-	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl) && exfunc("SUSPENDER"))
+	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl) && ExFunc("SUSPENDER"))
 	{
-		response(cl, CLI(chanserv), "\00312SUSPENDER");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Suspende un canal de ser utilizado.");
-		response(cl, CLI(chanserv), "El canal seguirá estando registrado pero sus usuarios, fundador incluído, no podrán aprovechar "
+		Responde(cl, CLI(chanserv), "\00312SUSPENDER");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Suspende un canal de ser utilizado.");
+		Responde(cl, CLI(chanserv), "El canal seguirá estando registrado pero sus usuarios, fundador incluído, no podrán aprovechar "
 						"ninguna de sus prestaciones.");
-		response(cl, CLI(chanserv), "Este suspenso durará indefinidamente hasta que se decida levantarlo.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312SUSPENDER #canal motivo");
+		Responde(cl, CLI(chanserv), "Este suspenso durará indefinidamente hasta que se decida levantarlo.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312SUSPENDER #canal motivo");
 	}
-	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl) && exfunc("LIBERAR"))
+	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl) && ExFunc("LIBERAR"))
 	{
-		response(cl, CLI(chanserv), "\00312LIBERAR");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Quita el suspenso puesto previamente con el comando SUSPENDER.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312LIBERAR #canal");
+		Responde(cl, CLI(chanserv), "\00312LIBERAR");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Quita el suspenso puesto previamente con el comando SUSPENDER.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312LIBERAR #canal");
 	}
-	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl) && exfunc("FORBID"))
+	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl) && ExFunc("FORBID"))
 	{
-		response(cl, CLI(chanserv), "\00312FORBID");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Prohibe el uso de este canal.");
-		response(cl, CLI(chanserv), "Los usuarios no podrán ni entrar ni registrarlo.");
-		response(cl, CLI(chanserv), "Este tipo de canales se extienden por toda la red.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312FORBID #canal motivo");
+		Responde(cl, CLI(chanserv), "\00312FORBID");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Prohibe el uso de este canal.");
+		Responde(cl, CLI(chanserv), "Los usuarios no podrán ni entrar ni registrarlo.");
+		Responde(cl, CLI(chanserv), "Este tipo de canales se extienden por toda la red.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312FORBID #canal motivo");
 	}
-	else if (!strcasecmp(param[1], "UNFORBID") && IsAdmin(cl) && exfunc("UNFORBID"))
+	else if (!strcasecmp(param[1], "UNFORBID") && IsAdmin(cl) && ExFunc("UNFORBID"))
 	{
-		response(cl, CLI(chanserv), "\00312UNFORBID");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Quita la prohibición de un canal puesta con el comando FORBID.");
-		response(cl, CLI(chanserv), " ");
-		response(cl, CLI(chanserv), "Sintaxis: \00312UNFORBID #canal");
+		Responde(cl, CLI(chanserv), "\00312UNFORBID");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Quita la prohibición de un canal puesta con el comando FORBID.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312UNFORBID #canal");
 	}
 	else
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
-BOTFUNC(chanserv_drop)
+BOTFUNC(CSDrop)
 {
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "DROP #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "DROP #canal");
 		return 1;
 	}
 	if (!ChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	if (!IsAdmin(cl) && (atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts")) & CS_OPT_NODROP))
+	if (!IsAdmin(cl) && (atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts")) & CS_OPT_NODROP))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no se puede dropear.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no se puede dropear.");
 		return 1;
 	}
-	if (!chanserv_baja(param[1], 1))
-		response(cl, CLI(chanserv), "Se ha dropeado el canal \00312%s\003.", param[1]);
+	if (!CSBaja(param[1], 1))
+		Responde(cl, CLI(chanserv), "Se ha dropeado el canal \00312%s\003.", param[1]);
 	else
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "No se ha podido dropear. Comuníquelo a la administración.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No se ha podido dropear. Comuníquelo a la administración.");
 	return 0;
 }
-BOTFUNC(chanserv_identify)
+BOTFUNC(CSIdentify)
 {
 	char *cache;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "IDENTIFY #canal pass");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "IDENTIFY #canal pass");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
 	if ((chanserv.opts & CS_SID) && !parv[parc])
 	{
-		sprintf_irc(buf, "Identificación incorrecta. /msg %s@%s IDENTIFY #canal pass", chanserv.hmod->nick, me.nombre);
-		response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+		ircsprintf(buf, "Identificación incorrecta. /msg %s@%s IDENTIFY #canal pass", chanserv.hmod->nick, me.nombre);
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}	
-	if (strcmp(_mysql_get_registro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(MySQLCogeRegistro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	if (es_fundador(cl, param[1]))
+	if (CSEsFundador(cl, param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya eres fundador de este canal.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ya eres fundador de este canal.");
 		return 1;
 	}
-	sprintf_irc(buf, "%s ", param[1]);
-	if ((cache = coge_cache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id)))
+	ircsprintf(buf, "%s ", param[1]);
+	if ((cache = CogeCache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id)))
 	{
 		if (strstr(cache, buf))
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya te has identificado como fundador de este canal.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ya te has identificado como fundador de este canal.");
 			return 1;
 		}
 		strcat(buf, cache);
 	}
-	inserta_cache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
-	response(cl, CLI(chanserv), "Ahora eres reconocido como founder de \00312%s\003.", param[1]);
+	InsertaCache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
+	Responde(cl, CLI(chanserv), "Ahora eres reconocido como founder de \00312%s\003.", param[1]);
 	return 0;
 }
-BOTFUNC(chanserv_deauth)
+BOTFUNC(CSDeauth)
 {
 	char *cache, *tok;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "DEAUTH #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "DEAUTH #canal");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	if (es_fundador(cl, param[1]))
+	if (CSEsFundador(cl, param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Eres fundador de este canal. No puedes quitarte este estado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Eres fundador de este canal. No puedes quitarte este estado.");
 		return 1;
 	}
-	if (!(cache = es_fundador_cache(cl, param[1])))
+	if (!(cache = CSEsFundador_cache(cl, param[1])))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "No te has identificado como fundador.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No te has identificado como fundador.");
 		return 1;
 	}
 	buf[0] = '\0';
@@ -1050,11 +1046,11 @@ BOTFUNC(chanserv_deauth)
 		}
 	}
 	if (buf[0])
-		inserta_cache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
-	response(cl, CLI(chanserv), CS_ERR_EMPT, "Ya no estás identificado como fundador de \00312%s", param[1]);
+		InsertaCache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
+	Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ya no estás identificado como fundador de \00312%s", param[1]);
 	return 1;
 }
-BOTFUNC(chanserv_info)
+BOTFUNC(CSInfo)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
@@ -1063,126 +1059,126 @@ BOTFUNC(chanserv_info)
 	char *forb, *susp, *modos;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "INFO #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "INFO #canal");
 		return 1;
 	}
 	if ((forb = IsChanForbid(param[1])))
 	{
-		response(cl, CLI(chanserv), "Este canal está \2PROHIBIDO\2: %s", forb);
+		Responde(cl, CLI(chanserv), "Este canal está \2PROHIBIDO\2: %s", forb);
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	res = _mysql_query("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where item='%s'", PREFIJO, CS_MYSQL, param[1]);
+	res = MySQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where item='%s'", PREFIJO, CS_MYSQL, param[1]);
 	row = mysql_fetch_row(res);
 	opts = atoi(row[0]);
-	response(cl, CLI(chanserv), "*** Información del canal \00312%s\003 ***", param[1]);
+	Responde(cl, CLI(chanserv), "*** Información del canal \00312%s\003 ***", param[1]);
 	if ((susp = IsChanSuspend(param[1])))
-		response(cl, CLI(chanserv), "Estado: \00312SUSPENDIDO: %s", susp);
+		Responde(cl, CLI(chanserv), "Estado: \00312SUSPENDIDO: %s", susp);
 	else
-		response(cl, CLI(chanserv), "Estado: \00312ACTIVO");
-	response(cl, CLI(chanserv), "Fundador: \00312%s", row[1]);
-	response(cl, CLI(chanserv), "Descripción: \00312%s", row[2]);
+		Responde(cl, CLI(chanserv), "Estado: \00312ACTIVO");
+	Responde(cl, CLI(chanserv), "Fundador: \00312%s", row[1]);
+	Responde(cl, CLI(chanserv), "Descripción: \00312%s", row[2]);
 	reg = (time_t)atol(row[3]);
-	response(cl, CLI(chanserv), "Fecha de registro: \00312%s", _asctime(&reg));
-	response(cl, CLI(chanserv), "Mensaje de bienvenida: \00312%s", row[4]);
+	Responde(cl, CLI(chanserv), "Fecha de registro: \00312%s", Fecha(&reg));
+	Responde(cl, CLI(chanserv), "Mensaje de bienvenida: \00312%s", row[4]);
 	if (!BadPtr(row[5]))
-		response(cl, CLI(chanserv), "URL: \00312%s", row[5]);
+		Responde(cl, CLI(chanserv), "URL: \00312%s", row[5]);
 	if (!BadPtr(row[6]))
-		response(cl, CLI(chanserv), "Email: \00312%s", row[6]);
+		Responde(cl, CLI(chanserv), "Email: \00312%s", row[6]);
 	if (tiene_nivel(cl->nombre, param[1], CS_LEV_SET))
 		modos = row[7];
 	else
 		modos = strtok(row[7], " ");
-	response(cl, CLI(chanserv), "Modos: \00312%s\003 Candado de modos: \00312%s", modos, opts & CS_OPT_RMOD ? "ON" : "OFF");
-	response(cl, CLI(chanserv), "Topic: \00312%s\003 puesto por: \00312%s", row[8], row[9]);
-	response(cl, CLI(chanserv), "Candado de topic: \00312%s\003 Retención de topic: \00312%s", opts & CS_OPT_KTOP ? "ON" : "OFF", opts & CS_OPT_RTOP ? "ON" : "OFF");
+	Responde(cl, CLI(chanserv), "Modos: \00312%s\003 Candado de modos: \00312%s", modos, opts & CS_OPT_RMOD ? "ON" : "OFF");
+	Responde(cl, CLI(chanserv), "Topic: \00312%s\003 puesto por: \00312%s", row[8], row[9]);
+	Responde(cl, CLI(chanserv), "Candado de topic: \00312%s\003 Retención de topic: \00312%s", opts & CS_OPT_KTOP ? "ON" : "OFF", opts & CS_OPT_RTOP ? "ON" : "OFF");
 	if (opts & CS_OPT_SOP)
-		response(cl, CLI(chanserv), "Canal con \2SECUREOPS");
+		Responde(cl, CLI(chanserv), "Canal con \2SECUREOPS");
 	if (opts & CS_OPT_SEC)
-		response(cl, CLI(chanserv), "Canal \2SEGURO");
+		Responde(cl, CLI(chanserv), "Canal \2SEGURO");
 	if (opts & CS_OPT_NODROP)
-		response(cl, CLI(chanserv), "Canal \2NO DROPABLE");
+		Responde(cl, CLI(chanserv), "Canal \2NO DROPABLE");
 	reg = (time_t)atol(row[10]);
-	response(cl, CLI(chanserv), "Último acceso: \00312%s", _asctime(&reg));
+	Responde(cl, CLI(chanserv), "Último acceso: \00312%s", Fecha(&reg));
 	mysql_free_result(res);
 	return 0;
 }
-BOTFUNC(chanserv_invite)
+BOTFUNC(CSInvite)
 {
 	Cliente *al = NULL;
 	Canal *cn;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "INVITE #canal [nick]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "INVITE #canal [nick]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
 	if (!tiene_nivel(cl->nombre, param[1], CS_LEV_INV))
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB);
+		Responde(cl, CLI(chanserv), CS_ERR_FORB);
 		return 1;
 	}
-	if (params == 3 && !(al = busca_cliente(param[2], NULL)))
+	if (params == 3 && !(al = BuscaCliente(param[2], NULL)))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este usuario no está conectado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	cn = busca_canal(param[1], NULL);
+	cn = BuscaCanal(param[1], NULL);
 	port_func(P_INVITE)(al ? al : cl, CLI(chanserv), cn);
-	response(cl, CLI(chanserv), "El usuario \00312%s\003 ha sido invitado a \00312%s\003.", params == 3 ? param[2] : parv[0], param[1]);
+	Responde(cl, CLI(chanserv), "El usuario \00312%s\003 ha sido invitado a \00312%s\003.", params == 3 ? param[2] : parv[0], param[1]);
 	if (IsChanDebug(param[1]))
 		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s invita a %s", parv[0], params == 3 ? param[2] : parv[0]);
 	return 0;
 }
-BOTFUNC(chanserv_modos)
+BOTFUNC(CSModos)
 {
 	int i, opts;
 	Cliente *al;
 	Canal *cn;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), "%s #canal parámetros", strtoupper(param[0]));
+		Responde(cl, CLI(chanserv), "%s #canal parámetros", strtoupper(param[0]));
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!(cn = busca_canal(param[1], NULL)))
+	if (!(cn = BuscaCanal(param[1], NULL)))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
 	if (!tiene_nivel(parv[0], param[1], CS_LEV_RMO))
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	opts = atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts"));
+	opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
 	if (!strcasecmp(param[0], "ADMIN") && MODE_ADM)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || es_link(cn->admin, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->admin, al))
 				continue;
 			if (!tiene_nivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
 				continue;
@@ -1193,7 +1189,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || !es_link(cn->admin, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->admin, al))
 				continue;
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al));
 		}
@@ -1202,7 +1198,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || es_link(cn->op, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->op, al))
 				continue;
 			if (!tiene_nivel(param[i], param[1], CS_LEV_AOP) && (opts & CS_OPT_SOP))
 				continue;
@@ -1213,7 +1209,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || !es_link(cn->op, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->op, al))
 				continue;
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al));
 		}
@@ -1222,7 +1218,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || es_link(cn->half, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->half, al))
 				continue;
 			if (!tiene_nivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
 				continue;
@@ -1233,7 +1229,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || !es_link(cn->half, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->half, al))
 				continue;
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al));
 		}
@@ -1242,7 +1238,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || es_link(cn->voz, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->voz, al))
 				continue;
 			if (!tiene_nivel(param[i], param[1], CS_LEV_AVO) && (opts & CS_OPT_SOP))
 				continue;
@@ -1253,7 +1249,7 @@ BOTFUNC(chanserv_modos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = busca_cliente(param[i], NULL)) || !es_link(cn->voz, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->voz, al))
 				continue;
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al));
 		}
@@ -1261,83 +1257,83 @@ BOTFUNC(chanserv_modos)
 	else if (!strcasecmp(param[0], "BAN"))
 	{
 		for (i = 2; i < params; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", ircdmask(param[i]));
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", MascaraIrcd(param[i]));
 	}
 	else if (!strcasecmp(param[0], "UNBAN"))
 	{
 		for (i = 2; i < params; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-b %s", ircdmask(param[i]));
+			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-b %s", MascaraIrcd(param[i]));
 	}
 	else if (!strcasecmp(param[0], "KICK"))
 	{
-		if (!(al = busca_cliente(param[2], NULL)))
+		if (!(al = BuscaCliente(param[2], NULL)))
 			return 1;
-		port_func(P_KICK)(al, CLI(chanserv), cn, implode(param, params, 3, -1));
+		port_func(P_KICK)(al, CLI(chanserv), cn, Unifica(param, params, 3, -1));
 	}
 	if (IsChanDebug(param[1]))
-		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace %s a %s", parv[0], strtoupper(param[0]), implode(param, params, 2, -1));
+		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace %s a %s", parv[0], strtoupper(param[0]), Unifica(param, params, 2, -1));
 	return 0;
 }
-BOTFUNC(chanserv_clear)
+BOTFUNC(CSClear)
 {
 	Canal *cn;
 	Cliente **al = NULL;
 	int i;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "CLEAR #canal opcion");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "CLEAR #canal opcion");
 		return 1;
 	}
 	if (!IsChanReg(param[1]) && !IsPreo(cl))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!(cn = busca_canal(param[1], NULL)))
+	if (!(cn = BuscaCanal(param[1], NULL)))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
 	if (!tiene_nivel(parv[0], param[1], CS_LEV_RES))
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
 	if (!strcasecmp(param[2], "USERS"))
 	{
 		char *motivo = "CLEAR USERS";
-		al = empaqueta_clientes(cn, NULL, !ADD);
+		al = CSEmpaquetaClientes(cn, NULL, !ADD);
 		if (params > 3)
-			motivo = implode(param, params, 3, -1);
+			motivo = Unifica(param, params, 3, -1);
 		for (i = 0; al[i]; i++)
 			port_func(P_KICK)(al[i], CLI(chanserv), cn, motivo);
 	}
 	else if (!strcasecmp(param[2], "ADMINS") && MODE_ADM)
 	{
-		al = empaqueta_clientes(cn, cn->admin, !ADD);
+		al = CSEmpaquetaClientes(cn, cn->admin, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "OPS"))
 	{
-		al = empaqueta_clientes(cn, cn->op, !ADD);
+		al = CSEmpaquetaClientes(cn, cn->op, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "HALFS") && MODE_HALF)
 	{
-		al = empaqueta_clientes(cn, cn->half, !ADD);
+		al = CSEmpaquetaClientes(cn, cn->half, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "VOCES"))
 	{
-		al = empaqueta_clientes(cn, cn->voz, !ADD);
+		al = CSEmpaquetaClientes(cn, cn->voz, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
 	}
@@ -1346,23 +1342,23 @@ BOTFUNC(chanserv_clear)
 		char *regs, *tok;
 		if (!IsChanReg(param[1]))
 		{
-			response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+			Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 			return 1;
 		}
-		regs = _mysql_get_registro(CS_MYSQL, param[1], "regs");
+		regs = MySQLCogeRegistro(CS_MYSQL, param[1], "regs");
 		for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
 		{
-			borra_cregistro(tok, param[1]);
+			CSBorraRegistro(tok, param[1]);
 			strtok(NULL, " ");
 		}
-		_mysql_add(CS_MYSQL, param[1], "regs", NULL);
-		response(cl, CLI(chanserv), "Lista de accesos eliminada.");
+		MySQLInserta(CS_MYSQL, param[1], "regs", NULL);
+		Responde(cl, CLI(chanserv), "Lista de accesos eliminada.");
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%s", modes2flags(cn->modos, protocolo->cmodos, cn));
+		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%s", ModosAFlags(cn->modos, protocolo->cmodos, cn));
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%c", IsChanReg(param[1]) && MODE_RGSTR ? MODEF_RGSTR : 0);
-		response(cl, CLI(chanserv), "Modos resetados a +nt.");
+		Responde(cl, CLI(chanserv), "Modos resetados a +nt.");
 	}
 	else if (!strcasecmp(param[2], "BANS"))
 	{
@@ -1374,15 +1370,15 @@ BOTFUNC(chanserv_clear)
 		char *motivo = "KILL USERS";
 		if (!IsOper(cl))
 		{
-			response(cl, CLI(chanserv), CS_ERR_FORB, "");
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		if (params > 3)
-			motivo = implode(param, params, 3, -1);
-		al = empaqueta_clientes(cn, NULL, !ADD);
+			motivo = Unifica(param, params, 3, -1);
+		al = CSEmpaquetaClientes(cn, NULL, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_QUIT_USUARIO_REMOTO)(al[i], CLI(chanserv), motivo);
-		response(cl, CLI(chanserv), "Usuarios de \00312%s\003 desconectados.", param[1]);
+		Responde(cl, CLI(chanserv), "Usuarios de \00312%s\003 desconectados.", param[1]);
 	}
 	else if (!strcasecmp(param[2], "GLINE"))
 	{
@@ -1390,31 +1386,31 @@ BOTFUNC(chanserv_clear)
 		char *motivo = "GLINE USERS";
 		if (!IsOper(cl))
 		{
-			response(cl, CLI(chanserv), CS_ERR_FORB, "");
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		if (params < 4)
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "CLEAR #canal GLINE tiempo");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "CLEAR #canal GLINE tiempo");
 			return 1;
 		}
 		if (atoi(param[3]) < 1)
 		{
-			response(cl, CLI(chanserv), CS_ERR_SNTX, "El tiempo debe ser superior a 1 segundo.");
+			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "El tiempo debe ser superior a 1 segundo.");
 			return 1;
 		}
 		if (params > 4)
-			motivo = implode(param, params, 4, -1);
+			motivo = Unifica(param, params, 4, -1);
 		for (aux = cn->miembro; aux; aux = aux->sig)
 		{
 			if (!EsBot(aux->user) && !IsOper(aux->user))
 				port_func(P_GLINE)(CLI(chanserv), ADD, aux->user->ident, aux->user->host, atoi(param[3]), motivo);
 		}
-		response(cl, CLI(chanserv), "Usuarios de \00312%s\003 con gline durante \00312%s\003 segundos.", param[1], param[3]);
+		Responde(cl, CLI(chanserv), "Usuarios de \00312%s\003 con gline durante \00312%s\003 segundos.", param[1], param[3]);
 	}
 	else
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 		return 1;
 	}
 	if (IsChanDebug(param[1]))
@@ -1422,88 +1418,88 @@ BOTFUNC(chanserv_clear)
 	ircfree(al);
 	return 0;
 }
-BOTFUNC(chanserv_set)
+BOTFUNC(CSOpts)
 {
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal parámetros");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal parámetros");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
 	if (!tiene_nivel(parv[0], param[1], CS_LEV_SET))
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
 	if (!strcasecmp(param[2], "DESC"))
 	{
 		if (params < 4)
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal DESC descripción");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal DESC descripción");
 			return 1;
 		}
-		_mysql_add(CS_MYSQL, param[1], "descripcion", implode(param, params, 3, -1));
-		response(cl, CLI(chanserv), "Descripción cambiada.");
+		MySQLInserta(CS_MYSQL, param[1], "descripcion", Unifica(param, params, 3, -1));
+		Responde(cl, CLI(chanserv), "Descripción cambiada.");
 	}
 	else if (!strcasecmp(param[2], "URL"))
 	{
 		if (params == 4)
-			response(cl, CLI(chanserv), "URL cambiada.");
+			Responde(cl, CLI(chanserv), "URL cambiada.");
 		else
-			response(cl, CLI(chanserv), "URL desactivada.");
-		_mysql_add(CS_MYSQL, param[1], "url", params == 4 ? param[3] : NULL);
+			Responde(cl, CLI(chanserv), "URL desactivada.");
+		MySQLInserta(CS_MYSQL, param[1], "url", params == 4 ? param[3] : NULL);
 	}
 	else if (!strcasecmp(param[2], "EMAIL"))
 	{
 		if (params == 4)
-			response(cl, CLI(chanserv), "EMAIL cambiado.");
+			Responde(cl, CLI(chanserv), "EMAIL cambiado.");
 		else
-			response(cl, CLI(chanserv), "EMAIL desactivado.");
-		_mysql_add(CS_MYSQL, param[1], "email", params == 4 ? param[3] : NULL);
+			Responde(cl, CLI(chanserv), "EMAIL desactivado.");
+		MySQLInserta(CS_MYSQL, param[1], "email", params == 4 ? param[3] : NULL);
 	}
 	else if (!strcasecmp(param[2], "TOPIC"))
 	{
 		char *topic;
-		topic = params > 3 ? implode(param, params, 3, -1) : NULL;
+		topic = params > 3 ? Unifica(param, params, 3, -1) : NULL;
 		if (params > 3)
 		{
-			response(cl, CLI(chanserv), "TOPIC cambiado.");
+			Responde(cl, CLI(chanserv), "TOPIC cambiado.");
 #ifndef UDB
-			port_func(P_TOPIC)(CLI(chanserv), busca_canal(param[1], NULL), topic);
+			port_func(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1], NULL), topic);
 #endif
 		}
 		else
-			response(cl, CLI(chanserv), "TOPIC desactivado.");
-		_mysql_add(CS_MYSQL, param[1], "topic", topic);
-		_mysql_add(CS_MYSQL, param[1], "ntopic", params > 3 ? parv[0] : NULL);
+			Responde(cl, CLI(chanserv), "TOPIC desactivado.");
+		MySQLInserta(CS_MYSQL, param[1], "topic", topic);
+		MySQLInserta(CS_MYSQL, param[1], "ntopic", params > 3 ? parv[0] : NULL);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
 		{
 			if (params > 3)
-				envia_registro_bdd("C::%s::T %s", param[1], topic);
+				PropagaRegistro("C::%s::T %s", param[1], topic);
 			else
-				envia_registro_bdd("C::%s::T", param[1]);
+				PropagaRegistro("C::%s::T", param[1]);
 		}
 #endif
 	}
 	else if (!strcasecmp(param[2], "BIENVENIDA"))
 	{
 		char *entry;
-		entry = params > 3 ? implode(param, params, 3, -1) : NULL;
+		entry = params > 3 ? Unifica(param, params, 3, -1) : NULL;
 		if (params > 3)
-			response(cl, CLI(chanserv), "Mensaje de bienvenida cambiado.");
+			Responde(cl, CLI(chanserv), "Mensaje de bienvenida cambiado.");
 		else
-			response(cl, CLI(chanserv), "Mensaje de bienvenida desactivado.");
-		_mysql_add(CS_MYSQL, param[1], "entry", entry);
+			Responde(cl, CLI(chanserv), "Mensaje de bienvenida desactivado.");
+		MySQLInserta(CS_MYSQL, param[1], "entry", entry);
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
@@ -1524,19 +1520,19 @@ BOTFUNC(chanserv_set)
 			{
 				if (strchr(param[3], forb[i]))
 				{
-					sprintf_irc(buf, "Los modos %s no se pueden especificar.", forb);
-					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+					ircsprintf(buf, "Los modos %s no se pueden especificar.", forb);
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
 			}
-			modos = implode(param, params, 3, -1);
-			port_func(P_MODO_CANAL)(CLI(chanserv), busca_canal(param[1], NULL), modos);
-			response(cl, CLI(chanserv), "Modos cambiados.");
+			modos = Unifica(param, params, 3, -1);
+			port_func(P_MODO_CANAL)(CLI(chanserv), BuscaCanal(param[1], NULL), modos);
+			Responde(cl, CLI(chanserv), "Modos cambiados.");
 			
 		}
 		else
-			response(cl, CLI(chanserv), "Modos eliminados.");
-		_mysql_add(CS_MYSQL, param[1], "modos", modos);
+			Responde(cl, CLI(chanserv), "Modos eliminados.");
+		MySQLInserta(CS_MYSQL, param[1], "modos", modos);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
 		{
@@ -1553,57 +1549,57 @@ BOTFUNC(chanserv_set)
 				strcat(buf, " ");
 				strcat(buf, str);
 			}
-			envia_registro_bdd("C::%s::M %s", param[1], buf);
+			PropagaRegistro("C::%s::M %s", param[1], buf);
 		}
 #endif
 	}
 	else if (!strcasecmp(param[2], "PASS"))
 	{
-		if (!es_fundador(cl, param[1]) && !IsOper(cl))
+		if (!CSEsFundador(cl, param[1]) && !IsOper(cl))
 		{
-			response(cl, CLI(chanserv), CS_ERR_FORB, "");
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		if (params < 4)
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal PASS contraseña");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal PASS contraseña");
 			return 1;
 		}
-		_mysql_add(CS_MYSQL, param[1], "pass", MDString(param[3]));
-		response(cl, CLI(chanserv), "Contraseña cambiada.");
+		MySQLInserta(CS_MYSQL, param[1], "pass", MDString(param[3]));
+		Responde(cl, CLI(chanserv), "Contraseña cambiada.");
 	}
 	else if (!strcasecmp(param[2], "FUNDADOR"))
 	{
-		if (!es_fundador(cl, param[1]) && !IsOper(cl))
+		if (!CSEsFundador(cl, param[1]) && !IsOper(cl))
 		{
-			response(cl, CLI(chanserv), CS_ERR_FORB, "");
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		if (params < 4)
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal FUNDADOR nick");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal FUNDADOR nick");
 			return 1;
 		}
 		if (!IsReg(param[3]))
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
-		_mysql_add(CS_MYSQL, param[1], "founder", param[3]);
+		MySQLInserta(CS_MYSQL, param[1], "founder", param[3]);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
-			envia_registro_bdd("C::%s::F %s", param[1], param[3]);
+			PropagaRegistro("C::%s::F %s", param[1], param[3]);
 #endif
-		response(cl, CLI(chanserv), "Fundador cambiado.");
+		Responde(cl, CLI(chanserv), "Fundador cambiado.");
 	}
 	else if (!strcasecmp(param[2], "OPCIONES"))
 	{
 		char f = ADD, *modos = param[3], buenos[128];
-		int opts = atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts"));
+		int opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
 		buenos[0] = 0;
 		if (params < 4)
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal opciones +-modos");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal opciones +-modos");
 			return 1;
 		}
 		while (!BadPtr(modos))
@@ -1670,7 +1666,7 @@ BOTFUNC(chanserv_set)
 				case 'n':
 					if (!IsOper(cl))
 					{
-						response(cl, CLI(chanserv), CS_ERR_FORB, "");
+						Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 						return 1;
 					}
 					if (f == ADD)
@@ -1682,55 +1678,55 @@ BOTFUNC(chanserv_set)
 			}
 			modos++;
 		}
-		_mysql_add(CS_MYSQL, param[1], "opts", "%i", opts);
-		response(cl, CLI(chanserv), "Opciones cambiadas a \00312%s\003.", buenos);
+		MySQLInserta(CS_MYSQL, param[1], "opts", "%i", opts);
+		Responde(cl, CLI(chanserv), "Opciones cambiadas a \00312%s\003.", buenos);
 	}
 	else
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
 		return 1;
 	}
 	return 0;
 }
-BOTFUNC(chanserv_akick)
+BOTFUNC(CSAkick)
 {
 	Akick *aux;
 	Canal *cn;
 	int i;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "AKICK #canal [+-nick|mascara [motivo]]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "AKICK #canal [+-nick|mascara [motivo]]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!(cn = busca_canal(param[1], NULL)))
+	if (!(cn = BuscaCanal(param[1], NULL)))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
 	if (!tiene_nivel(parv[0], param[1], CS_LEV_ACK))
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
 	if (params == 2)
 	{
-		if (!(aux = busca_akicks(param[1])) || !aux->akicks)
+		if (!(aux = CSBuscaAkicks(param[1])) || !aux->akicks)
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún akick.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún akick.");
 			return 1;
 		}
 		for (i = 0; i < aux->akicks; i++)
-			response(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
+			Responde(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
 	}
 	else
 	{
@@ -1738,60 +1734,60 @@ BOTFUNC(chanserv_akick)
 		{
 			Cliente *al;
 			char *motivo = NULL;
-			if ((aux = busca_akicks(param[1])) && aux->akicks == CS_MAX_AKICK && !es_akick(param[2] + 1, param[1]))
+			if ((aux = CSBuscaAkicks(param[1])) && aux->akicks == CS_MAX_AKICK && !CSEsAkick(param[2] + 1, param[1]))
 			{
-				response(cl, CLI(chanserv), CS_ERR_EMPT, "No se aceptan más entradas.");
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No se aceptan más entradas.");
 				return 1;
 			}
 			if (params > 3)
-				motivo = implode(param, params, 3, -1);
+				motivo = Unifica(param, params, 3, -1);
 			else
 				motivo = "No eres bienvenid@.";
 			if (motivo && (strchr(motivo, '\t') || strchr(motivo, '\1')))
 			{
-				response(cl, CLI(chanserv), CS_ERR_EMPT, "Este motivo contiene caracteres inválidos.");
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este motivo contiene caracteres inválidos.");
 				return 1;
 			}
-			borra_akick_bd(param[2] + 1, param[1]);
-			inserta_akick_bd(param[2] + 1, param[1], parv[0], motivo);
-			if ((al = busca_cliente(param[2] + 1, NULL)))
+			CSBorraAkickDb(param[2] + 1, param[1]);
+			CSInsertaAkickDb(param[2] + 1, param[1], parv[0], motivo);
+			if ((al = BuscaCliente(param[2] + 1, NULL)))
 				port_func(P_KICK)(al, CLI(chanserv), cn, motivo);
-			response(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2] + 1);
+			Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2] + 1);
 		}
 		else if (*param[2] == '-')
 		{
-			if (!es_akick(param[2] + 1, param[1]))
+			if (!CSEsAkick(param[2] + 1, param[1]))
 			{
-				response(cl, CLI(chanserv), CS_ERR_EMPT, "Esta entrada no existe.");
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Esta entrada no existe.");
 				return 1;
 			}
-			borra_akick_bd(param[2] + 1, param[1]);
-			response(cl, CLI(chanserv), "Entrada \00312%s\003 eliminada.", param[2] + 1);
+			CSBorraAkickDb(param[2] + 1, param[1]);
+			Responde(cl, CLI(chanserv), "Entrada \00312%s\003 eliminada.", param[2] + 1);
 		}
 		else
 		{
-			response(cl, CLI(chanserv), CS_ERR_SNTX, "AKICK +-nick|mascara [motivo]");
+			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "AKICK +-nick|mascara [motivo]");
 			return 1;
 		}
 	}	
 	return 0;
 }
-BOTFUNC(chanserv_access)
+BOTFUNC(CSAccess)
 {
 	char *registros;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "ACCESS #canal [+-nick [+-flags]]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "ACCESS #canal [+-nick [+-flags]]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
 	if (params == 2)
@@ -1799,20 +1795,20 @@ BOTFUNC(chanserv_access)
 		char *tok;
 		if (!tiene_nivel(parv[0], param[1], CS_LEV_LIS))
 		{
-			response(cl, CLI(chanserv), CS_ERR_FORB, "");
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		registros = _mysql_get_registro(CS_MYSQL, param[1], "regs");
+		registros = MySQLCogeRegistro(CS_MYSQL, param[1], "regs");
 		if (!registros)
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún acceso.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún acceso.");
 			return 1;
 		}
-		response(cl, CLI(chanserv), "*** Accesos de \00312%s\003 ***", param[1]);
+		Responde(cl, CLI(chanserv), "*** Accesos de \00312%s\003 ***", param[1]);
 		for (tok = strtok(registros, ":"); tok; tok = strtok(NULL, ":"))
 		{
 			u_long niv = atol(strtok(NULL, " "));
-			response(cl, CLI(chanserv), "Nick: \00312%s\003 flags:\00312+%s\003 (\00312%lu\003)", tok, modes2flags(niv, cFlags, NULL), niv);
+			Responde(cl, CLI(chanserv), "Nick: \00312%s\003 flags:\00312+%s\003 (\00312%lu\003)", tok, ModosAFlags(niv, cFlags, NULL), niv);
 		}
 	}
 	else
@@ -1820,17 +1816,17 @@ BOTFUNC(chanserv_access)
 		u_long prev;
 		if (!tiene_nivel(parv[0], param[1], CS_LEV_EDT))
 		{
-			response(cl, CLI(chanserv), CS_ERR_FORB, "");
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
 		if (*param[2] != '+' && *param[2] != '-')
 		{
-			response(cl, CLI(chanserv), CS_ERR_SNTX, "ACCESS #canal +-nick [+-flags]");
+			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "ACCESS #canal +-nick [+-flags]");
 			return 1;
 		}
 		if (!IsReg(param[2] + 1))
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
 		if (*param[2] == '+')
@@ -1839,10 +1835,10 @@ BOTFUNC(chanserv_access)
 			param[2]++;
 			if (params < 4)
 			{
-				response(cl, CLI(chanserv), CS_ERR_PARA, "ACCESS +-nick +-flags");
+				Responde(cl, CLI(chanserv), CS_ERR_PARA, "ACCESS +-nick +-flags");
 				return 1;
 			}
-			prev = borra_acceso(param[2], param[1]);
+			prev = CSBorraAcceso(param[2], param[1]);
 			while (!BadPtr(modos))
 			{
 				switch(*modos)
@@ -1855,39 +1851,39 @@ BOTFUNC(chanserv_access)
 						break;
 					default:
 						if (f == ADD)
-							prev |= flag2mode(*modos, cFlags);
+							prev |= FlagAModo(*modos, cFlags);
 						else
-							prev &= ~flag2mode(*modos, cFlags);
+							prev &= ~FlagAModo(*modos, cFlags);
 				}
 				modos++;
 			}
 			if (prev)
 			{
 				CsRegistros *aux;
-				if ((aux = busca_cregistro(param[2])) && aux->subs == CS_MAX_REGS && !es_cregistro(param[2], param[1]))
+				if ((aux = busca_cregistro(param[2])) && aux->subs == CS_MAX_REGS && !CSEsRegistro(param[2], param[1]))
 				{
-					response(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick ya no acepta más registros.");
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick ya no acepta más registros.");
 					return 1;
 				}
-				registros = _mysql_get_registro(CS_MYSQL, param[1], "regs");
-				sprintf_irc(buf, "%s:%lu", param[2], prev);
-				_mysql_add(CS_MYSQL, param[1], "regs", "%s%s", registros ? registros : "", buf);
-				inserta_cregistro(param[2], param[1], prev);
-				response(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
+				registros = MySQLCogeRegistro(CS_MYSQL, param[1], "regs");
+				ircsprintf(buf, "%s:%lu", param[2], prev);
+				MySQLInserta(CS_MYSQL, param[1], "regs", "%s%s", registros ? registros : "", buf);
+				CSInsertaRegistro(param[2], param[1], prev);
+				Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
 				if (IsChanDebug(param[1]))
 				{
 					Canal *cn;
-					cn = busca_canal(param[1], NULL);
+					cn = BuscaCanal(param[1], NULL);
 					port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s cambiado a %s", param[2], param[3]);
 				}
 			}
 			else
 			{
-				response(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
+				Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 				if (IsChanDebug(param[1]))
 				{
 					Canal *cn;
-					cn = busca_canal(param[1], NULL);
+					cn = BuscaCanal(param[1], NULL);
 					port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s eliminado", param[2]);
 				}
 			}
@@ -1895,19 +1891,19 @@ BOTFUNC(chanserv_access)
 		else if (*param[2] == '-')
 		{
 			param[2]++;
-			prev = borra_acceso(param[2], param[1]);
-			response(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
+			prev = CSBorraAcceso(param[2], param[1]);
+			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 			if (IsChanDebug(param[1]))
 			{
 				Canal *cn;
-				cn = busca_canal(param[1], NULL);
+				cn = BuscaCanal(param[1], NULL);
 				port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s eliminado", param[2]);
 			}
 		}
 	}	
 	return 0;
 }
-BOTFUNC(chanserv_list)
+BOTFUNC(CSList)
 {
 	char *rep;
 	MYSQL_RES *res;
@@ -1915,7 +1911,7 @@ BOTFUNC(chanserv_list)
 	int i;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "LIST [-r] patrón");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "LIST [-r] patrón");
 		return 1;
 	}
 	if (params == 3)
@@ -1924,27 +1920,27 @@ BOTFUNC(chanserv_list)
 		{
 			if (params < 3)
 			{
-				response(cl, CLI(chanserv), CS_ERR_PARA, "LIST [-r] patrón");
+				Responde(cl, CLI(chanserv), CS_ERR_PARA, "LIST [-r] patrón");
 				return 1;
 			}
 			switch(*(param[1] + 1))
 			{
 				case 'r':
 					rep = str_replace(param[2], '*', '%');
-					res = _mysql_query("SELECT item,descripcion from %s%s where item LIKE '%s' AND registro='0'", PREFIJO, CS_MYSQL, rep);
+					res = MySQLQuery("SELECT item,descripcion from %s%s where item LIKE '%s' AND registro='0'", PREFIJO, CS_MYSQL, rep);
 					if (!res)
 					{
-						response(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
+						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
 						return 1;
 					}
-					response(cl, CLI(chanserv), "*** Canales en petición que coinciden con el patrón \00312%s\003 ***", param[1]);
+					Responde(cl, CLI(chanserv), "*** Canales en petición que coinciden con el patrón \00312%s\003 ***", param[1]);
 					for (i = 0; i < chanserv.maxlist && (row = mysql_fetch_row(res)); i++)
-						response(cl, CLI(chanserv), "\00312%s\003 Desc:\00312%s", row[0], row[1]);
-					response(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
+						Responde(cl, CLI(chanserv), "\00312%s\003 Desc:\00312%s", row[0], row[1]);
+					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
 					mysql_free_result(res);
 					break;
 				default:
-					response(cl, CLI(chanserv), CS_ERR_SNTX, "Parámetro no válido.");
+					Responde(cl, CLI(chanserv), CS_ERR_SNTX, "Parámetro no válido.");
 					return 1;
 			}
 		}
@@ -1953,267 +1949,267 @@ BOTFUNC(chanserv_list)
 	{
 		if (*param[1] == '-')
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "LIST [-r] patrón");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "LIST [-r] patrón");
 			return 1;
 		}
 		rep = str_replace(param[1], '*', '%');
-		res = _mysql_query("SELECT item from %s%s where item LIKE '%s' AND registro!='0'", PREFIJO, CS_MYSQL, rep);
+		res = MySQLQuery("SELECT item from %s%s where item LIKE '%s' AND registro!='0'", PREFIJO, CS_MYSQL, rep);
 		if (!res)
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
 			return 1;
 		}
-		response(cl, CLI(chanserv), "*** Canales que coinciden con el patrón \00312%s\003 ***", param[1]);
+		Responde(cl, CLI(chanserv), "*** Canales que coinciden con el patrón \00312%s\003 ***", param[1]);
 		for (i = 0; i < chanserv.maxlist && (row = mysql_fetch_row(res)); i++)
 		{
-			if (IsOper(cl) || !(atoi(_mysql_get_registro(CS_MYSQL, row[0], "opts")) & CS_OPT_HIDE))
-				response(cl, CLI(chanserv), "\00312%s", row[0]);
+			if (IsOper(cl) || !(atoi(MySQLCogeRegistro(CS_MYSQL, row[0], "opts")) & CS_OPT_HIDE))
+				Responde(cl, CLI(chanserv), "\00312%s", row[0]);
 			else
 				i--;
 		}
-		response(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
+		Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
 		mysql_free_result(res);
 	}
 	return 0;
 }
-BOTFUNC(chanserv_jb)
+BOTFUNC(CSJb)
 {
 	Cliente *bl;
 	Canal *cn;
 	int i, bots = 0;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "JOIN #canal [servicios]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "JOIN #canal [servicios]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]) && !IsOper(cl))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	cn = busca_canal(param[1], NULL);
+	cn = BuscaCanal(param[1], NULL);
 	if (cn)
 	{
 		Modulo *ex;
 		for (ex = modulos; ex; ex = ex->sig)
 		{
-			bl = busca_cliente(ex->nick, NULL);
-			if (es_link(cn->miembro, bl) && !es_residente(ex, param[1] + 1))
-				saca_bot_de_canal(bl, cn->nombre, "Cambiando bots");
+			bl = BuscaCliente(ex->nick, NULL);
+			if (EsLink(cn->miembro, bl) && !CSEsResidente(ex, param[1] + 1))
+				SacaBot(bl, cn->nombre, "Cambiando bots");
 		}
 	}
 	for (i = 2; i < params; i++)
 	{
 		Modulo *ex;
-		if ((ex = busca_modulo(param[i], modulos)))
+		if ((ex = BuscaModulo(param[i], modulos)))
 		{
-			bl = busca_cliente(ex->nick, NULL);
-			mete_bot_en_canal(bl, param[1]);
+			bl = BuscaCliente(ex->nick, NULL);
+			EntraBot(bl, param[1]);
 			bots |= ex->id;
 		}
 	}
 	if (IsChanReg(param[1]))
-		_mysql_add(CS_MYSQL, param[1], "bjoins", "%i", bots);
-	response(cl, CLI(chanserv), "Bots cambiados.");
+		MySQLInserta(CS_MYSQL, param[1], "bjoins", "%i", bots);
+	Responde(cl, CLI(chanserv), "Bots cambiados.");
 	return 0;
 }
-BOTFUNC(chanserv_sendpass)
+BOTFUNC(CSSendpass)
 {
 	char *pass;
 	char *founder;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "SENDPASS #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "SENDPASS #canal");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	pass = random_ex("******-******");
-	founder = strdup(_mysql_get_registro(CS_MYSQL, param[1], "founder"));
-	_mysql_add(CS_MYSQL, param[1], "pass", MDString(pass));
-	email(_mysql_get_registro(NS_MYSQL, founder, "email"), "Reenvío de la contraseña", "Debido a la pérdida de la contraseña de tu canal, se te ha generado otra clave totalmetne segura.\r\n"
+	pass = AleatorioEx("******-******");
+	founder = strdup(MySQLCogeRegistro(CS_MYSQL, param[1], "founder"));
+	MySQLInserta(CS_MYSQL, param[1], "pass", MDString(pass));
+	Email(MySQLCogeRegistro(NS_MYSQL, founder, "email"), "Reenvío de la contraseña", "Debido a la pérdida de la contraseña de tu canal, se te ha generado otra clave totalmetne segura.\r\n"
 		"A partir de ahora, la clave de tu canal es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", pass, chanserv.hmod->nick, conf_set->red);
-	response(cl, CLI(chanserv), "Se generado y enviado otra contraseña al email del founder de \00312%s\003.", param[1]);
+	Responde(cl, CLI(chanserv), "Se generado y enviado otra contraseña al email del founder de \00312%s\003.", param[1]);
 	Free(founder);
 	return 0;
 }
-BOTFUNC(chanserv_suspender)
+BOTFUNC(CSSuspender)
 {
 	char *motivo;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "SUSPENDER #canal motivo");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "SUSPENDER #canal motivo");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	motivo = implode(param, params, 2, -1);
+	motivo = Unifica(param, params, 2, -1);
 #ifdef UDB
-	envia_registro_bdd("C::%s::S %s", param[1], motivo);
+	PropagaRegistro("C::%s::S %s", param[1], motivo);
 #else
-	_mysql_add(CS_MYSQL, param[1], "suspend", motivo);
+	MySQLInserta(CS_MYSQL, param[1], "suspend", motivo);
 #endif
-	response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido suspendido.", param[1]);
+	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido suspendido.", param[1]);
 	return 0;
 }
-BOTFUNC(chanserv_liberar)
+BOTFUNC(CSLiberar)
 {
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "LIBERAR #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "LIBERAR #canal");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está suspendido.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está suspendido.");
 		return 1;
 	}
 #ifdef UDB
-	envia_registro_bdd("C::%s::S", param[1]);
+	PropagaRegistro("C::%s::S", param[1]);
 #else
-	_mysql_add(CS_MYSQL, param[1], "suspend", "");
+	MySQLInserta(CS_MYSQL, param[1], "suspend", "");
 #endif
-	response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su suspenso.", param[1]);
+	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su suspenso.", param[1]);
 	return 0;
 }
-BOTFUNC(chanserv_forbid)
+BOTFUNC(CSForbid)
 {
 	Canal *cn;
 	char *motivo;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "FORBID #canal motivo");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "FORBID #canal motivo");
 		return 1;
 	}
-	motivo = implode(param, params, 2, -1);
-	if ((cn = busca_canal(param[1], NULL)) && cn->miembros)
+	motivo = Unifica(param, params, 2, -1);
+	if ((cn = BuscaCanal(param[1], NULL)) && cn->miembros)
 	{
 		Cliente **al = NULL;
 		int i;
-		al = empaqueta_clientes(cn, NULL, !ADD);
+		al = CSEmpaquetaClientes(cn, NULL, !ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_KICK)(al[i], CLI(chanserv), cn, "Canal \2PROHIBIDO\2: %s", motivo);
 		ircfree(al);
 	}
 #ifdef UDB
-	envia_registro_bdd("C::%s::B %s", param[1], motivo);
+	PropagaRegistro("C::%s::B %s", param[1], motivo);
 #else
-	_mysql_add(CS_FORBIDS, param[1], "motivo", motivo);
+	MySQLInserta(CS_FORBIDS, param[1], "motivo", motivo);
 #endif
-	response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido prohibido.", param[1]);
+	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido prohibido.", param[1]);
 	return 0;
 }
-BOTFUNC(chanserv_unforbid)
+BOTFUNC(CSUnforbid)
 {
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "UNFORBID #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "UNFORBID #canal");
 		return 1;
 	}
 	if (!IsChanForbid(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está prohibido.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está prohibido.");
 		return 1;
 	}
 #ifdef UDB
-	envia_registro_bdd("C::%s::B", param[1]);
+	PropagaRegistro("C::%s::B", param[1]);
 #else
-	_mysql_del(CS_FORBIDS, param[1]);
+	MySQLBorra(CS_FORBIDS, param[1]);
 #endif
-	response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su prohibición.", param[1]);
+	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su prohibición.", param[1]);
 	return 0;
 }
-BOTFUNC(chanserv_block)
+BOTFUNC(CSBlock)
 {
 	Canal *cn;
 	Cliente **al;
 	int i;
 	if (params < 2)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "BLOCK #canal");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "BLOCK #canal");
 		return 1;
 	}
-	if (!(cn = busca_canal(param[1], NULL)))
+	if (!(cn = BuscaCanal(param[1], NULL)))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal está vacío.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal está vacío.");
 		return 1;
 	}
 	if (MODE_OWNER)
 	{
-		al = empaqueta_clientes(cn, cn->owner, ADD);
+		al = CSEmpaquetaClientes(cn, cn->owner, ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_OWNER, TRIO(al[i]));
 		ircfree(al);
 	}
 	if (MODE_ADM)
 	{
-		al = empaqueta_clientes(cn, cn->admin, ADD);
+		al = CSEmpaquetaClientes(cn, cn->admin, ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
 		ircfree(al);
 	}
-	al = empaqueta_clientes(cn, cn->op, ADD);
+	al = CSEmpaquetaClientes(cn, cn->op, ADD);
 	for (i = 0; al[i]; i++)
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
 	ircfree(al);
 	if (MODE_HALF)
 	{
-		al = empaqueta_clientes(cn, cn->half, ADD);
+		al = CSEmpaquetaClientes(cn, cn->half, ADD);
 		for (i = 0; al[i]; i++)
 			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
 		ircfree(al);
 	}
-	al = empaqueta_clientes(cn, cn->voz, ADD);
+	al = CSEmpaquetaClientes(cn, cn->voz, ADD);
 	for (i = 0; al[i]; i++)
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
 	ircfree(al);
 	port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+iml 1");
-	response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido bloqueado.", param[1]);
+	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido bloqueado.", param[1]);
 	/* aun asi podrán opearse si tienen nivel, se supone que este comando lo utilizan los operadores 
 	   y estan supervisando el canal, para que si alguno se opea se le killee, o simplemente por hacer 
 	   la gracia */
 	return 0;
 }
-BOTFUNC(chanserv_register)
+BOTFUNC(CSRegister)
 {
 	if (params == 2) /* registro de una petición de canal */
 	{
 		if (!IsOper(cl))
 		{
-			response(cl, CLI(chanserv), CS_ERR_PARA, "REGISTER #canal pass descripción tokens");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "REGISTER #canal pass descripción tokens");
 			return 1;
 		}
 		if (!IsChanPReg(param[1]))
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está en petición de registro.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está en petición de registro.");
 			return 1;
 		}
 		goto registrar;
-		_mysql_add(CS_MYSQL, param[1], "registro", "%i", time(0));
+		MySQLInserta(CS_MYSQL, param[1], "registro", "%i", time(0));
 #ifdef UDB
 		if (chanserv.opts & CS_AUTOMIGRAR)
 		{
-			_mysql_add(CS_MYSQL, param[1], "opts", "%i", CS_OPT_UDB);
-			envia_canal_bdd(param[1]);
+			MySQLInserta(CS_MYSQL, param[1], "opts", "%i", CS_OPT_UDB);
+			CSPropagaCanal(param[1]);
 		}
 #endif
-		response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
+		Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
 	}
 	else if (params >= 4) /* peticion de registro */
 	{
@@ -2223,31 +2219,31 @@ BOTFUNC(chanserv_register)
 		char *desc;
 		if (IsChanReg(param[1]))
 		{
-			response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está registrado.");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está registrado.");
 			return 1;
 		}
 		if (!IsOper(cl))
 		{
-			if ((atol(_mysql_get_registro(NS_MYSQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
+			if ((atol(MySQLCogeRegistro(NS_MYSQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
 			{
 				char buf[512];
-				sprintf_irc(buf, "Tu nick debe tener una antigüedad de como mínimo %i días.", chanserv.antig);
-				response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+				ircsprintf(buf, "Tu nick debe tener una antigüedad de como mínimo %i días.", chanserv.antig);
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 				return 1;
 			}
-			if ((res = _mysql_query("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, parv[0])))
+			if ((res = MySQLQuery("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, parv[0])))
 			{
 				char buf[512];
 				mysql_free_result(res);
-				sprintf_irc(buf, "Ya has efectuado alguna operación referente a tokens. Debes esperar %i horas antes de realizar otra.", chanserv.vigencia);
-				response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+				ircsprintf(buf, "Ya has efectuado alguna operación referente a tokens. Debes esperar %i horas antes de realizar otra.", chanserv.vigencia);
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 				return 1;
 			}
 			if (params < (4 + chanserv.necesarios))
 			{
 				char buf[512];
-				sprintf_irc(buf, "Se necesitan %i tokens.", chanserv.necesarios);
-				response(cl, CLI(chanserv), CS_ERR_SNTX, buf);
+				ircsprintf(buf, "Se necesitan %i tokens.", chanserv.necesarios);
+				Responde(cl, CLI(chanserv), CS_ERR_SNTX, buf);
 				return 1;
 			}
 			/* comprobamos los tokens */
@@ -2258,252 +2254,252 @@ BOTFUNC(chanserv_register)
 				tokbuf[0] = '\0';
 				if (strstr(tokbuf, tok)) /* ya había sido usado */
 				{
-					sprintf_irc(buf, "El token %s está repetido.", tok);
-					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+					ircsprintf(buf, "El token %s está repetido.", tok);
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
-				if (!(res = _mysql_query("SELECT item,nick,hora from %s%s where item='%s'", PREFIJO, CS_TOK, tok)))
+				if (!(res = MySQLQuery("SELECT item,nick,hora from %s%s where item='%s'", PREFIJO, CS_TOK, tok)))
 				{
-					sprintf_irc(buf, "El token %s no es válido o ha caducado.", tok);
-					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+					ircsprintf(buf, "El token %s no es válido o ha caducado.", tok);
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
 				row = mysql_fetch_row(res);
 				mysql_free_result(res);
 				if (BadPtr(row[1]) || BadPtr(row[2]))
 				{
-					sprintf_irc(buf, "Existe un error en el token %s. Posiblemente haya sido robado.", tok);
-					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+					ircsprintf(buf, "Existe un error en el token %s. Posiblemente haya sido robado.", tok);
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
 				if ((atol(row[2]) + 24 * chanserv.vigencia) < time(0))
 				{
-					sprintf_irc(buf, "El token %s ha caducado.", tok);
-					response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+					ircsprintf(buf, "El token %s ha caducado.", tok);
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
 				strcat(tokbuf, tok);
 				strcat(tokbuf, " ");
 			}
-			desc = implode(param, params, 3, params - chanserv.necesarios - 1);
+			desc = Unifica(param, params, 3, params - chanserv.necesarios - 1);
 		}
 		else
-			desc = implode(param, params, 3, -1);
-		_mysql_add(CS_MYSQL, param[1], "founder", parv[0]);
-		_mysql_add(CS_MYSQL, param[1], "pass", MDString(param[2]));
-		_mysql_add(CS_MYSQL, param[1], "descripcion", desc);
+			desc = Unifica(param, params, 3, -1);
+		MySQLInserta(CS_MYSQL, param[1], "founder", parv[0]);
+		MySQLInserta(CS_MYSQL, param[1], "pass", MDString(param[2]));
+		MySQLInserta(CS_MYSQL, param[1], "descripcion", desc);
 		if (IsOper(cl))
 		{
 			Canal *cn;
 			registrar:
-			cn = busca_canal(param[1], NULL);
-			_mysql_add(CS_MYSQL, param[1], "registro", "%i", time(0));
+			cn = BuscaCanal(param[1], NULL);
+			MySQLInserta(CS_MYSQL, param[1], "registro", "%i", time(0));
 #ifdef UDB
 			if (chanserv.opts & CS_AUTOMIGRAR)
 			{
-				_mysql_add(CS_MYSQL, param[1], "opts", "%i", CS_OPT_UDB);
-				envia_canal_bdd(param[1]);
+				MySQLInserta(CS_MYSQL, param[1], "opts", "%i", CS_OPT_UDB);
+				CSPropagaCanal(param[1]);
 			}
 			else
 #endif
 			if (cn)
 			{
 				if (RedOverride)
-					mete_bot_en_canal(CLI(chanserv), cn->nombre);
+					EntraBot(CLI(chanserv), cn->nombre);
 				if (MODE_RGSTR)
 					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", MODEF_RGSTR);
 				port_func(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
 			}
-			senyal1(CS_SIGN_REG, param[1]);
+			Senyal1(CS_SIGN_REG, param[1]);
 		}
-		response(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
+		Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
 	}
 	else
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, IsOper(cl) ? "REGISTER #canal [pass descripción]" : "REGISTER #canal pass descripción tokens");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, IsOper(cl) ? "REGISTER #canal [pass descripción]" : "REGISTER #canal pass descripción tokens");
 		return 1;
 	}
 	return 0;
 }
-BOTFUNC(chanserv_token)
+BOTFUNC(CSToken)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	int libres = 25, i; /* siempre tendremos 25 tokens libres */
-	if ((atol(_mysql_get_registro(NS_MYSQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
+	if ((atol(MySQLCogeRegistro(NS_MYSQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
 	{
 		char buf[512];
-		sprintf_irc(buf, "Tu nick debe tener una antigüedad de como mínimo %i días.", chanserv.antig);
-		response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+		ircsprintf(buf, "Tu nick debe tener una antigüedad de como mínimo %i días.", chanserv.antig);
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}
-	if ((res = _mysql_query("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, parv[0])))
+	if ((res = MySQLQuery("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, parv[0])))
 	{
 		char buf[512];
 		mysql_free_result(res);
-		sprintf_irc(buf, "Ya has efectuado alguna operación referente a tokens. Debes esperar %i horas antes de realizar otra.", chanserv.vigencia);
-		response(cl, CLI(chanserv), CS_ERR_EMPT, buf);
+		ircsprintf(buf, "Ya has efectuado alguna operación referente a tokens. Debes esperar %i horas antes de realizar otra.", chanserv.vigencia);
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}
-	res = _mysql_query("SELECT * from %s%s where hora='0'", PREFIJO, CS_TOK);
+	res = MySQLQuery("SELECT * from %s%s where hora='0'", PREFIJO, CS_TOK);
 	if (res)
 		libres = 25 - (int)mysql_num_rows(res); /* ya que sera ocupada */
 	for (i = 0; i < libres; i++)
 	{
 		char buf[512];
-		sprintf_irc(buf, "%lu", rand());
-		_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, CS_TOK, cifranick(buf, buf));
+		ircsprintf(buf, "%lu", rand());
+		MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, CS_TOK, CifraNick(buf, buf));
 	}
 	if (res)
 		mysql_free_result(res);
-	res = _mysql_query("SELECT item from %s%s where hora='0'", PREFIJO, CS_TOK);
+	res = MySQLQuery("SELECT item from %s%s where hora='0'", PREFIJO, CS_TOK);
 	row = mysql_fetch_row(res);
-	_mysql_add(CS_TOK, row[0], "hora", "%i", time(0));
-	_mysql_add(CS_TOK, row[0], "nick", parv[0]);
-	response(cl, CLI(chanserv), "Tu token es \00312%s\003. Guarda este token ya que será necesario para futuras operaciones y no podrás pedir otro hasta dentro de unas horas.", row[0]);
+	MySQLInserta(CS_TOK, row[0], "hora", "%i", time(0));
+	MySQLInserta(CS_TOK, row[0], "nick", parv[0]);
+	Responde(cl, CLI(chanserv), "Tu token es \00312%s\003. Guarda este token ya que será necesario para futuras operaciones y no podrás pedir otro hasta dentro de unas horas.", row[0]);
 	mysql_free_result(res);
 	return 0;
 }
 #ifdef UDB
-BOTFUNC(chanserv_migrar)
+BOTFUNC(CSMigrar)
 {
 	int opts;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "MIGRAR #canal pass");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "MIGRAR #canal pass");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!es_fundador(cl, param[1])) /* Los operadores de red NO pueden migrar canales que no sean suyos */
+	if (!CSEsFundador(cl, param[1])) /* Los operadores de red NO pueden migrar canales que no sean suyos */
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (strcmp(_mysql_get_registro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(MySQLCogeRegistro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts"));
+	opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
 	if (opts & CS_OPT_UDB)
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está migrado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está migrado.");
 		return 1;
 	}
-	envia_canal_bdd(param[1]);
-	response(cl, CLI(chanserv), "Migración realizada.");
+	CSPropagaCanal(param[1]);
+	Responde(cl, CLI(chanserv), "Migración realizada.");
 	opts |= CS_OPT_UDB;
-	_mysql_add(CS_MYSQL, param[1], "opts", "%i", opts);
+	MySQLInserta(CS_MYSQL, param[1], "opts", "%i", opts);
 	return 0;
 }
-BOTFUNC(chanserv_demigrar)
+BOTFUNC(CSDemigrar)
 {
 	int opts;
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "DEMIGRAR #canal pass");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "DEMIGRAR #canal pass");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!es_fundador(cl, param[1])) /* Los operadores de red NO pueden migrar canales que no sean suyos */
+	if (!CSEsFundador(cl, param[1])) /* Los operadores de red NO pueden migrar canales que no sean suyos */
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (strcmp(_mysql_get_registro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(MySQLCogeRegistro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(_mysql_get_registro(CS_MYSQL, param[1], "opts"));
+	opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
 	if (!(opts & CS_OPT_UDB))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está migrado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está migrado.");
 		return 1;
 	}
-	envia_registro_bdd("C::%s", param[1]);
-	response(cl, CLI(chanserv), "Demigración realizada.");
+	PropagaRegistro("C::%s", param[1]);
+	Responde(cl, CLI(chanserv), "Demigración realizada.");
 	opts &= ~CS_OPT_UDB;
-	_mysql_add(CS_MYSQL, param[1], "opts", "%i", opts);
+	MySQLInserta(CS_MYSQL, param[1], "opts", "%i", opts);
 	return 0;
 }
-BOTFUNC(chanserv_proteger)
+BOTFUNC(CSProteger)
 {
 	if (params < 3)
 	{
-		response(cl, CLI(chanserv), CS_ERR_PARA, "PROTEGER #canal {+|-}nick");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "PROTEGER #canal {+|-}nick");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SUSP);
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
 	if (!tiene_nivel(parv[0], param[1], CS_LEV_EDT))
 	{
-		response(cl, CLI(chanserv), CS_ERR_FORB, "");
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
 	if (!IsChanUDB(param[1]))
 	{
-		response(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está migrado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está migrado.");
 		return 1;
 	}
 	if (BadPtr(param[2] + 1))
 	{
-		response(cl, CLI(chanserv), CS_ERR_SNTX, "PROTEGER #canal {+|-}nick");
+		Responde(cl, CLI(chanserv), CS_ERR_SNTX, "PROTEGER #canal {+|-}nick");
 		return 1;
 	}
 	if (*param[2] == '+')
 	{
-		envia_registro_bdd("C::%s::A::%s -", param[1], param[2] + 1);
-		response(cl, CLI(chanserv), "La entrada \00312%s\003 ha sido añadida.", param[2] + 1);
+		PropagaRegistro("C::%s::A::%s -", param[1], param[2] + 1);
+		Responde(cl, CLI(chanserv), "La entrada \00312%s\003 ha sido añadida.", param[2] + 1);
 	}
 	else if (*param[2] == '-')
 	{
-		envia_registro_bdd("C::%s::A::%s", param[1], param[2] + 1);
-		response(cl, CLI(chanserv), "La entrada \00312%s\003 ha sido eliminada.", param[2] + 1);
+		PropagaRegistro("C::%s::A::%s", param[1], param[2] + 1);
+		Responde(cl, CLI(chanserv), "La entrada \00312%s\003 ha sido eliminada.", param[2] + 1);
 	}
 	else
 	{
-		response(cl, CLI(chanserv), CS_ERR_SNTX, "PROTEGER {+|-}nick");
+		Responde(cl, CLI(chanserv), CS_ERR_SNTX, "PROTEGER {+|-}nick");
 		return 1;
 	}
 	return 0;
 }
 #endif
-int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
+int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 {
 	modebuf[0] = parabuf[0] = '\0';
 	if (IsChanReg(cn->nombre))
 	{
 		int opts;
 		char *modlock, *k;
-		opts = atoi(_mysql_get_registro(CS_MYSQL, cn->nombre, "opts"));
-		modlock = _mysql_get_registro(CS_MYSQL, cn->nombre, "modos");
+		opts = atoi(MySQLCogeRegistro(CS_MYSQL, cn->nombre, "opts"));
+		modlock = MySQLCogeRegistro(CS_MYSQL, cn->nombre, "modos");
 		if (opts & CS_OPT_RMOD && modlock)
 		{
 			strcat(modebuf, strtok(modlock, " "));
@@ -2537,7 +2533,7 @@ int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
 						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AOP))
 						{
 							strcat(modebuf, "-o");
-							strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
+							strcat(parabuf, TRIO(BuscaCliente(mods[pars], NULL)));
 							strcat(parabuf, " ");
 						}
 					}
@@ -2550,9 +2546,9 @@ int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
 						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AHA))
 						{
 							char tmp[3];
-							sprintf_irc(tmp, "-%c", MODEF_HALF);
+							ircsprintf(tmp, "-%c", MODEF_HALF);
 							strcat(modebuf, tmp);
-							strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
+							strcat(parabuf, TRIO(BuscaCliente(mods[pars], NULL)));
 							strcat(parabuf, " ");
 						}
 					}
@@ -2565,9 +2561,9 @@ int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
 						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AAD))
 						{
 							char tmp[3];
-							sprintf_irc(tmp, "-%c", MODEF_ADM);
+							ircsprintf(tmp, "-%c", MODEF_ADM);
 							strcat(modebuf, tmp);
-							strcat(parabuf, TRIO(busca_cliente(mods[pars], NULL)));
+							strcat(parabuf, TRIO(BuscaCliente(mods[pars], NULL)));
 							strcat(parabuf, " ");
 						}
 					}
@@ -2585,14 +2581,14 @@ int chanserv_mode(Cliente *cl, Canal *cn, char *mods[], int max)
 		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
 	return 0;
 }
-int chanserv_topic(Cliente *cl, Canal *cn, char *topic)
+int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 {
 	int opts;
 	if (IsChanReg(cn->nombre))
 	{
 		char *topic;
-		opts = atoi(_mysql_get_registro(CS_MYSQL, cn->nombre, "opts"));
-		topic = _mysql_get_registro(CS_MYSQL, cn->nombre, "topic");
+		opts = atoi(MySQLCogeRegistro(CS_MYSQL, cn->nombre, "opts"));
+		topic = MySQLCogeRegistro(CS_MYSQL, cn->nombre, "topic");
 		if (opts & CS_OPT_KTOP)
 		{
 			if (topic && strcmp(cn->topic, topic))
@@ -2600,22 +2596,22 @@ int chanserv_topic(Cliente *cl, Canal *cn, char *topic)
 		}
 		else if (opts & CS_OPT_RTOP)
 		{
-			_mysql_add(CS_MYSQL, cn->nombre, "topic", topic);
-			_mysql_add(CS_MYSQL, cn->nombre, "ntopic", cl->nombre);
+			MySQLInserta(CS_MYSQL, cn->nombre, "topic", topic);
+			MySQLInserta(CS_MYSQL, cn->nombre, "ntopic", cl->nombre);
 		}
 	}	
 	return 0;
 }
-int chanserv_kick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
+int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 {
 	if (IsChanReg(cn->nombre))
 	{
-		if (tiene_nivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, _mysql_get_registro(CS_MYSQL, cn->nombre, "founder")))
+		if (tiene_nivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, MySQLCogeRegistro(CS_MYSQL, cn->nombre, "founder")))
 			port_func(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
 	}	
 	return 0;
 }
-int chanserv_join(Cliente *cl, Canal *cn)
+int CSCmdJoin(Cliente *cl, Canal *cn)
 {
 	char find, *forb;
 	MYSQL_RES *res;
@@ -2636,7 +2632,7 @@ int chanserv_join(Cliente *cl, Canal *cn)
 	if (IsChanReg(cn->nombre))
 	{
 		find = 0;
-		res = _mysql_query("SELECT opts,entry,modos,topic from %s%s where item='%s'", PREFIJO, CS_MYSQL, cn->nombre);
+		res = MySQLQuery("SELECT opts,entry,modos,topic from %s%s where item='%s'", PREFIJO, CS_MYSQL, cn->nombre);
 		row = mysql_fetch_row(res);
 		mysql_free_result(res);
 		opts = atoi(row[0]);
@@ -2650,7 +2646,7 @@ int chanserv_join(Cliente *cl, Canal *cn)
 			if (!IsOper(cl))
 				return 0;
 		}
-		aux = flags2modes(&aux, modos, protocolo->cmodos);
+		aux = FlagsAModos(&aux, modos, protocolo->cmodos);
 		if (((opts & CS_OPT_RMOD) && (((aux & MODE_OPERONLY) && !IsOper(cl)) || 
 			((aux & MODE_ADMONLY) && !IsAdmin(cl)) ||
 			((aux & MODE_RGSTRONLY) && !IsId(cl)))) ||
@@ -2660,16 +2656,16 @@ int chanserv_join(Cliente *cl, Canal *cn)
 				port_func(P_PART_USUARIO_REMOTO)(cl, cn, NULL);
 			return 0;
 		}
-		akicks = busca_akicks(cn->nombre);
+		akicks = CSBuscaAkicks(cn->nombre);
 		if (akicks)
 		{
 			int i;
 			for (i = 0; i < akicks->akicks; i++)
 			{
-				if (!match(ircdmask(akicks->akick[i].nick), cl->mask))
+				if (!match(MascaraIrcd(akicks->akick[i].nick), cl->mask))
 				{
 					find = 1;
-					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", mascara(cl->mask, chanserv.bantype));
+					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", TipoMascara(cl->mask, chanserv.bantype));
 					port_func(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", akicks->akick[i].motivo, akicks->akick[i].puesto);
 					break;
 				}
@@ -2681,7 +2677,7 @@ int chanserv_join(Cliente *cl, Canal *cn)
 		buf[0] = tokbuf[0] = '\0';
 		if (MODE_OWNER && IsId(cl))
 		{
-			if (es_fundador(cl, cn->nombre) || es_fundador_cache(cl, cn->nombre))
+			if (CSEsFundador(cl, cn->nombre) || CSEsFundador_cache(cl, cn->nombre))
 			{
 				chrcat(buf, MODEF_OWNER);
 				strcat(tokbuf, TRIO(cl));
@@ -2713,7 +2709,7 @@ int chanserv_join(Cliente *cl, Canal *cn)
 			strcat(tokbuf, " ");
 		}
 		if (nivel)
-			_mysql_add(CS_MYSQL, cn->nombre, "ultimo", "%lu", time(0));
+			MySQLInserta(CS_MYSQL, cn->nombre, "ultimo", "%lu", time(0));
 		//if (buf[0])
 		//	tokbuf[strlen(tokbuf)-1] = '\0';
 		if (cn->miembros == 1)
@@ -2749,11 +2745,11 @@ int chanserv_join(Cliente *cl, Canal *cn)
 	}
 	return 0;
 }
-int chanserv_sig_mysql()
+int CSSigMySQL()
 {
-	if (!_mysql_existe_tabla(CS_MYSQL))
+	if (!MySQLEsTabla(CS_MYSQL))
 	{
-		if (_mysql_query("CREATE TABLE `%s%s` ( "
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
   			"`n` int(11) NOT NULL auto_increment, "
   			"`item` text NOT NULL, "
 			"`founder` text NOT NULL, "
@@ -2778,35 +2774,35 @@ int chanserv_sig_mysql()
   			"`regs` text NOT NULL, "
   			"KEY `item` (`n`) "
 			") TYPE=MyISAM COMMENT='Tabla de canales';", PREFIJO, CS_MYSQL))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_MYSQL);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_MYSQL);
 	}
-	if (!_mysql_existe_tabla(CS_TOK))
+	if (!MySQLEsTabla(CS_TOK))
 	{
-		if (_mysql_query("CREATE TABLE `%s%s` ( "
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
 			"`item` varchar(255) default NULL, "
 			"`nick` varchar(255) default NULL, "
 			"`hora` int(11) NOT NULL default '0', "
 			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla de tokens para canales';", PREFIJO, CS_TOK))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
 	}
 #ifndef UDB
-	if (!_mysql_existe_tabla(CS_FORBIDS))
+	if (!MySQLEsTabla(CS_FORBIDS))
 	{
-		if (_mysql_query("CREATE TABLE `%s%s` ( "
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"`motivo` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla de canales prohibidos';", PREFIJO, CS_FORBIDS))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
 	}
 #endif
-	_mysql_carga_tablas();
-	chanserv_carga_registros();
-	chanserv_carga_akicks();
+	MySQLCargaTablas();
+	CSCargaRegistros();
+	CSCargaAkicks();
 	return 1;
 }
-int chanserv_sig_eos()
+int CSSigEOS()
 {
 	/* metemos los bots en los canales que lo hayan soliticado */
 	MYSQL_RES *res;
@@ -2814,9 +2810,9 @@ int chanserv_sig_eos()
 	int bjoins;
 	Cliente *bl;
 #ifdef UDB
-	envia_registro_bdd("S::C %s", chanserv.hmod->mascara);
+	PropagaRegistro("S::C %s", chanserv.hmod->mascara);
 #endif
-	if ((res = _mysql_query("SELECT item,bjoins from %s%s where bjoins !='0'", PREFIJO, CS_MYSQL)))
+	if ((res = MySQLQuery("SELECT item,bjoins from %s%s where bjoins !='0'", PREFIJO, CS_MYSQL)))
 	{
 		while ((row = mysql_fetch_row(res)))
 		{
@@ -2824,11 +2820,11 @@ int chanserv_sig_eos()
 			bjoins = atoi(row[1]);
 			for (ex = modulos; ex; ex = ex->sig)
 			{
-				if ((bjoins & ex->id) && !es_residente(ex, row[0]))
+				if ((bjoins & ex->id) && !CSEsResidente(ex, row[0]))
 				{
-					bl = busca_cliente(ex->nick, NULL);
+					bl = BuscaCliente(ex->nick, NULL);
 					if (bl)
-						mete_bot_en_canal(bl, row[0]);
+						EntraBot(bl, row[0]);
 				}
 			}
 		}
@@ -2836,55 +2832,55 @@ int chanserv_sig_eos()
 	}
 	return 0;
 }
-int chanserv_sig_prenick(Cliente *cl, char *nuevo)
+int CSSigPreNick(Cliente *cl, char *nuevo)
 {
-	borra_cache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id);
+	BorraCache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id);
 	return 0;
 }
-int chanserv_baja(char *canal, char opt)
+int CSBaja(char *canal, char opt)
 {
 	Canal *an;
 	Akick *akick;
 	char *tok, *regs;
-	if (!opt && atoi(_mysql_get_registro(CS_MYSQL, canal, "opts")) & CS_OPT_NODROP)
+	if (!opt && atoi(MySQLCogeRegistro(CS_MYSQL, canal, "opts")) & CS_OPT_NODROP)
 		return 1;
-	an = busca_canal(canal, NULL);
+	an = BuscaCanal(canal, NULL);
 	if (an)
 	{
 		port_func(P_MODO_CANAL)(CLI(chanserv), an, "-r");
 		if (RedOverride)
-			saca_bot_de_canal(CLI(chanserv), canal, NULL);
+			SacaBot(CLI(chanserv), canal, NULL);
 	}
-	if ((regs = _mysql_get_registro(CS_MYSQL, canal, "regs")))
+	if ((regs = MySQLCogeRegistro(CS_MYSQL, canal, "regs")))
 	{
 		for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
 		{
-			borra_cregistro(tok, canal);
+			CSBorraRegistro(tok, canal);
 			strtok(NULL, " ");
 		}
 	}
-	if ((akick = busca_akicks(canal)))
+	if ((akick = CSBuscaAkicks(canal)))
 	{
 		int akicks = akick->akicks;
 		while (akicks)
 		{
-			borra_akick(akick->akick[0].nick, canal);
+			CSBorraAkick(akick->akick[0].nick, canal);
 			akicks--;
 		}
 	}
 #ifdef UDB
 	if (IsChanUDB(canal))
-		envia_registro_bdd("C::%s", canal);
+		PropagaRegistro("C::%s", canal);
 #endif
-	senyal1(CS_SIGN_DROP, canal);
-	_mysql_del(CS_MYSQL, canal);
+	Senyal1(CS_SIGN_DROP, canal);
+	MySQLBorra(CS_MYSQL, canal);
 	return 0;
 }
 CsRegistros *busca_cregistro(char *nick)
 {
 	CsRegistros *aux;
 	u_int hash;
-	hash = hash_cliente(nick);
+	hash = HashCliente(nick);
 	for (aux = (CsRegistros *)csregs[hash].item; aux; aux = aux->sig)
 	{
 		if (!strcasecmp(aux->nick, nick))
@@ -2892,11 +2888,11 @@ CsRegistros *busca_cregistro(char *nick)
 	}
 	return NULL;
 }
-Akick *busca_akicks(char *canal)
+Akick *CSBuscaAkicks(char *canal)
 {
 	Akick *aux;
 	u_int hash;
-	hash = hash_canal(canal);
+	hash = HashCanal(canal);
 	for (aux = (Akick *)akicks[hash].item; aux; aux = aux->sig)
 	{
 		if (!strcasecmp(aux->canal, canal))
@@ -2904,7 +2900,7 @@ Akick *busca_akicks(char *canal)
 	}
 	return NULL;
 }
-void inserta_cregistro(char *nick, char *canal, u_long flag)
+void CSInsertaRegistro(char *nick, char *canal, u_long flag)
 {
 	CsRegistros *creg;
 	u_int hash = 0;
@@ -2914,7 +2910,7 @@ void inserta_cregistro(char *nick, char *canal, u_long flag)
 		creg->subs = 0;
 		creg->nick = strdup(nick);
 	}
-	hash = hash_cliente(nick);
+	hash = HashCliente(nick);
 	creg->sub[creg->subs].canal = strdup(canal);
 	creg->sub[creg->subs].flags = flag;
 	creg->subs++;
@@ -2924,32 +2920,32 @@ void inserta_cregistro(char *nick, char *canal, u_long flag)
 		csregs[hash].items++;
 	}
 }
-Akick *inserta_akick(char *nick, char *canal, char *emisor, char *motivo)
+Akick *CSInsertaAkick(char *nick, char *canal, char *emisor, char *motivo)
 {
 	Akick *akick;
 	u_int hash = 0;
-	if (!(akick = busca_akicks(canal)))
+	if (!(akick = CSBuscaAkicks(canal)))
 	{
 		akick = (Akick *)Malloc(sizeof(Akick));
 		akick->akicks = 0;
 		akick->canal = strdup(canal);
 	}
-	hash = hash_canal(canal);
+	hash = HashCanal(canal);
 	akick->akick[akick->akicks].nick = strdup(nick);
 	akick->akick[akick->akicks].motivo = strdup(motivo);
 	akick->akick[akick->akicks].puesto = strdup(emisor);
 	akick->akicks++;
-	if (!busca_akicks(canal))
+	if (!CSBuscaAkicks(canal))
 	{
 		AddItem(akick, akicks[hash].item);
 		akicks[hash].items++;
 	}
 	return akick;
 }
-int borra_cregistro_de_hash(CsRegistros *creg, char *nick)
+int CSBorraRegistro_de_hash(CsRegistros *creg, char *nick)
 {
 	u_int hash;
-	hash = hash_cliente(nick);
+	hash = HashCliente(nick);
 	if (BorraItem(creg, csregs[hash].item))
 	{
 		csregs[hash].items--;
@@ -2957,7 +2953,7 @@ int borra_cregistro_de_hash(CsRegistros *creg, char *nick)
 	}
 	return 0;
 }
-void borra_cregistro(char *nick, char *canal)
+void CSBorraRegistro(char *nick, char *canal)
 {
 	CsRegistros *creg;
 	int i;
@@ -2974,7 +2970,7 @@ void borra_cregistro(char *nick, char *canal)
 				creg->sub[i] = creg->sub[i+1];
 			if (!(--creg->subs))
 			{
-				borra_cregistro_de_hash(creg, nick);
+				CSBorraRegistro_de_hash(creg, nick);
 				Free(creg->nick);
 				Free(creg);
 			}
@@ -2982,10 +2978,10 @@ void borra_cregistro(char *nick, char *canal)
 		}
 	}
 }
-int borra_akick_de_hash(Akick *akick, char *canal)
+int CSBorraAkick_de_hash(Akick *akick, char *canal)
 {
 	u_int hash;
-	hash = hash_canal(canal);
+	hash = HashCanal(canal);
 	if (BorraItem(akick, akicks[hash].item))
 	{
 			akicks[hash].items--;
@@ -2993,11 +2989,11 @@ int borra_akick_de_hash(Akick *akick, char *canal)
 	}
 	return 0;
 }
-void borra_akick(char *nick, char *canal)
+void CSBorraAkick(char *nick, char *canal)
 {
 	Akick *akick;
 	int i;
-	if (!(akick = busca_akicks(canal)))
+	if (!(akick = CSBuscaAkicks(canal)))
 		return;
 	for (i = 0; i < akick->akicks; i++)
 	{
@@ -3010,7 +3006,7 @@ void borra_akick(char *nick, char *canal)
 				akick->akick[i] = akick->akick[i+1];
 			if (!(--akick->akicks))
 			{
-				borra_akick_de_hash(akick, canal);
+				CSBorraAkick_de_hash(akick, canal);
 				Free(akick->canal);
 				Free(akick);
 			}
@@ -3018,7 +3014,7 @@ void borra_akick(char *nick, char *canal)
 		}
 	}
 }
-int chanserv_dropanick(char *nick)
+int CSDropanick(char *nick)
 {
 	CsRegistros *regs;
 	regs = busca_cregistro(nick);
@@ -3029,34 +3025,34 @@ int chanserv_dropanick(char *nick)
 		{
 			char tmp[512];
 			strncpy(tmp, regs->sub[0].canal, 512);
-			borra_acceso(nick, tmp);
-			if (!strcasecmp(_mysql_get_registro(CS_MYSQL, tmp, "founder"), nick))
-				_mysql_add(CS_MYSQL, tmp, "founder", CLI(chanserv)->nombre);
+			CSBorraAcceso(nick, tmp);
+			if (!strcasecmp(MySQLCogeRegistro(CS_MYSQL, tmp, "founder"), nick))
+				MySQLInserta(CS_MYSQL, tmp, "founder", CLI(chanserv)->nombre);
 			subs--;
 		}
 	}
 	return 0;
 }
-void chanserv_carga_registros()
+void CSCargaRegistros()
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
-	res = _mysql_query("SELECT item,regs from %s%s", PREFIJO, CS_MYSQL);
+	res = MySQLQuery("SELECT item,regs from %s%s", PREFIJO, CS_MYSQL);
 	if (!res)
 		return;
 	while ((row = mysql_fetch_row(res)))
 	{
 		char *tok;
 		for (tok = strtok(row[1], ":"); tok; tok = strtok(NULL, ":"))
-			inserta_cregistro(tok, row[0], atol(strtok(NULL, " ")));
+			CSInsertaRegistro(tok, row[0], atol(strtok(NULL, " ")));
 	}
 	mysql_free_result(res);
 }
-void chanserv_carga_akicks()
+void CSCargaAkicks()
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
-	res = _mysql_query("SELECT item,akick from %s%s", PREFIJO, CS_MYSQL);
+	res = MySQLQuery("SELECT item,akick from %s%s", PREFIJO, CS_MYSQL);
 	if (!res)
 		return;
 	while ((row = mysql_fetch_row(res)))
@@ -3066,7 +3062,7 @@ void chanserv_carga_akicks()
 		{
 			mo = strtok(NULL, "\1");
 			au = strtok(NULL, "\t");
-			inserta_akick(tok, row[0], au, mo);
+			CSInsertaAkick(tok, row[0], au, mo);
 		}
 	}
 	mysql_free_result(res);
@@ -3076,10 +3072,10 @@ u_long tiene_nivel(char *nick, char *canal, u_long flag)
 	CsRegistros *aux;
 	Cliente *al;
 	int i;
-	al = busca_cliente(nick, NULL);
+	al = BuscaCliente(nick, NULL);
 	if ((!IsOper(al) && IsChanSuspend(canal)) || !IsId(al))
 		return 0L;
-	if (es_fundador(al, canal) || es_fundador_cache(al, canal))
+	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))
 		return CS_LEV_ALL;
 	if ((aux = busca_cregistro(nick)))
 	{
@@ -3102,23 +3098,23 @@ u_long tiene_nivel(char *nick, char *canal, u_long flag)
 		return (CS_LEV_ALL & ~CS_LEV_MOD);
 	return 0L;
 }
-int chanserv_dropachans(Proc *proc)
+int CSDropachans(Proc *proc)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = _mysql_query("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && SockIrcd ? CLI(chanserv)->nombre : "", proc->proc)) || !mysql_num_rows(res))
+		if (!(res = MySQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && SockIrcd ? CLI(chanserv)->nombre : "", proc->proc)) || !mysql_num_rows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);
-			_mysql_query("DELETE from %s%s where hora < %i AND hora !='0'", PREFIJO, CS_TOK, time(0) - 3600 * chanserv.vigencia);
+			MySQLQuery("DELETE from %s%s where hora < %i AND hora !='0'", PREFIJO, CS_TOK, time(0) - 3600 * chanserv.vigencia);
 			return 1;
 		}
 		while ((row = mysql_fetch_row(res)))
 		{
 			if (atoi(row[1]) + 86400 * chanserv.autodrop < time(0))
-				chanserv_baja(row[0], 0);
+				CSBaja(row[0], 0);
 		}
 		proc->proc += 30;
 		mysql_free_result(res);
@@ -3130,7 +3126,7 @@ int ChanReg(char *canal)
 	char *res;
 	if (!canal)
 		return 0;
-	res = _mysql_get_registro(CS_MYSQL, canal, "registro");
+	res = MySQLCogeRegistro(CS_MYSQL, canal, "registro");
 	if (res)
 	{
 		if (strcmp(res, "0"))
@@ -3150,10 +3146,10 @@ char *IsChanSuspend(char *canal)
 	if (!canal)
 		return NULL;
 #ifdef UDB
-	if ((reg = busca_registro(BDD_CHANS, canal)) && (bloq = busca_bloque(C_SUS_TOK, reg)))
+	if ((reg = BuscaRegistro(BDD_CHANS, canal)) && (bloq = BuscaBloque(C_SUS_TOK, reg)))
 		return bloq->data_char;
 #else
-	if ((motivo = _mysql_get_registro(CS_MYSQL, canal, "suspend")))
+	if ((motivo = MySQLCogeRegistro(CS_MYSQL, canal, "suspend")))
 		return motivo;
 #endif
 	return NULL;
@@ -3168,24 +3164,24 @@ char *IsChanForbid(char *canal)
 	if (!canal)
 		return NULL;
 #ifdef UDB
-	if ((reg = busca_registro(BDD_CHANS, canal)) && (bloq = busca_bloque(C_FOR_TOK, reg)))
+	if ((reg = BuscaRegistro(BDD_CHANS, canal)) && (bloq = BuscaBloque(C_FOR_TOK, reg)))
 		return bloq->data_char;
 #else
-	if ((motivo = _mysql_get_registro(CS_FORBIDS, canal, "motivo")))
+	if ((motivo = MySQLCogeRegistro(CS_FORBIDS, canal, "motivo")))
 		return motivo;
 #endif
 	return NULL;
 }
-int chanserv_sig_synch()
+int CSSigSynch()
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	if (RedOverride)
 	{
-		if ((res = _mysql_query("SELECT item from %s%s", PREFIJO, CS_MYSQL)))
+		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, CS_MYSQL)))
 		{
 			while ((row = mysql_fetch_row(res)))
-					mete_bot_en_canal(CLI(chanserv), row[0]);
+					EntraBot(CLI(chanserv), row[0]);
 			mysql_free_result(res);
 		}
 	}

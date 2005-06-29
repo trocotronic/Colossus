@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.8 2005-03-14 14:18:06 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.9 2005-06-29 21:13:44 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -12,11 +12,11 @@
 typedef struct _conf Conf;
 typedef struct _conf_com cComConf;
 
-extern int parseconf(char *, Conf *, char);
-extern void libera_conf(Conf *);
-extern void distribuye_conf(Conf *);
-extern Conf *busca_entrada(Conf *, char *);
-extern void descarga_conf();
+extern int ParseaConfiguracion(char *, Conf *, char);
+extern void LiberaMemoriaConfiguracion(Conf *);
+extern void DistribuyeConfiguracion(Conf *);
+extern Conf *BuscaEntrada(Conf *, char *);
+extern void DescargaConfiguracion();
 
 struct _conf
 {

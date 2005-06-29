@@ -1,21 +1,24 @@
 /*
- * $Id: zlib.c,v 1.9 2005-03-14 14:18:10 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.10 2005-06-29 21:13:59 Trocotronic Exp $ 
  */
  
 #include "struct.h"
 #ifdef USA_ZLIB
-#include "zlib.h"
+#ifdef _WIN32
+ #define ZLIB_WINAPI
+#endif
+#include "zip.h"
 #define ZIP_BUFFER_SIZE	ZIP_MAXIMUM + BUFSIZE
 #define UNZIP_BUFFER_SIZE	6 * ZIP_BUFFER_SIZE
 
 static char unzipbuf[UNZIP_BUFFER_SIZE];
 static char zipbuf[ZIP_BUFFER_SIZE];
 
-int inicia_zlib(Sock *sck, int nivel)
+int ZLibInit(Sock *sck, int nivel)
 {
-	da_Malloc(sck->zlib, Zlib);
-	da_Malloc(sck->zlib->in, z_stream);
-	da_Malloc(sck->zlib->out, z_stream);
+	BMalloc(sck->zlib, Zlib);
+	BMalloc(sck->zlib->in, z_stream);
+	BMalloc(sck->zlib->out, z_stream);
 	sck->zlib->in->data_type = sck->zlib->out->data_type = Z_ASCII;
 	if (inflateInit(sck->zlib->in) != Z_OK)
 		return -1;
@@ -23,7 +26,7 @@ int inicia_zlib(Sock *sck, int nivel)
 		return -2;
 	return 0;
 }
-void libera_zlib(Sock *sck)
+void ZLibLibera(Sock *sck)
 {
 	sck->opts &= ~OPT_ZLIB;
 	if (sck->zlib)
@@ -46,7 +49,7 @@ void libera_zlib(Sock *sck)
  * Comprime un mensaje de cola
  * Devuelve el mensaje comprimido y guarda en len su longitud
  */
-char *comprime(Sock *sck, char *mensaje, int *len, int flush)
+char *ZLibComprime(Sock *sck, char *mensaje, int *len, int flush)
 {
 	z_stream *zout = sck->zlib->out;
 	int e;
@@ -78,7 +81,7 @@ char *comprime(Sock *sck, char *mensaje, int *len, int flush)
 	*len = -1;
 	return NULL;
 }
-char *descomprime(Sock *sck, char *mensaje, int *len)
+char *ZLibDescomprime(Sock *sck, char *mensaje, int *len)
 {
 	z_stream *zin = sck->zlib->in;
 	int e;

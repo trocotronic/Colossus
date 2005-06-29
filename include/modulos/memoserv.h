@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
+ * $Id: memoserv.h,v 1.3 2005-06-29 21:13:49 Trocotronic Exp $ 
  */
 
 typedef struct _ms MemoServ;
@@ -21,7 +21,7 @@ struct _ms
 
 extern MemoServ memoserv;
 
-DLLFUNC extern int memoserv_send(char *, char *, char *);
+DLLFUNC extern int MSSend(char *, char *, char *);
 
 #define MS_OPT_LOG 0x1 /* +l */
 #define MS_OPT_AWY 0x2 /* +w */

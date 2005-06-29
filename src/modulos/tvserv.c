@@ -1,0 +1,451 @@
+/*
+ * $Id: tvserv.c,v 1.1 2005-06-29 21:14:05 Trocotronic Exp $ 
+ */
+
+#include "struct.h"
+#include "ircd.h"
+#include "modulos.h"
+#include "modulos/tvserv.h"
+
+TvServ tvserv;
+#define ExFunc(x) BuscaFuncion(tvserv.hmod, x, NULL)
+
+SOCKFUNC(TSAbreProg);
+SOCKFUNC(TSLeeProg);
+SOCKFUNC(TSCierraProg);
+SOCKFUNC(TSAbreHoroscopo);
+SOCKFUNC(TSLeeHoroscopo);
+SOCKFUNC(TSCierraHoroscopo);
+BOTFUNC(TSTv);
+BOTFUNC(TSHelp);
+BOTFUNC(TSHoroscopo);
+Sock *prog = NULL, *hor = NULL;
+Cadena *viendo = NULL;
+int horosc = 1;
+int TSSigMySQL();
+
+static bCom tvserv_coms[] = {
+	{ "help" , TSHelp , USERS } ,
+	{ "tv" , TSTv , USERS } ,
+	{ "horoscopo" , TSHoroscopo , USERS } ,
+	{ 0x0 , 0x0 , 0x0 }
+};
+
+void TSSet(Conf *, Modulo *);
+int TSTest(Conf *, int *);
+
+ModInfo info = {
+	"TvServ" ,
+	0.3 ,
+	"Trocotronic" ,
+	"trocotronic@rallados.net"
+};
+
+Cadena cadenas[] = {
+	{ "TVE1" , "TVE1" , 'n' } ,
+	{ "TVE2" , "TVE2" , 'n' } ,
+	{ "T5" , "Tele+5" , 'n' } ,
+	{ "C+" , "Canal+Plus" , 'n' } ,
+	{ "A3" , "Antena+3" , 'n' } ,
+	{ "Canal2" , "Canal+2" , 'a' } ,
+	{ "Canal9" , "Canal+9" , 'a' } ,
+	{ "TV3" , "TV3" , 'a' } ,
+	{ "Canal33" , "Canal+33" , 'a' } ,
+	{ "TVG" , "TVG" , 'a' } ,
+	{ "ETB1" , "ETB+1" , 'a' } ,
+	{ "ETB2" , "ETB+2" , 'a' } ,
+	{ "PUN2" , "PUNT+2" , 'a' } ,
+	{ "CanalSur", "Canal+Sur" , 'a' } ,
+	{ "Telemadrid" , "TVAM" , 'a' } ,
+	{ "TVCanaria" , "TV+Canaria" , 'a' } ,
+	{ NULL, NULL, 0 }
+};
+char *horoscopos[] = {
+	"Aries" ,
+	"Tauro" ,
+	"Geminis" ,
+	"Cancer" ,
+	"Leo" ,
+	"Virgo" ,
+	"Libra" ,
+	"Escorpio" ,
+	"Sagitario" ,
+	"Capricornio" ,
+	"Acuario" ,
+	"Piscis" ,
+	NULL
+};
+Cadena *TSBuscaCadena(char *nombre)
+{
+	int i;
+	for (i = 0; cadenas[i].nombre; i++)
+	{
+		if (!strcasecmp(nombre, cadenas[i].nombre))
+			return &cadenas[i];
+	}
+	return NULL;
+}
+char *TSBuscaHoroscopo(char *horo)
+{
+	int i;
+	for (i = 0; horoscopos[i]; i++)
+	{
+		if (!strcasecmp(horoscopos[i], horo))
+			return horoscopos[i];
+	}
+	return NULL;
+}
+int carga(Modulo *mod)
+{
+	Conf modulo;
+	int errores = 0;
+	if (!mod->config)
+	{
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		errores++;
+	}
+	else
+	{
+		if (ParseaConfiguracion(mod->config, &modulo, 1))
+		{
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			errores++;
+		}
+		else
+		{
+			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			{
+				if (!TSTest(modulo.seccion[0], &errores))
+					TSSet(modulo.seccion[0], mod);
+				else
+				{
+					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					errores++;
+				}
+			}
+			else
+			{
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				errores++;
+			}
+		}
+		LiberaMemoriaConfiguracion(&modulo);
+	}
+	return errores;
+}
+int descarga()
+{
+	BorraSenyal(SIGN_MYSQL, TSSigMySQL);
+	BotUnset(tvserv);
+	return 0;
+}
+int TSTest(Conf *config, int *errores)
+{
+	short error_parcial = 0;
+	return error_parcial;
+}
+void TSSet(Conf *config, Modulo *mod)
+{
+	int i, p;
+	bCom *ts;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funciones"))
+		{
+			for (p = 0; p < config->seccion[i]->secciones; p++)
+			{
+				ts = &tvserv_coms[0];
+				while (ts->com != 0x0)
+				{
+					if (!strcasecmp(ts->com, config->seccion[i]->seccion[p]->item))
+					{
+						mod->comando[mod->comandos++] = ts;
+						break;
+					}
+					ts++;
+				}
+				if (ts->com == 0x0)
+					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
+			}
+		}
+		mod->comando[mod->comandos] = NULL;
+	}
+	InsertaSenyal(SIGN_MYSQL, TSSigMySQL);
+	BotSet(tvserv);
+}
+char *TSQuitaTags(char *str, char *dest)
+{
+	char a = 0, *c = str;
+	while (!BadPtr(c))
+	{
+		if (*c == '<')
+		{
+			if (!(c = strchr(c, '>')))
+				break;
+			c++;
+		}
+		else if (*c == '&')
+		{
+			if (!strncmp("&nbsp;", c, 6))
+			{
+				*dest++ = 2;
+				*dest++ = ' ';
+				c += 6;
+			}
+		}
+		else if (*c == '\t')
+			break;
+		else
+			*dest++ = *c++;
+	}
+	*dest = 0;
+	return dest;
+}
+char *TSFecha(time_t ts)
+{
+	static char TSFecha[9];
+	struct tm *timeptr;
+    	timeptr = localtime(&ts);
+    	ircsprintf(TSFecha, "%.2d/%.2d/%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100);
+    	return TSFecha;
+}
+void TSActualizaProg()
+{
+	static int i = 0;
+	if (prog)
+		return;
+	if (cadenas[i].nombre)
+	{
+		viendo = &cadenas[i];
+		if (!(prog = SockOpen("www.teletexto.com", 80, TSAbreProg, TSLeeProg, NULL, TSCierraProg, ADD)))
+			return;
+		i++;
+	}
+	else
+		i = 0;
+}
+void TSActualizaHoroscopo()
+{
+	static int i = 1;
+	if (hor)
+		return;
+	if (i <= 12)
+	{
+		horosc = i++;
+		if (!(hor = SockOpen("www.teletexto.com", 80, TSAbreHoroscopo, TSLeeHoroscopo, NULL, TSCierraHoroscopo, ADD)))
+			return;
+	}
+	else
+		i = 1;
+}
+BOTFUNC(TSTv)
+{
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TV cadena");
+		return 1;
+	}
+	if (! TSBuscaCadena(param[1]))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta cadena no existe");
+		return 1;
+	}
+	if (!(res = MySQLQuery("SELECT programacion from %s%s where TSFecha='%s' AND item='%s'", PREFIJO, TS_TV, TSFecha(time(NULL)), param[1])))
+	{
+		MySQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_TV);
+		TSActualizaProg();
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
+		return 1;
+	}
+	while ((row = mysql_fetch_row(res)))
+		Responde(cl, CLI(tvserv), row[0]);
+	return 0;
+}
+BOTFUNC(TSHelp)
+{
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), "\00312%s\003 es un servicio de ocio para los usuarios que ofrece distintos servicios.", tvserv.hmod->nick);
+		Responde(cl, CLI(tvserv), "Todos los servicios se actualizan a diario.");
+		Responde(cl, CLI(tvserv), " ");
+		if (!IsId(cl))
+		{
+			Responde(cl, CLI(tvserv), "Debes estar registrado e identificado para poder usar este servicio.");
+			return 1;
+		}
+		Responde(cl, CLI(tvserv), "Servicios prestados:");
+		FuncResp(tvserv, "TV", "Programación de las televisiones de España.");
+		FuncResp(tvserv, "HOROSCOPO", "Horóscopo del día.");
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Para más información, \00312/msg %s %s comando", tvserv.hmod->nick, strtoupper(param[0]));
+	}
+	else if (!strcasecmp(param[1], "TV") && ExFunc("TV"))
+	{
+		int i;
+		Responde(cl, CLI(tvserv), "\00312TV");
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Muestra la programación de las distintas cadenas de la televisión de España.");
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Cadenas disponibles:");
+		for (i = 0; cadenas[i].nombre; i++)
+			Responde(cl, CLI(tvserv), cadenas[i].nombre);
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Sintaxis: \00312TV cadena");
+	}
+	else if (!strcasecmp(param[1], "HOROSCOPO") && ExFunc("HOROSCOPO"))
+	{
+		int i = 0;
+		Responde(cl, CLI(tvserv), "\00312HOROSCOPO");
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Muestra la predicción del día del signo zodiacal que se indique.");
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Zodiacos disponibles:");
+		while (horoscopos[i])
+			Responde(cl, CLI(tvserv), horoscopos[i++]);
+		Responde(cl, CLI(tvserv), " ");
+		Responde(cl, CLI(tvserv), "Sintaxis: \00312HOROSCOPO signo");
+	}
+	else
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Opción desconocida.");
+	return 0;
+}
+BOTFUNC(TSHoroscopo)
+{
+	MYSQL_RES *res;
+	MYSQL_ROW row;
+	char *h;
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, "HOROSCOPO signo");
+		return 1;
+	}
+	if (!(h = TSBuscaHoroscopo(param[1])))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este horóscopo no existe");
+		return 1;
+	}
+	if (!(res = MySQLQuery("SELECT prediccion from %s%s where TSFecha='%s' AND item='%s'", PREFIJO, TS_HO, TSFecha(time(NULL)), param[1])))
+	{
+		MySQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_HO);
+		TSActualizaHoroscopo();
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
+		return 1;
+	}
+	Responde(cl, CLI(tvserv), "\00312%s", h);
+	while ((row = mysql_fetch_row(res)))
+		Responde(cl, CLI(tvserv), row[0]);
+	return 0;
+}
+SOCKFUNC(TSAbreProg)
+{
+	SockWrite(prog, OPT_CRLF, "GET /Categorias/ProgramacionTV/subcategoria/General/default.asp?c=%s&p=%c&f=%s HTTP/1.1", viendo->texto, viendo->tipo, TSFecha(time(NULL)));
+	SockWrite(prog, OPT_CRLF, "Accept: */*");
+	SockWrite(prog, OPT_CRLF, "Host: www.teletexto.com");
+	SockWrite(prog, OPT_CRLF, "Connection: Keep-alive");
+	SockWrite(prog, OPT_CRLF, "");
+	SockWrite(prog, OPT_CRLF, "");
+	return 0;
+}
+SOCKFUNC(TSLeeProg)
+{
+	static char imp = 0, txt[BUFSIZE];
+	if (!imp && !strcmp(data, "<tr class=\"textofino\">"))
+	{
+		imp = 1;
+		txt[0] = 2;
+		txt[1] = '\0';
+	}
+	else if (imp && !strcmp(data, "</tr>"))
+	{
+		imp = 0;
+		MySQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, viendo->nombre, TSFecha(time(NULL)), txt);
+	}
+	else if (!strcmp(data, "</html>"))
+		SockClose(prog, LOCAL);
+	if (imp)
+	{
+		TSQuitaTags(data, buf);
+		if (*buf)
+			strcat(txt, buf);
+	}
+	return 0;
+}
+SOCKFUNC(TSCierraProg)
+{
+	prog = NULL;
+	TSActualizaProg();
+	return 0;
+}
+SOCKFUNC(TSAbreHoroscopo)
+{
+	SockWrite(hor, OPT_CRLF, "GET /categorias/Horoscopos/horoscopo.asp?o=%i HTTP/1.1", horosc);
+	SockWrite(hor, OPT_CRLF, "Accept: */*");
+	SockWrite(hor, OPT_CRLF, "Host: www.teletexto.com");
+	SockWrite(hor, OPT_CRLF, "Connection: Keep-alive");
+	SockWrite(hor, OPT_CRLF, "");
+	SockWrite(hor, OPT_CRLF, "");
+	return 0;
+}
+SOCKFUNC(TSLeeHoroscopo)
+{
+	static char txt[BUFSIZE];
+	static int salud = 0, dinero = 0, amor = 0, *a = NULL;
+	if (!strncmp("<TD class=texto5 style=\"FONT-SIZE:8pt\" style=\"COLOR:#222222\" >", data, 62))
+	{
+		TSQuitaTags(data, txt);
+		MySQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+	}
+	else if (!strncmp("src=\"I/AMOR", data, 11))
+		a = &amor;
+	else if (!strncmp("src=\"I/SALUD", data, 12))
+		a = &salud;
+	else if (!strncmp("src=\"I/DINERO", data, 13))
+		a = &dinero;
+	else if (!strncmp("src=\"I/ESTRELLA", data, 15))
+		(*a)++;
+	else if (salud && dinero && amor && !strcmp("</tr>", data))
+	{
+		ircsprintf(txt, "Salud: \00312%s\003 - Dinero: \00312", Repite('*', salud));
+		strcat(txt, Repite('*', dinero));
+		strcat(txt, "\003 - Amor: \00312");
+		strcat(txt, Repite('*', amor));
+		MySQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+		salud = dinero = amor = 0;
+		a = NULL;
+		SockClose(hor, LOCAL);
+	}
+	return 0;
+}
+SOCKFUNC(TSCierraHoroscopo)
+{
+	hor = NULL;
+	TSActualizaHoroscopo();
+	return 0;
+}
+int TSSigMySQL()
+{
+	if (!MySQLEsTabla(TS_TV))
+	{
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
+  			"`item` varchar(255) default NULL, "
+  			"`TSFecha` varchar(255) default NULL, "
+  			"`programacion` varcjar(255) default NULL, "
+  			"KEY `item` (`item`) "
+			") TYPE=MyISAM COMMENT='Tabla de programación de TV';", PREFIJO, TS_TV))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
+	}
+	if (!MySQLEsTabla(TS_HO))
+	{
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
+  			"`item` varchar(255) default NULL, "
+  			"`TSFecha` varchar(255) default NULL, "
+  			"`prediccion` varchar(255) default NULL, "
+  			"KEY `item` (`item`) "
+			") TYPE=MyISAM COMMENT='Tabla de horóscopo';", PREFIJO, TS_HO))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
+	}
+	MySQLCargaTablas();
+	return 1;
+}

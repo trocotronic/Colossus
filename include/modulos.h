@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.8 2005-05-18 18:51:02 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.9 2005-06-29 21:13:44 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -78,20 +78,20 @@ typedef struct _mod
 }Modulo;
 
 extern MODVAR Modulo *modulos;
-extern Modulo *busca_modulo(char *, Modulo *);
+extern Modulo *BuscaModulo(char *, Modulo *);
 
 #define ERR_DESC "\00304ERROR: Comando desconocido."
 #define ERR_NOID "\00304ERROR: No estás identificado."
 #define ERR_FORB "\00304ERROR: Acceso denegado."
 #define ERR_NSUP "\00304ERROR: Este comando no está soportado en este servidor."
-extern void descarga_modulos(void);
-extern Modulo *crea_modulo(char *);
+extern void DescargaModulos(void);
+extern Modulo *CreaModulo(char *);
 #ifdef _WIN32
-extern const char *our_dlerror(void);
+extern const char *ErrorDl(void);
 #endif
 
 #define CLI(x) x.hmod->cl
-#define bot_set(x) x.hmod = mod; mod->conf = &(x)
-#define bot_unset(x) x.hmod->conf = NULL; x.hmod = NULL; 
-extern Mod_Func busca_funcion(Modulo *, char *, int *);
-#define func_resp(x,y,z) do { if (busca_funcion(x.hmod,y,NULL)) { response(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
+#define BotSet(x) x.hmod = mod; mod->conf = &(x)
+#define BotUnset(x) x.hmod->conf = NULL; x.hmod = NULL; 
+extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
+#define FuncResp(x,y,z) do { if (BuscaFuncion(x.hmod,y,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)

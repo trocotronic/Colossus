@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.10 2005-05-18 18:51:00 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.11 2005-06-29 21:13:40 Trocotronic Exp $ -->
 
 <body>
 
@@ -87,7 +87,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro. 
   Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
   <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll, 
-  en Windows, o archivo .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios 
+  en Windows, o archivos .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios 
   servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
   <ul>
     <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.     
@@ -101,9 +101,9 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p>El sistema UDB es exclusivo de <a href="http://www.rallados.net" target="_blank">Rallados</a>. Su uso principal es la de poder distribuir bases de datos por toda la red de forma s&iacute;ncrona. 
   As&iacute; se consigue que todos los nodos tengan unos registros globales que no dependan del mismo. Con s&oacute;lo introducir un registro en un nodo, 
   inmediatamente se propaga por toda la red de forma instant&aacute;nea y sincronizada. </p>
-  <p>Para ello se usa el protocolo UDB propuesto &uacute;nicamente para este fin. Actualmente el protocolo en desarrollo es el UDB3.1, dejando el primero obsoleto e incompatible la primera y segunda versi&oacute;n. 
+  <p>Para ello se usa el protocolo UDB propuesto &uacute;nicamente para este fin. Actualmente el protocolo en desarrollo es el UDB3.2, dejando obsoletas e incompatibles la primera y segunda versi&oacute;n. 
   Esta nueva versi&oacute;n incorpora cuantiosos cambios que dan lugar a un nuevo sistema de bases de datos. Es un protocolo abierto y libre, 
-  con lo cual se consigue que puedan usarse distintos servicios que potencien las caracter&iacute;sticas de la red al un&iacute;sono. 
+  con lo cual se consigue que puedan usarse distintos servicios que potenc&iacute;en las caracter&iacute;sticas de la red al un&iacute;sono. 
   Es tarea del desarrollador aprovechar estas caracter&iacute;sticas.</p>
   <p>El sistema se compone de varios bloques (nicks, canales, ips y set) que contienen varias directrices que conforman el ircd. 
   Es parecido a la configuraci&oacute;n de UnrealIRCd, puesto que usa el formato bloque::seccion::subseccion valor. La propagaci&oacute;n de la red se hace mediante el comando DB. 
@@ -114,8 +114,8 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="mysql"></a>5.0 MySQL</font></b></p>
   <p>Colossus utiliza el sistema de base de datos libre MySQL. Para ello es necesario tener instalado este servicio en alguna m&aacute;quina. Puede descargarlo de 
-  <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/&ntilde;</a>.</p>
-  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Una vez hecho esto, tendr&aacute; 
+  <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
+  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Hecho esto, tendr&aacute; 
   que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots. 
   Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>. 
   Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a> 

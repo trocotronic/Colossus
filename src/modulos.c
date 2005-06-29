@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.8 2005-05-18 18:51:04 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.9 2005-06-29 21:13:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,16 +10,17 @@
 #endif
 
 #ifdef _WIN32
-const char *our_dlerror(void);
+const char *ErrorDl(void);
 #endif
 int id = 1;
 
 Modulo *modulos = NULL;
-Modulo *crea_modulo(char *archivo)
+Modulo *CreaModulo(char *archivo)
 {
 	char tmppath[128];
 #ifdef _WIN32
 	HMODULE modulo;
+	char tmppdb[128], pdb[128];
 #else
 	void *modulo;
 #endif
@@ -30,11 +31,29 @@ Modulo *crea_modulo(char *archivo)
 	amod = strrchr(archivo, '/');
 	if (!amod)
 	{
-		fecho(FADV, "Ha sido imposible cargar %s (falla ruta)", archivo);
+		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", archivo);
 		return NULL;
 	}
 	amod++;
-	sprintf_irc(tmppath, "./tmp/%s", amod);
+	ircsprintf(tmppath, "./tmp/%s", amod);
+#ifdef _WIN32
+	strcpy(pdb, archivo);
+	amod = strrchr(pdb, '.');
+	if (!amod)
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla pdb)", archivo);
+		return NULL;
+	}
+	strcpy(amod, ".pdb");
+	amod = strrchr(pdb, '/');
+	if (!amod)
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta pdb)", pdb);
+		return NULL;
+	}
+	amod++;
+	ircsprintf(tmppdb, "./tmp/%s", amod);
+#endif
 	for (ex = modulos; ex; ex = ex->sig)
 	{
 		if (!strcasecmp(ex->archivo, archivo))
@@ -45,34 +64,41 @@ Modulo *crea_modulo(char *archivo)
 	}
 	if (!copyfile(archivo, tmppath))
 	{
-		fecho(FADV, "Ha sido imposible cargar %s (no puede copiar)", archivo);
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", archivo);
 		return NULL;
 	}
+#ifdef _WIN32
+	if (!copyfile(pdb, tmppdb))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar pdb)", pdb);
+		return NULL;
+	}
+#endif
 	if ((modulo = irc_dlopen(tmppath, RTLD_NOW)))
 	{
 		Modulo *mod;
 		irc_dlsym(modulo, "carga", mod_carga);
 		if (!mod_carga)
 		{
-			fecho(FADV, "Ha sido imposible cargar %s (carga)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (carga)", amod);
 			irc_dlclose(modulo);
 			return NULL;
 		}
 		irc_dlsym(modulo, "descarga", mod_descarga);
 		if (!mod_descarga)
 		{
-			fecho(FADV, "Ha sido imposible cargar %s (descarga)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (descarga)", amod);
 			irc_dlclose(modulo);
 			return NULL;
 		}
 		irc_dlsym(modulo, "info", inf);
 		if (!inf || !inf->nombre)
 		{
-			fecho(FADV, "Ha sido imposible cargar %s (info)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (info)", amod);
 			irc_dlclose(modulo);
 			return NULL;
 		}
-		da_Malloc(mod, Modulo);
+		BMalloc(mod, Modulo);
 		mod->archivo = strdup(archivo);
 		mod->tmparchivo = strdup(tmppath);
 		mod->hmod = modulo;
@@ -86,12 +112,12 @@ Modulo *crea_modulo(char *archivo)
 		return mod;
 	}
 	else
-		fecho(FADV, "Ha sido imposible cargar %s (dlopen): %s", amod, irc_dlerror());
+		Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", amod, irc_dlerror());
 	return NULL;
 }
-void descarga_modulo(Modulo *ex)
+void DescargaModulo(Modulo *ex)
 {
-	killbot(ex->nick, "Refrescando");
+	DesconectaBot(ex->nick, "Refrescando");
 	if (ex->cargado == 2) /* está cargado */
 	{
 		if (ex->descarga)
@@ -105,7 +131,7 @@ void descarga_modulo(Modulo *ex)
 		Free(ex);
 	}
 }
-void carga_modulos()
+void CargaModulos()
 {
 	Modulo *ex;
 	for (ex = modulos; ex; ex = ex->sig)
@@ -116,26 +142,26 @@ void carga_modulos()
 			val = (*ex->carga)(ex);
 			if (val)
 			{
-				descarga_modulo(ex);
-				fecho(FADV, "No se ha podido cargar el modulo %s", ex->archivo);
+				DescargaModulo(ex);
+				Alerta(FADV, "No se ha podido cargar el modulo %s", ex->archivo);
 				continue;
 			}
 			ex->cargado = 2;
 		}
 	}
 }
-void descarga_modulos()
+void DescargaModulos()
 {
 	Modulo *ex, *sig;
 	for (ex = modulos; ex; ex = sig)
 	{
 		sig = ex->sig;
 		if (ex->cargado)
-			descarga_modulo(ex);
+			DescargaModulo(ex);
 	}
 	id = 1;
 }
-Modulo *busca_modulo(char *nick, Modulo *donde)
+Modulo *BuscaModulo(char *nick, Modulo *donde)
 {
 	Modulo *ex;
 	if (!donde)
@@ -148,7 +174,7 @@ Modulo *busca_modulo(char *nick, Modulo *donde)
 	return NULL;
 }
 #ifdef _WIN32
-const char *our_dlerror(void)
+const char *ErrorDl(void)
 {
 	static char errbuf[513];
 	DWORD err = GetLastError();
@@ -156,7 +182,7 @@ const char *our_dlerror(void)
 	return errbuf;
 }
 #endif
-Mod_Func busca_funcion(Modulo *mod, char *nombre, int *nivel)
+Mod_Func BuscaFuncion(Modulo *mod, char *nombre, int *nivel)
 {
 	int i;
 	for (i = 0; i < mod->comandos; i++)

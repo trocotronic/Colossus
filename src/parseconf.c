@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.14 2005-05-18 18:51:04 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.15 2005-06-29 21:13:54 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -24,46 +24,46 @@ struct Conf_log *conf_log = NULL;
 struct Conf_ssl *conf_ssl = NULL;
 #endif
 
-static int _test_server		(Conf *, int *);
-static int _test_db 			(Conf *, int *);
-static int _test_smtp		(Conf *, int *);
-static int _test_set		(Conf *, int *);
-static int _test_modulos	(Conf *, int *);
-static int _test_log		(Conf *, int *);
+static int TestServer		(Conf *, int *);
+static int TestDb 			(Conf *, int *);
+static int TestSmtp		(Conf *, int *);
+static int TestSet		(Conf *, int *);
+static int TestModulos	(Conf *, int *);
+static int TestLog		(Conf *, int *);
 #ifdef USA_SSL
-static int _test_ssl		(Conf *, int *);
+static int TestSSL		(Conf *, int *);
 #endif
-static int _test_protocolo	(Conf *, int *);
+static int TestProtocolo	(Conf *, int *);
 
-static void _conf_server	(Conf *);
-static void _conf_db 		(Conf *);
-static void _conf_smtp		(Conf *);
-static void _conf_set		(Conf *);
-static void _conf_log		(Conf *);
+static void ConfServer	(Conf *);
+static void ConfDb 		(Conf *);
+static void ConfSmtp		(Conf *);
+static void ConfSet		(Conf *);
+static void ConfLog		(Conf *);
 #ifdef USA_SSL
-static void _conf_ssl		(Conf *);
+static void ConfSSL		(Conf *);
 #endif
-static void _conf_modulos	(Conf *);
+static void ConfModulos	(Conf *);
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
    Si es OPC, significa que es opcional a partir de la versión dada (incluida)
    */
 static cComConf cComs[] = {
-	{ "server" , _test_server, _conf_server , OBL , 1 } ,
-	{ "db" , _test_db, _conf_db , OBL ,  1 } ,
+	{ "server" , TestServer, ConfServer , OBL , 1 } ,
+	{ "db" , TestDb, ConfDb , OBL ,  1 } ,
 #ifdef _WIN32
-	{ "smtp" , _test_smtp, _conf_smtp , OPC , 5 } , /* es opcional a partir de la version 5 */
+	{ "smtp" , TestSmtp, ConfSmtp , OPC , 5 } , /* es opcional a partir de la version 5 */
 #else
-	{ "smtp" , _test_smtp, _conf_smtp , OBL , 1 } ,
+	{ "smtp" , TestSmtp, ConfSmtp , OBL , 1 } ,
 #endif
-	{ "set" , _test_set, _conf_set , OBL , 1 } ,
-	{ "modulo" , _test_modulos, _conf_modulos , OPC , 1 } ,
-	{ "log" , _test_log , _conf_log , OPC , 1 } ,
+	{ "set" , TestSet, ConfSet , OBL , 1 } ,
+	{ "modulo" , TestModulos, ConfModulos , OPC , 1 } ,
+	{ "log" , TestLog , ConfLog , OPC , 1 } ,
 #ifdef USA_SSL
-	{ "ssl" , _test_ssl , _conf_ssl , OPC , 1 } ,
+	{ "ssl" , TestSSL , ConfSSL , OPC , 1 } ,
 #endif
-	{ "protocolo" , _test_protocolo , NULL , OBL , 1 } ,
+	{ "protocolo" , TestProtocolo , NULL , OBL , 1 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 struct bArchivos
@@ -88,7 +88,7 @@ static Opts Opts_Log[] = {
 	{ LOG_CONN , "conexiones" } ,
 	{ 0x0 , 0x0 }
 };
-void libera_conf(Conf *seccion)
+void LiberaMemoriaConfiguracion(Conf *seccion)
 {
 	int i;
 	if (!seccion)
@@ -96,13 +96,13 @@ void libera_conf(Conf *seccion)
 	ircfree(seccion->item);
 	ircfree(seccion->data);
 	for (i = 0; i < seccion->secciones; i++)
-		libera_conf(seccion->seccion[i]);
+		LiberaMemoriaConfiguracion(seccion->seccion[i]);
 	if (!seccion->root && seccion->archivo) /* top */
 		ircfree(seccion->archivo);
 	if (seccion->root)
 		ircfree(seccion);
 }
-void libera_server()
+void LiberaMemoriaServer()
 {
 	if (!conf_server)
 		return;
@@ -113,7 +113,7 @@ void libera_server()
 	ircfree(conf_server->password.remoto);
 	bzero(conf_server, sizeof(struct Conf_server));
 }
-void libera_db()
+void LiberaMemoriaDb()
 {
 	if (!conf_db)
 		return;
@@ -124,7 +124,7 @@ void libera_db()
 	ircfree(conf_db->prefijo);
 	bzero(conf_db, sizeof(struct Conf_db));
 }
-void libera_smtp()
+void LiberaMemoriaSmtp()
 {
 	if (!conf_smtp)
 		return;
@@ -133,7 +133,7 @@ void libera_smtp()
 	ircfree(conf_smtp->pass);
 	bzero(conf_smtp, sizeof(struct Conf_smtp));
 }
-void libera_set()
+void LiberaMemoriaSet()
 {
 	if (!conf_set)
 		return;
@@ -145,7 +145,7 @@ void libera_set()
 	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
 	bzero(conf_set, sizeof(struct Conf_set));
 }
-void libera_log()
+void LiberaMemoriaLog()
 {
 	if (!conf_log)
 		return;
@@ -153,7 +153,7 @@ void libera_log()
 	bzero(conf_log, sizeof(struct Conf_log));
 }
 #ifdef USA_SSL
-void libera_ssl()
+void LiberaMemoriaSSL()
 {
 	if (!conf_ssl)
 		return;
@@ -165,25 +165,25 @@ void libera_ssl()
 	bzero(conf_ssl, sizeof(struct Conf_ssl));
 }
 #endif
-void descarga_conf()
+void DescargaConfiguracion()
 {
-	libera_server();
-	libera_db();
-	libera_smtp();
-	libera_set();
-	libera_log();
+	LiberaMemoriaServer();
+	LiberaMemoriaDb();
+	LiberaMemoriaSmtp();
+	LiberaMemoriaSet();
+	LiberaMemoriaLog();
 #ifdef USA_SSL
-	libera_ssl();
+	LiberaMemoriaSSL();
 #endif
 }
-#define pce(x) conferror("[%s:%i] " x, archivo, linea)
+#define pce(x) Error("[%s:%i] " x, archivo, linea)
 /* parseconf
  * 
  * Inicializa una config y la mete en rama.
  * 0 Error
  * 1 Ok
  */
-int parseconf(char *archivo, Conf *rama, char avisa)
+int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 {
 	int fp, linea;
 	char *pitem, *pdata, *par, *ini, *f;
@@ -203,19 +203,19 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 #endif	
 	{
 		if (avisa)
-			fecho(FERR, "No existe el archivo %s", archivo);
+			Alerta(FERR, "No existe el archivo %s", archivo);
 		return -1;
 	}
 	if (fstat(fp, &inode) == -1)
 	{
 		if (avisa)
-			fecho(FERR, "No se puede hacer fstat");
+			Alerta(FERR, "No se puede hacer fstat");
 		return -2;
 	}
 	if (!inode.st_size)
 	{
 		if (avisa)
-			fecho(FERR, "El archivo esta vacio");
+			Alerta(FERR, "El archivo esta vacio");
 		close(fp);
 		return -3;
 	}
@@ -224,7 +224,7 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 	if (read(fp, par, inode.st_size) != inode.st_size)
 	{
 		if (avisa)
-			fecho(FERR, "Error fatal de lectura");
+			Alerta(FERR, "Error fatal de lectura");
 		return -4;
 	}
 	close(fp);
@@ -271,7 +271,7 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 					pce("Campo sin ítem.");
 					break;
 				}
-				da_Malloc(actual, Conf);
+				BMalloc(actual, Conf);
 				actual->item = strdup(pitem);
 				if (pdata)
 					actual->data = strdup(pdata);
@@ -309,7 +309,7 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 						par++;
 					}
 				}
-				da_Malloc(actual, Conf);
+				BMalloc(actual, Conf);
 				actual->item = strdup(pitem);
 				if (pdata)
 					actual->data = strdup(pdata);
@@ -362,7 +362,7 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 				{
 					if (*par == '{' || *par == '\n' || *par == '\r')
 					{
-						conferror("[%s:%i] Ítem inválido.", archivo, linea);
+						Error("[%s:%i] Ítem inválido.", archivo, linea);
 						break;
 					}
 					par++;
@@ -374,7 +374,7 @@ int parseconf(char *archivo, Conf *rama, char avisa)
 						pdata = ini;
 					else
 						pitem = ini;
-					da_Malloc(actual, Conf);
+					BMalloc(actual, Conf);
 					actual->item = strdup(pitem);
 					if (pdata)
 						actual->data = strdup(pdata);
@@ -407,7 +407,7 @@ int parseconf(char *archivo, Conf *rama, char avisa)
  * distribuye_conf
  * Distribuye por bloques la configuración parseada
  */
-void distribuye_conf(Conf *config)
+void DistribuyeConfiguracion(Conf *config)
 {
 	int i, errores = 0;
 	cComConf *com;
@@ -426,7 +426,7 @@ void distribuye_conf(Conf *config)
 				com->func(config->seccion[i]);
 		}
 		else
-			conferror("[%s:%i] Sección extra: '%s'.", config->seccion[i]->archivo, config->seccion[i]->linea, config->seccion[i]->item);
+			Error("[%s:%i] Sección extra: '%s'.", config->seccion[i]->archivo, config->seccion[i]->linea, config->seccion[i]->item);
 	}
 	com = &cComs[0];
 	while (com->nombre != 0x0)
@@ -437,9 +437,9 @@ void distribuye_conf(Conf *config)
 		if (com->opt == OBL)
 #endif			
 		{
-			if (!busca_entrada(config, com->nombre))
+			if (!BuscaEntrada(config, com->nombre))
 			{
-				fecho(FERR, "No se encuentra la seccion %s", com->nombre);
+				Alerta(FERR, "No se encuentra la seccion %s", com->nombre);
 				errores++;
 			}		
 		}
@@ -447,12 +447,12 @@ void distribuye_conf(Conf *config)
 	}
 	if (errores)
 	{
-		fecho(FERR, "Hay %i error%s en la configuracion. No se puede cargar", errores, errores > 1 ? "es" : "");
-		cierra_colossus(-1);
+		Alerta(FERR, "Hay %i error%s en la configuracion. No se puede cargar", errores, errores > 1 ? "es" : "");
+		CierraColossus(-1);
 	}
-	libera_conf(config);
+	LiberaMemoriaConfiguracion(config);
 }
-Conf *busca_entrada(Conf *config, char *meta)
+Conf *BuscaEntrada(Conf *config, char *meta)
 {
 	int i;
 	for (i = 0; i < config->secciones; i++)
@@ -462,40 +462,40 @@ Conf *busca_entrada(Conf *config, char *meta)
 	}
 	return NULL;
 }
-int _test_server(Conf *config, int *errores)
+int TestServer(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	int puerto;
 	Conf *eval, *aux;
 	struct hostent *addr;
-	if (!(eval = busca_entrada(config, "addr")))
+	if (!(eval = BuscaEntrada(config, "addr")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz addr.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz addr.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz addr esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz addr esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!EsIp(eval->data) && !(addr = gethostbyname(eval->data)))
 		{
-			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "puerto")))
+	if (!(eval = BuscaEntrada(config, "puerto")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz puerto.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz puerto.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -503,16 +503,16 @@ int _test_server(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 0 || puerto > 65535)
 			{
-				conferror("[%s:%s::%s::%i] El puerto debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
+				Error("[%s:%s::%s::%i] El puerto debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
 	}
-	if ((eval = busca_entrada(config, "puerto_escucha")))
+	if ((eval = BuscaEntrada(config, "puerto_escucha")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz puerto_escucha esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz puerto_escucha esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -520,87 +520,87 @@ int _test_server(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 0 || puerto > 65535)
 			{
-				conferror("[%s:%s::%s::%i] El puerto_escucha debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
+				Error("[%s:%s::%s::%i] El puerto_escucha debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
-			aux = busca_entrada(config, "puerto");
+			aux = BuscaEntrada(config, "puerto");
 			if (puerto == atoi(aux->data))
 			{
-				conferror("[%s:%s::%s::%i] El puerto_escucha no puede ser el mismo que puerto.", config->archivo, config->item, eval->item, eval->linea);
+				Error("[%s:%s::%s::%i] El puerto_escucha no puede ser el mismo que puerto.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
 	}
-	if (!(eval = busca_entrada(config, "password")))
+	if (!(eval = BuscaEntrada(config, "password")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz password.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz password.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
-		if (!(aux = busca_entrada(eval, "local")))
+		if (!(aux = BuscaEntrada(eval, "local")))
 		{
-			conferror("[%s:%s::%s] No se encuentra la directriz local.", config->archivo, config->item, eval->item);
+			Error("[%s:%s::%s] No se encuentra la directriz local.", config->archivo, config->item, eval->item);
 			error_parcial++;
 		}
 		else
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s::%i] La directriz local esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				Error("[%s:%s::%s::%s::%i] La directriz local esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
-		if (!(aux = busca_entrada(eval, "remoto")))
+		if (!(aux = BuscaEntrada(eval, "remoto")))
 		{
-			conferror("[%s:%s::%s] No se encuentra la directriz remoto.", config->archivo, config->item, eval->item);
+			Error("[%s:%s::%s] No se encuentra la directriz remoto.", config->archivo, config->item, eval->item);
 			error_parcial++;
 		}
 		else
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s::%i] La directriz remoto esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				Error("[%s:%s::%s::%s::%i] La directriz remoto esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
 	}
-	if (!(eval = busca_entrada(config, "host")))
+	if (!(eval = BuscaEntrada(config, "host")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "info")))
+	if (!(eval = BuscaEntrada(config, "info")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz info.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz info.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "numeric")))
+	if (!(eval = BuscaEntrada(config, "numeric")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz numeric.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz numeric.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz numeric esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz numeric esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -608,18 +608,18 @@ int _test_server(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 0 || puerto > 255)
 			{
-				conferror("[%s:%s::%s::%i] La directriz numeric debe estar entre 0 y 255.", config->archivo, config->item, eval->item, eval->linea);
+				Error("[%s:%s::%s::%i] La directriz numeric debe estar entre 0 y 255.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
 	}
 #ifdef USA_ZLIB
-	if ((eval = busca_entrada(config, "compresion")))
+	if ((eval = BuscaEntrada(config, "compresion")))
 	{
 		puerto = atoi(eval->data);
 		if (puerto < 1 || puerto > 9)
 		{
-			conferror("[%s:%s::%s::%i] La directriz compresion debe estar entre 1 y 9.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz compresion debe estar entre 1 y 9.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 		}
 	}
@@ -627,11 +627,11 @@ int _test_server(Conf *config, int *errores)
 	*errores += error_parcial;
 	return error_parcial;
 }
-void _conf_server(Conf *config)
+void ConfServer(Conf *config)
 {
 	int i, p;
 	if (!conf_server)
-		da_Malloc(conf_server, struct Conf_server);
+		BMalloc(conf_server, struct Conf_server);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "addr"))
@@ -664,81 +664,81 @@ void _conf_server(Conf *config)
 	if (!conf_server->escucha)
 		conf_server->escucha = conf_server->puerto;
 }
-int _test_db(Conf *config, int *errores)
+int TestDb(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
 	struct hostent *db;
-	if (!(eval = busca_entrada(config, "host")))
+	if (!(eval = BuscaEntrada(config, "host")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!EsIp(eval->data) && !(db = gethostbyname(eval->data)))
 		{
-			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "login")))
+	if (!(eval = BuscaEntrada(config, "login")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz login.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz login.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "pass")))
+	if ((eval = BuscaEntrada(config, "pass")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "nombre")))
+	if (!(eval = BuscaEntrada(config, "nombre")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz nombre.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz nombre.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz nombre esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz nombre esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "prefijo")))
+	if (!(eval = BuscaEntrada(config, "prefijo")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz prefijo.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz prefijo.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz prefijo esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz prefijo esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "puerto")))
+	if ((eval = BuscaEntrada(config, "puerto")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
@@ -747,7 +747,7 @@ int _test_db(Conf *config, int *errores)
 			puerto = atoi(eval->data);
 			if (puerto < 1 || puerto > 65535)
 			{
-				conferror("[%s:%s::%s::%i] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item, eval->linea);
+				Error("[%s:%s::%s::%i] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}
@@ -755,11 +755,11 @@ int _test_db(Conf *config, int *errores)
 	*errores += error_parcial;
 	return error_parcial;
 }
-void _conf_db(Conf *config)
+void ConfDb(Conf *config)
 {
 	int i;
 	if (!conf_db)
-		da_Malloc(conf_db, struct Conf_db);
+		BMalloc(conf_db, struct Conf_db);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
@@ -776,58 +776,58 @@ void _conf_db(Conf *config)
 			conf_db->puerto = atoi(config->seccion[i]->data);
 	}
 }
-int _test_smtp(Conf *config, int *errores)
+int TestSmtp(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
 	struct hostent *smtp;
-	if (!(eval = busca_entrada(config, "host")))
+	if (!(eval = BuscaEntrada(config, "host")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!EsIp(eval->data) && !(smtp = gethostbyname(eval->data)))
 		{
-			conferror("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "login")))
+	if ((eval = BuscaEntrada(config, "login")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "pass")))
+	if ((eval = BuscaEntrada(config, "pass")))
 	{
-		if (!(eval = busca_entrada(config, "login")))
+		if (!(eval = BuscaEntrada(config, "login")))
 		{
-			conferror("[%s:%s::%s::%i] Para usar la directriz pass se requiere la directriz login.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] Para usar la directriz pass se requiere la directriz login.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
 	*errores += error_parcial;
 	return error_parcial;
 }
-void _conf_smtp(Conf *config)
+void ConfSmtp(Conf *config)
 {
 	int i;
 	if (!conf_smtp)
-		da_Malloc(conf_smtp, struct Conf_smtp);
+		BMalloc(conf_smtp, struct Conf_smtp);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
@@ -838,57 +838,57 @@ void _conf_smtp(Conf *config)
 			ircstrdup((conf_smtp->pass), config->seccion[i]->data);
 	}
 }
-int _test_set(Conf *config, int *errores)
+int TestSet(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval, *aux;
-	if (!(eval = busca_entrada(config, "respuesta")))
+	if (!(eval = BuscaEntrada(config, "respuesta")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz respuesta.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz respuesta.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz respuesta esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz respuesta esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 		if (strcasecmp(eval->data, "PRIVMSG") && strcasecmp(eval->data, "NOTICE"))
 		{
-			conferror("[%s:%s::%s::%i] La respuesta solo puede tomar los valores PRIVMSG o NOTICE.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La respuesta solo puede tomar los valores PRIVMSG o NOTICE.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "root")))
+	if (!(eval = BuscaEntrada(config, "root")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz root.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz root.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz root esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz root esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if (!(eval = busca_entrada(config, "admin")))
+	if (!(eval = BuscaEntrada(config, "admin")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz admin.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz admin.", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "reconectar")))
+	if (!(eval = BuscaEntrada(config, "reconectar")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz reconectar.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz reconectar.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		int rec;
-		if (!(aux = busca_entrada(eval, "intentos")))
+		if (!(aux = BuscaEntrada(eval, "intentos")))
 		{
-			conferror("[%s:%s::%s] No se encuentra la directriz intentos.", config->archivo, config->item, eval->item);
+			Error("[%s:%s::%s] No se encuentra la directriz intentos.", config->archivo, config->item, eval->item);
 			error_parcial++;
 		}
 		else
@@ -896,45 +896,45 @@ int _test_set(Conf *config, int *errores)
 			
 			if (!(rec = atoi(aux->data)) || rec < 1 || rec >999)
 			{
-				conferror("[%s:%s::%s::%s::%i] Intentos de reconexion invalido (1-999).", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				Error("[%s:%s::%s::%s::%i] Intentos de reconexion invalido (1-999).", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
-		if (!(aux = busca_entrada(eval, "intervalo")))
+		if (!(aux = BuscaEntrada(eval, "intervalo")))
 		{
-			conferror("[%s:%s::%s] No se encuentra la directriz intervalo.", config->archivo, config->item, eval->item);
+			Error("[%s:%s::%s] No se encuentra la directriz intervalo.", config->archivo, config->item, eval->item);
 			error_parcial++;
 		}
 		else
 		{
 			if (!(rec = atoi(aux->data)) || rec < 1 || rec > 300)
 			{
-				conferror("[%s:%s::%s::%s::%i] Intervalo de reconexion invalido (1-300).", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				Error("[%s:%s::%s::%s::%i] Intervalo de reconexion invalido (1-300).", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 		}
 	}
-	if (!(eval = busca_entrada(config, "clave_cifrado")))
+	if (!(eval = BuscaEntrada(config, "clave_cifrado")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz clave_cifrado", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz clave_cifrado", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (strlen(eval->data) > 32)
 		{
-			conferror("[%s:%s::%s::%i] La clave de cifrado es demasiado larga. Sólo puede tener 32 caracteres.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La clave de cifrado es demasiado larga. Sólo puede tener 32 caracteres.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
 	*errores += error_parcial;
 	return error_parcial;
 }
-void _conf_set(Conf *config)
+void ConfSet(Conf *config)
 {
 	int i, p;
 	if (!conf_set)
-		da_Malloc(conf_set, struct Conf_set);
+		BMalloc(conf_set, struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "autobop"))
@@ -970,43 +970,43 @@ void _conf_set(Conf *config)
 			strncpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
 	}
 }
-int _test_modulos(Conf *config, int *errores)
+int TestModulos(Conf *config, int *errores)
 {
 	short int error_parcial = 0;
 	Conf *eval;
 	if (BadPtr(config->data))
 	{
-		conferror("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
+		Error("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "nick")))
+	if (!(eval = BuscaEntrada(config, "nick")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz nick.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz nick.", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "ident")))
+	if (!(eval = BuscaEntrada(config, "ident")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz ident.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz ident.", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "host")))
+	if (!(eval = BuscaEntrada(config, "host")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "realname")))
+	if (!(eval = BuscaEntrada(config, "realname")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz realname.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz realname.", config->archivo, config->item);
 		error_parcial++;
 	}
 	return error_parcial;
 }
-void _conf_modulos(Conf *config)
+void ConfModulos(Conf *config)
 {
 	int i;
 	Modulo *mod;
-	if (!(mod = crea_modulo(config->data)))
-		conferror("[%s:%s] Ha sido imposible cargar el módulo %s.", config->archivo, config->item, config->data);
+	if (!(mod = CreaModulo(config->data)))
+		Error("[%s:%s] Ha sido imposible cargar el módulo %s.", config->archivo, config->item, config->data);
 	else
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -1033,42 +1033,42 @@ void _conf_modulos(Conf *config)
 					*k = '\0';
 				ircfree(mod->config);
 				mod->config = (char *)Malloc(sizeof(char) * (strlen(config->seccion[i]->data) + (path ? strlen(path) : 0) + 2));
-				sprintf_irc(mod->config, "%s/%s", path, config->seccion[i]->data);
+				ircsprintf(mod->config, "%s/%s", path, config->seccion[i]->data);
 				Free(path);
 			}
 		}
 		ircfree(mod->mascara);
 		mod->mascara = (char *)Malloc(sizeof(char) * (strlen(mod->nick) + 1 + strlen(mod->ident) + 1 + strlen(mod->host) + 1));
-		sprintf_irc(mod->mascara, "%s!%s@%s", mod->nick, mod->ident, mod->host);
+		ircsprintf(mod->mascara, "%s!%s@%s", mod->nick, mod->ident, mod->host);
 	}
 }
-int _test_log(Conf *config, int *errores)
+int TestLog(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval, *aux;
 	int i;
 	Opts *ofl = NULL;
-	if ((eval = busca_entrada(config, "tamaño")))
+	if ((eval = BuscaEntrada(config, "tamaño")))
 	{
 		if (atoi(eval->data) < 0)
 		{
-			conferror("[%s:%s::%s::%i] El tamaño máximo del archivo log debe ser mayor que 0 bytes.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] El tamaño máximo del archivo log debe ser mayor que 0 bytes.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
 	if (BadPtr(config->data))
 	{
-		conferror("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
+		Error("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
 		error_parcial++;
 	}
 	else
 	{
-		if (!is_file(config->data))
+		if (!EsArchivo(config->data))
 			fclose(fopen(config->data, "w"));
 	}
-	if (!(eval = busca_entrada(config, "opciones")))
+	if (!(eval = BuscaEntrada(config, "opciones")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz opciones.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz opciones.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
@@ -1083,7 +1083,7 @@ int _test_log(Conf *config, int *errores)
 			}
 			if (!ofl || !ofl->item)
 			{
-				conferror("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
+				Error("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
 				error_parcial++;
 			}
 		}
@@ -1091,12 +1091,12 @@ int _test_log(Conf *config, int *errores)
 	*errores += error_parcial;
 	return error_parcial;
 }
-void _conf_log(Conf *config)
+void ConfLog(Conf *config)
 {
 	int i, p;
 	Opts *ofl = NULL;
 	if (!conf_log)
-		da_Malloc(conf_log, struct Conf_log);
+		BMalloc(conf_log, struct Conf_log);
 	ircstrdup(conf_log->archivo, config->data);
 	for (i = 0; i < config->secciones; i++)
 	{
@@ -1119,37 +1119,37 @@ void _conf_log(Conf *config)
 	}
 }
 #ifdef USA_SSL
-int _test_ssl(Conf *config, int *errores)
+int TestSSL(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval, *aux;
 	int i;
 	Opts *ofl = NULL;
-	if ((eval = busca_entrada(config, "certificado")))
+	if ((eval = BuscaEntrada(config, "certificado")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz certificado esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz certificado esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "clave")))
+	if ((eval = BuscaEntrada(config, "clave")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz clave esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz clave esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "certificados-seguros")))
+	if ((eval = BuscaEntrada(config, "certificados-seguros")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz certificado esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz certificado esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "opciones")))
+	if ((eval = BuscaEntrada(config, "opciones")))
 	{
 		for (i = 0; i < eval->secciones; i++)
 		{
@@ -1161,28 +1161,28 @@ int _test_ssl(Conf *config, int *errores)
 			}
 			if (!ofl || !ofl->item)
 			{
-				conferror("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
+				Error("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
 				error_parcial++;
 			}
 		}
 	}
-	if ((eval = busca_entrada(config, "cifrados")))
+	if ((eval = BuscaEntrada(config, "cifrados")))
 	{
 		if (!eval->data)
 		{
-			conferror("[%s:%s::%s::%i] La directriz cifrados esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz cifrados esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
 	*errores += error_parcial;
 	return error_parcial;
 }
-void _conf_ssl(Conf *config)
+void ConfSSL(Conf *config)
 {
 	int i, p;
 	Opts *ofl = NULL;
 	if (!conf_ssl)
-		da_Malloc(conf_ssl, struct Conf_ssl);
+		BMalloc(conf_ssl, struct Conf_ssl);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "egd"))
@@ -1214,20 +1214,20 @@ void _conf_ssl(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "cifrados"))
 			ircstrdup(conf_ssl->cifrados, config->seccion[i]->data);
 	}
-	init_ssl();
+	SSLInit();
 }
 #endif
-int _test_protocolo(Conf *config, int *errores)
+int TestProtocolo(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	if (BadPtr(config->data))
 	{
-		conferror("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
+		Error("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
 		error_parcial++;
 	}
-	if (carga_protocolo(config))
+	if (CargaProtocolo(config))
 	{
-		conferror("[%s:%s::%i] Ha sido imposible cargar el protocolo %s.", config->archivo, config->item, config->linea, config->data);
+		Error("[%s:%s::%i] Ha sido imposible cargar el protocolo %s.", config->archivo, config->item, config->linea, config->data);
 		error_parcial++;
 	}
 	*errores += error_parcial;
@@ -1235,12 +1235,12 @@ int _test_protocolo(Conf *config, int *errores)
 }
 
 #ifndef _WIN32
-void conferror(char *formato, ...)
+void Error(char *formato, ...)
 {
 	char buf[BUFSIZE];
 	va_list vl;
 	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
+	ircvsprintf(buf, formato, vl);
 	va_end(vl);
 	strcat(buf, "\r\n");
 	fprintf(stderr, buf);	
@@ -1254,8 +1254,8 @@ int Info(char *formato, ...)
 	ts = time(0);
 	timeptr = localtime(&ts);
 	va_start(vl, formato);
-	sprintf_irc(txt, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
-	vsprintf_irc(buf, txt, vl);
+	ircsprintf(txt, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
+	ircvsprintf(buf, txt, vl);
 	va_end(vl);
 	strcat(buf, "\r\n");
 	fprintf(stderr, buf);

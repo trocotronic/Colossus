@@ -5,9 +5,6 @@
 
 RUN_CONFIGURE () {
 ARG=""
-if [ -n "$HUB" ] ; then
-	ARG="$ARG--enable-hub "
-fi
 if [  "$CRYPTOIRCD" = "1" ] ; then
 	if test x"$SSLDIR" = "x" ; then
 		ARG="$ARG--enable-ssl "
@@ -50,7 +47,6 @@ fi
 
 c=""
 n=""
-HUB="1"
 DEFPERM="0600"
 CRYPTOIRCD=""
 SSLDIR=""
@@ -115,36 +111,6 @@ clear
         read cc
         clear
     fi
-
-TEST=""
-while [ -z "$TEST" ] ; do
-    if [ "$HUB" = "1" ] ; then
-	TEST="Hub"
-    else
-	TEST="Leaf"
-    fi
-    echo ""
-    echo "Quiere compilarlo como hub o como leaf?"
-    echo "Escriba Hub para seleccionar hub y Leaf para seleccionar leaf."
-    echo $n "[$TEST] -> $c"
-	read cc
-    if [ -z "$cc" ] ; then
-	cc=$TEST
-    fi
-    case "$cc" in
-	[Hh]*)
-	    HUB="1"
-	    ;;
-	[Ll]*)
-	    HUB=""
-	    ;;
-	*)
-	    echo ""
-	    echo "Debe especificar Hub o Leaf"
-	    TEST=""
-	    ;;
-    esac
-done
 
 TEST=""
 while [ -z "$TEST" ] ; do
@@ -376,7 +342,6 @@ INET6="$INET6"
 UDB="$UDB"
 LISTEN_SIZE="$LISTEN_SIZE"
 MAXCONNECTIONS="$MAXCONNECTIONS"
-HUB="$HUB"
 DEFPERM="$DEFPERM"
 CRYPTOIRCD="$CRYPTOIRCD"
 SSLDIR="$SSLDIR"

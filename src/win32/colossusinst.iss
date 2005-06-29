@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.6 2005-05-18 18:51:10 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.7 2005-06-29 21:14:07 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -37,23 +37,23 @@ Source: "..\..\cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignor
 Source: "..\..\proximamente"; DestDir: "{app}"; DestName: "proximamente.txt"; Flags: ignoreversion
 Source: "..\..\libmysql.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mx.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\pthreadVC1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\pthreadVC2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
 Source: "..\..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\modulos\*.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.dll"; DestDir: "{app}\protocolos"; Flags: ignoreversion
-Source: "..\..\protocolos\*.pdb"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\protocolos\*.pdb"; DestDir: "{app}\protocolos"; Flags: ignoreversion
 #ifdef USA_SSL
-Source: "c:\openssl\bin\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "c:\openssl\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "c:\openssl\bin\libeay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\dev\openssl\out32dll\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\dev\openssl\out32dll\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\dev\openssl\out32dll\libeay32.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\makecert.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\encpem.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\ssl.cnf"; DestDir: "{app}"; Flags: ignoreversion
 #endif
 #ifdef USA_ZLIB
-Source: "..\..\zlib1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\..\zlibwapi.dll"; DestDir: "{app}"; Flags: ignoreversion
 #endif
 Source: isxdl.dll; DestDir: {tmp}; Flags: dontcopy
 

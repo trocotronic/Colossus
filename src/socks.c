@@ -1,10 +1,10 @@
 /*
- * $Id: socks.c,v 1.11 2005-05-25 21:51:48 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.12 2005-06-29 21:13:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #ifdef USA_ZLIB
-#include "zlib.h"
+#include "zip.h"
 #endif
 #include "ircd.h"
 #ifndef _WIN32
@@ -13,28 +13,28 @@
 int listens[MAX_LISTN];
 int listenS = 0;
 
-void encola(DBuf *, char *, int);
-int desencola(DBuf *, char *, int);
-void envia_cola(Sock *);
+void Encola(DBuf *, char *, int);
+int Desencola(DBuf *, char *, int);
+void EnviaCola(Sock *);
 char *lee_cola(Sock *);
-int completa_conexion(Sock *);
+int CompletaConexion(Sock *);
 
 /*
  * resolv
  * Resvuelve el host dado
  * NULL si no se pudo resolver
  */
-struct in_addr *resolv(char *host)
+struct in_addr *Resuelve(char *host)
 {
 	struct hostent *he;
-	if (!host || !host[0]) 
+	if (BadPtr(host))
 		return NULL;
 	if (!(he = gethostbyname(host))) 
 		return NULL;
 	else 
 		return (struct in_addr *)he->h_addr;
 }
-int sockblock(int pres)
+int SockNoBlock(int pres)
 {
 #ifndef _WIN32
 	int res;
@@ -64,7 +64,7 @@ int sockblock(int pres)
 #endif
 	return 0;
 }
-void inserta_sock(Sock *sck)
+void InsertaSock(Sock *sck)
 {
 	int i;
 	for (i = 0; ListaSocks.socket[i]; i++);
@@ -77,7 +77,7 @@ void inserta_sock(Sock *sck)
 	if (i > ListaSocks.tope)
 		ListaSocks.tope = i;
 }
-void borra_sock(Sock *sck)
+void BorraSock(Sock *sck)
 {
 	ListaSocks.socket[sck->slot] = NULL;
 	sck->slot = -1;
@@ -90,13 +90,13 @@ void borra_sock(Sock *sck)
  * Abre una conexión
  * Devuelve el puntero al socket abierto
  */
-Sock *sockopen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), int add)
+Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), int add)
 {
 	Sock *sck;
 	struct in_addr *res;
 	if (add && ListaSocks.abiertos == MAXSOCKS)
 		return NULL;
-	da_Malloc(sck, Sock);
+	BMalloc(sck, Sock);
 	SockDesc(sck);
 #ifdef USA_SSL
 	if (puerto < 0) /* es un puerto ssl */
@@ -109,22 +109,21 @@ Sock *sockopen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 		return NULL;
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_port = htons((u_short)puerto);
-	if ((res = resolv(host)))
+	if ((res = Resuelve(host)))
 		sck->server.sin_addr = *res;
 	sck->host = strdup(host);
 	SockConn(sck);
-	if (sockblock(sck->pres) == -1)
+	if (SockNoBlock(sck->pres) == -1)
 		return NULL;
 #ifdef _WIN32
 	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) == -1 &&
-		WSAGetLastError() != WSAEINPROGRESS &&
-		WSAGetLastError() != WSAEWOULDBLOCK)
+		WSAGetLastError() != WSAEINPROGRESS && WSAGetLastError() != WSAEWOULDBLOCK)
 #else
 	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) < 0 && errno != EINPROGRESS)
 #endif			
 			return NULL;
-	da_Malloc(sck->recvQ, DBuf);
-	da_Malloc(sck->sendQ, DBuf);
+	BMalloc(sck->recvQ, DBuf);
+	BMalloc(sck->sendQ, DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
@@ -134,10 +133,10 @@ Sock *sockopen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 	Debug("Abriendo conexion con %s:%i (%i) %s", host, puerto, sck->pres, EsSSL(sck) ? "[SSL]" : "");
 #endif
 	if (add)
-		inserta_sock(sck);
+		InsertaSock(sck);
 	return sck;
 }
-Sock *socklisten(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
+Sock *SockListen(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
 {
 	Sock *sck;
 	int i;
@@ -152,8 +151,8 @@ Sock *socklisten(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(
 		return NULL;
 	ad[0] = ad[1] = ad[2] = ad[3] = 0;
 	(void)sscanf(name, "%d.%d.%d.%d", &ad[0], &ad[1], &ad[2], &ad[3]);
-	(void)sprintf_irc(ipname, "%d.%d.%d.%d", ad[0], ad[1], ad[2], ad[3]);
-	da_Malloc(sck, Sock);
+	(void)ircsprintf(ipname, "%d.%d.%d.%d", ad[0], ad[1], ad[2], ad[3]);
+	BMalloc(sck, Sock);
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		return NULL;
 	sck->server.sin_family = AF_INET;
@@ -165,23 +164,23 @@ Sock *socklisten(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(
 		    sizeof(sck->server)) == -1)
 		return NULL;
 	SockList(sck);
-	if (sockblock(sck->pres) == -1)
+	if (SockNoBlock(sck->pres) == -1)
 		return NULL;
 #ifdef DEBUG
 	Debug("Escuchando puerto %i (%i)", puerto, sck->pres);
 #endif
-	da_Malloc(sck->recvQ, DBuf);
-	da_Malloc(sck->sendQ, DBuf);
+	BMalloc(sck->recvQ, DBuf);
+	BMalloc(sck->sendQ, DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
 	sck->closefunc = closefunc;
 	listen(sck->pres, LISTEN_SIZE);
 	listens[listenS++] = puerto;
-	inserta_sock(sck);
+	InsertaSock(sck);
 	return sck;
 }
-Sock *sockaccept(Sock *list, int pres)
+Sock *SockAccept(Sock *list, int pres)
 {
 	Sock *sck;
 	struct sockaddr_in addr;
@@ -191,59 +190,64 @@ Sock *sockaccept(Sock *list, int pres)
 		CLOSE_SOCK(pres);
 		return NULL;
 	}
-	da_Malloc(sck, Sock);
+	BMalloc(sck, Sock);
 	sck->pres = pres;
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_port = list->server.sin_port;
 	memcpy(&sck->server.sin_addr, &addr.sin_addr, sizeof(struct sockaddr_in));
 	sck->host = strdup(inet_ntoa(addr.sin_addr));
 	sck->puerto = list->puerto;
-	if (sockblock(sck->pres) == -1)
+	if (SockNoBlock(sck->pres) == -1)
+	{
+		Free(sck);
 		return NULL;
-	da_Malloc(sck->recvQ, DBuf);
-	da_Malloc(sck->sendQ, DBuf);
+	}
+	BMalloc(sck->recvQ, DBuf);
+	BMalloc(sck->sendQ, DBuf);
 	sck->openfunc = list->openfunc;
 	sck->readfunc = list->readfunc;
 	sck->writefunc = list->writefunc;
 	sck->closefunc = list->closefunc;
-	inserta_sock(sck);
+	InsertaSock(sck);
 #ifdef USA_SSL
 	if (EsSSL(list))
 	{
 		SetSSLAcceptHandshake(sck);
 		if (!(sck->ssl = SSL_new(ctx_server)))
 		{
-			sockclose(sck, LOCAL);
+			SockClose(sck, LOCAL);
 			return NULL;
 		}
 		sck->opts |= OPT_SSL;
 		SSL_set_fd(sck->ssl, pres);
-		SSL_set_nonblocking(sck->ssl);
-		if (!ircd_SSL_accept(sck, pres)) 
+		SSLSockNoBlock(sck->ssl);
+		if (!SSLAccept(sck, pres)) 
 		{
 			SSL_set_shutdown(sck->ssl, SSL_RECEIVED_SHUTDOWN);
-			SSL_smart_shutdown(sck->ssl);
+			SSLShutDown(sck->ssl);
 			SSL_free(sck->ssl);
-			sockclose(sck, LOCAL);
+			SockClose(sck, LOCAL);
 			return NULL;
 		}
 	}
 	else
 #endif
-	completa_conexion(sck);
+	CompletaConexion(sck);
 	return sck;
 }
-void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
+void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 {
 	char buf[BUFSIZE], *msg;
 	int len;
 	if (!sck)
 		return;
 	msg = buf;
-	vsprintf_irc(buf, formato, vl);
+	ircvsprintf(buf, formato, vl);
 #ifndef DEBUG
 	Debug("[Enviando: %s]", buf);
 #endif
+	if (sck->writefunc && buf[0])
+		sck->writefunc(sck, buf);
 	if (opts & OPT_CR)
 		strcat(buf, "\r");
 	if (opts & OPT_LF)
@@ -251,26 +255,24 @@ void sockwritev(Sock *sck, int opts, char *formato, va_list vl)
 	len = strlen(buf);
 #ifdef USA_ZLIB
 	if (EsZlib(sck))
-		msg = comprime(sck, msg, &len, 0);
+		msg = ZLibComprime(sck, msg, &len, 0);
 	if (len)
 #endif
-	encola(sck->sendQ, msg, len); /* de momento siempre son cadenas */
-	if (sck->writefunc)
-		sck->writefunc(sck, msg);
+	Encola(sck->sendQ, msg, len); /* de momento siempre son cadenas */
 }
-void sockwrite(Sock *sck, int opts, char *formato, ...)
+void SockWrite(Sock *sck, int opts, char *formato, ...)
 {
 	va_list vl;
 	va_start(vl, formato);
-	sockwritev(sck, opts, formato, vl);
+	SockWriteVL(sck, opts, formato, vl);
 	va_end(vl);
 }
-void sockclose(Sock *sck, char closef)
+void SockClose(Sock *sck, char closef)
 {
 	if (!sck)
 		return;
 	if (closef == LOCAL)
-		envia_cola(sck); /* enviamos toda su cola */
+		EnviaCola(sck); /* enviamos toda su cola */
 	if (EsList(sck))
 	{
 		int i;
@@ -294,20 +296,20 @@ void sockclose(Sock *sck, char closef)
 	if (EsSSL(sck) && sck->ssl) 
 	{
 		SSL_set_shutdown((SSL *)sck->ssl, SSL_RECEIVED_SHUTDOWN);
-		SSL_smart_shutdown((SSL *)sck->ssl);
+		SSLShutDown((SSL *)sck->ssl);
 		SSL_free((SSL *)sck->ssl);
 		sck->ssl = NULL;
 	}
 #endif
 	if (sck->closefunc)
 		sck->closefunc(sck, closef ? NULL : "LOCAL");
-	borra_sock(sck);
+	BorraSock(sck);
 	ircfree(sck->recvQ);
 	ircfree(sck->sendQ);
 	ircfree(sck->host);
 	Free(sck);
 }
-void cierra_socks()
+void CierraSocks()
 {
 	int i;
 	for (i = ListaSocks.tope; i >= 0; i--)
@@ -323,13 +325,13 @@ void cierra_socks()
 	WSACleanup();
 #endif
 }
-void encola(DBuf *bufc, char *str, int bytes)
+void Encola(DBuf *bufc, char *str, int bytes)
 {
 	int copiados, len = bytes ? bytes : strlen(str);
 	//Debug("Len %i (%i %i %X)",len,bufc->len,bufc->wslot ? bufc->wslot->len : 0,bufc->wslot);
 	if (!bufc->slots)
 	{
-		da_Malloc(bufc->wslot, DbufData);
+		BMalloc(bufc->wslot, DbufData);
 		bufc->rslot = bufc->wslot;
 		bufc->rchar = &bufc->rslot->data[0];
 		bufc->wchar = &bufc->wslot->data[0];
@@ -345,10 +347,10 @@ void encola(DBuf *bufc, char *str, int bytes)
 			DbufData *aux;
 			if (copiados < 0)
 			{
-				fecho(FERR, "copiados es menor que 0. Póngase en contacto con el autor.");
-				cierra_colossus(-1);
+				Alerta(FERR, "copiados es menor que 0. Póngase en contacto con el autor.");
+				CierraColossus(-1);
 			}
-			da_Malloc(aux, DbufData);
+			BMalloc(aux, DbufData);
 			bufc->wslot->sig = aux;
 			bufc->wslot = aux;
 			bufc->wchar = &bufc->wslot->data[0];
@@ -367,7 +369,7 @@ void encola(DBuf *bufc, char *str, int bytes)
 		bufc->len += copiados;
 	}
 }
-void elimina_slot(DBuf *bufc, int bytes)
+void EliminaSlot(DBuf *bufc, int bytes)
 {
 	DbufData *aux;
 	int elim = 0;
@@ -396,7 +398,7 @@ void elimina_slot(DBuf *bufc, int bytes)
 	}
 }
 /* copia el nº de bytes indicados y los borra una vez colocados */
-int copia_slot(DBuf *bufc, char *dest, int bytes)
+int CopiaSlot(DBuf *bufc, char *dest, int bytes)
 {
 	int copiados = 0;
 	char *b = dest;
@@ -408,12 +410,12 @@ int copia_slot(DBuf *bufc, char *dest, int bytes)
 		memcpy(b, bufc->rchar, copiados);
 		b += copiados;
 		bytes -= copiados;
-		elimina_slot(bufc, copiados);
+		EliminaSlot(bufc, copiados);
 	}
 	return b - dest;
 }
 /* mete en buf una línea completa o hasta que se quede lleno */	
-int desencola(DBuf *bufc, char *buf, int bytes)
+int Desencola(DBuf *bufc, char *buf, int bytes)
 {
 	/* bytes contiene el máximo que podemos copiar */
 	DbufData *aux;
@@ -440,7 +442,7 @@ int desencola(DBuf *bufc, char *buf, int bytes)
 			copiados = bufc->len - len;
 			if (copiados == 1)
 			{
-				elimina_slot(bufc, 1);
+				EliminaSlot(bufc, 1);
 				goto inicio;
 			}
 			break;
@@ -462,14 +464,14 @@ int desencola(DBuf *bufc, char *buf, int bytes)
 		return 0;
 	bzero(tmp, sizeof(tmp));
 	strncpy(tmp, bufc->rchar, MIN(copiados, bytes));
-	i = copia_slot(bufc, buf, MIN(copiados, bytes)+1);
+	i = CopiaSlot(bufc, buf, MIN(copiados, bytes)+1);
 	if (copiados > i)
-		elimina_slot(bufc, copiados - i);
+		EliminaSlot(bufc, copiados - i);
 	if (i >= 0)
 		*(buf + i) = '\0';
 	return i;
 }
-void envia_cola(Sock *sck)
+void EnviaCola(Sock *sck)
 {
 	char buf[BUFSIZE], *msg;
 	int len = 0;
@@ -481,24 +483,24 @@ void envia_cola(Sock *sck)
 			mas = 1;
 		else
 		{
-			msg = comprime(sck, NULL, &len, 1);
+			msg = ZLibComprime(sck, NULL, &len, 1);
 			if (len == -1)
 			{
-				Info("No puede hacer comprime() (1)");
+				Info("No puede hacer ZLibComprime() (1)");
 				return;
 			}
-			encola(sck->sendQ, msg, len);
+			Encola(sck->sendQ, msg, len);
 		}
 	}
 #endif
 	if (sck->sendQ && sck->sendQ->len > 0)
 	{
-		while ((len = copia_slot(sck->sendQ, buf, sizeof(buf))) > 0)
+		while ((len = CopiaSlot(sck->sendQ, buf, sizeof(buf))) > 0)
 		{
 			msg = &buf[0];
 #ifdef USA_SSL
 			if (EsSSL(sck))
-				ircd_SSL_write(sck, msg, len);
+				SSLSockWrite(sck, msg, len);
 			else
 #endif
 			WRITE_SOCK(sck->pres, msg, len);
@@ -507,18 +509,18 @@ void envia_cola(Sock *sck)
 		if (!sck->sendQ->len && mas)
 		{
 			mas = 0;
-			msg = comprime(sck, NULL, &len, 1);
+			msg = ZLibComprime(sck, NULL, &len, 1);
 			if (len == -1)
 			{
-				Info("No puede hacer comprime() (2)");
+				Info("No puede hacer ZLibComprime() (2)");
 				return;
 			}
-			encola(sck->sendQ, msg, len);
+			Encola(sck->sendQ, msg, len);
 		}
 #endif
 	}
 }
-int lee_mensaje(Sock *sck)
+int LeeMensaje(Sock *sck)
 {
 	char lee[BUF_SOCK];
 	int len = 0;
@@ -527,17 +529,17 @@ int lee_mensaje(Sock *sck)
 	SET_ERRNO(0);
 #ifdef USA_SSL
 	if (EsSSL(sck))
-		len = ircd_SSL_read(sck, lee, sizeof(lee));
+		len = SSLSockRead(sck, lee, sizeof(lee));
 	else
 #endif
 	len = READ_SOCK(sck->pres, lee, sizeof(lee));
 	if (len < 0 && ERRNO == P_EWOULDBLOCK)
 		return 1;
 	if (len > 0)
-		encola(sck->recvQ, lee, len);
+		Encola(sck->recvQ, lee, len);
 	return len;
 }
-int crea_mensaje(Sock *sck, char *msg, int len)
+int CreaMensaje(Sock *sck, char *msg, int len)
 {
 #ifdef USA_ZLIB
 	int zip = 0, hecho = 0;
@@ -562,11 +564,11 @@ int crea_mensaje(Sock *sck, char *msg, int len)
 		zip = len;
 		sck->zlib->inbuf[0] = '\0';
 		sck->zlib->incount = 0;
-		p = descomprime(sck, p, &zip);
+		p = ZLibDescomprime(sck, p, &zip);
 		len = zip;
 		zip = 1;
 		if (len == -1)
-			return Info("Ha sido imposible hacer descomprime() (1)");
+			return Info("Ha sido imposible hacer ZLibDescomprime() (1)");
 	}
 	do
 	{
@@ -583,7 +585,7 @@ int crea_mensaje(Sock *sck, char *msg, int len)
 #ifndef DEBUG
 				Debug("[Parseando: %s]", sck->buffer);
 #endif
-				if (sck->readfunc)
+				if (sck->readfunc && sck->buffer)
 					sck->readfunc(sck, sck->buffer);
 #ifdef USA_ZLIB
 				if (EsZlib(sck) && zip == 0 && len > 0)
@@ -594,12 +596,15 @@ int crea_mensaje(Sock *sck, char *msg, int len)
 						p++;
 						zip--;
 					}
-					sck->zlib->primero = 0;
-					p = descomprime(sck, p, &zip);
-					len = zip;
-					zip = 1;
-					if (len == -1);
-						//return Info("Ha sido imposible hacer descomprime() (2)");
+					if (zip > 0)
+					{
+						sck->zlib->primero = 0;
+						p = ZLibDescomprime(sck, p, &zip);
+						len = zip;
+						zip = 1;
+						if (len == -1)
+							return Info("Ha sido imposible hacer ZLibDescomprime() (2)");
+					}
 				}
 #endif
 				b = sck->buffer;
@@ -610,11 +615,11 @@ int crea_mensaje(Sock *sck, char *msg, int len)
 #ifdef USA_ZLIB
 		if (EsZlib(sck) && sck->zlib->incount)
 		{
-			p = descomprime(sck, (char *)NULL, &zip);
+			p = ZLibDescomprime(sck, (char *)NULL, &zip);
 			len = zip;
 			zip = 1;
 			if (len == -1)
-				return Info("Ha sido imposible hacer descomprime() (3)");
+				return Info("Ha sido imposible hacer ZLibDescomprime() (3)");
 			b = p + len;
 			hecho = 0;
 		}
@@ -625,7 +630,7 @@ int crea_mensaje(Sock *sck, char *msg, int len)
 	sck->pos = b - sck->buffer;
 	return 0;
 }
-int completa_conexion(Sock *sck)
+int CompletaConexion(Sock *sck)
 {
 	SockOk(sck);
 #ifdef DEBUG
@@ -633,10 +638,10 @@ int completa_conexion(Sock *sck)
 #endif
 	if (sck->openfunc)
 		sck->openfunc(sck, NULL);
-	ircd_log(LOG_CONN, "Conexión establecida con %s:%i", sck->host, sck->puerto);
+	Loguea(LOG_CONN, "Conexión establecida con %s:%i", sck->host, sck->puerto);
 	return 0;
 }
-int lee_socks() /* devuelve los bytes leídos */
+int LeeSocks() /* devuelve los bytes leídos */
 {
 	int i, len, sels, lee = 0;
 	fd_set read_set, write_set, excpt_set;
@@ -682,7 +687,7 @@ int lee_socks() /* devuelve los bytes leídos */
 			FD_CLR(SockActual->pres, &read_set);
 			sels--;
 			if ((pres = accept(SockActual->pres, NULL, NULL)) >= 0)
-				sockaccept(SockActual, pres);
+				SockAccept(SockActual, pres);
 		}
 	}
 	for (i = ListaSocks.tope; i >= 0; i--)
@@ -698,13 +703,13 @@ int lee_socks() /* devuelve los bytes leídos */
 			{
 #ifdef USA_SSL
 				if (EsSSL(SockActual))
-					err = ircd_SSL_client_handshake(SockActual);
+					err = SSLClienteConexion(SockActual);
 				else
 #endif
-					err = completa_conexion(SockActual);
+					err = CompletaConexion(SockActual);
 			}
 			else
-				envia_cola(SockActual);
+				EnviaCola(SockActual);
 			if (EsCerr(SockActual) || err)
 			{
 				if (FD_ISSET(SockActual->pres, &read_set))
@@ -712,7 +717,7 @@ int lee_socks() /* devuelve los bytes leídos */
 					sels--;
 					FD_CLR(SockActual->pres, &read_set);
 				}
-				sockclose(SockActual, REMOTO);
+				SockClose(SockActual, REMOTO);
 				continue;
 			}
 		}
@@ -720,19 +725,19 @@ int lee_socks() /* devuelve los bytes leídos */
 		{
 			len = 1;
 #ifdef USA_SSL
-			if (!(IsSSLAcceptHandshake(SockActual) || IsSSLConnectHandshake(SockActual)))
+			if (!(EsSSLAcceptHandshake(SockActual) || EsSSLConnectHandshake(SockActual)))
 #endif
-			len = lee_mensaje(SockActual); /* leemos el mensaje */
+			len = LeeMensaje(SockActual); /* leemos el mensaje */
 #ifdef USA_SSL
-			if (SockActual->ssl && (IsSSLAcceptHandshake(SockActual) || IsSSLConnectHandshake(SockActual)))
+			if (SockActual->ssl && (EsSSLAcceptHandshake(SockActual) || EsSSLConnectHandshake(SockActual)))
 			{
 				if (!SSL_is_init_finished(SockActual->ssl))
 				{
-					if (EsCerr(SockActual) || IsSSLAcceptHandshake(SockActual) ? !ircd_SSL_accept(SockActual, SockActual->pres) : ircd_SSL_connect(SockActual) < 0)
+					if (EsCerr(SockActual) || EsSSLAcceptHandshake(SockActual) ? !SSLAccept(SockActual, SockActual->pres) : SSLConnect(SockActual) < 0)
 						len = -2;
 				}
 				else
-					completa_conexion(SockActual);
+					CompletaConexion(SockActual);
 			}
 #endif
 			if (len <= 0)
@@ -740,7 +745,7 @@ int lee_socks() /* devuelve los bytes leídos */
 				sels--;
 				FD_CLR(SockActual->pres, &read_set);
 				if (!EsCerr(SockActual))
-					sockclose(SockActual, REMOTO);
+					SockClose(SockActual, REMOTO);
 				continue;
 			}
 			lee += len;
@@ -748,11 +753,11 @@ int lee_socks() /* devuelve los bytes leídos */
 			{
 				char read[BUFSIZE];
 				int cop = 0;
-				cop = copia_slot(SockActual->recvQ, read, sizeof(read));
-				//Debug("Creando mensaje %s", read);
+				cop = CopiaSlot(SockActual->recvQ, read, sizeof(read));
+				//Debug("Creando mensaje %X %s", SockActual, read);
 				if (cop > 0)
 				{
-					if (crea_mensaje(SockActual, read, cop) < 0)
+					if (CreaMensaje(SockActual, read, cop) < 0)
 						break;
 				}
 				else /* stop, por lo que sea */
@@ -766,7 +771,7 @@ int lee_socks() /* devuelve los bytes leídos */
 		{
 			sels--;
 			FD_CLR(SockActual->pres, &excpt_set);
-			sockclose(SockActual, REMOTO);
+			SockClose(SockActual, REMOTO);
 			continue;
 		}
 	}

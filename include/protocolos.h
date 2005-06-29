@@ -25,8 +25,8 @@ typedef struct _proto
 }Protocolo;
 	
 extern MODVAR Protocolo *protocolo;
-extern int carga_protocolo(Conf *);
-extern void libera_protocolo(Protocolo *);
+extern int CargaProtocolo(Conf *);
+extern void LiberaMemoriaProtocolo(Protocolo *);
 
 //Macros de compatibilidad
 #define MSG_NULL NULL

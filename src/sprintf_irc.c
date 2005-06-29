@@ -1,5 +1,5 @@
 /*
- * $Id: sprintf_irc.c,v 1.4 2004-09-17 22:09:12 Trocotronic Exp $ 
+ * $Id: sprintf_irc.c,v 1.5 2005-06-29 21:13:57 Trocotronic Exp $ 
  */
 
 /*
@@ -270,7 +270,7 @@ static char scratch_buffer[32];
  *
  * --Run
  */
-char *vsprintf_irc(register char *str, register const char *format, register va_list vl)
+char *ircvsprintf(register char *str, register const char *format, register va_list vl)
 {
   	register char c;
 
@@ -407,13 +407,13 @@ char *vsprintf_irc(register char *str, register const char *format, register va_
 	return str;
 }
 
-char *sprintf_irc(register char *str, const char *format, ...)
+char *ircsprintf(register char *str, const char *format, ...)
 {
   va_list vl;
   char *ret;
 
   va_start(vl, format);
-  ret = vsprintf_irc(str, format, vl);
+  ret = ircvsprintf(str, format, vl);
   va_end(vl);
   return ret;
 }

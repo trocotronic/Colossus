@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.12 2005-05-18 18:51:09 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.13 2005-06-29 21:14:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -59,7 +59,7 @@ int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (parseconf(mod->config, &modulo, 1))
+	if (ParseaConfiguracion(mod->config, &modulo, 1))
 		return 1;
 	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
 	{
@@ -68,83 +68,83 @@ int carga(Modulo *mod)
 	}
 	else
 	{
-		conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
 		errores++;
 	}
 	return errores;
 }
 int descarga()
 {
-	borra_comando(MSG_NOTICE, statserv_notice);
-	borra_comando(MSG_NICK, statserv_nick);
-	borra_comando("242", statserv_local_uptime);
-	borra_comando("265", statserv_local_users);
-	borra_comando(MSG_SERVER, statserv_server);
+	BorraComando(MSG_NOTICE, statserv_notice);
+	BorraComando(MSG_NICK, statserv_nick);
+	BorraComando("242", statserv_local_uptime);
+	BorraComando("265", statserv_local_users);
+	BorraComando(MSG_SERVER, statserv_server);
 	if (port_existe(MODO_USUARIO))
-		borra_comando(port_msg(MODO_USUARIO),  statserv_umode2);
-	borra_comando(MSG_SQUIT, statserv_squit);
-	borra_comando("351", statserv_version);
+		BorraComando(port_msg(MODO_USUARIO),  statserv_umode2);
+	BorraComando(MSG_SQUIT, statserv_squit);
+	BorraComando("351", statserv_version);
 	if (port_existe(EOS))
-		borra_comando(port_msg(EOS), statserv_eos);
-	borra_senyal(SIGN_UMODE, statserv_umode);
-	borra_senyal(SIGN_QUIT, statserv_quit);
-	//borra_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
-	//borra_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
-	borra_senyal(SIGN_MYSQL, statserv_mysql);
-	borra_senyal(SIGN_BOT, statserv_sig_bot);
-	borra_senyal(SIGN_EOS, statserv_sig_eos);
+		BorraComando(port_msg(EOS), statserv_eos);
+	BorraSenyal(SIGN_UMODE, statserv_umode);
+	BorraSenyal(SIGN_QUIT, statserv_quit);
+	//BorraSenyal(SIGN_CREATE_CHAN, statserv_create_channel);
+	//BorraSenyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
+	BorraSenyal(SIGN_MYSQL, statserv_mysql);
+	BorraSenyal(SIGN_BOT, statserv_sig_bot);
+	BorraSenyal(SIGN_EOS, statserv_sig_eos);
 	return 0;
 }
 int test(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
-	if (!(eval = busca_entrada(config, "nick")))
+	if (!(eval = BuscaEntrada(config, "nick")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "ident")))
+	if (!(eval = BuscaEntrada(config, "ident")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "host")))
+	if (!(eval = BuscaEntrada(config, "host")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "realname")))
+	if (!(eval = BuscaEntrada(config, "realname")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "laguea")))
+	if (!(eval = BuscaEntrada(config, "laguea")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz laguea.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz laguea.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (atoi(eval->data) < 60)
 		{
-			conferror("[%s:%s::%i] La directriz laguea debe ser superior a 60 segundos.]\n", config->archivo, eval->item, eval->linea);
+			Error("[%s:%s::%i] La directriz laguea debe ser superior a 60 segundos.]\n", config->archivo, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
-	if ((eval = busca_entrada(config, "web")))
+	if ((eval = BuscaEntrada(config, "web")))
 	{
 		Conf *temp;
-		if (!(temp = busca_entrada(eval, "template")))
+		if (!(temp = BuscaEntrada(eval, "template")))
 		{
-			conferror("[%s:%s::%i] Debes especificar la directriz template si usaras web.]\n", config->archivo, eval->item, eval->linea);
+			Error("[%s:%s::%i] Debes especificar la directriz template si usaras web.]\n", config->archivo, eval->item, eval->linea);
 			error_parcial++;
 		}
 		else
 		{
-			if (!is_file(temp->data))
+			if (!EsArchivo(temp->data))
 			{
-				conferror("[%s:%s::%s::%i] No se encuentra el template %s.]\n", config->archivo, eval->item, temp->item, temp->linea, temp->data);
+				Error("[%s:%s::%s::%i] No se encuentra el template %s.]\n", config->archivo, eval->item, temp->item, temp->linea, temp->data);
 				error_parcial++;
 			}
 		}
@@ -157,7 +157,7 @@ void set(Conf *config, Modulo *mod)
 	int i, p;
 	bCom *ss;
 	if (!statserv)
-		da_Malloc(statserv, StatServ);
+		BMalloc(statserv, StatServ);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "nick"))
@@ -187,7 +187,7 @@ void set(Conf *config, Modulo *mod)
 					ss++;
 				}
 				if (ss->com == 0x0)
-					conferror("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
+					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
 			}
 		}
 		if (!strcmp(config->seccion[i]->item, "web"))
@@ -218,25 +218,25 @@ void set(Conf *config, Modulo *mod)
 	if (statserv->mascara)
 		Free(statserv->mascara);
 	statserv->mascara = (char *)Malloc(sizeof(char) * (strlen(statserv->nick) + 1 + strlen(statserv->ident) + 1 + strlen(statserv->host) + 1));
-	sprintf_irc(statserv->mascara, "%s!%s@%s", statserv->nick, statserv->ident, statserv->host);
-	inserta_comando(MSG_NOTICE, TOK_NOTICE, statserv_notice, INI, 0);
-	inserta_comando(MSG_NICK, TOK_NICK, statserv_nick, INI, 0);
-	inserta_comando("242", "242", statserv_local_uptime, INI, 0);
-	inserta_comando("265", "265", statserv_local_users, INI, 0);
-	inserta_comando(MSG_SERVER, TOK_SERVER, statserv_server, INI, 0);
+	ircsprintf(statserv->mascara, "%s!%s@%s", statserv->nick, statserv->ident, statserv->host);
+	InsertaComando(MSG_NOTICE, TOK_NOTICE, statserv_notice, INI, 0);
+	InsertaComando(MSG_NICK, TOK_NICK, statserv_nick, INI, 0);
+	InsertaComando("242", "242", statserv_local_uptime, INI, 0);
+	InsertaComando("265", "265", statserv_local_users, INI, 0);
+	InsertaComando(MSG_SERVER, TOK_SERVER, statserv_server, INI, 0);
 	if (port_existe(MODO_USUARIO))
-		inserta_comando(port_msg(MODO_USUARIO), port_tok(MODO_USUARIO), statserv_umode2, INI, 0);
-	inserta_comando(MSG_SQUIT, TOK_SQUIT, statserv_squit, INI, 0);
-	inserta_comando("351", "351", statserv_version, INI, 0);
+		InsertaComando(port_msg(MODO_USUARIO), port_tok(MODO_USUARIO), statserv_umode2, INI, 0);
+	InsertaComando(MSG_SQUIT, TOK_SQUIT, statserv_squit, INI, 0);
+	InsertaComando("351", "351", statserv_version, INI, 0);
 	if (port_existe(EOS))
-		inserta_comando(port_msg(EOS), port_tok(EOS), statserv_eos, INI, 0);
-	inserta_senyal(SIGN_UMODE, statserv_umode);
-	inserta_senyal(SIGN_QUIT, statserv_quit);
-	//inserta_senyal(SIGN_CREATE_CHAN, statserv_create_channel);
-	//inserta_senyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
-	inserta_senyal(SIGN_MYSQL, statserv_mysql);
-	inserta_senyal(SIGN_BOT, statserv_sig_bot);
-	inserta_senyal(SIGN_EOS, statserv_sig_eos);
+		InsertaComando(port_msg(EOS), port_tok(EOS), statserv_eos, INI, 0);
+	InsertaSenyal(SIGN_UMODE, statserv_umode);
+	InsertaSenyal(SIGN_QUIT, statserv_quit);
+	//InsertaSenyal(SIGN_CREATE_CHAN, statserv_create_channel);
+	//InsertaSenyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
+	InsertaSenyal(SIGN_MYSQL, statserv_mysql);
+	InsertaSenyal(SIGN_BOT, statserv_sig_bot);
+	InsertaSenyal(SIGN_EOS, statserv_sig_eos);
 	bot_mod(statserv);
 }
 int vuelca_template(char *temp)
@@ -322,7 +322,7 @@ void vuelca()
 	fclose(fp);
 	if (statserv->puerto) /* usa web */
 	{
-		socklisten(statserv->puerto, NULL, statserv_lee_web, statserv_escribe_web, NULL);
+		SockListen(statserv->puerto, NULL, statserv_lee_web, statserv_escribe_web, NULL);
 		vuelca_template(statserv->template);
 	}
 }
@@ -475,11 +475,11 @@ IRCFUNC(statserv_nick)
 {
 	if (parc > 4)
 	{
-		cl = busca_cliente(parv[1], NULL);
+		cl = BuscaCliente(parv[1], NULL);
 		actualiza_stats(STSUSERS);
 		statserv_umode(cl, parv[7]);
 		statserv->servidor[cl->server->numeric].usuarios++;
-		sendto_serv(":%s %s %s :\001VERSION\001", statserv->nick, TOK_PRIVATE, cl->nombre);
+		EnviaAServidor(":%s %s %s :\001VERSION\001", statserv->nick, TOK_PRIVATE, cl->nombre);
 		statserv->dominios[posdom(cl->rvhost)].usuarios++;
 	}
 	return 0;
@@ -496,7 +496,7 @@ IRCFUNC(statserv_local_uptime)
 	m = atoi(strtok(NULL, ":"));
 	s = atoi(strtok(NULL, ":"));
 	statserv->servidor[cl->numeric].uptime = d*86400 + h*3600 + m*60 + s;
-	if (!_mysql_get_registro(SS_MYSQL, cl->nombre, "valor") || coge(cl->nombre) < statserv->servidor[cl->numeric].uptime)
+	if (!MySQLCogeRegistro(SS_MYSQL, cl->nombre, "valor") || coge(cl->nombre) < statserv->servidor[cl->numeric].uptime)
 		actualiza(cl->nombre, statserv->servidor[cl->numeric].uptime);
 	return 0;
 }
@@ -525,19 +525,19 @@ IRCFUNC(statserv_server)
 	else if (parc == 4)
 		serv = parv[1];
 	/* aprovechando que el numeric es unico, lo utilizo como indice */
-	al = busca_cliente(serv, NULL);
+	al = BuscaCliente(serv, NULL);
 	statserv->servidor[al->numeric].serv = al;
 	statserv->servidor[al->numeric].usuarios = statserv->servidor[al->numeric].operadores = 
 		statserv->servidor[al->numeric].max_users = statserv->servidor[al->numeric].lag = 
 		statserv->servidor[al->numeric].uptime = 0;
 	statserv->servidor[al->numeric].version = NULL;
-	sendto_serv(":%s %s :%s", statserv->nick, TOK_VERSION, al->nombre);
-	sendto_serv(":%s %s :%s", statserv->nick, TOK_LUSERS, al->nombre);
-	sendto_serv(":%s %s u %s", statserv->nick, TOK_STATS, al->nombre);
+	EnviaAServidor(":%s %s :%s", statserv->nick, TOK_VERSION, al->nombre);
+	EnviaAServidor(":%s %s :%s", statserv->nick, TOK_LUSERS, al->nombre);
+	EnviaAServidor(":%s %s u %s", statserv->nick, TOK_STATS, al->nombre);
 	if (port_existe(LAG))
 	{
-		sendto_serv(":%s %s %s", statserv->nick, port_tok(LAG), al->nombre);
-		timer(al->nombre, cl->sck, 0, statserv->laguea, statserv_laguea, al->nombre, sizeof(char) * (strlen(al->nombre) + 1));
+		EnviaAServidor(":%s %s %s", statserv->nick, port_tok(LAG), al->nombre);
+		IniciaCrono(al->nombre, cl->sck, 0, statserv->laguea, statserv_laguea, al->nombre, sizeof(char) * (strlen(al->nombre) + 1));
 	}
 	return 0;
 }
@@ -553,7 +553,7 @@ IRCFUNC(statserv_squit)
 		statserv->servidor[cl->numeric].max_users = statserv->servidor[cl->numeric].lag = 
 		statserv->servidor[cl->numeric].uptime = 0;
 	statserv->servidor[cl->numeric].serv = NULL;
-	timer_off(cl->nombre, cl->sck);
+	ApagaCrono(cl->nombre, cl->sck);
 	return 0;
 }
 IRCFUNC(statserv_version)
@@ -617,62 +617,62 @@ int statserv_destroy_channel(char *nombre)
 }
 int statserv_mysql()
 {
-	if (!_mysql_existe_tabla(SS_MYSQL))
+	if (!MySQLEsTabla(SS_MYSQL))
 	{
-		if (_mysql_query("CREATE TABLE `%s%s` ( "
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
 			"`item` varchar(255) default NULL, "
   			"`valor` varchar(255) NOT NULL default '0', "
 			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla estadísticas';", PREFIJO, SS_MYSQL))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_MYSQL);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_MYSQL);
 		else
 		{
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_max");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_hoy");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_semana");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_mes");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_time");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_hoytime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_semanatime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_mestime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_max");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_hoy");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_semana");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_mes");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_time");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_hoytime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_semanatime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_mestime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_max");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_hoy");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_semana");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_mes");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_time");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_hoytime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_semanatime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_mestime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_max");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_hoy");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_semana");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_mes");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_time");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_hoytime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_semanatime");
-			_mysql_query("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_mestime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_max");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_hoy");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_semana");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_mes");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_time");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_hoytime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_semanatime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_mestime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_max");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_hoy");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_semana");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_mes");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_time");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_hoytime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_semanatime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_mestime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_max");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_hoy");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_semana");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_mes");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_time");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_hoytime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_semanatime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_mestime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_max");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_hoy");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_semana");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_mes");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_time");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_hoytime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_semanatime");
+			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_mestime");
 		}
 	}
-	_mysql_carga_tablas();
+	MySQLCargaTablas();
 	vuelca();
 	return 1;
 }
 int statserv_laguea(char *servidor)
 {
-	sendto_serv(":%s %s %s", statserv->nick, port_tok(LAG), servidor);
+	EnviaAServidor(":%s %s %s", statserv->nick, port_tok(LAG), servidor);
 	return 0;
 }
 SOCKFUNC(statserv_escribe_web)
 {
-	sockclose(sck, 0);
+	SockClose(sck, 0);
 	return 0;
 }
 SOCKFUNC(statserv_lee_web)
@@ -687,68 +687,68 @@ SOCKFUNC(statserv_lee_web)
 			while ((ac = strchr(td, '$')))
 			{
 				*ac++ = '\0';
-				sockwrite(sck, 0x0, "%s", td);
+				SockWrite(sck, 0x0, "%s", td);
 				bc = strchr(++ac, ')');
 				*bc++ = '\0';
 				if (!strcmp(ac, "USERS_AHORA"))
-					sockwrite(sck, 0x0, "%i", statserv->usuarios.no);
+					SockWrite(sck, 0x0, "%i", statserv->usuarios.no);
 				else if (!strcmp(ac, "USERS_MAX"))
-					sockwrite(sck, 0x0, "%i", statserv->usuarios.max);
+					SockWrite(sck, 0x0, "%i", statserv->usuarios.max);
 				else if (!strcmp(ac, "USERS_HOY"))
-					sockwrite(sck, 0x0, "%i", statserv->usuarios.hoy);
+					SockWrite(sck, 0x0, "%i", statserv->usuarios.hoy);
 				else if (!strcmp(ac, "USERS_SEMANA"))
-					sockwrite(sck, 0x0, "%i", statserv->usuarios.semana);
+					SockWrite(sck, 0x0, "%i", statserv->usuarios.semana);
 				else if (!strcmp(ac, "USERS_MES"))
-					sockwrite(sck, 0x0, "%i", statserv->usuarios.mes);
+					SockWrite(sck, 0x0, "%i", statserv->usuarios.mes);
 				else if (!strcmp(ac, "USERS_TIME"))
 				{
 					tm = statserv->usuarios.max_time;
-					sockwrite(sck, 0x0, "%s",  _asctime(&tm));
+					SockWrite(sck, 0x0, "%s",  Fecha(&tm));
 				}
 				else if (!strcmp(ac, "CANALES_AHORA"))
-					sockwrite(sck, 0x0, "%i", statserv->canales.no);
+					SockWrite(sck, 0x0, "%i", statserv->canales.no);
 				else if (!strcmp(ac, "CANALES_MAX"))
-					sockwrite(sck, 0x0, "%i", statserv->canales.max);
+					SockWrite(sck, 0x0, "%i", statserv->canales.max);
 				else if (!strcmp(ac, "CANALES_HOY"))
-					sockwrite(sck, 0x0, "%i", statserv->canales.hoy);
+					SockWrite(sck, 0x0, "%i", statserv->canales.hoy);
 				else if (!strcmp(ac, "CANALES_SEMANA"))
-					sockwrite(sck, 0x0, "%i", statserv->canales.semana);
+					SockWrite(sck, 0x0, "%i", statserv->canales.semana);
 				else if (!strcmp(ac, "CANALES_MES"))
-					sockwrite(sck, 0x0, "%i", statserv->canales.mes);
+					SockWrite(sck, 0x0, "%i", statserv->canales.mes);
 				else if (!strcmp(ac, "CANALES_TIME"))
 				{
 					tm = statserv->canales.max_time;
-					sockwrite(sck, 0x0, "%s",  _asctime(&tm));
+					SockWrite(sck, 0x0, "%s",  Fecha(&tm));
 				}
 				else if (!strcmp(ac, "SERVERS_AHORA"))
-					sockwrite(sck, 0x0, "%i", statserv->servidores.no);
+					SockWrite(sck, 0x0, "%i", statserv->servidores.no);
 				else if (!strcmp(ac, "SERVERS_MAX"))
-					sockwrite(sck, 0x0, "%i", statserv->servidores.max);
+					SockWrite(sck, 0x0, "%i", statserv->servidores.max);
 				else if (!strcmp(ac, "SERVERS_HOY"))
-					sockwrite(sck, 0x0, "%i", statserv->servidores.hoy);	
+					SockWrite(sck, 0x0, "%i", statserv->servidores.hoy);	
 				else if (!strcmp(ac, "SERVERS_SEMANA"))
-					sockwrite(sck, 0x0, "%i", statserv->servidores.semana);
+					SockWrite(sck, 0x0, "%i", statserv->servidores.semana);
 				else if (!strcmp(ac, "SERVERS_MES"))
-					sockwrite(sck, 0x0, "%i", statserv->servidores.mes);
+					SockWrite(sck, 0x0, "%i", statserv->servidores.mes);
 				else if (!strcmp(ac, "SERVERS_TIME"))
 				{
 					tm = statserv->servidores.max_time;
-					sockwrite(sck, 0x0, "%s",  _asctime(&tm));
+					SockWrite(sck, 0x0, "%s",  Fecha(&tm));
 				}
 				else if (!strcmp(ac, "OPERS_AHORA"))
-					sockwrite(sck, 0x0, "%i", statserv->operadores.no);
+					SockWrite(sck, 0x0, "%i", statserv->operadores.no);
 				else if (!strcmp(ac, "OPERS_MAX"))
-					sockwrite(sck, 0x0, "%i", statserv->operadores.max);
+					SockWrite(sck, 0x0, "%i", statserv->operadores.max);
 				else if (!strcmp(ac, "OPERS_HOY"))
-					sockwrite(sck, 0x0, "%i", statserv->operadores.hoy);	
+					SockWrite(sck, 0x0, "%i", statserv->operadores.hoy);	
 				else if (!strcmp(ac, "OPERS_SEMANA"))
-					sockwrite(sck, 0x0, "%i", statserv->operadores.semana);
+					SockWrite(sck, 0x0, "%i", statserv->operadores.semana);
 				else if (!strcmp(ac, "OPERS_MES"))
-					sockwrite(sck, 0x0, "%i", statserv->operadores.mes);
+					SockWrite(sck, 0x0, "%i", statserv->operadores.mes);
 				else if (!strcmp(ac, "OPERS_TIME"))
 				{
 					tm = statserv->operadores.max_time;
-					sockwrite(sck, 0x0, "%s",  _asctime(&tm));
+					SockWrite(sck, 0x0, "%s",  Fecha(&tm));
 				}
 				else if (!strcmp(ac, "SERVERS"))
 				{
@@ -769,29 +769,29 @@ SOCKFUNC(statserv_lee_web)
 								while ((pc = strchr(wc, '$')))
 								{
 									*pc++ = '\0';
-									sockwrite(sck, 0x0, "%s", wc);
+									SockWrite(sck, 0x0, "%s", wc);
 									qc = strchr(++pc, ')');
 									*qc++ = '\0';
 									if (!strcmp(pc, "SERVER_NOMBRE"))
-										sockwrite(sck, 0x0, "%s", statserv->servidor[i].serv->nombre);
+										SockWrite(sck, 0x0, "%s", statserv->servidor[i].serv->nombre);
 									else if (!strcmp(pc, "SERVER_USERS"))
-										sockwrite(sck, 0x0, "%i", statserv->servidor[i].usuarios);
+										SockWrite(sck, 0x0, "%i", statserv->servidor[i].usuarios);
 									else if (!strcmp(pc, "SERVER_OPERS"))
-										sockwrite(sck, 0x0, "%i", statserv->servidor[i].operadores);
+										SockWrite(sck, 0x0, "%i", statserv->servidor[i].operadores);
 									else if (!strcmp(pc, "SERVER_MAX"))
-										sockwrite(sck, 0x0, "%i", statserv->servidor[i].max_users);
+										SockWrite(sck, 0x0, "%i", statserv->servidor[i].max_users);
 									else if (!strcmp(pc, "SERVER_LAG"))
-										sockwrite(sck, 0x0, "%i", statserv->servidor[i].lag);
+										SockWrite(sck, 0x0, "%i", statserv->servidor[i].lag);
 									else if (!strcmp(pc, "SERVER_VERSION"))
-										sockwrite(sck, 0x0, "%s", statserv->servidor[i].version);
+										SockWrite(sck, 0x0, "%s", statserv->servidor[i].version);
 									else if (!strcmp(pc, "SERVER_UPTIME"))
 									{
 										u_int dura = statserv->servidor[i].uptime + (time(0) - ini);
-										sockwrite(sck, 0x0, "%i días, %02i:%02i:%02i", dura / 86400, (dura / 3600) % 24, (dura / 60) % 60, dura % 60);
+										SockWrite(sck, 0x0, "%i días, %02i:%02i:%02i", dura / 86400, (dura / 3600) % 24, (dura / 60) % 60, dura % 60);
 									}
 									wc = qc;
 								}
-								sockwrite(sck, OPT_CRLF, "%s", qc);
+								SockWrite(sck, OPT_CRLF, "%s", qc);
 								Free(yc);
 							}
 						}
@@ -817,16 +817,16 @@ SOCKFUNC(statserv_lee_web)
 								while ((pc = strchr(wc, '$')))
 								{
 									*pc++ = '\0';
-									sockwrite(sck, 0x0, "%s", wc);
+									SockWrite(sck, 0x0, "%s", wc);
 									qc = strchr(++pc, ')');
 									*qc++ = '\0';
 									if (!strcmp(pc, "CLIENTE_NOMBRE"))
-										sockwrite(sck, 0x0, "%s", statserv->clientes[i].cliente);
+										SockWrite(sck, 0x0, "%s", statserv->clientes[i].cliente);
 									else if (!strcmp(pc, "CLIENTE_USERS"))
-										sockwrite(sck, 0x0, "%i", statserv->clientes[i].usuarios);
+										SockWrite(sck, 0x0, "%i", statserv->clientes[i].usuarios);
 									wc = qc;
 								}
-								sockwrite(sck, OPT_CRLF, "%s", qc);
+								SockWrite(sck, OPT_CRLF, "%s", qc);
 								Free(yc);
 							}
 						}
@@ -852,18 +852,18 @@ SOCKFUNC(statserv_lee_web)
 								while ((pc = strchr(wc, '$')))
 								{
 									*pc++ = '\0';
-									sockwrite(sck, 0x0, "%s", wc);
+									SockWrite(sck, 0x0, "%s", wc);
 									qc = strchr(++pc, ')');
 									*qc++ = '\0';
 									if (!strcmp(pc, "DOMINUMS_DOM"))
-										sockwrite(sck, 0x0, "%s", statserv->dominios[i].dominio);
+										SockWrite(sck, 0x0, "%s", statserv->dominios[i].dominio);
 									else if (!strcmp(pc, "DOMINUMS_LUGAR"))
-										sockwrite(sck, 0x0, "%s", statserv->dominios[i].donde);
+										SockWrite(sck, 0x0, "%s", statserv->dominios[i].donde);
 									else if (!strcmp(pc, "DOMINUMS_USERS"))
-										sockwrite(sck, 0x0, "%i", statserv->dominios[i].usuarios);
+										SockWrite(sck, 0x0, "%i", statserv->dominios[i].usuarios);
 									wc = qc;
 								}
-								sockwrite(sck, OPT_CRLF, "%s", qc);
+								SockWrite(sck, OPT_CRLF, "%s", qc);
 								Free(yc);
 							}
 						}
@@ -871,10 +871,10 @@ SOCKFUNC(statserv_lee_web)
 					bc = rc;
 				}
 				else if (!strcmp(ac, "CARGA"))
-					sockwrite(sck, 0x0, "%.3f", abs(microtime() - tb));
+					SockWrite(sck, 0x0, "%.3f", abs(microtime() - tb));
 				td = bc;
 			}
-			sockwrite(sck, OPT_CRLF, "%s", bc);
+			SockWrite(sck, OPT_CRLF, "%s", bc);
 			Free(fd);
 		}
 	}
@@ -883,7 +883,7 @@ SOCKFUNC(statserv_lee_web)
 int statserv_sig_bot()
 {
 	Cliente *bl;
-	bl = botnick(statserv->nick, statserv->ident, statserv->host, me.nombre, statserv->modos, statserv->realname);
+	bl = CreaBot(statserv->nick, statserv->ident, statserv->host, me.nombre, statserv->modos, statserv->realname);
 	statserv->cl = bl;
 	return 0;
 }
@@ -894,7 +894,7 @@ int statserv_sig_eos()
 	{
 		strcpy(tokbuf, statserv->residente);
 		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-			mete_bot_en_canal(statserv->cl, canal);
+			EntraBot(statserv->cl, canal);
 	}
 	return 0;
 }

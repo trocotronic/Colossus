@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.37 2005-06-05 13:45:52 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.38 2005-06-29 21:13:46 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -120,9 +120,9 @@ struct Sockets
 	int tope;
 }ListaSocks;
 
-extern Sock *sockopen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
-extern void sockwrite(Sock *, int, char *, ...);
-extern void sockclose(Sock *, char);
+extern Sock *SockOpen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
+extern void SockWrite(Sock *, int, char *, ...);
+extern void SockClose(Sock *, char);
 
 typedef struct _hash Hash;
 struct _hash {
@@ -133,35 +133,35 @@ struct _hash {
 extern const char NTL_tolower_tab[];
 extern MODVAR char buf[BUFSIZE];
 extern Sock *SockActual;
-extern struct _cliente *busca_cliente_en_hash(char *, struct _cliente *, Hash *);
-extern struct _canal *busca_canal_en_hash(char *, struct _canal *, Hash *);
-extern void inserta_cliente_en_hash(struct _cliente*, char *, Hash *);
-extern void inserta_canal_en_hash(struct _canal *, char *, Hash *);
-extern int borra_cliente_de_hash(struct _cliente *, char *, Hash *);
-extern int borra_canal_de_hash(struct _canal *, char *, Hash *);
+extern struct _cliente *BuscaClienteEnHash(char *, struct _cliente *, Hash *);
+extern struct _canal *BuscaCanalEnHash(char *, struct _canal *, Hash *);
+extern void InsertaClienteEnHash(struct _cliente*, char *, Hash *);
+extern void InsertaCanalEnHash(struct _canal *, char *, Hash *);
+extern int BorraClienteDeHash(struct _cliente *, char *, Hash *);
+extern int BorraCanalDeHash(struct _canal *, char *, Hash *);
 extern int match(char *, char *);
 
-extern char *_asctime(time_t *);
+extern char *Fecha(time_t *);
 #define PROTOCOL 2305
 
-extern int carga_mysql();
+extern int CargaMySQL();
 extern MODVAR MYSQL *mysql;
-extern MYSQL_RES *_mysql_query(char *format, ...);
-extern char *_mysql_get_registro(char *, char *, char *);
-extern char *_mysql_get_num(MYSQL *, char *, int, char *);
-extern void _mysql_add(char *, char *, char *, char *, ...);
-extern void _mysql_del(char *, char *);
-extern int _mysql_restaura(void);
-extern int _mysql_backup(void);
-extern int _mysql_existe_tabla(char *);
+extern MYSQL_RES *MySQLQuery(char *format, ...);
+extern char *MySQLCogeRegistro(char *, char *, char *);
+extern char *MySQLCogeNumero(MYSQL *, char *, int, char *);
+extern void MySQLInserta(char *, char *, char *, char *, ...);
+extern void MySQLBorra(char *, char *);
+extern int MySQLRestaura(void);
+extern int MySQLBackup(void);
+extern int MySQLEsTabla(char *);
 struct mysql_t
 {
 	char *tabla[256]; /* espero que no haya tantas tablas */
 	int tablas;
 };
 extern MODVAR struct mysql_t mysql_tablas;
-extern char *_mysql_escapa(char *);
-extern char *_mysql_fetch_array(MYSQL_RES *, const char *, MYSQL_ROW);
+extern char *MySQLEscapa(char *);
+extern char *MySQLFetchArray(MYSQL_RES *, const char *, MYSQL_ROW);
 
 typedef struct _smtpData SmtpData;
 struct _smtpData
@@ -173,12 +173,12 @@ struct _smtpData
 	char enviado;
 	int intentos;
 };
-extern void envia_email(char *, char *, char *, char *);
-extern void email(char *, char *, char *, ...);
+extern void EnviaEmail(char *, char *, char *, char *);
+extern void Email(char *, char *, char *, ...);
 
-extern char *random_ex(char *);
-extern int randomiza(int, int);
-extern char *coge_mx(char *);
+extern char *AleatorioEx(char *);
+extern int Aleatorio(int, int);
+extern char *Mx(char *);
 
 /* senyals */
 typedef struct _senyal Senyal;
@@ -190,14 +190,14 @@ struct _senyal
 };
 #define MAXSIGS 256
 extern MODVAR Senyal *senyals[MAXSIGS];
-extern void inserta_senyal(short, int (*)());
-extern int borra_senyal(short, int (*)());
-#define senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
-#define senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
-#define senyal2(s,x,y) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
-#define senyal3(s,x,y,z) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z); } while(0)
-#define senyal4(s,x,y,z,t) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t); } while(0)
-#define senyal5(s,x,y,z,t,u) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t,u); } while(0)
+extern void InsertaSenyal(short, int (*)());
+extern int BorraSenyal(short, int (*)());
+#define Senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
+#define Senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
+#define Senyal2(s,x,y) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
+#define Senyal3(s,x,y,z) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z); } while(0)
+#define Senyal4(s,x,y,z,t) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t); } while(0)
+#define Senyal5(s,x,y,z,t,u) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t,u); } while(0)
 
 /* timers */
 typedef struct _timer Timer;
@@ -213,14 +213,14 @@ struct _timer
 	int lleva;
 	int cada;
 };
-extern void timer(char *, Sock *, int, int, int (*)(), void *, size_t);
-extern int timer_off(char *, Sock *);
-extern void comprueba_timers(void);
+extern void IniciaCrono(char *, Sock *, int, int, int (*)(), void *, size_t);
+extern int ApagaCrono(char *, Sock *);
+extern void CompruebaCronos(void);
 extern double microtime(void);
 extern char *str_replace(char *, char, char);
 extern char *strtolower(char *);
 extern char *strtoupper(char *);
-extern char *implode(char *[], int, int, int);
+extern char *Unifica(char *[], int, int, int);
 extern char *gettok(char *, int, char);
 typedef struct _proc Proc;
 struct _proc
@@ -230,22 +230,22 @@ struct _proc
 	int proc;
 	time_t time;
 };
-extern void procesos_auxiliares(void);
-extern void proc(int(*)());
-extern int proc_stop(int (*)());
+extern void ProcesosAuxiliares(void);
+extern void IniciaProceso(int(*)());
+extern int DetieneProceso(int (*)());
 #define CHMAX 2048
 #define UMAX 2048
 #define INI_FACT 8
 #define INI_SUMD 0xFF
-extern u_int hash_cliente(char *);
-extern u_int hash_canal(char *);
+extern u_int HashCliente(char *);
+extern u_int HashCanal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
 #define COLOSSUS_VERNUM "1.2"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 extern char **margv;
-#define Malloc(x) StsMalloc(x, __FILE__, __LINE__)
-#define da_Malloc(p,s) do { p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s)); }while(0)
+#define Malloc(x) ExMalloc(x, __FILE__, __LINE__)
+#define BMalloc(p,s) do { p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s)); }while(0)
 #define EST_DESC 0
 #define EST_CONN 1
 #define EST_LIST 2
@@ -264,9 +264,9 @@ extern char **margv;
 #define SockOk(x)   x->estado = EST_OK
 #define SockCerr(x) x->estado = EST_CERR
 #ifdef USA_SSL
-#define IsSSLAcceptHandshake(x)	((x)->estado == STAT_SSL_ACCEPT_HANDSHAKE)
-#define IsSSLConnectHandshake(x)	((x)->estado == STAT_SSL_CONNECT_HANDSHAKE)
-#define IsSSLHandshake(x) (IsSSLAcceptHandshake(x) || IsSSLConnectHandshake(x))
+#define EsSSLAcceptHandshake(x)	((x)->estado == STAT_SSL_ACCEPT_HANDSHAKE)
+#define EsSSLConnectHandshake(x)	((x)->estado == STAT_SSL_CONNECT_HANDSHAKE)
+#define EsSSLHandshake(x) (EsSSLAcceptHandshake(x) || EsSSLConnectHandshake(x))
 #define SetSSLAcceptHandshake(x)	((x)->estado = STAT_SSL_ACCEPT_HANDSHAKE)
 #define SetSSLConnectHandshake(x)	((x)->estado = STAT_SSL_CONNECT_HANDSHAKE)
 #endif
@@ -274,18 +274,18 @@ extern char **margv;
 #define FADV 2
 #define FOK  3
 #define FSQL 4
-extern void fecho(char , char *, ...);
+extern void Alerta(char , char *, ...);
 extern void Debug(char *, ...);
-extern char *StsMalloc(size_t, char *, long);
+extern char *ExMalloc(size_t, char *, long);
 #define ADD 1
 #define DEL 2
-extern struct in_addr *resolv(char *);
+extern struct in_addr *Resuelve(char *);
 #define MYSQL_CACHE "cache"
 extern MODVAR char tokbuf[BUFSIZE];
 #define MAX_LISTN 256
-extern Sock *socklisten(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
+extern Sock *SockListen(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
 extern int EsIp(char *);
-extern int is_file(char *);
+extern int EsArchivo(char *);
 #define OPT_CR 0x1
 #define OPT_LF 0x2
 #define OPT_CRLF (OPT_CR | OPT_LF)
@@ -304,25 +304,25 @@ extern OSVERSIONINFO VerInfo;
 extern char SO[256];
 extern HWND hwMain;
 extern void CleanUp(void);
-extern void programa_loop_principal(void *);
+extern void LoopPrincipal(void *);
 #endif
-extern void _mysql_carga_tablas(void);
+extern void MySQLCargaTablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
-extern void conferror(char *, ...);
+extern void Error(char *, ...);
 extern int Info(char *, ...);
-extern void sockwritev(Sock *, int, char *, va_list);
+extern void SockWriteVL(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1
-extern VOIDSIG cierra_colossus(int);
-extern void ircd_log(int, char *, ...);
+extern VOIDSIG CierraColossus(int);
+extern void Loguea(int, char *, ...);
 #define ircfree(x) do { if (x) Free(x); x = NULL; }while(0)
 #define PID "colossus.pid"
 #ifdef _WIN32
 extern void CleanUpSegv(int);
 #endif
-extern VOIDSIG reinicia();
+extern VOIDSIG Reinicia();
 extern int pregunta(char *);
-extern VOIDSIG refresca();
+extern VOIDSIG Refresca();
 extern int copyfile(char *, char *);
 #ifdef USA_SSL
 #define SSLFLAG_FAILIFNOCERT 	0x1
@@ -333,33 +333,33 @@ extern char *my_itoa(int);
 extern int b64_decode(char const *src, u_char *, size_t);
 extern int b64_encode(u_char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
-#define creditos() 																\
-	response(cl, bl, "\00312%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);								\
-	response(cl, bl, " ");															\
-	response(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");						\
-	response(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\
+#define Creditos() 																\
+	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);								\
+	Responde(cl, bl, " ");															\
+	Responde(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");						\
+	Responde(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\
 		"aportando su semilla, a que este programa vea la luz.");									\
-	response(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
-	response(cl, bl, "Y, en especial, a MaD y a Davidlig por las ayudas de infrastructuras prestadas altruístamente."); 			\
-	response(cl, bl, " "); 															\
-	response(cl, bl, "Puedes descargar este programa de forma gratuíta en %c\00312http://www.rallados.net", 31); 				\
-	response(cl, bl, "Sé feliz. Paz.")
-extern void resuelve_host(char **, char *);
+	Responde(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
+	Responde(cl, bl, "Y, en especial, a MaD y a Davidlig por las ayudas de infrastructuras prestadas altruístamente."); 			\
+	Responde(cl, bl, " "); 															\
+	Responde(cl, bl, "Puedes descargar este programa de forma gratuíta en %c\00312http://www.rallados.net", 31); 				\
+	Responde(cl, bl, "Sé feliz. Paz.")
+extern void ResuelveHost(char **, char *);
 extern void cloak_crc(char *);
 
 extern u_int base64toint(const char *);
 extern const char *inttobase64(char *, u_int, u_int);
 extern void tea(u_int *, u_int *, u_int *);
-extern char *cifranick(char *, char *);
-extern u_long our_crc32(const u_char *, u_int);
+extern char *CifraNick(char *, char *);
+extern u_long Crc32(const u_char *, u_int);
 extern char *chrcat(char *, char);
 #ifdef NEED_STRNCASECMP
 extern int strncasecmp(const char *, const char *, int);
 #endif
 /* definiciones de cache */
-extern char *coge_cache(char *, char *, int);
-extern void inserta_cache(char *, char *, int, int, char *, ...);
-extern void borra_cache(char *, char *, int);
+extern char *CogeCache(char *, char *, int);
+extern void InsertaCache(char *, char *, int, int, char *, ...);
+extern void BorraCache(char *, char *, int);
 #define CACHE_HOST "hosts" /* cache para hosts */
 #define CACHE_MX "mx" /* cache para registros mx */
 
@@ -380,3 +380,4 @@ Item *del_item(Item *, Item **, char);
 #define AddItem(item, lista) add_item((Item *)item, (Item **)&lista)
 #define BorraItem(item, lista) del_item((Item *)item, (Item **)&lista, 0)
 #define LiberaItem(item, lista) del_item((Item *)item, (Item **)&lista, 1)
+char *Repite(char, int);

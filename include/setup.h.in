@@ -4,7 +4,6 @@
 #undef FCNTLH
 #undef FORCE_CORE
 #undef GETTIMEOFDAY
-#undef HUB
 #undef INET6
 #undef LISTEN_SIZE
 #undef MAXCONNECTIONS

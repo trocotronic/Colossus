@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.9 2005-03-18 21:26:53 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.10 2005-06-29 21:13:55 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -11,8 +11,8 @@ SmtpData *colasmtp[MAXSMTP];
 int totalcola = 0;
 int conta = 0;
 
-SOCKFUNC(procesa_smtp);
-SOCKFUNC(cierra_smtp);
+SOCKFUNC(ProcesaSmtp);
+SOCKFUNC(CierraSmtp);
 
 static const char Base64[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -198,14 +198,14 @@ char *base64_decode(char *src)
 	b64_decode(src, buf2, sizeof(buf2));
 	return buf2;
 }
-int parse_smtp(char *data, int numeric)
+int ParseSmtp(char *data, int numeric)
 {
 	strcpy(tokbuf, data);
 	if (atoi(strtok(tokbuf, " ")) != numeric)
 		return 1;
 	return 0;
 }
-char *coge_mx(char *dominio)
+char *Mx(char *dominio)
 {
 #define SDK
 #ifdef _WIN32
@@ -214,7 +214,7 @@ char *coge_mx(char *dominio)
 	char *cache;
 	if (!dominio)
 		return NULL;
-	if ((cache = coge_cache(CACHE_MX, dominio, 0)))
+	if ((cache = CogeCache(CACHE_MX, dominio, 0)))
 		return cache;
 	if (VerInfo.dwMajorVersion == 5)
 	{
@@ -228,7 +228,7 @@ char *coge_mx(char *dominio)
 				if (host)
 				{
 					FreeLibrary(api);
-					inserta_cache(CACHE_MX, dominio, 86400, 0, host);
+					InsertaCache(CACHE_MX, dominio, 86400, 0, host);
 					return host;
 				}
 			}
@@ -244,7 +244,7 @@ char *coge_mx(char *dominio)
 	bzero(host, 512);
 	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
 	hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	sprintf_irc(orden, "nslookup -type=mx %s", dominio);
+	ircsprintf(orden, "nslookup -type=mx %s", dominio);
 	if (CreatePipe(&hStdout, &hStdin, NULL, 0))
 	{
 		int i;
@@ -264,8 +264,8 @@ char *coge_mx(char *dominio)
 			{
 				_pclose(pp);
 				strcpy(host, ++mx);
-				_mysql_add(MYSQL_CACHE, dominio, "valor", host);
-				_mysql_add(MYSQL_CACHE, dominio, "hora", "%lu", time(0));
+				MySQLInserta(MYSQL_CACHE, dominio, "valor", host);
+				MySQLInserta(MYSQL_CACHE, dominio, "hora", "%lu", time(0));
 				return host;
 			}
 		}
@@ -275,7 +275,7 @@ char *coge_mx(char *dominio)
 #endif
 	return (conf_smtp ? conf_smtp->host : NULL);
 }
-void encola_smtp(char *para, char *de, char *tema, char *cuerpo)
+void EncolaSmtp(char *para, char *de, char *tema, char *cuerpo)
 {
 	SmtpData *smtp;
 	if (totalcola == MAXSMTP)
@@ -289,7 +289,7 @@ void encola_smtp(char *para, char *de, char *tema, char *cuerpo)
 	smtp->intentos = 0;
 	colasmtp[totalcola++] = smtp;
 }
-int desencola_smtp()
+int DesencolaSmtp()
 {
 	char *dominio, *hostmx;
 	if (!totalcola)
@@ -298,14 +298,14 @@ int desencola_smtp()
 	strcpy(tokbuf, colasmtp[0]->para);
 	strtok(tokbuf, "@");
 	dominio = strtok(NULL, "@");
-	hostmx = conf_smtp ? conf_smtp->host : coge_mx(dominio);
+	hostmx = conf_smtp ? conf_smtp->host : Mx(dominio);
 	if (!hostmx)
 		return 1;
-	if (!sockopen(hostmx, 25, NULL, procesa_smtp, NULL, cierra_smtp, ADD))
+	if (!SockOpen(hostmx, 25, NULL, ProcesaSmtp, NULL, CierraSmtp, ADD))
 		return 1;
 	return 0;
 }
-void borra_mensaje()
+void LiberaMemoriaMensaje()
 {
 	int i;
 	Free(colasmtp[0]->de);
@@ -316,98 +316,98 @@ void borra_mensaje()
 	for (i = 0; i < totalcola; i++)
 		colasmtp[i] = colasmtp[i+1];
 	totalcola--;
-	desencola_smtp();
+	DesencolaSmtp();
 }
-void envia_email(char *para, char *de, char *tema, char *cuerpo)
+void EnviaEmail(char *para, char *de, char *tema, char *cuerpo)
 {
-	encola_smtp(para, de, tema, cuerpo);
+	EncolaSmtp(para, de, tema, cuerpo);
 	if (totalcola == 1)
-		desencola_smtp();
+		DesencolaSmtp();
 }
-void email(char *para, char *tema, char *cuerpo, ...)
+void Email(char *para, char *tema, char *cuerpo, ...)
 {
 	char buf[BUFSIZE];
 	va_list vl;
 	va_start(vl, cuerpo);
-	vsprintf_irc(buf, cuerpo, vl);
+	ircvsprintf(buf, cuerpo, vl);
 	va_end(vl);
-	envia_email(para, conf_set->admin, tema, buf);
+	EnviaEmail(para, conf_set->admin, tema, buf);
 }
-SOCKFUNC(procesa_smtp)
+SOCKFUNC(ProcesaSmtp)
 {
 	SmtpData *smtp;
 	smtp = colasmtp[0];
 	//printf("%% %s\n", data);
-	if (!parse_smtp(data, 220))
+	if (!ParseSmtp(data, 220))
 	{
 		if (conf_smtp && conf_smtp->login)
-			sockwrite(sck, OPT_CRLF, "EHLO Colossus");
+			SockWrite(sck, OPT_CRLF, "EHLO Colossus");
 		else
 		{
-			sockwrite(sck, OPT_CRLF, "HELO Colossus");
+			SockWrite(sck, OPT_CRLF, "HELO Colossus");
 			conta = 3;
 		}
 	}
-	if (!parse_smtp(data, 250) && conta == 0)
+	if (!ParseSmtp(data, 250) && conta == 0)
 	{
-		sockwrite(sck, OPT_CRLF, "AUTH LOGIN");
+		SockWrite(sck, OPT_CRLF, "AUTH LOGIN");
 		conta++;
 	}
-	else if (!parse_smtp(data, 334) && conta == 1)
+	else if (!ParseSmtp(data, 334) && conta == 1)
 	{
-		sockwrite(sck, OPT_CRLF, base64_encode(conf_smtp->login, strlen(conf_smtp->login)));
+		SockWrite(sck, OPT_CRLF, base64_encode(conf_smtp->login, strlen(conf_smtp->login)));
 		conta++;
 	}
-	else if (!parse_smtp(data, 334) && conta == 2)
+	else if (!ParseSmtp(data, 334) && conta == 2)
 	{
-		sockwrite(sck, OPT_CRLF, base64_encode(conf_smtp->pass, strlen(conf_smtp->pass)));
+		SockWrite(sck, OPT_CRLF, base64_encode(conf_smtp->pass, strlen(conf_smtp->pass)));
 		conta++;
 	}
-	else if (!parse_smtp(data, 235))
+	else if (!ParseSmtp(data, 235))
 	{
-		sockwrite(sck, OPT_CRLF, "MAIL FROM: %s", smtp->de);
+		SockWrite(sck, OPT_CRLF, "MAIL FROM: %s", smtp->de);
 		conta++;
 	}
-	else if (!parse_smtp(data, 250) && conta == 3)
+	else if (!ParseSmtp(data, 250) && conta == 3)
 	{
-		sockwrite(sck, OPT_CRLF, "MAIL FROM: %s", smtp->de);
+		SockWrite(sck, OPT_CRLF, "MAIL FROM: %s", smtp->de);
 		conta++;
 	}
-	else if (!parse_smtp(data, 250) && conta == 4)
+	else if (!ParseSmtp(data, 250) && conta == 4)
 	{
-		sockwrite(sck, OPT_CRLF, "RCPT TO: %s", smtp->para);
+		SockWrite(sck, OPT_CRLF, "RCPT TO: %s", smtp->para);
 		conta++;
 	}
-	else if (!parse_smtp(data, 250) && conta == 5)
+	else if (!ParseSmtp(data, 250) && conta == 5)
 	{
-		sockwrite(sck, OPT_CRLF, "DATA");
+		SockWrite(sck, OPT_CRLF, "DATA");
 		conta++;
 	}
-	if (!parse_smtp(data, 354))
+	if (!ParseSmtp(data, 354))
 	{
-		sockwrite(sck, OPT_CRLF, "From: \"%s\" <%s>", conf_set->red, smtp->de);
-		sockwrite(sck, OPT_CRLF, "To: <%s>", smtp->para);
-		sockwrite(sck, OPT_CRLF, "Subject: %s", smtp->tema);
-		sockwrite(sck, OPT_CRLF, "Date: %lu", time(0));
-		sockwrite(sck, OPT_CRLF, "%s", smtp->cuerpo);
-		sockwrite(sck, OPT_CRLF, ".");
-		sockwrite(sck, OPT_CRLF, "QUIT");
+		SockWrite(sck, OPT_CRLF, "From: \"%s\" <%s>", conf_set->red, smtp->de);
+		SockWrite(sck, OPT_CRLF, "To: <%s>", smtp->para);
+		SockWrite(sck, OPT_CRLF, "Subject: %s", smtp->tema);
+		SockWrite(sck, OPT_CRLF, "Date: %lu", time(0));
+		SockWrite(sck, OPT_CRLF, "%s", smtp->cuerpo);
+		SockWrite(sck, OPT_CRLF, ".");
+		SockWrite(sck, OPT_CRLF, "QUIT");
 		smtp->enviado = 1;
 	}
-	if (!parse_smtp(data, 221))
-		sockclose(sck, LOCAL);
+	if (!ParseSmtp(data, 221))
+		SockClose(sck, LOCAL);
 	return 0;
 }
-SOCKFUNC(cierra_smtp)
+SOCKFUNC(CierraSmtp)
 {
 	if (!colasmtp[0]->enviado && colasmtp)
 	{
 		if (totalcola == MAXSMTP)
-			fecho(FADV, "Es imposible reenviar el email %s.");
+			Alerta(FADV, "Es imposible reenviar el email %s.");
 		else
 		{
 			if (++(colasmtp[0]->intentos) == INTSMTP)
-				fecho(FADV, "Ha sido imposible enviar el email %s.");
+				Alerta(FADV, "Ha sido imposible enviar el email %s.");
 			else
 			{
 				int i;
@@ -415,10 +415,10 @@ SOCKFUNC(cierra_smtp)
 				for (i = 0; i < totalcola; i++)
 					colasmtp[i] = colasmtp[i+1];
 				totalcola--;
-				fecho(FADV, "No se puede enviar el email %s. Poniendolo al final de la cola", colasmtp[0]->para);
+				Alerta(FADV, "No se puede enviar el email %s. Poniendolo al final de la cola", colasmtp[0]->para);
 			}
 		}
 	}
-	borra_mensaje();
+	LiberaMemoriaMensaje();
 	return 1;
 }

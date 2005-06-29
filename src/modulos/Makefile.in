@@ -1,10 +1,10 @@
-## $Id: Makefile.in,v 1.2 2005-02-19 00:20:52 Trocotronic Exp $
+## $Id: Makefile.in,v 1.3 2005-06-29 21:14:02 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
 	../include/sprintf_irc.h ../include/struct.h
-R_MODULES=chanserv.so nickserv.so operserv.so ipserv.so memoserv.so proxyserv.so
-COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o proxyserv.o	
+R_MODULES=chanserv.so nickserv.so operserv.so ipserv.so memoserv.so proxyserv.so tvserv.so
+COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o proxyserv.o tvserv.o	
 MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@
 all: build
@@ -27,5 +27,7 @@ proxyserv.so: proxyserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o proxyserv.so proxyserv.c
 linkserv.so: linkserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o linkserv.so linkserv.c
+tvserv.so: tvserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o tvserv.so tvserv.c
 clean:
 	$(RM) -f *.o *.so *~ core

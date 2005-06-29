@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.41 2005-06-05 13:45:53 Trocotronic Exp $ 
+ * $Id: main.c,v 1.42 2005-06-29 21:13:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,7 +11,7 @@
 #include "bdd.h"
 #endif
 #ifdef USA_ZLIB
-#include "zlib.h"
+#include "zip.h"
 #endif
 #include <signal.h>
 #include <sys/stat.h>
@@ -45,19 +45,19 @@ char spath[PATH_MAX];
 MODVAR char **margv;
 time_t iniciado;
 
-int carga_cache();
-int dropacache();
-extern void lee_socks();
-extern void cierra_socks();
+int CargaCache();
+int ProcCache();
+extern void LeeSocks();
+extern void CierraSocks();
 
 #ifdef USA_CONSOLA
 void *consola_loop_principal(void *);
 void parsea_comando(char *);
 #endif
 #ifdef _WIN32
-void programa_loop_principal(void *);
+void LoopPrincipal(void *);
 #endif
-#define descarga_protocolo() do { if (protocolo) { libera_protocolo(protocolo); protocolo = NULL;	} }while(0)
+#define DescargaProtocolo() do { if (protocolo) { LiberaMemoriaProtocolo(protocolo); protocolo = NULL;	} }while(0)
 
 #ifndef _WIN32
 const char logo[] = {
@@ -70,7 +70,7 @@ const char logo[] = {
 	0 
 };
 #endif
-char *StsMalloc(size_t size, char *file, long line)
+char *ExMalloc(size_t size, char *file, long line)
 {
 	void *x;
 	x = malloc(size);
@@ -79,7 +79,7 @@ char *StsMalloc(size_t size, char *file, long line)
 #endif
 	if (!x)
 	{
-		fecho(FERR,  "[%s:%i] Te has quedado sin memoria", file, line);
+		Alerta(FERR,  "[%s:%i] Te has quedado sin memoria", file, line);
 		exit(-1);
 	}
 	return x;
@@ -96,7 +96,7 @@ void print_r(Conf *conf, int escapes)
 	tabs[0] = '\0';
 	for (i = 0; i < escapes; i++)
 		strcat(tabs, "\t");
-	conferror("%s%s%s%s%s%s", tabs, conf->item, conf->data ? " \"" : "", conf->data ? conf->data : "", conf->data ? "\"" : "", conf->secciones ? " {" : ";");
+	Error("%s%s%s%s%s%s", tabs, conf->item, conf->data ? " \"" : "", conf->data ? conf->data : "", conf->data ? "\"" : "", conf->secciones ? " {" : ";");
 	if (conf->secciones)
 		escapes++;
 	for (i = 0; i < conf->secciones; i++)
@@ -107,10 +107,10 @@ void print_r(Conf *conf, int escapes)
 		tabs[0] = '\0';
 		for (i = 0; i < escapes; i++)
 			strcat(tabs, "\t");
-		conferror("%s};", tabs);
+		Error("%s};", tabs);
 	}
 }
-void inicia_procesos()
+void IniciaProcesos()
 {
 	for(;;)
 	{
@@ -121,17 +121,17 @@ void inicia_procesos()
 			conbuf[0] = '\0';
 		}
 #endif
-		lee_socks();
-		comprueba_timers();
-		procesos_auxiliares();
+		LeeSocks();
+		CompruebaCronos();
+		ProcesosAuxiliares();
 	}
 	/* si llegamos aquí estamos saliendo del programa */
-	cierra_socks();
+	CierraSocks();
 #ifdef _WIN32
 	ChkBtCon(0, 0);
 #endif
 }
-void escribe_pid()
+void EscribePid()
 {
 #ifdef PID
 	int  fd;
@@ -151,45 +151,45 @@ void escribe_pid()
 #endif
 #endif
 }
-void destruye_temporales()
+void BorraTemporales()
 {
 	Modulo *mod;
 	for (mod = modulos; mod; mod = mod->sig)
 	{
-		//fecho(FOK,"eliminando %s",mod->tmparchivo);
+		//Alerta(FOK,"eliminando %s",mod->tmparchivo);
 		unlink(mod->tmparchivo);
 	}
 }
-void cierra_todo()
+void CierraTodo()
 {
-	cierra_socks();
-	destruye_temporales();
+	CierraSocks();
+	BorraTemporales();
 #ifdef _WIN32
 	DestroyWindow(hwMain);
 #endif
 }
-VOIDSIG refresca()
+VOIDSIG Refresca()
 {
 	Conf config;
 #ifdef	POSIX_SIGNALS
 	struct sigaction act;
 #endif
-	descarga_modulos();
-	descarga_protocolo();
-	descarga_conf();
-	parseconf(CPATH, &config, 1);
-	distribuye_conf(&config);
-	carga_modulos();
+	DescargaModulos();
+	DescargaProtocolo();
+	DescargaConfiguracion();
+	ParseaConfiguracion(CPATH, &config, 1);
+	DistribuyeConfiguracion(&config);
+	CargaModulos();
 #ifdef UDB
-	carga_bloques();
+	CargaBloques();
 #endif
 	if (SockIrcd)
 	{
-		senyal(SIGN_SYNCH);
-		senyal(SIGN_EOS);
+		Senyal(SIGN_SYNCH);
+		Senyal(SIGN_EOS);
 	}
 	else
-		distribuye_me(&me, &SockIrcd);
+		DistribuyeMe(&me, &SockIrcd);
 #ifdef	POSIX_SIGNALS
 	act.sa_handler = refresca;
 	act.sa_flags = 0;
@@ -203,25 +203,25 @@ VOIDSIG refresca()
 #endif
 	return;
 }
-VOIDSIG reinicia()
+VOIDSIG Reinicia()
 {
-	cierra_todo();
+	CierraTodo();
 #ifdef _WIN32
 	CleanUp();
 #endif
 	execv(SPATH, margv);
 	exit(-1);
 }
-VOIDSIG cierra_colossus(int excode)
+VOIDSIG CierraColossus(int excode)
 {
-	cierra_todo();
+	CierraTodo();
 #ifdef _WIN32
 	CleanUp();
 #endif
 	exit(excode);
 }
 #ifdef _WIN32
-int carga_programa(int argc, char *argv[])
+int IniciaPrograma(int argc, char *argv[])
 #else
 int main(int argc, char *argv[])
 #endif
@@ -269,12 +269,12 @@ int main(int argc, char *argv[])
 	chmod(CPATH, DEFAULT_PERMISSIONS);
 #endif
 	/* las primeras señales deben ser del núcleo */
-	inserta_senyal(SIGN_SYNCH, mete_bots);
-	inserta_senyal(SIGN_EOS, mete_residentes);
-	if (parseconf(CPATH, &config, 1) < 0)
+	InsertaSenyal(SIGN_SYNCH, EntraBots);
+	InsertaSenyal(SIGN_EOS, EntraResidentes);
+	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
-	distribuye_conf(&config);
-	carga_modulos();
+	DistribuyeConfiguracion(&config);
+	CargaModulos();
 	/*Info("bleeeeeee %lu", time(0));
 	Info("Blaaaaaa");
 	Info("bleeeeeee %lu", time(0));
@@ -285,13 +285,13 @@ int main(int argc, char *argv[])
 	Info("Blaaaaaa");
 	Info("blee eeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %lu", time(0));
 	Info("Blaaaaaa");*/
-	if ((val = carga_mysql()) <= 0)
+	if ((val = CargaMySQL()) <= 0)
 	{
 		if (!val) /* no ha emitido mensaje */
 		{
 			char pq[256];
 			pthread_mutex_lock(&mutex);
-			sprintf_irc(pq, "No se puede iniciar MySQL\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+			ircsprintf(pq, "No se puede iniciar MySQL\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
 			pthread_mutex_unlock(&mutex);
 #ifdef _WIN32			
 			MessageBox(hwMain, pq, "MySQL", MB_OK|MB_ICONERROR);
@@ -301,7 +301,7 @@ int main(int argc, char *argv[])
 		}
 		return 1;
 	}
-	if (is_file("backup.sql"))
+	if (EsArchivo("backup.sql"))
 	{
 #ifdef _WIN32		
 		if (MessageBox(hwMain, "Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
 		if (pregunta("Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?") == 1)
 #endif
 		{
-			if (!_mysql_restaura())
+			if (!MySQLRestaura())
 			{
 #ifdef _WIN32				
 				if (MessageBox(hwMain, "Se ha restaurado con éxito. ¿Quieres borrar la copia?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
@@ -320,15 +320,15 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				fecho(FSQL, "Ha sido imposible restaurar la copia.");
-				cierra_colossus(-1);
+				Alerta(FSQL, "Ha sido imposible restaurar la copia.");
+				CierraColossus(-1);
 			}
 		}
 	}
 	margv = argv;
-	carga_cache();
+	CargaCache();
 #ifdef UDB
-	bdd_init();
+	BddInit();
 #endif
 	pthread_mutex_init(&mutex, NULL);
 	for (i = 0; i < UMAX; i++)
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
 		cTab[i].item = NULL;
 		cTab[i].items = 0;
 	}
-	distribuye_me(&me, &SockIrcd);
+	DistribuyeMe(&me, &SockIrcd);
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
 #else
@@ -366,22 +366,22 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 	if (fork())
 		exit(0);
-	escribe_pid();
-	abre_sock_ircd();
+	EscribePid();
+	AbreSockIrcd();
 #else
-	escucha_ircd();
+	EscuchaIrcd();
 	return 0;
 }
-void programa_loop_principal(void *args)
+void LoopPrincipal(void *args)
 {
 #endif
 	intentos = 0;
-	inicia_procesos();
+	IniciaProcesos();
 #ifndef _WIN32
 	return 0;
 #endif
 }
-int is_file(char *archivo)
+int EsArchivo(char *archivo)
 {
 	FILE *fp;
 	if (!(fp = fopen(archivo, "r")))
@@ -406,7 +406,7 @@ typedef struct
 	char **destino;
 	char *ip;
 }Host;
-void dominum(Host *aux)
+void Dominio(Host *aux)
 {
 	struct hostent *he;
 	int addr;
@@ -414,34 +414,34 @@ void dominum(Host *aux)
 	if ((he = gethostbyaddr((char *)&addr, 4, AF_INET)))
 	{
 		*aux->destino = strdup(he->h_name);
-		inserta_cache(CACHE_HOST, aux->ip, 86400, 0, he->h_name);
+		InsertaCache(CACHE_HOST, aux->ip, 86400, 0, he->h_name);
 	}
 	else
 		ircfree(*aux->destino);
 	Free(aux->ip);
 	Free(aux);
 }
-void resuelve_host(char **destino, char *ip)
+void ResuelveHost(char **destino, char *ip)
 {
 	char *cache;
 	if (EsIp(ip))
 	{
-		if ((cache = coge_cache(CACHE_HOST, ip, 0)))
+		if ((cache = CogeCache(CACHE_HOST, ip, 0)))
 			*destino = strdup(cache);
 		else
 		{
 			pthread_t id;
 			Host *aux;
-			da_Malloc(aux, Host);
+			BMalloc(aux, Host);
 			aux->destino = destino;
 			aux->ip = strdup(ip);
-			pthread_create(&id, NULL, (void *)dominum, (void *)aux);
+			pthread_create(&id, NULL, (void *)Dominio, (void *)aux);
 		}
 	}
 	else
 		*destino = strdup(ip);
 }
-int randomiza(int ini, int fin)
+int Aleatorio(int ini, int fin)
 {
 	int r, i;
 #ifdef _WIN32
@@ -463,7 +463,7 @@ int randomiza(int ini, int fin)
 		return fin - r;
 	return r;
 }	
-char *random_ex(char *patron)
+char *AleatorioEx(char *patron)
 {
 	char *ptr;
 	static char buf[BUFSIZE];
@@ -477,19 +477,19 @@ char *random_ex(char *patron)
 		switch(*patron)
 		{
 			case '?':
-				*ptr++ = randomiza(0, 9) + 48;
+				*ptr++ = Aleatorio(0, 9) + 48;
 				break;
 			case 'º':
-				*ptr++ = upper[randomiza(0, 25)];
+				*ptr++ = upper[Aleatorio(0, 25)];
 				break;
 			case '!':
-				*ptr++ = lower[randomiza(0, 25)];
+				*ptr++ = lower[Aleatorio(0, 25)];
 				break;
 			case '#':
-				*ptr++ = (randomiza(0, 1) == 1 ? upper[randomiza(0, 25)] : lower[randomiza(0, 25)]);
+				*ptr++ = (Aleatorio(0, 1) == 1 ? upper[Aleatorio(0, 25)] : lower[Aleatorio(0, 25)]);
 				break;
 			case '*':
-				*ptr++ = (randomiza(0, 1) == 1 ? randomiza(0, 9) + 48 : (randomiza(0, 1) == 1 ? upper[randomiza(0, 25)] : lower[randomiza(0, 25)]));
+				*ptr++ = (Aleatorio(0, 1) == 1 ? Aleatorio(0, 9) + 48 : (Aleatorio(0, 1) == 1 ? upper[Aleatorio(0, 25)] : lower[Aleatorio(0, 25)]));
 				break;
 			default:
 				*ptr++ = *patron;
@@ -499,7 +499,7 @@ char *random_ex(char *patron)
 	*ptr = '\0';
 	return buf;
 }
-void inserta_senyal(short senyal, int (*func)())
+void InsertaSenyal(short senyal, int (*func)())
 {
 	Senyal *sign, *aux;
 	for (aux = senyals[senyal]; aux; aux = aux->sig)
@@ -507,7 +507,7 @@ void inserta_senyal(short senyal, int (*func)())
 		if (aux->func == func)
 			return;
 	}
-	da_Malloc(sign, Senyal);
+	BMalloc(sign, Senyal);
 	sign->senyal = senyal;
 	sign->func = func;
 	if (!senyals[senyal])
@@ -524,7 +524,7 @@ void inserta_senyal(short senyal, int (*func)())
 		}
 	}
 }
-int borra_senyal(short senyal, int (*func)())
+int BorraSenyal(short senyal, int (*func)())
 {
 	Senyal *aux, *prev = NULL;
 	for (aux = senyals[senyal]; aux; aux = aux->sig)
@@ -560,10 +560,10 @@ double microtime()
 		milisegs /= 10;
 	return (segs + milisegs);
 }
-void timer(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *args, size_t sizearg)
+void IniciaCrono(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *args, size_t sizearg)
 {
 	Timer *aux;
-	da_Malloc(aux, Timer);
+	BMalloc(aux, Timer);
 	aux->nombre = strdup(nombre);
 	aux->sck = sck;
 	aux->cuando = microtime() + cada;
@@ -577,7 +577,7 @@ void timer(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *ar
 	}
 	AddItem(aux, timers);
 }
-int timer_off(char *nombre, Sock *sck)
+int ApagaCrono(char *nombre, Sock *sck)
 {
 	Timer *aux, *prev = NULL;
 	for (aux = timers; aux; aux = aux->sig)
@@ -597,7 +597,7 @@ int timer_off(char *nombre, Sock *sck)
 	}
 	return 0;
 }
-void comprueba_timers()
+void CompruebaCronos()
 {
 	Timer *aux, *sig;
 	double ms;
@@ -614,11 +614,11 @@ void comprueba_timers()
 			aux->lleva++;
 			aux->cuando = ms + aux->cada;
 			if (aux->lleva == aux->veces)
-				timer_off(aux->nombre, aux->sck);
+				ApagaCrono(aux->nombre, aux->sck);
 		}
 	}
 }
-char *implode(char *array[], int total, int parte, int hasta)
+char *Unifica(char *array[], int total, int parte, int hasta)
 {
 	static char imp[BUFSIZE];
 	int i;
@@ -667,13 +667,13 @@ char *gettok(char *str, int pos, char sep)
 	}
 	return NULL;
 }
-void procesos_auxiliares()
+void ProcesosAuxiliares()
 {
 	Proc *aux;
 	for (aux = procs; aux; aux = aux->sig)
 		aux->func(aux);
 }
-void proc(int (*func)())
+void IniciaProceso(int (*func)())
 {
 	Proc *proc;
 	for (proc = procs; proc; proc = proc->sig)
@@ -687,7 +687,7 @@ void proc(int (*func)())
 	proc->time = (time_t) 0;
 	AddItem(proc, procs);
 }
-int proc_stop(int (*func)())
+int DetieneProceso(int (*func)())
 {
 	Proc *proc, *prev = NULL;
 	for (proc = procs; proc; proc = proc->sig)
@@ -776,7 +776,7 @@ int mainn(int argc, char *argv[])
 	return 1;
 }
 */
-char *_asctime(time_t *tim)
+char *Fecha(time_t *tim)
 {
     static char *wday_name[] = {
         "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
@@ -797,7 +797,7 @@ char *_asctime(time_t *tim)
         timeptr->tm_min, timeptr->tm_sec);
     return result;
 }
-void fecho(char err, char *error, ...)
+void Alerta(char err, char *error, ...)
 {
 	char buf[BUFSIZE];
 #ifdef _WIN32
@@ -805,7 +805,7 @@ void fecho(char err, char *error, ...)
 #endif
 	va_list vl;
 	va_start(vl, error);
-	vsprintf_irc(buf, error, vl);
+	ircvsprintf(buf, error, vl);
 	va_end(vl);
 #ifdef _WIN32
 	switch (err)
@@ -840,11 +840,11 @@ void fecho(char err, char *error, ...)
 	}
 #endif
 }
-int carga_cache()
+int CargaCache()
 {
-	if (!_mysql_existe_tabla(MYSQL_CACHE))
+	if (!MySQLEsTabla(MYSQL_CACHE))
 	{
-		if (_mysql_query("CREATE TABLE `%s%s` ( "
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"`valor` varchar(255) default NULL, "
   			"`hora` int(11) NOT NULL default '0', "
@@ -852,25 +852,25 @@ int carga_cache()
   			"`tipo` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla caché';", PREFIJO, MYSQL_CACHE))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MYSQL_CACHE);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MYSQL_CACHE);
 	}
 	else
 	{
-		_mysql_query("ALTER TABLE `%s%s` ADD `owner` int(11) NOT NULL default '0' AFTER `hora`;", PREFIJO, MYSQL_CACHE);
-		_mysql_query("ALTER TABLE `%s%s` ADD `tipo` VARCHAR(255) default NULL AFTER `owner`;", PREFIJO, MYSQL_CACHE);
+		MySQLQuery("ALTER TABLE `%s%s` ADD `owner` int(11) NOT NULL default '0' AFTER `hora`;", PREFIJO, MYSQL_CACHE);
+		MySQLQuery("ALTER TABLE `%s%s` ADD `tipo` VARCHAR(255) default NULL AFTER `owner`;", PREFIJO, MYSQL_CACHE);
 	}
-	_mysql_carga_tablas();
-	proc(dropacache);
+	MySQLCargaTablas();
+	IniciaProceso(ProcCache);
 	return 1;
 }
-char *coge_cache(char *tipo, char *item, int id)
+char *CogeCache(char *tipo, char *item, int id)
 {
 	MYSQL_RES *res;
 	MYSQL_ROW row;
 	char *tipo_c, *item_c;
-	tipo_c = _mysql_escapa(tipo);
-	item_c = _mysql_escapa(item);
-	res = _mysql_query("SELECT `valor`,`hora` FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
+	tipo_c = MySQLEscapa(tipo);
+	item_c = MySQLEscapa(item);
+	res = MySQLQuery("SELECT `valor`,`hora` FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	if (res)
@@ -879,7 +879,7 @@ char *coge_cache(char *tipo, char *item, int id)
 		mysql_free_result(res);
 		if ((time_t)atoul(row[1]) < time(0))
 		{
-			borra_cache(tipo, item, id);
+			BorraCache(tipo, item, id);
 			return NULL;
 		}
 		else
@@ -887,7 +887,7 @@ char *coge_cache(char *tipo, char *item, int id)
 	}
 	return NULL;
 }
-void inserta_cache(char *tipo, char *item, int off, int id, char *valor, ...)
+void InsertaCache(char *tipo, char *item, int off, int id, char *valor, ...)
 {
 	char *tipo_c, *item_c, *valor_c = NULL, buf[BUFSIZE];
 	va_list vl;
@@ -895,21 +895,21 @@ void inserta_cache(char *tipo, char *item, int off, int id, char *valor, ...)
 	if (!BadPtr(valor))
 	{
 		va_start(vl, valor);
-		vsprintf_irc(buf, valor, vl);
+		ircvsprintf(buf, valor, vl);
 		va_end(vl);
-		valor_c = _mysql_escapa(buf);
+		valor_c = MySQLEscapa(buf);
 	}
-	tipo_c = _mysql_escapa(tipo);
-	item_c = _mysql_escapa(item);
-	if (coge_cache(tipo, item, 0))
-		_mysql_query("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
+	tipo_c = MySQLEscapa(tipo);
+	item_c = MySQLEscapa(item);
+	if (CogeCache(tipo, item, 0))
+		MySQLQuery("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
 	else
-		_mysql_query("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
+		MySQLQuery("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	ircfree(valor_c);
 }
-int dropacache(Proc *proc)
+int ProcCache(Proc *proc)
 {
 	u_long ts = time(0);
 	if ((u_long)proc->time + 1800 < ts) /* lo hacemos cada 30 mins */
@@ -918,20 +918,20 @@ int dropacache(Proc *proc)
 		proc->time = ts;
 		return 1;
 	}
-	_mysql_query("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
+	MySQLQuery("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
 	return 0;
 }
-void borra_cache(char *tipo, char *item, int id)
+void BorraCache(char *tipo, char *item, int id)
 {
 	char *tipo_c, *item_c;
-	tipo_c = _mysql_escapa(tipo);
-	item_c = _mysql_escapa(item);
-	_mysql_query("DELETE FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
+	tipo_c = MySQLEscapa(tipo);
+	item_c = MySQLEscapa(item);
+	MySQLQuery("DELETE FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 }
 #ifdef USA_CONSOLA
-#define MyErrorExit(x) { fecho(FERR, x); exit(-1); }
+#define MyErrorExit(x) { Alerta(FERR, x); exit(-1); }
 void *consola_loop_principal(void *args)
 {
 	HANDLE hStdin;
@@ -971,13 +971,13 @@ void parsea_comando(char *comando)
 		return;
 	if (!strcasecmp(comando, "REHASH"))
 	{
-		fecho(FOK, "Refrescando servicios");
-		refresca();
+		Alerta(FOK, "Refrescando servicios");
+		Refresca();
 	}
 	/* else if (!strcasecmp(comando, "RESTART"))
 	{
-		fecho(FOK, "Reiniciando servicios");
-		reinicia();
+		Alerta(FOK, "Reiniciando servicios");
+		Reinicia();
 	} */
 	else if (!strcasecmp(comando, "VERSION"))
 	{
@@ -989,19 +989,19 @@ void parsea_comando(char *comando)
 	}
 	else if (!strcasecmp(comando, "QUIT"))
 	{
-		fecho(FOK, "Saliendo de la aplicacion");
+		Alerta(FOK, "Saliendo de la aplicacion");
 		Sleep(1000);
 		exit(0);
 	}
 	else if (!strcasecmp(comando, "AYUDA"))
 	{
-		fecho(FOK, "Comandos disponibles:");
-		fecho(FOK, "\t-REHASH Refresca la configuracion y recarga los modulos");
-		fecho(FOK, "\t-VERSION Muestra la version actual");
-		fecho(FOK, "\t-QUIT Cierra el programa");
+		Alerta(FOK, "Comandos disponibles:");
+		Alerta(FOK, "\t-REHASH Refresca la configuracion y recarga los modulos");
+		Alerta(FOK, "\t-VERSION Muestra la version actual");
+		Alerta(FOK, "\t-QUIT Cierra el programa");
 	}
 	else
-		fecho(FERR, "Comando desconocido. Para mas informacion escriba AYUDA");
+		Alerta(FERR, "Comando desconocido. Para mas informacion escriba AYUDA");
 }
 #endif
 #define DEBUG
@@ -1010,16 +1010,16 @@ void Debug(char *formato, ...)
 #ifndef DEBUG
 	return;
 #else
-	char debugbuf[BUFSIZE];
+	char debugbuf[BUFSIZE*4];
 	va_list vl;
 #ifdef _WIN32
 	static HANDLE *conh = NULL;
 	LPDWORD len = 0;
 #endif
 	va_start(vl, formato);
-	vsprintf_irc(debugbuf, formato, vl);
+	ircvsprintf(debugbuf, formato, vl);
 	va_end(vl);
-	strcat(debugbuf, "\r\n");
+	strncat(debugbuf, "\r\n", sizeof(debugbuf));
 #ifdef _WIN32
 	if (!conh)
 	{
@@ -1035,7 +1035,7 @@ void Debug(char *formato, ...)
 #endif
 #endif
 }
-void ircd_log(int opt, char *formato, ...)
+void Loguea(int opt, char *formato, ...)
 {
 	char buf[256], auxbuf[512];
 	int fp;
@@ -1046,9 +1046,9 @@ void ircd_log(int opt, char *formato, ...)
 		return;
 	tm = time(0);
 	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
+	ircvsprintf(buf, formato, vl);
 	va_end(vl);
-	sprintf_irc(auxbuf, "(%s) > %s\n", _asctime(&tm), buf);
+	ircsprintf(auxbuf, "(%s) > %s\n", Fecha(&tm), buf);
 	if (stat(conf_log->archivo, &inode) == -1)
 		return;
 	if (conf_log->size && inode.st_size > conf_log->size)
@@ -1124,7 +1124,7 @@ static u_long crc32_tab[] = {
       0x5d681b02L, 0x2a6f2b94L, 0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL,
       0x2d02ef8dL
    };
-u_long our_crc32(const u_char *s, u_int len)
+u_long Crc32(const u_char *s, u_int len)
 {
 	u_int i;
 	u_long crc32val = 0L;
@@ -1212,7 +1212,7 @@ const char *inttobase64(char *buf, u_int v, u_int count)
 	}
 	return buf;
 }
-char *cifranick(char *nickname, char *pass)
+char *CifraNick(char *nickname, char *pass)
 {
 	u_int v[2], k[2], x[2], *p;
 	int cont = (conf_set->nicklen + 8) / 8, i = 0;
@@ -1284,4 +1284,16 @@ Item *del_item(Item *item, Item **lista, char borra)
 		prev = aux;
 	}
 	return NULL;
+}
+char *Repite(char car, int veces)
+{
+	static char ret[128];
+	int i = 0;
+	if (veces < sizeof(ret)-1)
+	{
+		while (i < veces)
+			ret[i++] = car;
+	}
+	ret[i] = 0;
+	return ret;
 }

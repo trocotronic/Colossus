@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.2 2005-05-18 18:51:05 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.3 2005-06-29 21:13:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -92,7 +92,7 @@ char *my_itoa(int i)
 {
 	static char buf[128];
 #ifndef _WIN32	
-	sprintf_irc(buf, "%d", i);
+	ircsprintf(buf, "%d", i);
 #else
 	_itoa(i, buf, 10);
 #endif
@@ -108,7 +108,7 @@ char *inet_ntoa(struct sockaddr_in *in)
 	b = (int)*s++;
 	c = (int)*s++;
 	d = (int)*s++;
-	sprintf_irc(buf, "%d.%d.%d.%d", a, b, c, d);
+	ircsprintf(buf, "%d.%d.%d.%d", a, b, c, d);
 	return buf;
 }
 #endif
@@ -123,7 +123,7 @@ char *strerror(int err_no)
 	if (errp == (char *)NULL)
 	{
 		errp = buff;
-		sprintf_irc(errp, "Error desconocido %d", err_no);
+		ircsprintf(errp, "Error desconocido %d", err_no);
 
 	}
 	return errp;
@@ -197,7 +197,7 @@ int copyfile(char *src, char *dest)
 #endif
 	if (destfd < 0)
 	{
-		fecho(FADV, "No se puede crear el archivo '%s'", dest);
+		Alerta(FADV, "No se puede crear el archivo '%s'", dest);
 		return 0;
 	}
 
@@ -205,7 +205,7 @@ int copyfile(char *src, char *dest)
 	{
 		if (write(destfd, buf, len) != len)
 		{
-			fecho(FADV, "No se puede escribir en el archivo '%s'. Quizás por falta de espacio en su HD.", dest);
+			Alerta(FADV, "No se puede escribir en el archivo '%s'. Quizás por falta de espacio en su HD.", dest);
 			close(srcfd);
 			close(destfd);
 			unlink(dest);

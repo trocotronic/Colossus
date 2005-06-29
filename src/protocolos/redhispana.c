@@ -212,7 +212,7 @@ mTab cmodos[] = {
 	{0x0, '0'}
 };
 
-void entra_usuario(Cliente *, char *);
+void EntraCliente(Cliente *, char *);
 void p_kick_vl(Cliente *, Cliente *, Canal *, char *, va_list *);
 int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 
@@ -244,13 +244,13 @@ int b642int(char *num)
 	}
 	return numero;
 }
-Cliente *busca_cliente_numerico(char *clave, Cliente *lugar)
+Cliente *BuscaClienteNumerico(char *clave, Cliente *lugar)
 {
 	Trio *aux;
 	u_int hash;
 	int num;
 	num = b642int(clave);
-	hash = hash_cliente(clave);
+	hash = HashCliente(clave);
 	for (aux = (Trio *)uTab[hash].item; aux; aux = aux->hsig)
 	{
 		if (aux->cl && aux->cl->numeric == num)
@@ -258,22 +258,22 @@ Cliente *busca_cliente_numerico(char *clave, Cliente *lugar)
 	}
 	return lugar;
 }
-void inserta_cliente_en_numerico(Cliente *us, char *clave, Hash *tabla)
+void InsertaClienteEnNumerico(Cliente *us, char *clave, Hash *tabla)
 {
 	Trio *aux;
 	u_int hash = 0;
-	hash = hash_cliente(clave);
-	da_Malloc(aux, Trio);
+	hash = HashCliente(clave);
+	BMalloc(aux, Trio);
 	aux->cl = us;
 	aux->hsig = tabla[hash].item;
 	tabla[hash].item = aux;
 	tabla[hash].items++;
 }
-int borra_cliente_de_numerico(Cliente *us, char *clave, Hash *tabla)
+int BorraClienteDeNumerico(Cliente *us, char *clave, Hash *tabla)
 {
 	u_int hash = 0;
 	Trio *aux, *prev = NULL;
-	hash = hash_cliente(clave);
+	hash = HashCliente(clave);
 	for (aux = (Trio *)tabla[hash].item; aux; aux = aux->hsig)
 	{
 		if (aux->cl == us)
@@ -296,7 +296,7 @@ char *p_trio(Cliente *cl)
 }
 int p_umode(Cliente *cl, char *modos)
 {
-	procesa_umodos(cl, modos);
+	ProcesaModosCliente(cl, modos);
 	return 0;
 }
 int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
@@ -304,10 +304,10 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 	char buf[BUFSIZE];
 	va_list vl;
 	va_start(vl, modos);
-	vsprintf_irc(buf, modos, vl);
+	ircvsprintf(buf, modos, vl);
 	va_end(vl);
 	if (!strcmp(buf, "+r"))
-		sendto_serv("%s %s %s", me.trio, TOK_IDENTIFY, cl->nombre);
+		EnviaAServidor("%s %s %s", me.trio, TOK_IDENTIFY, cl->nombre);
 	return 0;
 }
 int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
@@ -317,22 +317,22 @@ int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
 	if (!cn)
 		return 0;
 	va_start(vl, modos);
-	vsprintf_irc(buf, modos, vl);
+	ircvsprintf(buf, modos, vl);
 	va_end(vl);
 	copy = strdup(buf);
 	procesa_modos(cn, buf);
-	sendto_serv("%s %s %s %s", cl->trio, TOK_MODE, cn->nombre, copy);
+	EnviaAServidor("%s %s %s %s", cl->trio, TOK_MODE, cn->nombre, copy);
 	Free(copy);
 	return 0;
 }
 int p_nick(Cliente *cl, char *nuevo)
 {
-	sendto_serv("%s %s %s", cl->trio, TOK_NICK, nuevo);
+	EnviaAServidor("%s %s %s", cl->trio, TOK_NICK, nuevo);
 	return 0;
 }
 int p_join(Cliente *bl, Canal *cn)
 {
-	sendto_serv("%s %s %s", bl->trio, TOK_JOIN, cn->nombre);
+	EnviaAServidor("%s %s %s", bl->trio, TOK_JOIN, cn->nombre);
 	return 0;
 }
 int p_part(Cliente *bl, Canal *cn, char *motivo, ...)
@@ -342,12 +342,12 @@ int p_part(Cliente *bl, Canal *cn, char *motivo, ...)
 		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
-		vsprintf_irc(buf, motivo, vl);
+		ircvsprintf(buf, motivo, vl);
 		va_end(vl);
-		sendto_serv("%s %s %s :%s", bl->trio, TOK_PART, cn->nombre, buf);
+		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_PART, cn->nombre, buf);
 	}
 	else
-		sendto_serv("%s %s %s", bl->trio, TOK_PART, cn->nombre);
+		EnviaAServidor("%s %s %s", bl->trio, TOK_PART, cn->nombre);
 	return 0;
 }
 int p_svspart(Cliente *cl, Canal *cn, char *motivo, ...)
@@ -371,16 +371,16 @@ int p_quit(Cliente *bl, char *motivo, ...)
 		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
-		vsprintf_irc(buf, motivo, vl);
+		ircvsprintf(buf, motivo, vl);
 		va_end(vl);
-		sendto_serv("%s %s :%s", bl->trio, TOK_QUIT, buf);
+		EnviaAServidor("%s %s :%s", bl->trio, TOK_QUIT, buf);
 	}
 	else
-		sendto_serv("%s %s", bl->trio, TOK_QUIT);
+		EnviaAServidor("%s %s", bl->trio, TOK_QUIT);
 	for (lk = bl->canal; lk; lk = lk->sig)
-		borra_cliente_de_canal(lk->chan, bl);
+		BorraClienteDeCanal(lk->chan, bl);
 	borra_cliente_de_numerico(bl, bl->trio, uTab);
-	libera_cliente_de_memoria(bl);
+	LiberaMemoriaCliente(bl);
 	return 0;
 }
 int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
@@ -391,16 +391,16 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
-		vsprintf_irc(buf, motivo, vl);
+		ircvsprintf(buf, motivo, vl);
 		va_end(vl);
-		sendto_serv("%s %s %s :%s %s", bl->trio, TOK_KILL, cl->trio, me.nombre, buf);
+		EnviaAServidor("%s %s %s :%s %s", bl->trio, TOK_KILL, cl->trio, me.nombre, buf);
 	}
 	else
-		sendto_serv("%s %s %s :%s Usuario desconectado.", bl->trio, TOK_KILL, cl->trio, me.nombre);
-	senyal2(SIGN_QUIT, cl, buf);
+		EnviaAServidor("%s %s %s :%s Usuario desconectado.", bl->trio, TOK_KILL, cl->trio, me.nombre);
+	Senyal2(SIGN_QUIT, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
-		borra_cliente_de_canal(lk->chan, cl);
-	libera_cliente_de_memoria(cl);
+		BorraClienteDeCanal(lk->chan, cl);
+	LiberaMemoriaCliente(cl);
 	return 0;
 }
 int p_nuevonick(Cliente *al)
@@ -416,8 +416,8 @@ int p_nuevonick(Cliente *al)
 	int2b64(al->trio + 2, al->numeric, sizeof(char) * 4);
 	al->numeric = b642int(al->trio);
 	inserta_cliente_en_numerico(al, al->trio, uTab);
-	modos = modes2flags(al->modos, umodos, NULL);
-	sendto_serv("%s %s %s 1 %lu %s %s +%s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, ipb64, al->trio, al->info);
+	modos = ModosAFlags(al->modos, umodos, NULL);
+	EnviaAServidor("%s %s %s 1 %lu %s %s +%s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, ipb64, al->trio, al->info);
 	return 0;
 }
 int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
@@ -435,9 +435,9 @@ int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
 int p_gline(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *motivo)
 {
 	if (modo == ADD)
-		sendto_serv("%s %s * +%s@%s %i :%s", me.trio, TOK_GLINE, ident, host, tiempo, motivo);
+		EnviaAServidor("%s %s * +%s@%s %i :%s", me.trio, TOK_GLINE, ident, host, tiempo, motivo);
 	else
-		sendto_serv("%s %s * -%s@%s", me.trio, TOK_GLINE, ident, host);
+		EnviaAServidor("%s %s * -%s@%s", me.trio, TOK_GLINE, ident, host);
 	return 0;
 }
 void p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
@@ -448,11 +448,11 @@ void p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
 		if (!vl)
 			strcpy(buf, motivo);
 		else
-			vsprintf_irc(buf, motivo, *vl);
-		sendto_serv("%s %s %s %s :%s", bl->trio, TOK_KICK, cn->nombre, cl->trio, buf);
+			ircvsprintf(buf, motivo, *vl);
+		EnviaAServidor("%s %s %s %s :%s", bl->trio, TOK_KICK, cn->nombre, cl->trio, buf);
 	}
 	else
-		sendto_serv("%s %s %s %s :Usuario expulsado", bl->trio, TOK_KICK, cn->nombre, cl->trio);
+		EnviaAServidor("%s %s %s %s :Usuario expulsado", bl->trio, TOK_KICK, cn->nombre, cl->trio);
 }
 int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
@@ -469,15 +469,15 @@ int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 	}
 	else
 		p_kick_vl(cl, bl, cn, motivo, NULL);
-	borra_canal_de_usuario(cl, cn);
-	borra_cliente_de_canal(cn, cl);
+	BorraCanalDeCliente(cl, cn);
+	BorraClienteDeCanal(cn, cl);
 	return 0;
 }
 int p_topic(Cliente *bl, Canal *cn, char *topic)
 {
 	if (!cn->topic || strcmp(cn->topic, topic))
 	{
-		sendto_serv("%s %s %s :%s", bl->trio, TOK_TOPIC, cn->nombre, topic);
+		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_TOPIC, cn->nombre, topic);
 		ircstrdup(cn->topic, topic);
 	}
 	return 0;
@@ -496,7 +496,7 @@ int p_notice(Cliente *cl, Cliente *bl, char *mensaje, ...)
 }
 int p_invite(Cliente *cl, Cliente *bl, Canal *cn)
 {
-	sendto_serv("%s %s %s %s", bl->trio, TOK_INVITE, cl->trio, cn->nombre);
+	EnviaAServidor("%s %s %s %s", bl->trio, TOK_INVITE, cl->trio, cn->nombre);
 	return 0;
 }
 int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
@@ -505,11 +505,11 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 	if (!vl)
 		strcpy(buf, formato);
 	else
-		vsprintf_irc(buf, formato, *vl);
+		ircvsprintf(buf, formato, *vl);
 	if (tipo == 1) 
-		sendto_serv("%s %s %s :%s", bl->trio, TOK_PRIVATE, cl->trio, buf);
+		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_PRIVATE, cl->trio, buf);
 	else
-		sendto_serv("%s %s %s :%s", bl->trio, TOK_NOTICE, cl->trio, buf);
+		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_NOTICE, cl->trio, buf);
 	return 0;
 }
 Com comandos_especiales[] = {
@@ -544,23 +544,23 @@ int test(Conf *config, int *errores)
 {
 	Conf *eval, *aux;
 	short error_parcial = 0;
-	if (!(eval = busca_entrada(config, "red")))
+	if (!(eval = BuscaEntrada(config, "red")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz red.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz red.", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "nicklen")))
+	if (!(eval = BuscaEntrada(config, "nicklen")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz nicklen.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz nicklen.", config->archivo, config->item);
 		error_parcial++;
 	}
-	if ((eval = busca_entrada(config, "modos")))
+	if ((eval = BuscaEntrada(config, "modos")))
 	{
-		if ((aux = busca_entrada(eval, "canales")))
+		if ((aux = BuscaEntrada(eval, "canales")))
 		{
 			if (!aux->data)
 			{
-				conferror("[%s:%s::%s::%s::%i] La directriz canales esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				Error("[%s:%s::%s::%s::%i] La directriz canales esta vacia.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 				error_parcial++;
 			}
 			else
@@ -571,7 +571,7 @@ int test(Conf *config, int *errores)
 				{
 					if (strchr(aux->data, forb[i]))
 					{
-						conferror("[%s:%s::%s::%s::%i] Los modos +ovb no se permiten.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+						Error("[%s:%s::%s::%s::%i] Los modos +ovb no se permiten.", config->archivo, config->item, eval->item, aux->item, aux->linea);
 						error_parcial++;
 					}
 				}
@@ -585,7 +585,7 @@ void set(Conf *config)
 {
 	int i, p;
 	if (!conf_set)
-		da_Malloc(conf_set, struct Conf_set);
+		BMalloc(conf_set, struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "red"))
@@ -606,79 +606,79 @@ int carga(Conf *config)
 {
 	int errores = 0;
 #ifdef UDB
-	conferror("Este protocolo está compilado bajo UDB y no debería estarlo.");
+	Error("Este protocolo está compilado bajo UDB y no debería estarlo.");
 	return ++errores;
 #endif
 	if (!test(config, &errores))
 		set(config);
 	else
 	{
-		conferror("[%s] La configuracion de %s es errónea", config->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es errónea", config->archivo, info.nombre);
 		return ++errores;
 	}
-	inserta_comando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
-	inserta_comando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
-	inserta_comando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);
-	inserta_comando(MSG_TOPIC, TOK_TOPIC, m_topic, INI, 4);
-	inserta_comando(MSG_QUIT, TOK_QUIT, m_quit, FIN, 1);
-	inserta_comando(MSG_KILL, TOK_KILL, m_kill, INI, 2);
-	inserta_comando(MSG_PING, TOK_PING, m_ping, INI, MAXPARA);
-	inserta_comando(MSG_PASS, TOK_PASS, m_pass, INI, 1);
-	inserta_comando(MSG_NOTICE, TOK_NOTICE, m_msg, INI, 2);
-	inserta_comando(MSG_JOIN, TOK_JOIN, m_join, INI, MAXPARA);
-	inserta_comando(MSG_PART, TOK_PART, m_part, FIN, 2);
-	inserta_comando(MSG_MODE, TOK_MODE, m_mode, INI, MAXPARA);
-	inserta_comando(MSG_KICK, TOK_KICK, m_kick, INI, 3);
-	inserta_comando(MSG_VERSION, TOK_VERSION, m_version, INI, MAXPARA);
-	inserta_comando(MSG_STATS, TOK_STATS, m_stats, INI, 3);
-	inserta_comando(MSG_SERVER, TOK_SERVER, m_server, INI, MAXPARA);
-	inserta_comando(MSG_SQUIT, TOK_SQUIT, m_squit, FIN, 2);
-	inserta_comando(MSG_ERROR, TOK_ERROR, m_error, INI, MAXPARA);
-	inserta_comando(MSG_AWAY, TOK_AWAY, m_away, INI, 1);
-	inserta_comando(MSG_REHASH, TOK_REHASH, m_rehash, INI, MAXPARA);
-	inserta_comando(MSG_EOB, TOK_EOB, m_eos, INI, MAXPARA);
-	inserta_comando(MSG_BURST , TOK_BURST , m_burst , INI , MAXPARA);
-	inserta_comando(MSG_CREATE , TOK_CREATE , m_create , INI , MAXPARA);
-	inserta_comando(MSG_TBURST , TOK_TBURST , m_tburst , INI , 5);
+	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
+	InsertaComando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
+	InsertaComando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);
+	InsertaComando(MSG_TOPIC, TOK_TOPIC, m_topic, INI, 4);
+	InsertaComando(MSG_QUIT, TOK_QUIT, m_quit, FIN, 1);
+	InsertaComando(MSG_KILL, TOK_KILL, m_kill, INI, 2);
+	InsertaComando(MSG_PING, TOK_PING, m_ping, INI, MAXPARA);
+	InsertaComando(MSG_PASS, TOK_PASS, m_pass, INI, 1);
+	InsertaComando(MSG_NOTICE, TOK_NOTICE, m_msg, INI, 2);
+	InsertaComando(MSG_JOIN, TOK_JOIN, m_join, INI, MAXPARA);
+	InsertaComando(MSG_PART, TOK_PART, m_part, FIN, 2);
+	InsertaComando(MSG_MODE, TOK_MODE, m_mode, INI, MAXPARA);
+	InsertaComando(MSG_KICK, TOK_KICK, m_kick, INI, 3);
+	InsertaComando(MSG_VERSION, TOK_VERSION, m_version, INI, MAXPARA);
+	InsertaComando(MSG_STATS, TOK_STATS, m_stats, INI, 3);
+	InsertaComando(MSG_SERVER, TOK_SERVER, m_server, INI, MAXPARA);
+	InsertaComando(MSG_SQUIT, TOK_SQUIT, m_squit, FIN, 2);
+	InsertaComando(MSG_ERROR, TOK_ERROR, m_error, INI, MAXPARA);
+	InsertaComando(MSG_AWAY, TOK_AWAY, m_away, INI, 1);
+	InsertaComando(MSG_REHASH, TOK_REHASH, m_rehash, INI, MAXPARA);
+	InsertaComando(MSG_EOB, TOK_EOB, m_eos, INI, MAXPARA);
+	InsertaComando(MSG_BURST , TOK_BURST , m_burst , INI , MAXPARA);
+	InsertaComando(MSG_CREATE , TOK_CREATE , m_create , INI , MAXPARA);
+	InsertaComando(MSG_TBURST , TOK_TBURST , m_tburst , INI , 5);
 	return 0;
 }
 int descarga()
 {
-	borra_comando(MSG_PRIVATE, m_msg);
-	borra_comando(MSG_WHOIS, m_whois);
-	borra_comando(MSG_NICK, m_nick);
-	borra_comando(MSG_TOPIC, m_topic);
-	borra_comando(MSG_QUIT, m_quit);
-	borra_comando(MSG_KILL, m_kill);
-	borra_comando(MSG_PING, m_ping);
-	borra_comando(MSG_PASS, m_pass);
-	borra_comando(MSG_NOTICE, m_msg);
-	borra_comando(MSG_JOIN, m_join);
-	borra_comando(MSG_PART, m_part);
-	borra_comando(MSG_MODE, m_mode);
-	borra_comando(MSG_KICK, m_kick);
-	borra_comando(MSG_VERSION, m_version);
-	borra_comando(MSG_STATS, m_stats);
-	borra_comando(MSG_SERVER, m_server);
-	borra_comando(MSG_SQUIT, m_squit);
-	borra_comando(MSG_ERROR, m_error);
-	borra_comando(MSG_AWAY, m_away);
-	borra_comando(MSG_REHASH, m_rehash);
-	borra_comando(MSG_EOB, m_eos);
-	borra_comando(MSG_BURST, m_burst);
-	borra_comando(MSG_CREATE , m_create);
-	borra_comando(MSG_TBURST, m_tburst);
+	BorraComando(MSG_PRIVATE, m_msg);
+	BorraComando(MSG_WHOIS, m_whois);
+	BorraComando(MSG_NICK, m_nick);
+	BorraComando(MSG_TOPIC, m_topic);
+	BorraComando(MSG_QUIT, m_quit);
+	BorraComando(MSG_KILL, m_kill);
+	BorraComando(MSG_PING, m_ping);
+	BorraComando(MSG_PASS, m_pass);
+	BorraComando(MSG_NOTICE, m_msg);
+	BorraComando(MSG_JOIN, m_join);
+	BorraComando(MSG_PART, m_part);
+	BorraComando(MSG_MODE, m_mode);
+	BorraComando(MSG_KICK, m_kick);
+	BorraComando(MSG_VERSION, m_version);
+	BorraComando(MSG_STATS, m_stats);
+	BorraComando(MSG_SERVER, m_server);
+	BorraComando(MSG_SQUIT, m_squit);
+	BorraComando(MSG_ERROR, m_error);
+	BorraComando(MSG_AWAY, m_away);
+	BorraComando(MSG_REHASH, m_rehash);
+	BorraComando(MSG_EOB, m_eos);
+	BorraComando(MSG_BURST, m_burst);
+	BorraComando(MSG_CREATE , m_create);
+	BorraComando(MSG_TBURST, m_tburst);
 	return 0;
 }
 void inicia()
 {
 	char buf[3];
 	int2b64(buf, me.numeric, sizeof(buf));
-	//sendto_serv(":%s PROTOCTL REQ :TOKEN", me.nombre);
+	//EnviaAServidor(":%s PROTOCTL REQ :TOKEN", me.nombre);
 	ircstrdup(me.trio, buf);
-	sendto_serv("PROTOCTL REQ :TOKEN");
-	sendto_serv("PASS :%s", conf_server->password.local);
-	sendto_serv("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
+	EnviaAServidor("PROTOCTL REQ :TOKEN");
+	EnviaAServidor("PASS :%s", conf_server->password.local);
+	EnviaAServidor("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
 }
 SOCKFUNC(parsea)
 {
@@ -704,7 +704,7 @@ SOCKFUNC(parsea)
 			if (!(p = strchr(p, ' ')))
 				return -1;
 			*p++ = '\0';
-			cl = busca_cliente(para[0], NULL);
+			cl = BuscaCliente(para[0], NULL);
 			if (!cl)
 			{
 				while (*p == ' ')
@@ -758,7 +758,7 @@ SOCKFUNC(parsea)
 		s = strchr(p, ' ');
 		if (s)
 			*s++ = '\0';
-		comd = busca_comando(p);
+		comd = BuscaComando(p);
 		params = (comd ? comd->params : 0);
 		i = 0;
 		if (s)
@@ -845,11 +845,11 @@ IRCFUNC(m_eos)
 {
 	if (cl == linkado)
 	{
-		sendto_serv("%s %s", me.trio, TOK_EOB);
-		sendto_serv("%s %s", me.trio, TOK_EOB_ACK);
-		sendto_serv("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, abs(microtime() - tburst));
+		EnviaAServidor("%s %s", me.trio, TOK_EOB);
+		EnviaAServidor("%s %s", me.trio, TOK_EOB_ACK);
+		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, abs(microtime() - tburst));
 		intentos = 0;
-		senyal(SIGN_EOS);
+		Senyal(SIGN_EOS);
 #ifdef _WIN32		
 		ChkBtCon(1, 0);
 #endif		
@@ -873,20 +873,20 @@ IRCFUNC(m_msg)
 		return 1; /* algo passa! */
 	if (!strcasecmp(param[0], "\1PING"))
 	{
-		sendto_serv("%s %s %s :%s", parv[1], TOK_NOTICE, cl->trio, parv[2]);
+		EnviaAServidor("%s %s %s :%s", parv[1], TOK_NOTICE, cl->trio, parv[2]);
 		return 0;
 	}
 	else if (!strcasecmp(param[0], "\1VERSION\1"))
 	{
-		sendto_serv("%s %s %s :\1VERSION %s .%s.\1", parv[1], TOK_NOTICE, cl->trio, COLOSSUS_VERSION, conf_set->red);
+		EnviaAServidor("%s %s %s :\1VERSION %s .%s.\1", parv[1], TOK_NOTICE, cl->trio, COLOSSUS_VERSION, conf_set->red);
 		return 0;
 	}
 	else if (!strcasecmp(param[0], "CREDITOS"))
 	{
-		creditos();
+		Creditos();
 		return 0;
 	}
-	if ((mod = busca_modulo(bl->nombre, modulos)))
+	if ((mod = BuscaModulo(bl->nombre, modulos)))
 	{
 		for (i = 0; i < mod->comandos; i++)
 		{
@@ -895,7 +895,7 @@ IRCFUNC(m_msg)
 			{
 				if ((bcom->nivel & USER) && !(cl->nivel & USER))
 				{
-					response(cl, bl, ERR_NOID, "");
+					Responde(cl, bl, ERR_NOID, "");
 					return 0;
 				}
 				if (bcom->nivel & cl->nivel || bcom->nivel == TODOS)
@@ -903,31 +903,31 @@ IRCFUNC(m_msg)
 				else
 				{
 					if (cl->nivel & USER)
-						response(cl, bl, ERR_FORB, "");
+						Responde(cl, bl, ERR_FORB, "");
 					else
-						response(cl, bl, ERR_NOID, "");
+						Responde(cl, bl, ERR_NOID, "");
 				}
 				return 0;
 			}
 		}
 		if (!EsServer(cl))
-			response(cl, bl, ERR_DESC, "");
+			Responde(cl, bl, ERR_DESC, "");
 	}
 	return 0;
 }
 IRCFUNC(m_whois)
 {
 	Modulo *mod;
-	mod = busca_modulo(parv[2], modulos);
+	mod = BuscaModulo(parv[2], modulos);
 	if (mod)
 	{
-		sendto_serv("%s 311 %s %s %s %s * :%s", me.trio, cl->trio, mod->nick, mod->ident, mod->host, mod->realname);
-		sendto_serv("%s 312 %s %s %s :%s", me.trio, cl->trio, mod->nick, me.nombre, me.info);
-		sendto_serv("%s 307 %s %s :Tiene el nick Registrado y Protegido", me.trio, cl->trio, mod->nick);
-		sendto_serv("%s 310 %s %s :Es un OPERador de los servicios de red", me.trio, cl->trio, mod->nick);
-		sendto_serv("%s 316 %s %s :es un roBOT oficial de la Red %s", me.trio, cl->trio, mod->nick, conf_set->red);
-		sendto_serv("%s 313 %s %s :es un IRCop", me.trio, cl->trio, mod->nick);
-		sendto_serv("%s 318 %s %s :Fin de /WHOIS", me.trio, cl->trio, mod->nick);
+		EnviaAServidor("%s 311 %s %s %s %s * :%s", me.trio, cl->trio, mod->nick, mod->ident, mod->host, mod->realname);
+		EnviaAServidor("%s 312 %s %s %s :%s", me.trio, cl->trio, mod->nick, me.nombre, me.info);
+		EnviaAServidor("%s 307 %s %s :Tiene el nick Registrado y Protegido", me.trio, cl->trio, mod->nick);
+		EnviaAServidor("%s 310 %s %s :Es un OPERador de los servicios de red", me.trio, cl->trio, mod->nick);
+		EnviaAServidor("%s 316 %s %s :es un roBOT oficial de la Red %s", me.trio, cl->trio, mod->nick, conf_set->red);
+		EnviaAServidor("%s 313 %s %s :es un IRCop", me.trio, cl->trio, mod->nick);
+		EnviaAServidor("%s 318 %s %s :Fin de /WHOIS", me.trio, cl->trio, mod->nick);
 	}
 	return 0;
 }
@@ -940,7 +940,7 @@ IRCFUNC(m_nick)
 		{
 			struct in_addr tmp;
 			tmp.s_addr = htonl(base64toint(parv[parc - 3]));
-			al = nuevo_cliente(parv[1], parv[4], parv[5], inet_ntoa(tmp), cl->nombre, parv[5], parc > 9 ? parv[6] : NULL, parv[parc - 1]);
+			al = NuevoCliente(parv[1], parv[4], parv[5], inet_ntoa(tmp), cl->nombre, parv[5], parc > 9 ? parv[6] : NULL, parv[parc - 1]);
 			al->numeric = b642int(parv[parc - 2]);
 			al->trio = strdup(parv[parc - 2]);
 			inserta_cliente_en_numerico(al, parv[parc - 2], uTab);
@@ -954,22 +954,22 @@ IRCFUNC(m_nick)
 				}
 			}
 		}
-		if (busca_modulo(parv[1], modulos))
+		if (BuscaModulo(parv[1], modulos))
 		{
 			p_kill(al, &me, "Nick protegido.");
-			renick_bot(parv[1]);
+			ReconectaBot(parv[1]);
 		}
-		senyal2(SIGN_POST_NICK, cl, 0);
+		Senyal2(SIGN_POST_NICK, cl, 0);
 		if (parc > 9)
-			senyal2(SIGN_UMODE, cl, parv[6]);
+			Senyal2(SIGN_UMODE, cl, parv[6]);
 	}
 	else
 	{
-		senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		Senyal2(SIGN_PRE_NICK, cl, parv[1]);
 		if (strcasecmp(parv[1], cl->nombre))
-			procesa_umodos(cl, "-r");
-		cambia_nick(cl, parv[1]);
-		senyal2(SIGN_POST_NICK, cl, 1);
+			ProcesaModosCliente(cl, "-r");
+		CambiaNick(cl, parv[1]);
+		Senyal2(SIGN_POST_NICK, cl, 1);
 	}
 	return 0;
 }
@@ -978,20 +978,20 @@ IRCFUNC(m_topic)
 	Canal *cn = NULL;
 	if (parc == 3)
 	{
-		cn = info_canal(parv[1], !0);
+		cn = InfoCanal(parv[1], !0);
 		ircstrdup(cn->topic, parv[2]);
 		cn->ntopic = cl;
-		senyal3(SIGN_TOPIC, cl, cn, parv[2]);
+		Senyal3(SIGN_TOPIC, cl, cn, parv[2]);
 	}
 	return 0;
 }
 IRCFUNC(m_quit)
 {
 	LinkCanal *lk;
-	senyal2(SIGN_QUIT, cl, parv[1]);
+	Senyal2(SIGN_QUIT, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
-		borra_cliente_de_canal(lk->chan, cl);
-	libera_cliente_de_memoria(cl);
+		BorraClienteDeCanal(lk->chan, cl);
+	LiberaMemoriaCliente(cl);
 	return 0;
 }
 IRCFUNC(m_kill)
@@ -999,17 +999,17 @@ IRCFUNC(m_kill)
 	Cliente *al;
 	if (EsServer(cl))
 		return 0;
-	if ((al = busca_cliente(parv[1], NULL)))
+	if ((al = BuscaCliente(parv[1], NULL)))
 	{
 		LinkCanal *lk;
 		for (lk = al->canal; lk; lk = lk->sig)
-			borra_cliente_de_canal(lk->chan, al);
-		libera_cliente_de_memoria(al);
+			BorraClienteDeCanal(lk->chan, al);
+		LiberaMemoriaCliente(al);
 	}
 	if (conf_set->opts & REKILL)
 	{
-		if (busca_modulo(parv[1], modulos))
-			renick_bot(parv[1]);
+		if (BuscaModulo(parv[1], modulos))
+			ReconectaBot(parv[1]);
 	}
 	return 0;
 }
@@ -1018,7 +1018,7 @@ IRCFUNC(m_ping)
 	if (parc > 3)
 	{
 		int diff = atoi(militime_float(parv[3]));
-		sendto_serv("%s %s %s %s %i %s", me.trio, TOK_PONG, me.trio, parv[3], diff, militime_float(NULL));
+		EnviaAServidor("%s %s %s %s %i %s", me.trio, TOK_PONG, me.trio, parv[3], diff, militime_float(NULL));
 	}
 	return 0;
 }
@@ -1026,8 +1026,8 @@ IRCFUNC(m_pass)
 {
 	if (strcmp(parv[1], conf_server->password.remoto))
 	{
-		fecho(FERR, "Contraseñas incorrectas");
-		sockclose(sck, LOCAL);
+		Alerta(FERR, "Contraseñas incorrectas");
+		SockClose(sck, LOCAL);
 	}
 	return 0;
 }
@@ -1036,32 +1036,32 @@ IRCFUNC(m_join)
 	char *canal;
 	strcpy(tokbuf, parv[1]);
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-		entra_usuario(cl, canal);
+		EntraCliente(cl, canal);
 	return 0;
 }
 IRCFUNC(m_part)
 {
 	Canal *cn;
-	cn = busca_canal(parv[1], NULL);
-	senyal3(SIGN_PART, cl, cn, parv[2]);
-	borra_canal_de_usuario(cl, cn);
-	borra_cliente_de_canal(cn, cl);
+	cn = BuscaCanal(parv[1], NULL);
+	Senyal3(SIGN_PART, cl, cn, parv[2]);
+	BorraCanalDeCliente(cl, cn);
+	BorraClienteDeCanal(cn, cl);
 	return 0;
 }
 IRCFUNC(m_mode)
 {
 	Cliente *bl;
-	if ((bl = busca_cliente(parv[1], NULL)))
+	if ((bl = BuscaCliente(parv[1], NULL)))
 	{
-		procesa_umodos(bl, parv[2]);
-		senyal2(SIGN_UMODE, bl, parv[2]);
+		ProcesaModosCliente(bl, parv[2]);
+		Senyal2(SIGN_UMODE, bl, parv[2]);
 	}
 	else
 	{
 		Canal *cn;
-		cn = info_canal(parv[1], !0);
+		cn = InfoCanal(parv[1], !0);
 		procesa_modo(cl, cn, parv + 2, parc - 2);
-		senyal4(SIGN_MODE, cl, cn, parv + 2, EsServer(cl) ? parc - 3 : parc - 2);
+		Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServer(cl) ? parc - 3 : parc - 2);
 	}
 	return 0;
 }
@@ -1069,22 +1069,22 @@ IRCFUNC(m_kick)
 {
 	Canal *cn;
 	Cliente *al;
-	if (!(al = busca_cliente(parv[2], NULL)))
+	if (!(al = BuscaCliente(parv[2], NULL)))
 		return 1;
-	cn = info_canal(parv[1], 0);
-	senyal4(SIGN_KICK, cl, al, cn, parv[3]);
-	borra_canal_de_usuario(al, cn);
-	borra_cliente_de_canal(cn, al);
+	cn = InfoCanal(parv[1], 0);
+	Senyal4(SIGN_KICK, cl, al, cn, parv[3]);
+	BorraCanalDeCliente(al, cn);
+	BorraClienteDeCanal(cn, al);
 	if (EsBot(al))
 	{
 		if (conf_set->opts & REJOIN)
-			mete_bot_en_canal(al, parv[1]);
+			EntraBot(al, parv[1]);
 	}
 	return 0;
 }
 IRCFUNC(m_version)
 {
-	sendto_serv(":%s 351 %s :%s .%s. iniciado el %s", me.nombre, parv[0], COLOSSUS_VERSION, conf_set->red, _asctime(&inicio));
+	EnviaAServidor(":%s 351 %s :%s .%s. iniciado el %s", me.nombre, parv[0], COLOSSUS_VERSION, conf_set->red, Fecha(&inicio));
 	return 0;
 }
 IRCFUNC(m_stats)
@@ -1095,11 +1095,11 @@ IRCFUNC(m_stats)
 		{
 			time_t dura;
 			dura = time(0) - inicio;
-			sendto_serv(":%s 242 %s :Servidor online %i días, %02i:%02i:%02i", me.nombre, parv[0], dura / 86400, (dura / 3600) % 24, (dura / 60) % 60, dura % 60);
+			EnviaAServidor(":%s 242 %s :Servidor online %i días, %02i:%02i:%02i", me.nombre, parv[0], dura / 86400, (dura / 3600) % 24, (dura / 60) % 60, dura % 60);
 			break;
 		}
 	}
-	sendto_serv(":%s 219 %s %s :Fin de /STATS", me.nombre, parv[0], parv[1]);
+	EnviaAServidor(":%s 219 %s %s :Fin de /STATS", me.nombre, parv[0], parv[1]);
 	return 0;
 }
 IRCFUNC(m_server)
@@ -1108,11 +1108,11 @@ IRCFUNC(m_server)
 	char numeric[3];
 	if (!cl && atoi(parv[5] + 1) < 10)
 	{
-		fecho(FERR, "Version IRCU incorrecta. Sólo funciona con versiones de P10");
-		sockclose(sck, LOCAL);
+		Alerta(FERR, "Version IRCU incorrecta. Sólo funciona con versiones de P10");
+		SockClose(sck, LOCAL);
 		return 1;
 	}
-	al = nuevo_cliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);
+	al = NuevoCliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);
 	al->protocol = atoi(parv[5] + 1);
 	numeric[0] = *parv[6];
 	numeric[1] = *(parv[6] + 1);
@@ -1127,19 +1127,19 @@ IRCFUNC(m_server)
 		sincroniza(sck, al, parv, parc);
 	}
 	else
-		ircd_log(LOG_SERVER, "Servidor %s (%s)", al->nombre, al->info);
+		Loguea(LOG_SERVER, "Servidor %s (%s)", al->nombre, al->info);
 	return 0;
 }
 IRCFUNC(m_squit)
 {
 	Cliente *al;
-	al = busca_cliente(parv[1], NULL);
-	libera_cliente_de_memoria(al);
+	al = BuscaCliente(parv[1], NULL);
+	LiberaMemoriaCliente(al);
 	return 0;
 }
 IRCFUNC(m_error)
 {
-	ircd_log(LOG_ERROR, "ERROR: %s", parv[1]);
+	Loguea(LOG_ERROR, "ERROR: %s", parv[1]);
 	return 0;
 }
 IRCFUNC(m_away)
@@ -1148,26 +1148,26 @@ IRCFUNC(m_away)
 		cl->nivel |= AWAY;
 	else if (parc == 1)
 		cl->nivel &= ~AWAY;
-	senyal2(SIGN_AWAY, cl, parv[1]);
+	Senyal2(SIGN_AWAY, cl, parv[1]);
 	return 0;
 }
 IRCFUNC(m_rehash)
 {
 	if (!strcasecmp(parv[1], me.nombre))
-		refresca();
+		Refresca();
 	return 0;
 }
 IRCFUNC(sincroniza)
 {
 	tburst = microtime();
-	senyal(SIGN_SYNCH);
+	Senyal(SIGN_SYNCH);
 	return 0;
 }
 IRCFUNC(m_burst)
 {
 	int i;
 	Canal *cn;
-	cn = info_canal(parv[1], !0);
+	cn = InfoCanal(parv[1], !0);
 	for (i = 3; i < parc; i++)
 	{
 		if (*parv[i] == '+') /* hay modos */
@@ -1178,7 +1178,7 @@ IRCFUNC(m_burst)
 			if (strchr(parv[i], 'l'))
 				params++;
 			procesa_modo(cl, cn, parv + i, params);
-			senyal4(SIGN_MODE, cl, cn, parv + i, params);
+			Senyal4(SIGN_MODE, cl, cn, parv + i, params);
 		}
 		else if (*parv[i] == '%')
 		{
@@ -1189,7 +1189,7 @@ IRCFUNC(m_burst)
 				p = strchr(b, ' ');
 				if (p)
 					*p++ = '\0';
-				inserta_ban_en_canal(cl, cn, b);
+				InsertaBan(cl, cn, b);
 			}
 			Free(bans);
 		}
@@ -1222,7 +1222,7 @@ IRCFUNC(m_burst)
 					}
 				}
 				al = busca_cliente_numerico(p, NULL);
-				entra_usuario(al, parv[1]);
+				EntraCliente(al, parv[1]);
 				if (mod[0])
 				{
 					char *c, *arr[4];
@@ -1234,7 +1234,7 @@ IRCFUNC(m_burst)
 					procesa_modo(cl, cn, arr, j);
 					for (c = &mod[0], j = 1; *c; c++)
 						arr[j++] = al->nombre;
-					senyal4(SIGN_MODE, cl, cn, arr, j);
+					Senyal4(SIGN_MODE, cl, cn, arr, j);
 				}
 			}
 			Free(users);
@@ -1247,7 +1247,7 @@ IRCFUNC(m_create)
 	char *canal;
 	strcpy(tokbuf, parv[1]);
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-		entra_usuario(cl, canal);
+		EntraCliente(cl, canal);
 	return 0;
 }
 IRCFUNC(m_tburst)
@@ -1256,11 +1256,11 @@ IRCFUNC(m_tburst)
 	Cliente *al;
 	if (parc == 3)
 	{
-		cn = info_canal(parv[1], !0);
+		cn = InfoCanal(parv[1], !0);
 		al = busca_cliente_numerico(parv[3], NULL);
 		ircstrdup(cn->topic, parv[4]);
 		cn->ntopic = al;
-		senyal3(SIGN_TOPIC, al, cn, parv[4]);
+		Senyal3(SIGN_TOPIC, al, cn, parv[4]);
 	}
 	return 0;
 }
@@ -1282,9 +1282,9 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					inserta_ban_en_canal(cl, cn, parv[param]);
+					InsertaBan(cl, cn, parv[param]);
 				else
-					borra_ban_de_canal(cn, parv[param]);
+					BorraBanDeCanal(cn, parv[param]);
 				param++;
 				break;
 			case 'k':
@@ -1293,14 +1293,14 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (modo == ADD)
 				{
 					ircstrdup(cn->clave, parv[param]);
-					cn->modos |= flag2mode('k', cmodos);
+					cn->modos |= FlagAModo('k', cmodos);
 				}
 				else
 				{
 					if (cn->clave)
 						Free(cn->clave);
 					cn->clave = NULL;
-					cn->modos &= ~flag2mode('k', cmodos);
+					cn->modos &= ~FlagAModo('k', cmodos);
 				}
 				param++;
 				break;
@@ -1310,38 +1310,38 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					if (!parv[param])
 						break;
 					cn->limite = atoi(parv[param]);
-					cn->modos |= flag2mode('l', cmodos);
+					cn->modos |= FlagAModo('l', cmodos);
 					param++;
 				}
 				else
 				{
 					cn->limite = 0;
-					cn->modos &= ~flag2mode('l', cmodos);
+					cn->modos &= ~FlagAModo('l', cmodos);
 				}
 				break;
 			case 'o':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					inserta_modo_cliente_en_canal(&cn->op, busca_cliente_numerico(parv[param], NULL));
+					InsertaModoCliente(&cn->op, busca_cliente_numerico(parv[param], NULL));
 				else
-					borra_modo_cliente_de_canal(&cn->op, busca_cliente_numerico(parv[param], NULL));
+					BorraModoCliente(&cn->op, busca_cliente_numerico(parv[param], NULL));
 				param++;
 				break;
 			case 'v':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					inserta_modo_cliente_en_canal(&cn->voz, busca_cliente_numerico(parv[param], NULL));
+					InsertaModoCliente(&cn->voz, busca_cliente_numerico(parv[param], NULL));
 				else
-					borra_modo_cliente_de_canal(&cn->voz, busca_cliente_numerico(parv[param], NULL));
+					BorraModoCliente(&cn->voz, busca_cliente_numerico(parv[param], NULL));
 				param++;
 				break;
 			default:
 				if (modo == ADD)
-					cn->modos |= flag2mode(*mods, cmodos);
+					cn->modos |= FlagAModo(*mods, cmodos);
 				else
-					cn->modos &= ~flag2mode(*mods, cmodos);
+					cn->modos &= ~FlagAModo(*mods, cmodos);
 		}
 		mods++;
 	}
@@ -1366,20 +1366,20 @@ void procesa_modos(Canal *cn, char *modos)
 	} while(*modos != 0x0);
 	procesa_modo(&me, cn, arv, arc);
 }
-void entra_usuario(Cliente *cl, char *canal)
+void EntraCliente(Cliente *cl, char *canal)
 {
 	Canal *cn = NULL;
-	cn = info_canal(canal, !0);
+	cn = InfoCanal(canal, !0);
 	if (conf_set->debug && cn->miembros == 0 && !strcmp(canal, conf_set->debug))
 	{
 		if (!IsAdmin(cl))
 		{
-			sendto_serv("%s %s %s %s :No puedes estar aqui", me.trio, TOK_KICK, cl->trio, canal);
+			EnviaAServidor("%s %s %s %s :No puedes estar aqui", me.trio, TOK_KICK, cl->trio, canal);
 			return;
 		}
 		p_mode(&me, cn, "+sim");
 	}
-	inserta_canal_en_usuario(cl, cn);
-	inserta_usuario_en_canal(cn, cl);
-	senyal2(SIGN_JOIN, cl, cn);
+	InsertaCanalEnCliente(cl, cn);
+	InsertaClienteEnCanal(cn, cl);
+	Senyal2(SIGN_JOIN, cl, cn);
 }

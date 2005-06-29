@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.4 2004-10-01 18:55:21 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.5 2005-06-29 21:13:52 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "md5.h"
@@ -326,7 +326,7 @@ char *string;
   MDFinal (digest, &context);
   for (i = 0; i < 16; i++)
   {
-  	sprintf_irc(tmp, "%02x", digest[i]);
+  	ircsprintf(tmp, "%02x", digest[i]);
   	strcat(ptr, tmp);
   }
   return ptr;

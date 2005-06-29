@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.6 2005-02-19 18:21:48 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.7 2005-06-29 21:13:45 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -23,7 +23,7 @@
 #define irc_dlopen(x,y) LoadLibrary(x)
 #define irc_dlclose FreeLibrary
 #define irc_dlsym(x,y,z) z = (void *)GetProcAddress(x,y)
-#define irc_dlerror our_dlerror
+#define irc_dlerror ErrorDl
 #else
 #define irc_dlopen dlopen
 #define irc_dlclose dlclose

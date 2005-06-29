@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.10 2005-05-18 18:51:07 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.11 2005-06-29 21:14:01 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -52,7 +52,7 @@ int carga(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (parseconf(mod->config, &modulo, 1))
+	if (ParseaConfiguracion(mod->config, &modulo, 1))
 		return 1;
 	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
 	{
@@ -61,7 +61,7 @@ int carga(Modulo *mod)
 	}
 	else
 	{
-		conferror("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
 		errores++;
 	}
 #ifndef _WIN32
@@ -81,33 +81,33 @@ int carga(Modulo *mod)
 }
 int descarga()
 {
-	borra_senyal(SIGN_MYSQL, linkserv_sig_mysql);
-	borra_senyal(SIGN_EOS, linkserv_sig_eos);
-	borra_senyal(SIGN_BOT, linkserv_sig_bot);
+	BorraSenyal(SIGN_MYSQL, linkserv_sig_mysql);
+	BorraSenyal(SIGN_EOS, linkserv_sig_eos);
+	BorraSenyal(SIGN_BOT, linkserv_sig_bot);
 	return 0;
 }
 int test(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
-	if (!(eval = busca_entrada(config, "nick")))
+	if (!(eval = BuscaEntrada(config, "nick")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz nick.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "ident")))
+	if (!(eval = BuscaEntrada(config, "ident")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz ident.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "host")))
+	if (!(eval = BuscaEntrada(config, "host")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz host.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
-	if (!(eval = busca_entrada(config, "realname")))
+	if (!(eval = BuscaEntrada(config, "realname")))
 	{
-		conferror("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz realname.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
 	*errores += error_parcial;
@@ -118,7 +118,7 @@ void set(Conf *config, Modulo *mod)
 	int i, p;
 	bCom *ls;
 	if (!linkserv)
-		da_Malloc(linkserv, LinkServ);
+		BMalloc(linkserv, LinkServ);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "nick"))
@@ -146,7 +146,7 @@ void set(Conf *config, Modulo *mod)
 					ls++;
 				}
 				if (ls->com == 0x0)
-					conferror("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
+					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
 			}
 		}
 		if (!strcmp(config->seccion[i]->item, "residente"))
@@ -155,10 +155,10 @@ void set(Conf *config, Modulo *mod)
 	if (linkserv->mascara)
 		Free(linkserv->mascara);
 	linkserv->mascara = (char *)Malloc(sizeof(char) * (strlen(linkserv->nick) + 1 + strlen(linkserv->ident) + 1 + strlen(linkserv->host) + 1));
-	sprintf_irc(linkserv->mascara, "%s!%s@%s", linkserv->nick, linkserv->ident, linkserv->host);
-	inserta_senyal(SIGN_MYSQL, linkserv_sig_mysql);
-	inserta_senyal(SIGN_EOS, linkserv_sig_eos);
-	inserta_senyal(SIGN_BOT, linkserv_sig_bot);
+	ircsprintf(linkserv->mascara, "%s!%s@%s", linkserv->nick, linkserv->ident, linkserv->host);
+	InsertaSenyal(SIGN_MYSQL, linkserv_sig_mysql);
+	InsertaSenyal(SIGN_EOS, linkserv_sig_eos);
+	InsertaSenyal(SIGN_BOT, linkserv_sig_bot);
 	bot_mod(linkserv);
 }
 /* devuelve el puntero al link a partir del sock */
@@ -189,13 +189,13 @@ int linkserv_conecta_red(char *red)
 	if (!links)
 		links = (Links **)Malloc(sizeof(Links *));
 	links[linkS] = (Links *)Malloc(sizeof(Links));
-	serv = strdup(_mysql_get_registro(LS_MYSQL, red, "servidor"));
-	puerto = _mysql_get_registro(LS_MYSQL, red, "puerto");
-	if (!(links[linkS]->sck = sockopen(serv, atoi(puerto), linkserv_sockop, linkserv_sockre, NULL, linkserv_sockcl, ADD)))
+	serv = strdup(MySQLCogeRegistro(LS_MYSQL, red, "servidor"));
+	puerto = MySQLCogeRegistro(LS_MYSQL, red, "puerto");
+	if (!(links[linkS]->sck = SockOpen(serv, atoi(puerto), linkserv_sockop, linkserv_sockre, NULL, linkserv_sockcl, ADD)))
 	{
 		Free(links[linkS]);
 		Free(serv);
-		sendto_serv(":%s %s :Es imposible establecer la conexión con %s:%s (%s)", me.nombre, TOK_WALLOPS, serv, puerto, linkserv->nick);
+		EnviaAServidor(":%s %s :Es imposible establecer la conexión con %s:%s (%s)", me.nombre, TOK_WALLOPS, serv, puerto, linkserv->nick);
 		return 0;
 	}
 	links[linkS]->red = strdup(red);
@@ -211,7 +211,7 @@ int linkserv_cierra_red(char *red)
 		if (!strcasecmp(links[i]->red, red))
 		{
 			if (links[i]->sck)
-				sockclose(links[i]->sck, LOCAL);
+				SockClose(links[i]->sck, LOCAL);
 			Free(links[i]->red);
 			Free(links[i]);
 			links[i] = NULL;
@@ -232,17 +232,17 @@ BOTFUNC(linkserv_red)
 	{
 		MYSQL_RES *res;
 		MYSQL_ROW row;
-		if (!(res = _mysql_query("SELECT * from %s%s", PREFIJO, LS_MYSQL)))
+		if (!(res = MySQLQuery("SELECT * from %s%s", PREFIJO, LS_MYSQL)))
 		{
-			response(cl, linkserv->cl, LS_ERR_EMPT, "No existen redes para listar.");
+			Responde(cl, linkserv->cl, LS_ERR_EMPT, "No existen redes para listar.");
 			return 1;
 		}
 		while ((row = mysql_fetch_row(res)))
 		{
 			if (!BadPtr(row[3]))
-				response(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s\003 con el nick \00312%s", row[0], row[1], row[2], row[3]);
+				Responde(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s\003 con el nick \00312%s", row[0], row[1], row[2], row[3]);
 			else
-				response(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s", row[0], row[1], row[2]);
+				Responde(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s", row[0], row[1], row[2]);
 		}
 		mysql_free_result(res);
 	}
@@ -250,7 +250,7 @@ BOTFUNC(linkserv_red)
 	{
 		if (!IsAdmin(cl))
 		{
-			response(cl, linkserv->cl, LS_ERR_FORB, "");
+			Responde(cl, linkserv->cl, LS_ERR_FORB, "");
 			return 1;
 		}
 		if (*param[1] == '+')
@@ -258,42 +258,42 @@ BOTFUNC(linkserv_red)
 			char *port = NULL;
 			if (params < 3)
 			{
-				response(cl, linkserv->cl, LS_ERR_PARA, "RED +red servidor[:puerto] [nick]");
+				Responde(cl, linkserv->cl, LS_ERR_PARA, "RED +red servidor[:puerto] [nick]");
 				return 1;
 			}
 			param[1]++;
-			if (_mysql_get_registro(LS_MYSQL, param[1], NULL))
+			if (MySQLCogeRegistro(LS_MYSQL, param[1], NULL))
 			{
-				response(cl, linkserv->cl, LS_ERR_EMPT, "Esta red ya está en la lista.");
+				Responde(cl, linkserv->cl, LS_ERR_EMPT, "Esta red ya está en la lista.");
 				return 1;
 			}
 			if ((port = strchr(param[2], ':')))
 				*port++ = '\0';
-			_mysql_add(LS_MYSQL, param[1], "servidor", param[2]);
+			MySQLInserta(LS_MYSQL, param[1], "servidor", param[2]);
 			if (params > 3)
-				_mysql_add(LS_MYSQL, param[1], "nick", param[3]);
+				MySQLInserta(LS_MYSQL, param[1], "nick", param[3]);
 			else
-				_mysql_add(LS_MYSQL, param[1], "nick", random_ex("u??????"));
+				MySQLInserta(LS_MYSQL, param[1], "nick", AleatorioEx("u??????"));
 			if (port)
-				_mysql_add(LS_MYSQL, param[1], "puerto", port);
+				MySQLInserta(LS_MYSQL, param[1], "puerto", port);
 			linkserv_conecta_red(param[1]);
-			response(cl, linkserv->cl, "Se ha añadido la red \00312%s", param[1]);
+			Responde(cl, linkserv->cl, "Se ha añadido la red \00312%s", param[1]);
 		}
 		else if (*param[1] == '-')
 		{
 			param[1]++;
-			if (!_mysql_get_registro(LS_MYSQL, param[1], NULL))
+			if (!MySQLCogeRegistro(LS_MYSQL, param[1], NULL))
 			{
-				response(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no se encuentra.");
+				Responde(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no se encuentra.");
 				return 1;
 			}
-			_mysql_del(LS_MYSQL, param[1]);
+			MySQLBorra(LS_MYSQL, param[1]);
 			linkserv_cierra_red(param[1]);
-			response(cl, linkserv->cl, "Se ha borrado la red \00312%s", param[1]);
+			Responde(cl, linkserv->cl, "Se ha borrado la red \00312%s", param[1]);
 		}
 		else
 		{
-			response(cl, linkserv->cl, LS_ERR_SNTX, "RED {+|-}red servidor[:puerto] [nick]");
+			Responde(cl, linkserv->cl, LS_ERR_SNTX, "RED {+|-}red servidor[:puerto] [nick]");
 			return 1;
 		}
 	}
@@ -304,35 +304,35 @@ BOTFUNC(linkserv_link)
 	Sock *sck;
 	if (params < 3)
 	{
-		response(cl, linkserv->cl, LS_ERR_PARA, "LINK red {+|-}#canal");
+		Responde(cl, linkserv->cl, LS_ERR_PARA, "LINK red {+|-}#canal");
 		return 1;
 	}
 	if (!IsAdmin(cl) && !es_fundador_dl(cl, param[2] + 1))
 	{
-		response(cl, linkserv->cl, LS_ERR_FORB, "");
+		Responde(cl, linkserv->cl, LS_ERR_FORB, "");
 		return 1;
 	}
 	if (!GetLinkRed(param[1]) || !(sck = GetLinkRed(param[1])->sck))
 	{
-		response(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no está disponible.");
+		Responde(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no está disponible.");
 		return 1;
 	}
 	if (*param[2] == '+')
 	{
-		sockwrite(sck, OPT_CRLF, "JOIN %s", param[2] + 1);
-		mete_bot_en_canal(linkserv->cl, param[2] + 1);
+		SockWrite(sck, OPT_CRLF, "JOIN %s", param[2] + 1);
+		EntraBot(linkserv->cl, param[2] + 1);
 	}
 	else if (*param[2] == '-')
 	{
-		sockwrite(sck, OPT_CRLF, "PART %s", param[2] + 1);
-		saca_bot_de_canal(linkserv->cl, param[2] + 1, "Separación recibida");
+		SockWrite(sck, OPT_CRLF, "PART %s", param[2] + 1);
+		SacaBot(linkserv->cl, param[2] + 1, "Separación recibida");
 	}
 	else
 	{
-		response(cl, linkserv->cl, LS_ERR_SNTX, "LINK red {+|-}#canal");
+		Responde(cl, linkserv->cl, LS_ERR_SNTX, "LINK red {+|-}#canal");
 		return 1;
 	}
-	response(cl, linkserv->cl, "%s con el canal \00312%s\003 de \00312%s\003 realizado.", *param[2] == '+' ? "Unión" : "Separación", param[2] + 1, param[1]);
+	Responde(cl, linkserv->cl, "%s con el canal \00312%s\003 de \00312%s\003 realizado.", *param[2] == '+' ? "Unión" : "Separación", param[2] + 1, param[1]);
 	return 0;
 }
 int linkserv_sig_mysql()
@@ -340,24 +340,24 @@ int linkserv_sig_mysql()
 	char buf[1][BUFSIZE], tabla[1];
 	int i;
 	tabla[0] = 0;
-	sprintf_irc(buf[0], "%s%s", PREFIJO, LS_MYSQL);
+	ircsprintf(buf[0], "%s%s", PREFIJO, LS_MYSQL);
 	for (i = 0; i < mysql_tablas.tablas; i++)
 	{
 		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
 			tabla[0] = 1;
 	}
-	if (!_mysql_existe_tabla(LS_MYSQL))
+	if (!MySQLEsTabla(LS_MYSQL))
 	{
-		if (_mysql_query("CREATE TABLE `%s%s` ( "
+		if (MySQLQuery("CREATE TABLE `%s%s` ( "
   			"`item` varchar(255) default NULL, "
   			"`servidor` varchar(255) default NULL, "
   			"`puerto` varchar(255) NOT NULL default '6667', "
   			"`nick` varchar(255) default NULL, "
   			"KEY `item` (`item`) "
 			") TYPE=MyISAM COMMENT='Tabla de servidores para links';", PREFIJO, LS_MYSQL))
-				fecho(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_MYSQL);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_MYSQL);
 	}
-	_mysql_carga_tablas();
+	MySQLCargaTablas();
 	return 0;
 }
 int linkserv_sig_eos()
@@ -369,11 +369,11 @@ int linkserv_sig_eos()
 	{
 		strcpy(tokbuf, linkserv->residente);
 		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-			mete_bot_en_canal(linkserv->cl, canal);
+			EntraBot(linkserv->cl, canal);
 	}
 	if (!links) /* primer arranque */
 	{
-		if ((res = _mysql_query("SELECT item from %s%s", PREFIJO, LS_MYSQL)))
+		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, LS_MYSQL)))
 		{
 			while ((row = mysql_fetch_row(res)))
 				linkserv_conecta_red(row[0]);
@@ -385,7 +385,7 @@ int linkserv_sig_eos()
 int linkserv_sig_bot()
 {
 	Cliente *bl;
-	bl = botnick(linkserv->nick, linkserv->ident, linkserv->host, me.nombre, linkserv->modos, linkserv->realname);
+	bl = CreaBot(linkserv->nick, linkserv->ident, linkserv->host, me.nombre, linkserv->modos, linkserv->realname);
 	linkserv->cl = bl;
 	return 0;
 }
@@ -393,10 +393,10 @@ int linkserv_sig_bot()
 SOCKFUNC(linkserv_sockop)
 {
 	char *nick, *lnick;
-	nick = _mysql_get_registro(LS_MYSQL, GetLinkSock(sck)->red, "nick");
+	nick = MySQLCogeRegistro(LS_MYSQL, GetLinkSock(sck)->red, "nick");
 	lnick = strtolower(nick);
-	sockwrite(sck, OPT_CRLF, "NICK %s", nick);
-	sockwrite(sck, OPT_CRLF, "USER %s %s 0 :Linkaje a la red %s", lnick, lnick, conf_set->red ? conf_set->red : "NULL");
+	SockWrite(sck, OPT_CRLF, "NICK %s", nick);
+	SockWrite(sck, OPT_CRLF, "USER %s %s 0 :Linkaje a la red %s", lnick, lnick, conf_set->red ? conf_set->red : "NULL");
 	return 0;
 }
 SOCKFUNC(linkserv_sockre)
@@ -410,16 +410,16 @@ SOCKFUNC(linkserv_sockre)
 	if (com)
 	{
 		if (!strcmp(com, "PING"))
-			sockwrite(sck, OPT_CRLF, "PONG :%s", lparv[0]);
+			SockWrite(sck, OPT_CRLF, "PONG :%s", lparv[0]);
 		else if (!strcmp(com, "PRIVMSG"))
 		{
 			if (*lparv[1] == '#' && *lparv[2] != '!')
-				sendto_serv(":%s %s %s :! (%s) %s", linkserv->nick, TOK_PRIVATE, lparv[1], strtok(lparv[0], "!"), lparv[2]);
+				EnviaAServidor(":%s %s %s :! (%s) %s", linkserv->nick, TOK_PRIVATE, lparv[1], strtok(lparv[0], "!"), lparv[2]);
 		}
 		else if (!strcmp(com, "JOIN"))
-			sendto_serv(":%s %s %s :! \2JOIN\2 (%s)", linkserv->nick, TOK_PRIVATE, lparv[1], strtok(lparv[0], "!"), lparv[1]);
+			EnviaAServidor(":%s %s %s :! \2JOIN\2 (%s)", linkserv->nick, TOK_PRIVATE, lparv[1], strtok(lparv[0], "!"), lparv[1]);
 		else if (!strcmp(com, "PART"))
-			sendto_serv(":%s %s %s :! \2PART\2 (%s) %s", linkserv->nick, TOK_PRIVATE, lparv[1], strtok(lparv[0], "!"), lparc > 2 ? lparv[2] : "");
+			EnviaAServidor(":%s %s %s :! \2PART\2 (%s) %s", linkserv->nick, TOK_PRIVATE, lparv[1], strtok(lparv[0], "!"), lparc > 2 ? lparv[2] : "");
 	}
 	return 0;
 }

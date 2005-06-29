@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.7 2005-03-14 14:18:13 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.8 2005-06-29 21:14:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,7 +10,7 @@
 #include <windows.h>
 
 extern void InitDebug(void);
-extern int carga_programa(int, char **);
+extern int IniciaPrograma(int, char **);
 
 NOTIFYICONDATA SysTray;
 HINSTANCE hInst;
@@ -97,7 +97,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
 	InitDebug();
-	if (carga_programa(__argc, __argv))
+	if (IniciaPrograma(__argc, __argv))
 		exit(-1);
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{
@@ -105,7 +105,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		exit(-1);
 	}
 	ShowWindow(hWnd, SW_SHOW);
-	if ((hThreadPrincipal = (HANDLE)_beginthread(programa_loop_principal, 0, NULL)) < 0)
+	if ((hThreadPrincipal = (HANDLE)_beginthread(LoopPrincipal, 0, NULL)) < 0)
 	{
 		MessageBox(hWnd, "Ha sido imposible crear el thread.", "Error", MB_OK|MB_ICONERROR);
 		exit(-1);
@@ -144,7 +144,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			if (MessageBox(hDlg, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 				return 0;
 			else 
-				cierra_colossus(0);
+				CierraColossus(0);
 		}
 		case WM_SIZE: 
 		{
@@ -207,11 +207,11 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					if (IsDlgButtonChecked(hDlg, BT_CON))
 					{
 						ChkBtCon(0, 1);
-						abre_sock_ircd();
+						AbreSockIrcd();
 					}
 					else
 					{
-						sockclose(SockIrcd, LOCAL);
+						SockClose(SockIrcd, LOCAL);
 						ChkBtCon(0, 0);
 					}
 					break;
@@ -241,14 +241,14 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				case IDM_REHASH:
 				case BT_REHASH:
-					fecho(FOK, "Refrescando servicios");
-					refresca();
+					Alerta(FOK, "Refrescando servicios");
+					Refresca();
 					break;
 				case IDM_SHUTDOWN:
 					if (MessageBox(hDlg, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 						return 0;
 					else 
-						cierra_colossus(0);
+						CierraColossus(0);
 					break;
 			}
 			return 0;
@@ -278,13 +278,13 @@ LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	}
 	return FALSE;
 }
-void conferror(char *formato, ...)
+void Error(char *formato, ...)
 {
 	char buf[BUFSIZE], *texto, actual[BUFSIZE];
 	int len;
 	va_list vl;
 	va_start(vl, formato);
-	vsprintf_irc(buf, formato, vl);
+	ircvsprintf(buf, formato, vl);
 	va_end(vl);
 	strcat(buf, "\r\n");
 	if (!hwConfError)
@@ -321,8 +321,8 @@ int Info(char *formato, ...)
 	ts = time(0);
 	timeptr = localtime(&ts);
 	va_start(vl, formato);
-	sprintf_irc(texto, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
-	vsprintf_irc(txt, texto, vl);
+	ircsprintf(texto, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
+	ircvsprintf(txt, texto, vl);
 	len += strlen(txt);
 	if (len > sizeof(info))
 	{
