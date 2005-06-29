@@ -381,7 +381,7 @@ int p_quit(Cliente *bl, char *motivo, ...)
 		EnviaAServidor("%s %s", bl->trio, TOK_QUIT);
 	for (lk = bl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->chan, bl);
-	borra_cliente_de_numerico(bl, bl->trio, uTab);
+	BorraClienteDeNumerico(bl, bl->trio, uTab);
 	LiberaMemoriaCliente(bl);
 	return 0;
 }
@@ -417,7 +417,7 @@ int p_nuevonick(Cliente *al)
 	al->trio[1] = me.trio[1];
 	int2b64(al->trio + 2, al->numeric, sizeof(char) * 4);
 	al->numeric = b642int(al->trio);
-	inserta_cliente_en_numerico(al, al->trio, uTab);
+	InsertaClienteEnNumerico(al, al->trio, uTab);
 	modos = ModosAFlags(al->modos, umodos, NULL);
 	EnviaAServidor("%s %s %s 1 %lu %s %s +%s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, ipb64, al->trio, al->info);
 	return 0;
@@ -736,7 +736,7 @@ SOCKFUNC(parsea)
 				cl = linkado;
 			else
 			{
-				cl = busca_cliente_numerico(npref, NULL);
+				cl = BuscaClienteNumerico(npref, NULL);
 				do
 				{
 					++p;
@@ -801,7 +801,7 @@ SOCKFUNC(parsea)
 				for (j = comd->funciones - 1; j >= 0; j--)
 				{
 					if (!cl)
-						cl = busca_cliente_numerico(para[0], NULL);
+						cl = BuscaClienteNumerico(para[0], NULL);
 					if (comd->funcion[j])
 						comd->funcion[j](sck, cl, para, i);
 				}
@@ -870,7 +870,7 @@ IRCFUNC(m_msg)
 	strcpy(par, parv[2]);
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
-	bl = busca_cliente_numerico(parv[1], NULL);
+	bl = BuscaClienteNumerico(parv[1], NULL);
 	if (!bl)
 		return 1; /* algo passa! */
 	if (!strcasecmp(param[0], "\1PING"))
@@ -945,7 +945,7 @@ IRCFUNC(m_nick)
 			al = NuevoCliente(parv[1], parv[4], parv[5], inet_ntoa(tmp), cl->nombre, parv[5], parc > 9 ? parv[6] : NULL, parv[parc - 1]);
 			al->numeric = b642int(parv[parc - 2]);
 			al->trio = strdup(parv[parc - 2]);
-			inserta_cliente_en_numerico(al, parv[parc - 2], uTab);
+			InsertaClienteEnNumerico(al, parv[parc - 2], uTab);
 			if (parc > 10) /* hay account */
 			{
 				char *d;
@@ -1122,7 +1122,7 @@ IRCFUNC(m_server)
 	al->numeric = b642int(numeric);
 	al->tipo = ES_SERVER;
 	al->trio = strdup(numeric);
-	inserta_cliente_en_numerico(al, numeric, uTab);
+	InsertaClienteEnNumerico(al, numeric, uTab);
 	if (!cl) /* primer link */
 	{
 		linkado = al;
@@ -1223,7 +1223,7 @@ IRCFUNC(m_burst)
 						d++;
 					}
 				}
-				al = busca_cliente_numerico(p, NULL);
+				al = BuscaClienteNumerico(p, NULL);
 				EntraCliente(al, parv[1]);
 				if (mod[0])
 				{
@@ -1259,7 +1259,7 @@ IRCFUNC(m_tburst)
 	if (parc == 3)
 	{
 		cn = InfoCanal(parv[1], !0);
-		al = busca_cliente_numerico(parv[3], NULL);
+		al = BuscaClienteNumerico(parv[3], NULL);
 		ircstrdup(cn->topic, parv[4]);
 		cn->ntopic = al;
 		Senyal3(SIGN_TOPIC, al, cn, parv[4]);
@@ -1325,18 +1325,18 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->op, busca_cliente_numerico(parv[param], NULL));
+					InsertaModoCliente(&cn->op, BuscaClienteNumerico(parv[param], NULL));
 				else
-					BorraModoCliente(&cn->op, busca_cliente_numerico(parv[param], NULL));
+					BorraModoCliente(&cn->op, BuscaClienteNumerico(parv[param], NULL));
 				param++;
 				break;
 			case 'v':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->voz, busca_cliente_numerico(parv[param], NULL));
+					InsertaModoCliente(&cn->voz, BuscaClienteNumerico(parv[param], NULL));
 				else
-					BorraModoCliente(&cn->voz, busca_cliente_numerico(parv[param], NULL));
+					BorraModoCliente(&cn->voz, BuscaClienteNumerico(parv[param], NULL));
 				param++;
 				break;
 			default:
