@@ -1,7 +1,7 @@
-## $Id: Makefile.in,v 1.3 2005-03-14 14:32:22 Trocotronic Exp $
+## $Id: Makefile.in,v 1.4 2005-06-29 22:57:13 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/md5.h \
-	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
+	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
 	../include/sprintf_irc.h ../include/struct.h
 R_MODULES=unreal.so p10.so redhispana.so
 COMMANDS=unreal.o p10.o redhispana.o

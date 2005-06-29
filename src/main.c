@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.44 2005-06-29 21:40:00 Trocotronic Exp $ 
+ * $Id: main.c,v 1.45 2005-06-29 22:55:54 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -351,7 +351,7 @@ int main(int argc, char *argv[])
 	(void)sigemptyset(&act.sa_mask);
 	(void)sigaddset(&act.sa_mask, SIGHUP);
 	(void)sigaction(SIGHUP, &act, NULL);
-	act.sa_handler = reinicia;
+	act.sa_handler = Reinicia;
 	(void)sigaddset(&act.sa_mask, SIGINT);
 	(void)sigaction(SIGINT, &act, NULL);
 	act.sa_handler = CierraColossus;

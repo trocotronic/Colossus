@@ -213,6 +213,8 @@ mTab cmodos[] = {
 };
 
 void EntraCliente(Cliente *, char *);
+void ProcesaModos(Canal *, char *);
+void ProcesaModo(Cliente *, Canal *, char **, int);
 void p_kick_vl(Cliente *, Cliente *, Canal *, char *, va_list *);
 int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 
@@ -320,7 +322,7 @@ int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
 	ircvsprintf(buf, modos, vl);
 	va_end(vl);
 	copy = strdup(buf);
-	procesa_modos(cn, buf);
+	ProcesaModos(cn, buf);
 	EnviaAServidor("%s %s %s %s", cl->trio, TOK_MODE, cn->nombre, copy);
 	Free(copy);
 	return 0;
@@ -1060,7 +1062,7 @@ IRCFUNC(m_mode)
 	{
 		Canal *cn;
 		cn = InfoCanal(parv[1], !0);
-		procesa_modo(cl, cn, parv + 2, parc - 2);
+		ProcesaModo(cl, cn, parv + 2, parc - 2);
 		Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServer(cl) ? parc - 3 : parc - 2);
 	}
 	return 0;
@@ -1177,7 +1179,7 @@ IRCFUNC(m_burst)
 				params++;
 			if (strchr(parv[i], 'l'))
 				params++;
-			procesa_modo(cl, cn, parv + i, params);
+			ProcesaModo(cl, cn, parv + i, params);
 			Senyal4(SIGN_MODE, cl, cn, parv + i, params);
 		}
 		else if (*parv[i] == '%')
@@ -1231,7 +1233,7 @@ IRCFUNC(m_burst)
 					for (c = &mod[0]; *c; c++)
 						arr[j++] = p;
 					arr[j] = NULL;
-					procesa_modo(cl, cn, arr, j);
+					ProcesaModo(cl, cn, arr, j);
 					for (c = &mod[0], j = 1; *c; c++)
 						arr[j++] = al->nombre;
 					Senyal4(SIGN_MODE, cl, cn, arr, j);
@@ -1264,7 +1266,7 @@ IRCFUNC(m_tburst)
 	}
 	return 0;
 }
-void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
+void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 {
 	int modo = ADD, param = 1;
 	char *mods = parv[0];
@@ -1346,7 +1348,7 @@ void procesa_modo(Cliente *cl, Canal *cn, char *parv[], int parc)
 		mods++;
 	}
 }
-void procesa_modos(Canal *cn, char *modos)
+void ProcesaModos(Canal *cn, char *modos)
 {
 	char *arv[256];
 	int arc = 0;
@@ -1364,7 +1366,7 @@ void procesa_modos(Canal *cn, char *modos)
 		}
 		modos++;
 	} while(*modos != 0x0);
-	procesa_modo(&me, cn, arv, arc);
+	ProcesaModo(&me, cn, arv, arc);
 }
 void EntraCliente(Cliente *cl, char *canal)
 {

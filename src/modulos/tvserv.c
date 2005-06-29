@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.1 2005-06-29 21:14:05 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.2 2005-06-29 22:59:57 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -175,7 +175,7 @@ void TSSet(Conf *config, Modulo *mod)
 }
 char *TSQuitaTags(char *str, char *dest)
 {
-	char a = 0, *c = str;
+	char *c = str;
 	while (!BadPtr(c))
 	{
 		if (*c == '<')

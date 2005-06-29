@@ -172,6 +172,8 @@ mTab cmodos[] = {
 };
 
 void EntraCliente(Cliente *, char *);
+void ProcesaModos(Canal *, char *);
+void ProcesaModo(Cliente *, Canal *, char **, int);
 void p_kick_vl(Cliente *, Cliente *, Canal *, char *, va_list *);
 int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 
