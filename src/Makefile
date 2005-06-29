@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.14 2005-03-14 20:10:28 Trocotronic Exp $
+## $Id: Makefile,v 1.15 2005-06-29 22:33:18 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o main.o match.o md5.o modulos.o mysql.o \
 	parseconf.o protocolos.o smtp.o socks.o soporte.o sprintf_irc.o ssl.o zlib.o
@@ -9,7 +9,7 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
 MAKE = make $(MAKEARGS)
 INCLUDES = ../include/ircd.h ../include/md5.h \
-	../include/modulos.h ../include/protocolos.h ../include/mysql.h ../include/parseconf.h \
+	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
 	../include/sprintf_irc.h ../include/struct.h
 all: build
 build: ircd mods prots

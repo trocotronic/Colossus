@@ -1,15 +1,15 @@
 /*
- * $Id: struct.h,v 1.38 2005-06-29 21:13:46 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.39 2005-06-29 22:31:13 Trocotronic Exp $ 
  */
 
 #include "setup.h"
 #ifdef _WIN32
 #include <Winsock.h>
 #include <direct.h>
-#include "mysql.h"
+#include "win32/mysql.h"
 #include <sys/timeb.h>
 #include <process.h>
-#include "pthreadMS.h"
+#include "win32/pthread.h"
 #else
 #define DWORD int
 #include <mysql/mysql.h>

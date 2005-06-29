@@ -1,4 +1,4 @@
-## $Id: make,v 1.21 2005-06-29 21:13:40 Trocotronic Exp $
+## $Id: make,v 1.22 2005-06-29 22:31:12 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -63,7 +63,7 @@ OPENSSL_LIB=/LIBPATH:"$(OPENSSL_LIB_DIR)"
 !ENDIF
 !ENDIF
 
-CFLAGS=$(DBGCFLAG) /I ./INCLUDE /J $(ZLIB_INC) $(OPENSSL_INC) /Fosrc/ /nologo $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /D _WIN32 /c 
+CFLAGS=$(DBGCFLAG) /I ./INCLUDE /I ./INCLUDE/WIN32 /J $(ZLIB_INC) $(OPENSSL_INC) /Fosrc/ /nologo $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /D _WIN32 /c 
 LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib ./src/libmysql.lib $(ZLIBLIB) ./src/pthreadVC2.lib \
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) Dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:colossus.def /implib:colossus.lib
@@ -81,7 +81,7 @@ PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL SRC/PROTOCOLOS/REDHISP
 !ENDIF
 
 INCLUDES = ./include/ircd.h ./include/md5.h \
-	./include/modulos.h ./include/mysql.h ./include/parseconf.h ./include/protocolos.h \
+	./include/modulos.h ./include/win32/mysql.h ./include/parseconf.h ./include/protocolos.h \
 	./include/sprintf_irc.h ./include/struct.h ./include/ssl.h ./include/zip.h  \
 	./include/sistema.h make
 MODCFLAGS=$(MODDBGCFLAG) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /nologo /I ./INCLUDE $(ZLIB_INC) $(OPENSSL_INC) /J /D MODULE_COMPILE $(UDBFLAGS)
