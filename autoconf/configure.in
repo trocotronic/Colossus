@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(src/ircd.c)
+AC_INIT(src/main.c)
 if test $# = 0; then
 	echo "Deberia usar ./Config para proporcionarle algunos parametros de este programa."
 	echo "./configure --help para mas informacion sobre este programa"
@@ -323,5 +323,5 @@ IRCDLIBS="$IRCDLIBS -lresolv "
 ;;
 esac
 AC_SUBST(IRCDLIBS)
-AC_OUTPUT(Makefile src/modulos/Makefile servicios src/protocolos/Makefile)
-chmod 0700 servicios
+AC_OUTPUT(Makefile src/modulos/Makefile Colossus src/protocolos/Makefile)
+chmod 0700 Colossus

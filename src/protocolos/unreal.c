@@ -1855,7 +1855,7 @@ IRCFUNC(m_module)
 		ircsprintf(send, "Módulo %s.", ex->info->nombre);
 		if (ex->info->version)
 		{
-			ircsprintf(minbuf, " Versión %.1f.", ex->info->version);
+			ircsprintf(minbuf, " Versión %.2f.", ex->info->version);
 			strcat(send, minbuf);
 		}
 		if (ex->info->autor)
