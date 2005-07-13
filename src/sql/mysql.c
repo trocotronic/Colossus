@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.1 2005-07-13 14:06:37 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.2 2005-07-13 15:10:47 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -75,7 +75,9 @@ int Carga()
 SQLRes Query(const char *query)
 {
 	MYSQL_RES *resultado;
+#ifdef DEBUG
 	Debug(query);
+#endif
 	//pthread_mutex_lock(&mutex);
 	if (!mysql)
 		return NULL;

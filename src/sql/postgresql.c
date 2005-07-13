@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.1 2005-07-13 14:06:37 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.2 2005-07-13 15:10:47 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,6 +23,7 @@ int Carga()
 	reintenta:
 	if (!(postgres = PQsetdbLogin(conf_db->host, port, NULL, NULL, conf_db->bd, conf_db->login, conf_db->pass)) || PQstatus(postgres) != CONNECTION_OK)
 	{
+#ifdef _WIN32
 		char *msg = PQerrorMessage(postgres);
 		if (!strncmp("FATAL:  database \"", msg, 17))
 		{
@@ -41,6 +42,7 @@ int Carga()
 			goto reintenta;
 		}
 		else
+#endif
 			Alerta(FADV, "Ha sido imposible conectar PostGreSQL.\n[%s]\n", msg);
 		return -1;
 	}
@@ -98,7 +100,9 @@ int Carga()
 SQLRes Query(const char *query)
 {
 	PGresult *resultado;
+#ifdef DEBUG
 	Debug(query);
+#endif
 	if (!postgres)
 		return NULL;
 	if (!(resultado = PQexec(postgres, query)))
