@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.2 2005-07-13 15:10:47 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.3 2005-07-13 15:12:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -20,11 +20,13 @@ int Carga()
 	char port[6];
 	u_long version;
 	ircsprintf(port, "%i", conf_db->puerto ? conf_db->puerto : 5432);
+#ifdef _WIN32
 	reintenta:
+#endif
 	if (!(postgres = PQsetdbLogin(conf_db->host, port, NULL, NULL, conf_db->bd, conf_db->login, conf_db->pass)) || PQstatus(postgres) != CONNECTION_OK)
 	{
-#ifdef _WIN32
 		char *msg = PQerrorMessage(postgres);
+#ifdef _WIN32
 		if (!strncmp("FATAL:  database \"", msg, 17))
 		{
 			char *user;
