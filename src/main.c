@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.48 2005-07-13 14:45:53 Trocotronic Exp $ 
+ * $Id: main.c,v 1.49 2005-07-13 15:14:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -236,6 +236,18 @@ int main(int argc, char *argv[])
   #ifdef FORCE_CORE
 	struct rlimit corelim;
   #endif
+  	for (i = 0; logo[i] != 0; i++)
+		fprintf(stderr, "%c", logo[i]);
+	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
+  #ifdef UDB
+	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
+  #endif
+  #ifdef USA_ZLIB
+	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
+  #endif
+  #ifdef USA_SSL
+	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
+  #endif
 #endif
 	iniciado = time(0);
 	ListaSocks.abiertos = ListaSocks.tope = 0;
@@ -266,6 +278,15 @@ int main(int argc, char *argv[])
 	CargaModulos();
 	if (CargaSQL())
 		return 1;
+#ifndef _WIN32
+	if (sql->clientinfo)
+		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
+	if (sql->servinfo)
+		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
+	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
+	fprintf(stderr, "\t\t(c)2004-2005\n");
+	fprintf(stderr, "\n");
+#endif
 /*	if (EsArchivo("backup.sql"))
 	{
 #ifdef _WIN32		
@@ -328,27 +349,6 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, CierraColossus);
 	signal(SIGINT, Reinicia);
   #endif
-#endif
-#ifndef _WIN32
-	for (i = 0; logo[i] != 0; i++)
-		fprintf(stderr, "%c", logo[i]);
-	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
-#ifdef UDB
-	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
-#endif
-#ifdef USA_ZLIB
-	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
-#endif
-#ifdef USA_SSL
-	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
-#endif
-	if (sql->clientinfo)
-		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
-	if (sql->servinfo)
-		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
-	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
-	fprintf(stderr, "\t\t(c)2004-2005\n");
-	fprintf(stderr, "\n");
 #endif
 #ifndef _WIN32
 	if (fork())
