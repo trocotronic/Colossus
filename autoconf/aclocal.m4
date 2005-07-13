@@ -100,7 +100,7 @@ AC_MSG_CHECKING(para zlib)
 AC_DEFUN([CHECK_MYSQL],
 [
 AC_MSG_CHECKING(para mysql)
-MYSQLLIBS="-L/usr/lib/mysql -lmysqlclient ";
+MYSQLLIBS="-L/usr/lib/mysql -lmysqlclient";
 AC_SUBST(MYSQLLIBS)
 AC_MSG_RESULT(ok);
 ])
@@ -108,7 +108,7 @@ AC_DEFUN([CHECK_POSTGRE],
 [
 AC_MSG_CHECKING(para postgresql)
 POSTGREHEAD="-I$(pg_config --includedir)";
-POSTGRELIBS="-L$(pg_config --libdir)";
+POSTGRELIBS="-L$(pg_config --libdir) -lpq";
 AC_SUBST(POSTGREHEAD)
 AC_SUBST(POSTGRELIBS)
 AC_MSG_RESULT(include en $POSTGREHEAD y lib en $POSTGRELIBS);
