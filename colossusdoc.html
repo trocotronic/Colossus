@@ -5,14 +5,14 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.11 2005-06-29 21:13:40 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.12 2005-07-13 14:06:18 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.rallados.net" target="_blank"><font size="3">http://www.rallados.net</font></a><font size="3"><br>
-    <b>Versi&oacute;n actual:</b> 1.1<br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 10/03/2005</font><br>
+    <b>Versi&oacute;n actual:</b> 1.2<br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 08/07/2005</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
    &nbsp;<br>
@@ -56,25 +56,18 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <ul>
   <li><b>Versiones *NIX:</b>
   <ul>
-  <li>Linux 2.2.x
-  <li>Linux 2.4.x
-  <li>FreeBSD 4.6-STABLE
-  <li>FreeBSD 4.5-STABLE
-  <li>Solaris 2.x
+  <li>Linux (2.2.*, 2.4.*, 2.6.*)
+  <li>FreeBSD (4.*, 5.*)
+  <li>Solaris (9, 10)
   </ul>
   <li><b>Versiones Windows:</b>
   <ul> 
-  <li>WindowsXP Home
-  <li>WindowsXP Pro
-  <li>Windows 2000 Pro
-  <li>Windows 2000 Server
-  <li>Windows 2000 Advanced Server
-  <li>Windows 98
-  <li>Windows Me
+  <li>Windows 2000 (Pro, Server, Advanced Server)
+  <li>Windows XP (Home, Pro)
+  <li>Windows 2003 
   </ul></ul><br>
-    Para	instalar	el	programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix, 
+    Para instalar el programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix, 
     o C:\Colossus si usa Windows.
-
     <p>Una vez descomprimido, crea el archivo colossus.conf y config&uacute;relo a sus necesidades.</p>
     <p>&nbsp;</p>
   <p><b><font size="6"><a name="caracteristicas"></a>3.0 Caracter&iacute;sticas</font></b></p>
@@ -152,7 +145,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p>Cabe mencionar que si el valor contiene alg&uacute;n s&iacute;mbolo de comentario (#, // o /* */) el uso del entrecomillado es <b>obligatorio</b>, puesto que, de no hacerse as&iacute;, se tomar&iacute;a como un comentario y dar&iacute;a error.<br>
   As&iacute; pues, por ejemplo canal &quot;#canal&quot;; ser&iacute;a correcto; pero canal #canal; ser&iacute;a incorrecto. </p>
   <p>Adem&aacute;s, los comentarios pueden hacerse anteponiendo // para comentar toda esta l&iacute;nea o con /* */ para comentar varias l&iacute;neas.</p>
-  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una s&oacute;la l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, 
+  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una sola l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, 
   recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
   <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa.</p>
   <p>El archivo se compone de varios bloques:</p><br>
@@ -251,7 +244,6 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		intervalo n&ordm;-intervalo;
 	};
 	debug &quot;#canal&quot;; //opcional
-	red nombre-red; //opcional
 };</pre>
 <p>Este bloque configura los par&aacute;metros del programa. </p>
 <p><b>autobop</b><br>Indica que los robots obtienen el estado de @ al entrar en un canal. </p>
@@ -265,7 +257,6 @@ configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de super
 <p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b> 
 con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 <p><b>debug</b><br>Indica el canal en el que se hace debug de toda la red si est&aacute; presente. </p>
-<p><b>red</b><br>Fija el nombre de la red. En caso de obtenerlo v&iacute;a /VERSION, se usar&aacute; el valor obtenido y se omitir&aacute; el de esta configuraci&oacute;n. </p>
 <p>Ejemplo:</p>
 <pre>set {
 	autobop;
@@ -280,7 +271,6 @@ con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 		intervalo 5;
 	};
 	debug &quot;#debug&quot;;
-	red Rallados;
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="5"><a name="modulos"></a>8.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>

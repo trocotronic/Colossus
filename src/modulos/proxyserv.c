@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.14 2005-06-29 21:14:04 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.15 2005-07-13 14:06:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -17,7 +17,7 @@ ProxyServ proxyserv;
 BOTFUNC(PSHelp);
 BOTFUNC(PSHost);
 
-int PSSigMySQL();
+int PSSigSQL();
 #ifdef USA_THREADS
 void *PSLoop(void *);
 HANDLE proxythread;
@@ -85,7 +85,7 @@ int carga(Modulo *mod)
 int descarga()
 {
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
-	BorraSenyal(SIGN_MYSQL, PSSigMySQL);
+	BorraSenyal(SIGN_SQL, PSSigSQL);
 	BotUnset(proxyserv);
 	return 0;
 }
@@ -95,7 +95,7 @@ int PSTest(Conf *config, int *errores)
 	Conf *eval;
 	if (!(eval = BuscaEntrada(config, "puertos")))
 	{
-		Error("[%s:%s] No has especificado puertos a PSEscanear.]\n", config->archivo, config->item);
+		Error("[%s:%s] No has especificado puertos a escanear.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
@@ -155,7 +155,7 @@ void PSSet(Conf *config, Modulo *mod)
 			proxyserv.maxlist = atoi(config->seccion[i]->data);
 	}
 	InsertaSenyal(SIGN_POST_NICK, PSCmdNick);
-	InsertaSenyal(SIGN_MYSQL, PSSigMySQL);
+	InsertaSenyal(SIGN_SQL, PSSigSQL);
 	BotSet(proxyserv);
 }
 void PSEscanea(char *host)
@@ -224,31 +224,31 @@ BOTFUNC(PSHost)
 	}
 	if (*param[1] == '+')
 	{
-		MySQLQuery("INSERT INTO %s%s (item) values ('%s')", PREFIJO, XS_MYSQL, param[1] + 1);
+		SQLQuery("INSERT INTO %s%s (item) values ('%s')", PREFIJO, XS_SQL, param[1] + 1);
 		Responde(cl, CLI(proxyserv), "El host \00312%s\003 se ha añadido para omitir el escaneo de puertos.", param[1] + 1);
 	}
 	else if (*param[1] == '-')
 	{
-		MySQLBorra(XS_MYSQL, param[1] + 1);
+		SQLBorra(XS_SQL, param[1] + 1);
 		Responde(cl, CLI(proxyserv), "El host \00312%s\003 ha sido borrado de la lista de excepciones.");
 	}
 	else
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
+		SQLRes res;
+		SQLRow row;
 		char *rep;
 		int i;
 		rep = str_replace(param[1], '*', '%');
-		if (!(res = MySQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, XS_MYSQL, rep)))
+		if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, XS_SQL, rep)))
 		{
 			Responde(cl, CLI(proxyserv), XS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;
 		}
 		Responde(cl, CLI(proxyserv), "*** Hosts que coinciden con el patrón \00312%s\003 ***", param[1]);
-		for (i = 0; i < proxyserv.maxlist && (row = mysql_fetch_row(res)); i++)
+		for (i = 0; i < proxyserv.maxlist && (row = SQLFetchRow(res)); i++)
 			Responde(cl, CLI(proxyserv), "\00312%s", row[0]);
-		Responde(cl, CLI(proxyserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
-		mysql_free_result(res);
+		Responde(cl, CLI(proxyserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -262,7 +262,7 @@ int PSCmdNick(Cliente *cl, int nuevo)
 			host = strdup(cl->ip);
 		else
 			host = strdup(cl->host);
-		if (CogeCache(CACHE_PROXY, host, proxyserv.hmod->id) || MySQLCogeRegistro(XS_MYSQL, host, NULL))
+		if (CogeCache(CACHE_PROXY, host, proxyserv.hmod->id) || SQLCogeRegistro(XS_SQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
 		{
@@ -271,20 +271,20 @@ int PSCmdNick(Cliente *cl, int nuevo)
 		}
 		port_func(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
 		PSEscanea(host);
+		Debug("iee");
 	}
 	return 0;
 }
-int PSSigMySQL()
+int PSSigSQL()
 {
-	if (!MySQLEsTabla(XS_MYSQL))
+	if (!SQLEsTabla(XS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de excepción de hosts';", PREFIJO, XS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, XS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL "
+			");", PREFIJO, XS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, XS_SQL);
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 #ifdef USA_THREADS
 	if ((proxythread = _beginthread(PSLoop, 0, NULL)) < 0)
 		return 0;

@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.16 2005-06-29 21:14:00 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.17 2005-07-13 14:06:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -21,7 +21,7 @@ BOTFUNC(ISClones);
 BOTFUNC(ISOpts);
 #endif
 
-int ISSigMySQL	();
+int ISSigSQL	();
 #ifndef UDB
 int ISSigIdOk 		(Cliente *);
 char *ISMakeVirtualhost 	(Cliente *, int);
@@ -101,7 +101,7 @@ int descarga()
 	BorraSenyal(NS_SIGN_IDOK, ISSigIdOk);
 	BorraSenyal(SIGN_POST_NICK, ISSigNick);
 #endif
-	BorraSenyal(SIGN_MYSQL, ISSigMySQL);
+	BorraSenyal(SIGN_SQL, ISSigSQL);
 	BorraSenyal(NS_SIGN_DROP, ISSigDrop);
 	BorraSenyal(SIGN_EOS, ISSigEOS);
 	DetieneProceso(ISProcIps);
@@ -151,7 +151,7 @@ void ISSet(Conf *config, Modulo *mod)
 	InsertaSenyal(NS_SIGN_IDOK, ISSigIdOk);
 	InsertaSenyal(SIGN_POST_NICK, ISSigNick);
 #endif
-	InsertaSenyal(SIGN_MYSQL, ISSigMySQL);
+	InsertaSenyal(SIGN_SQL, ISSigSQL);
 	InsertaSenyal(NS_SIGN_DROP, ISSigDrop);
 	InsertaSenyal(SIGN_EOS, ISSigEOS);
 	IniciaProceso(ISProcIps);
@@ -281,9 +281,9 @@ BOTFUNC(ISSetipv)
 		} 
 		else
 			ipv = param[2];
-		MySQLInserta(IS_MYSQL, param[1], "ip", ipv);
+		SQLInserta(IS_SQL, param[1], "ip", ipv);
 		if (params == 4)
-			MySQLInserta(IS_MYSQL, param[1], "caduca", "%lu", time(0) + atol(param[3]) * 8600);
+			SQLInserta(IS_SQL, param[1], "caduca", "%lu", time(0) + atol(param[3]) * 8600);
 #ifdef UDB
 		PropagaRegistro("N::%s::V %s", param[1], ipv);
 #endif
@@ -294,7 +294,7 @@ BOTFUNC(ISSetipv)
 	else if (*param[1] == '-')
 	{
 		param[1]++;
-		MySQLBorra(IS_MYSQL, param[1]);
+		SQLBorra(IS_SQL, param[1]);
 #ifdef UDB
 		PropagaRegistro("N::%s::V", param[1]);
 #endif
@@ -389,7 +389,7 @@ BOTFUNC(ISClones)
 #ifdef UDB
 		PropagaRegistro("I::%s::C %c%s", param[1], CHAR_NUM, param[2]);
 #else
-		MySQLInserta(IS_CLONS, param[1], "clones", param[2]);
+		SQLInserta(IS_CLONS, param[1], "clones", param[2]);
 #endif
 		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 se ha añadido con \00312%s\003 clones.", param[1], param[2]);
 	}
@@ -399,7 +399,7 @@ BOTFUNC(ISClones)
 #ifdef UDB
 		PropagaRegistro("I::%s::C", param[1]);
 #else
-		MySQLBorra(IS_CLONS, param[1]);
+		SQLBorra(IS_CLONS, param[1]);
 #endif
 		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
 	}
@@ -425,7 +425,7 @@ int ISSigNick(Cliente *cl, int nuevo)
 			if (!strcmp(cl->host, aux->host))
 				i++;
 		}
-		if ((cc = MySQLCogeRegistro(IS_CLONS, cl->host, "clones")))
+		if ((cc = SQLCogeRegistro(IS_CLONS, cl->host, "clones")))
 			clons = atoi(cc);
 		if (i > clons)
 			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(ipserv), "Demasiados clones.");
@@ -445,30 +445,28 @@ int ISSigIdOk(Cliente *al)
 	return 0;
 }
 #endif
-int ISSigMySQL()
+int ISSigSQL()
 {
-	if (!MySQLEsTabla(IS_MYSQL))
+	if (!SQLEsTabla(IS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`ip` varchar(255) default NULL, "
-  			"`caduca` int(11) NOT NULL default '0', "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de ips personalizadas';", PREFIJO, IS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"ip varchar(255) default NULL, "
+  			"caduca int4 default '0' "
+			");", PREFIJO, IS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_SQL);
 	}
 #ifndef UDB
-	if (!MySQLEsTabla(IS_CLONS))
+	if (!SQLEsTabla(IS_CLONS))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`clones` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de clones';", PREFIJO, IS_CLONS))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"clones varchar(255) default NULL "
+			");", PREFIJO, IS_CLONS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
 	}
 #endif
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	return 0;
 }
 int ISCompruebaCifrado()
@@ -510,7 +508,7 @@ int ISCompruebaCifrado()
 }
 int ISSigDrop(char *nick)
 {
-	MySQLBorra(IS_MYSQL, nick);
+	SQLBorra(IS_SQL, nick);
 	return 0;
 }
 int ISSigEOS()
@@ -565,7 +563,7 @@ char *ISMakeVirtualhost(Cliente *al, int mostrar)
 	sufix = ipserv.sufijo ? ipserv.sufijo : "virtual";
 	if (IsId(al))
 	{
-		if (!(vip = MySQLCogeRegistro(IS_MYSQL, al->nombre, "ip")))
+		if (!(vip = SQLCogeRegistro(IS_SQL, al->nombre, "ip")))
 		{
 			buf[0] = '\0';
 			ircsprintf(buf, "%s.%s", cifrada, sufix);
@@ -592,11 +590,11 @@ char *ISMakeVirtualhost(Cliente *al, int mostrar)
 #endif
 int ISProcIps(Proc *proc)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = MySQLQuery("SELECT item from %s%s where caduca != '0' && caduca < %i LIMIT %i,30", PREFIJO, IS_MYSQL, time(0), proc->proc)) || !mysql_num_rows(res))
+		if (!(res = SQLQuery("SELECT item from %s%s where (caduca != '0' AND caduca < %i) OFFSET %i LIMIT 30", PREFIJO, IS_SQL, time(0), proc->proc)) || !SQLNumRows(res))
 		{
 			if (proc->time) /* no es la primera llamada de ese proc */
 				ISCompruebaCifrado();
@@ -604,15 +602,15 @@ int ISProcIps(Proc *proc)
 			proc->time = time(0);
 			return 1;
 		}
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
-			MySQLBorra(IS_MYSQL, row[0]);
+			SQLBorra(IS_SQL, row[0]);
 #ifdef UDB
 			PropagaRegistro("N::%s::V", row[0]);
 #endif
 		}
 		proc->proc += 30;
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	return 0;
 }

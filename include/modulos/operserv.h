@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.h,v 1.4 2005-05-18 18:51:03 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.5 2005-07-13 14:06:25 Trocotronic Exp $ 
  */
 
 #define OS_OPTS_AOP 0x1
@@ -20,7 +20,7 @@ extern OperServ operserv;
 #define OS_ERR_FORB ERR_FORB
 
 #ifndef UDB
-#define OS_MYSQL "opers"
+#define OS_SQL "opers"
 #endif
 #define OS_NOTICIAS "noticias"
 #define OS_AKILL "akill"

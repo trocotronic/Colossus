@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.22 2005-06-29 21:14:00 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.23 2005-07-13 14:06:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -45,7 +45,7 @@ BOTFUNC(CSDemigrar);
 BOTFUNC(CSProteger);
 #endif
 
-int CSSigMySQL	();
+int CSSigSQL	();
 int CSSigEOS	();
 int CSSigSynch	();
 int CSSigPreNick (Cliente *, char *);
@@ -179,7 +179,7 @@ int descarga()
 	BorraSenyal(SIGN_TOPIC, CSCmdTopic);
 	BorraSenyal(SIGN_JOIN, CSCmdJoin);
 	BorraSenyal(SIGN_KICK, CSCmdKick);
-	BorraSenyal(SIGN_MYSQL, CSSigMySQL);
+	BorraSenyal(SIGN_SQL, CSSigSQL);
 	BorraSenyal(NS_SIGN_DROP, CSDropanick);
 	BorraSenyal(SIGN_EOS, CSSigEOS);
 	BorraSenyal(SIGN_SYNCH, CSSigSynch);
@@ -253,7 +253,7 @@ void CSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_TOPIC, CSCmdTopic);
 	InsertaSenyal(SIGN_JOIN, CSCmdJoin);
 	InsertaSenyal(SIGN_KICK, CSCmdKick);
-	InsertaSenyal(SIGN_MYSQL, CSSigMySQL);
+	InsertaSenyal(SIGN_SQL, CSSigSQL);
 	InsertaSenyal(NS_SIGN_DROP, CSDropanick);
 	InsertaSenyal(SIGN_EOS, CSSigEOS);
 	InsertaSenyal(SIGN_SYNCH, CSSigSynch);
@@ -267,7 +267,7 @@ int CSEsFundador(Cliente *al, char *canal)
 	char *fun;
 	if (!al)
 		return 0;
-	if (!(fun = MySQLCogeRegistro(CS_MYSQL, canal, "founder")))
+	if (!(fun = SQLCogeRegistro(CS_SQL, canal, "founder")))
 		return 0;
 	if (!strcasecmp(fun, al->nombre))
 		return 1;
@@ -299,7 +299,7 @@ u_long CSBorraAcceso(char *usuario, char *canal)
 {
 	char *registros, *tok;
 	u_long prev = 0L;
-	if ((registros = MySQLCogeRegistro(CS_MYSQL, canal, "regs")))
+	if ((registros = SQLCogeRegistro(CS_SQL, canal, "regs")))
 	{
 		buf[0] = '\0';
 		for (tok = strtok(registros, ":"); tok; tok = strtok(NULL, ":"))
@@ -315,14 +315,14 @@ u_long CSBorraAcceso(char *usuario, char *canal)
 			strcat(buf, " ");
 		}
 		CSBorraRegistro(usuario, canal);
-		MySQLInserta(CS_MYSQL, canal, "regs", buf);
+		SQLInserta(CS_SQL, canal, "regs", buf);
 	}
 	return prev;
 }
 void CSBorraAkickDb(char *nick, char *canal)
 {
 	char *registros, *tok;
-	if ((registros = MySQLCogeRegistro(CS_MYSQL, canal, "akick")))
+	if ((registros = SQLCogeRegistro(CS_SQL, canal, "akick")))
 	{
 		buf[0] = '\0';
 		for (tok = strtok(registros, "\1"); tok; tok = strtok(NULL, "\1"))
@@ -341,7 +341,7 @@ void CSBorraAkickDb(char *nick, char *canal)
 			strcat(buf, "\t");
 		}
 		CSBorraAkick(nick, canal);
-		MySQLInserta(CS_MYSQL, canal, "akick", buf);
+		SQLInserta(CS_SQL, canal, "akick", buf);
 	}
 }
 void CSInsertaAkickDb(char *nick, char *canal, char *emisor, char *motivo)
@@ -359,7 +359,7 @@ void CSInsertaAkickDb(char *nick, char *canal, char *emisor, char *motivo)
 		strcat(buf, tmp);
 		Free(tmp);
 	}
-	MySQLInserta(CS_MYSQL, canal, "akick", buf);
+	SQLInserta(CS_SQL, canal, "akick", buf);
 }
 int CSEsAkick(char *nick, char *canal)
 {
@@ -392,13 +392,13 @@ int CSEsRegistro(char *nick, char *canal)
 #ifdef UDB
 void CSPropagaCanal(char *canal)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *modos, *c;
-	res = MySQLQuery("SELECT founder,modos,topic from %s%s where item='%s'", PREFIJO, CS_MYSQL, canal);
+	res = SQLQuery("SELECT founder,modos,topic from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(canal));
 	if (!res)
 		return;
-	row = mysql_fetch_row(res);
+	row = SQLFetchRow(res);
 	modos = row[1];
 	if ((c = strchr(modos, '+')))
 		modos = c+1;
@@ -407,7 +407,7 @@ void CSPropagaCanal(char *canal)
 	PropagaRegistro("C::%s::F %s", canal, row[0]);
 	PropagaRegistro("C::%s::M %s", canal, modos);
 	PropagaRegistro("C::%s::T %s", canal, row[2]);
-	mysql_free_result(res);
+	SQLFreeRes(res);
 }
 #endif
 /* hace un empaquetamiento de los users de una determinada lista. No olvidar hacer Free() */
@@ -954,7 +954,7 @@ BOTFUNC(CSDrop)
 		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	if (!IsAdmin(cl) && (atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts")) & CS_OPT_NODROP))
+	if (!IsAdmin(cl) && (atoi(SQLCogeRegistro(CS_SQL, param[1], "opts")) & CS_OPT_NODROP))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no se puede dropear.");
 		return 1;
@@ -989,7 +989,7 @@ BOTFUNC(CSIdentify)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}	
-	if (strcmp(MySQLCogeRegistro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2])))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
@@ -1052,8 +1052,8 @@ BOTFUNC(CSDeauth)
 }
 BOTFUNC(CSInfo)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	time_t reg;
 	int opts;
 	char *forb, *susp, *modos;
@@ -1072,8 +1072,8 @@ BOTFUNC(CSInfo)
 		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	res = MySQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where item='%s'", PREFIJO, CS_MYSQL, param[1]);
-	row = mysql_fetch_row(res);
+	res = SQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(param[1]));
+	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
 	Responde(cl, CLI(chanserv), "*** Información del canal \00312%s\003 ***", param[1]);
 	if ((susp = IsChanSuspend(param[1])))
@@ -1104,7 +1104,7 @@ BOTFUNC(CSInfo)
 		Responde(cl, CLI(chanserv), "Canal \2NO DROPABLE");
 	reg = (time_t)atol(row[10]);
 	Responde(cl, CLI(chanserv), "Último acceso: \00312%s", Fecha(&reg));
-	mysql_free_result(res);
+	SQLFreeRes(res);
 	return 0;
 }
 BOTFUNC(CSInvite)
@@ -1173,7 +1173,7 @@ BOTFUNC(CSModos)
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
+	opts = atoi(SQLCogeRegistro(CS_SQL, param[1], "opts"));
 	if (!strcasecmp(param[0], "ADMIN") && MODE_ADM)
 	{
 		for (i = 2; i < params; i++)
@@ -1345,13 +1345,13 @@ BOTFUNC(CSClear)
 			Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 			return 1;
 		}
-		regs = MySQLCogeRegistro(CS_MYSQL, param[1], "regs");
+		regs = SQLCogeRegistro(CS_SQL, param[1], "regs");
 		for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
 		{
 			CSBorraRegistro(tok, param[1]);
 			strtok(NULL, " ");
 		}
-		MySQLInserta(CS_MYSQL, param[1], "regs", NULL);
+		SQLInserta(CS_SQL, param[1], "regs", NULL);
 		Responde(cl, CLI(chanserv), "Lista de accesos eliminada.");
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
@@ -1447,7 +1447,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal DESC descripción");
 			return 1;
 		}
-		MySQLInserta(CS_MYSQL, param[1], "descripcion", Unifica(param, params, 3, -1));
+		SQLInserta(CS_SQL, param[1], "descripcion", Unifica(param, params, 3, -1));
 		Responde(cl, CLI(chanserv), "Descripción cambiada.");
 	}
 	else if (!strcasecmp(param[2], "URL"))
@@ -1456,7 +1456,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), "URL cambiada.");
 		else
 			Responde(cl, CLI(chanserv), "URL desactivada.");
-		MySQLInserta(CS_MYSQL, param[1], "url", params == 4 ? param[3] : NULL);
+		SQLInserta(CS_SQL, param[1], "url", params == 4 ? param[3] : NULL);
 	}
 	else if (!strcasecmp(param[2], "EMAIL"))
 	{
@@ -1464,7 +1464,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), "EMAIL cambiado.");
 		else
 			Responde(cl, CLI(chanserv), "EMAIL desactivado.");
-		MySQLInserta(CS_MYSQL, param[1], "email", params == 4 ? param[3] : NULL);
+		SQLInserta(CS_SQL, param[1], "email", params == 4 ? param[3] : NULL);
 	}
 	else if (!strcasecmp(param[2], "TOPIC"))
 	{
@@ -1479,8 +1479,8 @@ BOTFUNC(CSOpts)
 		}
 		else
 			Responde(cl, CLI(chanserv), "TOPIC desactivado.");
-		MySQLInserta(CS_MYSQL, param[1], "topic", topic);
-		MySQLInserta(CS_MYSQL, param[1], "ntopic", params > 3 ? parv[0] : NULL);
+		SQLInserta(CS_SQL, param[1], "topic", topic);
+		SQLInserta(CS_SQL, param[1], "ntopic", params > 3 ? parv[0] : NULL);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
 		{
@@ -1499,7 +1499,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), "Mensaje de bienvenida cambiado.");
 		else
 			Responde(cl, CLI(chanserv), "Mensaje de bienvenida desactivado.");
-		MySQLInserta(CS_MYSQL, param[1], "entry", entry);
+		SQLInserta(CS_SQL, param[1], "entry", entry);
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
@@ -1532,7 +1532,7 @@ BOTFUNC(CSOpts)
 		}
 		else
 			Responde(cl, CLI(chanserv), "Modos eliminados.");
-		MySQLInserta(CS_MYSQL, param[1], "modos", modos);
+		SQLInserta(CS_SQL, param[1], "modos", modos);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
 		{
@@ -1565,7 +1565,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal PASS contraseña");
 			return 1;
 		}
-		MySQLInserta(CS_MYSQL, param[1], "pass", MDString(param[3]));
+		SQLInserta(CS_SQL, param[1], "pass", MDString(param[3]));
 		Responde(cl, CLI(chanserv), "Contraseña cambiada.");
 	}
 	else if (!strcasecmp(param[2], "FUNDADOR"))
@@ -1585,7 +1585,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
-		MySQLInserta(CS_MYSQL, param[1], "founder", param[3]);
+		SQLInserta(CS_SQL, param[1], "founder", param[3]);
 #ifdef UDB
 		if (IsChanUDB(param[1]))
 			PropagaRegistro("C::%s::F %s", param[1], param[3]);
@@ -1595,7 +1595,7 @@ BOTFUNC(CSOpts)
 	else if (!strcasecmp(param[2], "OPCIONES"))
 	{
 		char f = ADD, *modos = param[3], buenos[128];
-		int opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
+		int opts = atoi(SQLCogeRegistro(CS_SQL, param[1], "opts"));
 		buenos[0] = 0;
 		if (params < 4)
 		{
@@ -1678,7 +1678,7 @@ BOTFUNC(CSOpts)
 			}
 			modos++;
 		}
-		MySQLInserta(CS_MYSQL, param[1], "opts", "%i", opts);
+		SQLInserta(CS_SQL, param[1], "opts", "%i", opts);
 		Responde(cl, CLI(chanserv), "Opciones cambiadas a \00312%s\003.", buenos);
 	}
 	else
@@ -1798,7 +1798,7 @@ BOTFUNC(CSAccess)
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		registros = MySQLCogeRegistro(CS_MYSQL, param[1], "regs");
+		registros = SQLCogeRegistro(CS_SQL, param[1], "regs");
 		if (!registros)
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún acceso.");
@@ -1865,9 +1865,9 @@ BOTFUNC(CSAccess)
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick ya no acepta más registros.");
 					return 1;
 				}
-				registros = MySQLCogeRegistro(CS_MYSQL, param[1], "regs");
+				registros = SQLCogeRegistro(CS_SQL, param[1], "regs");
 				ircsprintf(buf, "%s:%lu", param[2], prev);
-				MySQLInserta(CS_MYSQL, param[1], "regs", "%s%s", registros ? registros : "", buf);
+				SQLInserta(CS_SQL, param[1], "regs", "%s%s", registros ? registros : "", buf);
 				CSInsertaRegistro(param[2], param[1], prev);
 				Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
 				if (IsChanDebug(param[1]))
@@ -1906,8 +1906,8 @@ BOTFUNC(CSAccess)
 BOTFUNC(CSList)
 {
 	char *rep;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	int i;
 	if (params < 2)
 	{
@@ -1927,17 +1927,17 @@ BOTFUNC(CSList)
 			{
 				case 'r':
 					rep = str_replace(param[2], '*', '%');
-					res = MySQLQuery("SELECT item,descripcion from %s%s where item LIKE '%s' AND registro='0'", PREFIJO, CS_MYSQL, rep);
+					res = SQLQuery("SELECT item,descripcion from %s%s where LOWER(item) LIKE '%s' AND registro='0'", PREFIJO, CS_SQL, strtolower(rep));
 					if (!res)
 					{
 						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
 						return 1;
 					}
 					Responde(cl, CLI(chanserv), "*** Canales en petición que coinciden con el patrón \00312%s\003 ***", param[1]);
-					for (i = 0; i < chanserv.maxlist && (row = mysql_fetch_row(res)); i++)
+					for (i = 0; i < chanserv.maxlist && (row = SQLFetchRow(res)); i++)
 						Responde(cl, CLI(chanserv), "\00312%s\003 Desc:\00312%s", row[0], row[1]);
-					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
-					mysql_free_result(res);
+					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+					SQLFreeRes(res);
 					break;
 				default:
 					Responde(cl, CLI(chanserv), CS_ERR_SNTX, "Parámetro no válido.");
@@ -1953,22 +1953,22 @@ BOTFUNC(CSList)
 			return 1;
 		}
 		rep = str_replace(param[1], '*', '%');
-		res = MySQLQuery("SELECT item from %s%s where item LIKE '%s' AND registro!='0'", PREFIJO, CS_MYSQL, rep);
+		res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s' AND registro!='0'", PREFIJO, CS_SQL, strtolower(rep));
 		if (!res)
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
 			return 1;
 		}
 		Responde(cl, CLI(chanserv), "*** Canales que coinciden con el patrón \00312%s\003 ***", param[1]);
-		for (i = 0; i < chanserv.maxlist && (row = mysql_fetch_row(res)); i++)
+		for (i = 0; i < chanserv.maxlist && (row = SQLFetchRow(res)); i++)
 		{
-			if (IsOper(cl) || !(atoi(MySQLCogeRegistro(CS_MYSQL, row[0], "opts")) & CS_OPT_HIDE))
+			if (IsOper(cl) || !(atoi(SQLCogeRegistro(CS_SQL, row[0], "opts")) & CS_OPT_HIDE))
 				Responde(cl, CLI(chanserv), "\00312%s", row[0]);
 			else
 				i--;
 		}
-		Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
-		mysql_free_result(res);
+		Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -2014,7 +2014,7 @@ BOTFUNC(CSJb)
 		}
 	}
 	if (IsChanReg(param[1]))
-		MySQLInserta(CS_MYSQL, param[1], "bjoins", "%i", bots);
+		SQLInserta(CS_SQL, param[1], "bjoins", "%i", bots);
 	Responde(cl, CLI(chanserv), "Bots cambiados.");
 	return 0;
 }
@@ -2033,9 +2033,9 @@ BOTFUNC(CSSendpass)
 		return 1;
 	}
 	pass = AleatorioEx("******-******");
-	founder = strdup(MySQLCogeRegistro(CS_MYSQL, param[1], "founder"));
-	MySQLInserta(CS_MYSQL, param[1], "pass", MDString(pass));
-	Email(MySQLCogeRegistro(NS_MYSQL, founder, "email"), "Reenvío de la contraseña", "Debido a la pérdida de la contraseña de tu canal, se te ha generado otra clave totalmetne segura.\r\n"
+	founder = strdup(SQLCogeRegistro(CS_SQL, param[1], "founder"));
+	SQLInserta(CS_SQL, param[1], "pass", MDString(pass));
+	Email(SQLCogeRegistro(NS_SQL, founder, "email"), "Reenvío de la contraseña", "Debido a la pérdida de la contraseña de tu canal, se te ha generado otra clave totalmetne segura.\r\n"
 		"A partir de ahora, la clave de tu canal es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", pass, chanserv.hmod->nick, conf_set->red);
 	Responde(cl, CLI(chanserv), "Se generado y enviado otra contraseña al email del founder de \00312%s\003.", param[1]);
 	Free(founder);
@@ -2058,7 +2058,7 @@ BOTFUNC(CSSuspender)
 #ifdef UDB
 	PropagaRegistro("C::%s::S %s", param[1], motivo);
 #else
-	MySQLInserta(CS_MYSQL, param[1], "suspend", motivo);
+	SQLInserta(CS_SQL, param[1], "suspend", motivo);
 #endif
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido suspendido.", param[1]);
 	return 0;
@@ -2083,7 +2083,7 @@ BOTFUNC(CSLiberar)
 #ifdef UDB
 	PropagaRegistro("C::%s::S", param[1]);
 #else
-	MySQLInserta(CS_MYSQL, param[1], "suspend", "");
+	SQLInserta(CS_SQL, param[1], "suspend", "");
 #endif
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su suspenso.", param[1]);
 	return 0;
@@ -2110,7 +2110,7 @@ BOTFUNC(CSForbid)
 #ifdef UDB
 	PropagaRegistro("C::%s::B %s", param[1], motivo);
 #else
-	MySQLInserta(CS_FORBIDS, param[1], "motivo", motivo);
+	SQLInserta(CS_FORBIDS, param[1], "motivo", motivo);
 #endif
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido prohibido.", param[1]);
 	return 0;
@@ -2130,7 +2130,7 @@ BOTFUNC(CSUnforbid)
 #ifdef UDB
 	PropagaRegistro("C::%s::B", param[1]);
 #else
-	MySQLBorra(CS_FORBIDS, param[1]);
+	SQLBorra(CS_FORBIDS, param[1]);
 #endif
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su prohibición.", param[1]);
 	return 0;
@@ -2201,11 +2201,11 @@ BOTFUNC(CSRegister)
 			return 1;
 		}
 		goto registrar;
-		MySQLInserta(CS_MYSQL, param[1], "registro", "%i", time(0));
+		SQLInserta(CS_SQL, param[1], "registro", "%i", time(0));
 #ifdef UDB
 		if (chanserv.opts & CS_AUTOMIGRAR)
 		{
-			MySQLInserta(CS_MYSQL, param[1], "opts", "%i", CS_OPT_UDB);
+			SQLInserta(CS_SQL, param[1], "opts", "%i", CS_OPT_UDB);
 			CSPropagaCanal(param[1]);
 		}
 #endif
@@ -2213,8 +2213,8 @@ BOTFUNC(CSRegister)
 	}
 	else if (params >= 4) /* peticion de registro */
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
+		SQLRes res;
+		SQLRow row;
 		int i;
 		char *desc;
 		if (IsChanReg(param[1]))
@@ -2224,17 +2224,17 @@ BOTFUNC(CSRegister)
 		}
 		if (!IsOper(cl))
 		{
-			if ((atol(MySQLCogeRegistro(NS_MYSQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
+			if ((atol(SQLCogeRegistro(NS_SQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
 			{
 				char buf[512];
 				ircsprintf(buf, "Tu nick debe tener una antigüedad de como mínimo %i días.", chanserv.antig);
 				Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 				return 1;
 			}
-			if ((res = MySQLQuery("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, parv[0])))
+			if ((res = SQLQuery("SELECT nick from %s%s where LOWER(nick)='%s'", PREFIJO, CS_TOK, strtolower(parv[0]))))
 			{
 				char buf[512];
-				mysql_free_result(res);
+				SQLFreeRes(res);
 				ircsprintf(buf, "Ya has efectuado alguna operación referente a tokens. Debes esperar %i horas antes de realizar otra.", chanserv.vigencia);
 				Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 				return 1;
@@ -2258,14 +2258,14 @@ BOTFUNC(CSRegister)
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
-				if (!(res = MySQLQuery("SELECT item,nick,hora from %s%s where item='%s'", PREFIJO, CS_TOK, tok)))
+				if (!(res = SQLQuery("SELECT item,nick,hora from %s%s where LOWER(item)='%s'", PREFIJO, CS_TOK, strtolower(tok))))
 				{
 					ircsprintf(buf, "El token %s no es válido o ha caducado.", tok);
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
-				row = mysql_fetch_row(res);
-				mysql_free_result(res);
+				row = SQLFetchRow(res);
+				SQLFreeRes(res);
 				if (BadPtr(row[1]) || BadPtr(row[2]))
 				{
 					ircsprintf(buf, "Existe un error en el token %s. Posiblemente haya sido robado.", tok);
@@ -2285,19 +2285,19 @@ BOTFUNC(CSRegister)
 		}
 		else
 			desc = Unifica(param, params, 3, -1);
-		MySQLInserta(CS_MYSQL, param[1], "founder", parv[0]);
-		MySQLInserta(CS_MYSQL, param[1], "pass", MDString(param[2]));
-		MySQLInserta(CS_MYSQL, param[1], "descripcion", desc);
+		SQLInserta(CS_SQL, param[1], "founder", parv[0]);
+		SQLInserta(CS_SQL, param[1], "pass", MDString(param[2]));
+		SQLInserta(CS_SQL, param[1], "descripcion", desc);
 		if (IsOper(cl))
 		{
 			Canal *cn;
 			registrar:
 			cn = BuscaCanal(param[1], NULL);
-			MySQLInserta(CS_MYSQL, param[1], "registro", "%i", time(0));
+			SQLInserta(CS_SQL, param[1], "registro", "%i", time(0));
 #ifdef UDB
 			if (chanserv.opts & CS_AUTOMIGRAR)
 			{
-				MySQLInserta(CS_MYSQL, param[1], "opts", "%i", CS_OPT_UDB);
+				SQLInserta(CS_SQL, param[1], "opts", "%i", CS_OPT_UDB);
 				CSPropagaCanal(param[1]);
 			}
 			else
@@ -2323,41 +2323,41 @@ BOTFUNC(CSRegister)
 }
 BOTFUNC(CSToken)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	int libres = 25, i; /* siempre tendremos 25 tokens libres */
-	if ((atol(MySQLCogeRegistro(NS_MYSQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
+	if ((atol(SQLCogeRegistro(NS_SQL, parv[0], "reg")) + 86400 * chanserv.antig) > time(0))
 	{
 		char buf[512];
 		ircsprintf(buf, "Tu nick debe tener una antigüedad de como mínimo %i días.", chanserv.antig);
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}
-	if ((res = MySQLQuery("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, parv[0])))
+	if ((res = SQLQuery("SELECT nick from %s%s where LOWER(nick)='%s'", PREFIJO, CS_TOK, strtolower(parv[0]))))
 	{
 		char buf[512];
-		mysql_free_result(res);
+		SQLFreeRes(res);
 		ircsprintf(buf, "Ya has efectuado alguna operación referente a tokens. Debes esperar %i horas antes de realizar otra.", chanserv.vigencia);
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}
-	res = MySQLQuery("SELECT * from %s%s where hora='0'", PREFIJO, CS_TOK);
+	res = SQLQuery("SELECT * from %s%s where hora='0'", PREFIJO, CS_TOK);
 	if (res)
-		libres = 25 - (int)mysql_num_rows(res); /* ya que sera ocupada */
+		libres = 25 - (int)SQLNumRows(res); /* ya que sera ocupada */
 	for (i = 0; i < libres; i++)
 	{
 		char buf[512];
 		ircsprintf(buf, "%lu", rand());
-		MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, CS_TOK, CifraNick(buf, buf));
+		SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, CS_TOK, CifraNick(buf, buf));
 	}
 	if (res)
-		mysql_free_result(res);
-	res = MySQLQuery("SELECT item from %s%s where hora='0'", PREFIJO, CS_TOK);
-	row = mysql_fetch_row(res);
-	MySQLInserta(CS_TOK, row[0], "hora", "%i", time(0));
-	MySQLInserta(CS_TOK, row[0], "nick", parv[0]);
+		SQLFreeRes(res);
+	res = SQLQuery("SELECT item from %s%s where hora='0'", PREFIJO, CS_TOK);
+	row = SQLFetchRow(res);
+	SQLInserta(CS_TOK, row[0], "hora", "%i", time(0));
+	SQLInserta(CS_TOK, row[0], "nick", parv[0]);
 	Responde(cl, CLI(chanserv), "Tu token es \00312%s\003. Guarda este token ya que será necesario para futuras operaciones y no podrás pedir otro hasta dentro de unas horas.", row[0]);
-	mysql_free_result(res);
+	SQLFreeRes(res);
 	return 0;
 }
 #ifdef UDB
@@ -2384,12 +2384,12 @@ BOTFUNC(CSMigrar)
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (strcmp(MySQLCogeRegistro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2])))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
+	opts = atoi(SQLCogeRegistro(CS_SQL, param[1], "opts"));
 	if (opts & CS_OPT_UDB)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está migrado.");
@@ -2398,7 +2398,7 @@ BOTFUNC(CSMigrar)
 	CSPropagaCanal(param[1]);
 	Responde(cl, CLI(chanserv), "Migración realizada.");
 	opts |= CS_OPT_UDB;
-	MySQLInserta(CS_MYSQL, param[1], "opts", "%i", opts);
+	SQLInserta(CS_SQL, param[1], "opts", "%i", opts);
 	return 0;
 }
 BOTFUNC(CSDemigrar)
@@ -2424,12 +2424,12 @@ BOTFUNC(CSDemigrar)
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (strcmp(MySQLCogeRegistro(CS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2])))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(MySQLCogeRegistro(CS_MYSQL, param[1], "opts"));
+	opts = atoi(SQLCogeRegistro(CS_SQL, param[1], "opts"));
 	if (!(opts & CS_OPT_UDB))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está migrado.");
@@ -2438,7 +2438,7 @@ BOTFUNC(CSDemigrar)
 	PropagaRegistro("C::%s", param[1]);
 	Responde(cl, CLI(chanserv), "Demigración realizada.");
 	opts &= ~CS_OPT_UDB;
-	MySQLInserta(CS_MYSQL, param[1], "opts", "%i", opts);
+	SQLInserta(CS_SQL, param[1], "opts", "%i", opts);
 	return 0;
 }
 BOTFUNC(CSProteger)
@@ -2498,8 +2498,8 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 	{
 		int opts;
 		char *modlock, *k;
-		opts = atoi(MySQLCogeRegistro(CS_MYSQL, cn->nombre, "opts"));
-		modlock = MySQLCogeRegistro(CS_MYSQL, cn->nombre, "modos");
+		opts = atoi(SQLCogeRegistro(CS_SQL, cn->nombre, "opts"));
+		modlock = SQLCogeRegistro(CS_SQL, cn->nombre, "modos");
 		if (opts & CS_OPT_RMOD && modlock)
 		{
 			strcat(modebuf, strtok(modlock, " "));
@@ -2587,8 +2587,8 @@ int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 	if (IsChanReg(cn->nombre))
 	{
 		char *topic;
-		opts = atoi(MySQLCogeRegistro(CS_MYSQL, cn->nombre, "opts"));
-		topic = MySQLCogeRegistro(CS_MYSQL, cn->nombre, "topic");
+		opts = atoi(SQLCogeRegistro(CS_SQL, cn->nombre, "opts"));
+		topic = SQLCogeRegistro(CS_SQL, cn->nombre, "topic");
 		if (opts & CS_OPT_KTOP)
 		{
 			if (topic && strcmp(cn->topic, topic))
@@ -2596,8 +2596,8 @@ int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 		}
 		else if (opts & CS_OPT_RTOP)
 		{
-			MySQLInserta(CS_MYSQL, cn->nombre, "topic", topic);
-			MySQLInserta(CS_MYSQL, cn->nombre, "ntopic", cl->nombre);
+			SQLInserta(CS_SQL, cn->nombre, "topic", topic);
+			SQLInserta(CS_SQL, cn->nombre, "ntopic", cl->nombre);
 		}
 	}	
 	return 0;
@@ -2606,7 +2606,7 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 {
 	if (IsChanReg(cn->nombre))
 	{
-		if (tiene_nivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, MySQLCogeRegistro(CS_MYSQL, cn->nombre, "founder")))
+		if (tiene_nivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
 			port_func(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
 	}	
 	return 0;
@@ -2614,8 +2614,8 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 int CSCmdJoin(Cliente *cl, Canal *cn)
 {
 	char find, *forb;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	u_long aux, nivel;
 	int opts;
 	char *entry, *modos, *topic, *susp;
@@ -2632,13 +2632,13 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	if (IsChanReg(cn->nombre))
 	{
 		find = 0;
-		res = MySQLQuery("SELECT opts,entry,modos,topic from %s%s where item='%s'", PREFIJO, CS_MYSQL, cn->nombre);
-		row = mysql_fetch_row(res);
-		mysql_free_result(res);
+		res = SQLQuery("SELECT opts,entry,modos,topic from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(cn->nombre));
+		row = SQLFetchRow(res);
 		opts = atoi(row[0]);
 		entry = strdup(row[1]);
 		modos = strdup(row[2]);
 		topic = strdup(row[3]);
+		SQLFreeRes(res);
 		aux = 0L;
 		if ((susp = IsChanSuspend(cn->nombre)))
 		{
@@ -2709,7 +2709,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 			strcat(tokbuf, " ");
 		}
 		if (nivel)
-			MySQLInserta(CS_MYSQL, cn->nombre, "ultimo", "%lu", time(0));
+			SQLInserta(CS_SQL, cn->nombre, "ultimo", "%lu", time(0));
 		//if (buf[0])
 		//	tokbuf[strlen(tokbuf)-1] = '\0';
 		if (cn->miembros == 1)
@@ -2745,59 +2745,56 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	}
 	return 0;
 }
-int CSSigMySQL()
+int CSSigSQL()
 {
-	if (!MySQLEsTabla(CS_MYSQL))
+	if (!SQLEsTabla(CS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`n` int(11) NOT NULL auto_increment, "
-  			"`item` text NOT NULL, "
-			"`founder` text NOT NULL, "
-  			"`pass` text NOT NULL, "
-  			"`descripcion` longtext NOT NULL, "
-  			"`modos` varchar(255) NOT NULL default '+nt', "
-  			"`opts` int(11) NOT NULL default '0', "
-  			"`topic` varchar(255) NOT NULL default 'El canal ha sido registrado.', "
-  			"`entry` varchar(255) NOT NULL default 'El canal ha sido registrado.', "
-  			"`registro` bigint(20) NOT NULL default '0', "
-  			"`ultimo` bigint(20) NOT NULL default '0', "
-  			"`ntopic` text NOT NULL, "
-  			"`limite` tinyint(4) NOT NULL default '5', "
-  			"`akick` text NOT NULL, "
-  			"`bjoins` int(11) NOT NULL default '0', "
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"n SERIAL, "
+  			"item text, "
+			"founder text, "
+  			"pass text, "
+  			"descripcion text, "
+  			"modos varchar(255) default '+nt', "
+  			"opts int4 default '0', "
+  			"topic varchar(255) default 'El canal ha sido registrado.', "
+  			"entry varchar(255) default 'El canal ha sido registrado.', "
+  			"registro int4 default '0', "
+  			"ultimo int4 default '0', "
+  			"ntopic text, "
+  			"limite int2 default '5', "
+  			"akick text, "
+  			"bjoins int4 default '0', "
 #ifndef UDB
-  			"`suspend` text NOT NULL, "
+  			"suspend text, "
 #endif
-  			"`url` text NOT NULL, "
-  			"`email` text NOT NULL, "
-  			"`memos` text NOT NULL, "
-  			"`regs` text NOT NULL, "
-  			"KEY `item` (`n`) "
-			") TYPE=MyISAM COMMENT='Tabla de canales';", PREFIJO, CS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_MYSQL);
+  			"url text, "
+  			"email text, "
+  			"memos text, "
+  			"regs text "
+			");", PREFIJO, CS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
 	}
-	if (!MySQLEsTabla(CS_TOK))
+	if (!SQLEsTabla(CS_TOK))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-			"`item` varchar(255) default NULL, "
-			"`nick` varchar(255) default NULL, "
-			"`hora` int(11) NOT NULL default '0', "
-			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de tokens para canales';", PREFIJO, CS_TOK))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+			"item varchar(255) default NULL, "
+			"nick varchar(255) default NULL, "
+			"hora int4 default '0' "
+			");", PREFIJO, CS_TOK))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
 	}
 #ifndef UDB
-	if (!MySQLEsTabla(CS_FORBIDS))
+	if (!SQLEsTabla(CS_FORBIDS))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`motivo` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de canales prohibidos';", PREFIJO, CS_FORBIDS))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"motivo varchar(255) default NULL "
+			");", PREFIJO, CS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
 	}
 #endif
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	CSCargaRegistros();
 	CSCargaAkicks();
 	return 1;
@@ -2805,16 +2802,16 @@ int CSSigMySQL()
 int CSSigEOS()
 {
 	/* metemos los bots en los canales que lo hayan soliticado */
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	int bjoins;
 	Cliente *bl;
 #ifdef UDB
 	PropagaRegistro("S::C %s", chanserv.hmod->mascara);
 #endif
-	if ((res = MySQLQuery("SELECT item,bjoins from %s%s where bjoins !='0'", PREFIJO, CS_MYSQL)))
+	if ((res = SQLQuery("SELECT item,bjoins from %s%s where bjoins !='0'", PREFIJO, CS_SQL)))
 	{
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			Modulo *ex;
 			bjoins = atoi(row[1]);
@@ -2828,7 +2825,7 @@ int CSSigEOS()
 				}
 			}
 		}
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -2842,7 +2839,7 @@ int CSBaja(char *canal, char opt)
 	Canal *an;
 	Akick *akick;
 	char *tok, *regs;
-	if (!opt && atoi(MySQLCogeRegistro(CS_MYSQL, canal, "opts")) & CS_OPT_NODROP)
+	if (!opt && atoi(SQLCogeRegistro(CS_SQL, canal, "opts")) & CS_OPT_NODROP)
 		return 1;
 	an = BuscaCanal(canal, NULL);
 	if (an)
@@ -2851,7 +2848,7 @@ int CSBaja(char *canal, char opt)
 		if (RedOverride)
 			SacaBot(CLI(chanserv), canal, NULL);
 	}
-	if ((regs = MySQLCogeRegistro(CS_MYSQL, canal, "regs")))
+	if ((regs = SQLCogeRegistro(CS_SQL, canal, "regs")))
 	{
 		for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
 		{
@@ -2873,7 +2870,7 @@ int CSBaja(char *canal, char opt)
 		PropagaRegistro("C::%s", canal);
 #endif
 	Senyal1(CS_SIGN_DROP, canal);
-	MySQLBorra(CS_MYSQL, canal);
+	SQLBorra(CS_SQL, canal);
 	return 0;
 }
 CsRegistros *busca_cregistro(char *nick)
@@ -3026,8 +3023,8 @@ int CSDropanick(char *nick)
 			char tmp[512];
 			strncpy(tmp, regs->sub[0].canal, 512);
 			CSBorraAcceso(nick, tmp);
-			if (!strcasecmp(MySQLCogeRegistro(CS_MYSQL, tmp, "founder"), nick))
-				MySQLInserta(CS_MYSQL, tmp, "founder", CLI(chanserv)->nombre);
+			if (!strcasecmp(SQLCogeRegistro(CS_SQL, tmp, "founder"), nick))
+				SQLInserta(CS_SQL, tmp, "founder", CLI(chanserv)->nombre);
 			subs--;
 		}
 	}
@@ -3035,27 +3032,27 @@ int CSDropanick(char *nick)
 }
 void CSCargaRegistros()
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
-	res = MySQLQuery("SELECT item,regs from %s%s", PREFIJO, CS_MYSQL);
+	SQLRes res;
+	SQLRow row;
+	res = SQLQuery("SELECT item,regs from %s%s", PREFIJO, CS_SQL);
 	if (!res)
 		return;
-	while ((row = mysql_fetch_row(res)))
+	while ((row = SQLFetchRow(res)))
 	{
 		char *tok;
 		for (tok = strtok(row[1], ":"); tok; tok = strtok(NULL, ":"))
 			CSInsertaRegistro(tok, row[0], atol(strtok(NULL, " ")));
 	}
-	mysql_free_result(res);
+	SQLFreeRes(res);
 }
 void CSCargaAkicks()
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
-	res = MySQLQuery("SELECT item,akick from %s%s", PREFIJO, CS_MYSQL);
+	SQLRes res;
+	SQLRow row;
+	res = SQLQuery("SELECT item,akick from %s%s", PREFIJO, CS_SQL);
 	if (!res)
 		return;
-	while ((row = mysql_fetch_row(res)))
+	while ((row = SQLFetchRow(res)))
 	{
 		char *tok, *mo, *au;
 		for (tok = strtok(row[1], "\1"); tok; tok = strtok(NULL, "\1"))
@@ -3065,7 +3062,7 @@ void CSCargaAkicks()
 			CSInsertaAkick(tok, row[0], au, mo);
 		}
 	}
-	mysql_free_result(res);
+	SQLFreeRes(res);
 }
 u_long tiene_nivel(char *nick, char *canal, u_long flag)
 {
@@ -3100,24 +3097,24 @@ u_long tiene_nivel(char *nick, char *canal, u_long flag)
 }
 int CSDropachans(Proc *proc)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = MySQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT %i,30", PREFIJO, CS_MYSQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && SockIrcd ? CLI(chanserv)->nombre : "", proc->proc)) || !mysql_num_rows(res))
+		if (!(res = SQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' OFFSET %i LIMIT 30", PREFIJO, CS_SQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);
-			MySQLQuery("DELETE from %s%s where hora < %i AND hora !='0'", PREFIJO, CS_TOK, time(0) - 3600 * chanserv.vigencia);
+			SQLQuery("DELETE from %s%s where hora < %i AND hora !='0'", PREFIJO, CS_TOK, time(0) - 3600 * chanserv.vigencia);
 			return 1;
 		}
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			if (atoi(row[1]) + 86400 * chanserv.autodrop < time(0))
 				CSBaja(row[0], 0);
 		}
 		proc->proc += 30;
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -3126,7 +3123,7 @@ int ChanReg(char *canal)
 	char *res;
 	if (!canal)
 		return 0;
-	res = MySQLCogeRegistro(CS_MYSQL, canal, "registro");
+	res = SQLCogeRegistro(CS_SQL, canal, "registro");
 	if (res)
 	{
 		if (strcmp(res, "0"))
@@ -3149,7 +3146,7 @@ char *IsChanSuspend(char *canal)
 	if ((reg = BuscaRegistro(BDD_CHANS, canal)) && (bloq = BuscaBloque(C_SUS_TOK, reg)))
 		return bloq->data_char;
 #else
-	if ((motivo = MySQLCogeRegistro(CS_MYSQL, canal, "suspend")))
+	if ((motivo = SQLCogeRegistro(CS_SQL, canal, "suspend")))
 		return motivo;
 #endif
 	return NULL;
@@ -3167,22 +3164,22 @@ char *IsChanForbid(char *canal)
 	if ((reg = BuscaRegistro(BDD_CHANS, canal)) && (bloq = BuscaBloque(C_FOR_TOK, reg)))
 		return bloq->data_char;
 #else
-	if ((motivo = MySQLCogeRegistro(CS_FORBIDS, canal, "motivo")))
+	if ((motivo = SQLCogeRegistro(CS_FORBIDS, canal, "motivo")))
 		return motivo;
 #endif
 	return NULL;
 }
 int CSSigSynch()
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	if (RedOverride)
 	{
-		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, CS_MYSQL)))
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
 		{
-			while ((row = mysql_fetch_row(res)))
+			while ((row = SQLFetchRow(res)))
 					EntraBot(CLI(chanserv), row[0]);
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
 	}
 	return 0;

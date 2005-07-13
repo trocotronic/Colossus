@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.46 2005-06-30 00:03:46 Trocotronic Exp $ 
+ * $Id: main.c,v 1.47 2005-07-13 14:06:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -40,6 +40,7 @@ char spath[MAX_PATH];
 #else
 char spath[PATH_MAX];
 #endif
+int refrescando = 0;
 
 
 MODVAR char **margv;
@@ -174,12 +175,14 @@ VOIDSIG Refresca()
 #ifdef	POSIX_SIGNALS
 	struct sigaction act;
 #endif
+	refrescando = 1;
 	DescargaModulos();
 	DescargaProtocolo();
 	DescargaConfiguracion();
 	ParseaConfiguracion(CPATH, &config, 1);
 	DistribuyeConfiguracion(&config);
 	CargaModulos();
+	CargaSQL();
 #ifdef UDB
 	CargaBloques();
 #endif
@@ -201,6 +204,7 @@ VOIDSIG Refresca()
 	(void)signal(SIGHUP, s_rehash);
   #endif
 #endif
+	refrescando = 0;
 	return;
 }
 VOIDSIG Reinicia()
@@ -227,7 +231,7 @@ int main(int argc, char *argv[])
 #endif
 {
 	Conf config;
-	int val, i;
+	int i;
 #ifndef _WIN32
 #ifdef FORCE_CORE
 	struct rlimit corelim;
@@ -236,7 +240,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
 #ifdef UDB
-	fprintf(stderr, "\t\t+UDB 3.2\n");
+	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
 #endif
 #ifdef USA_ZLIB
 	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
@@ -244,6 +248,8 @@ int main(int argc, char *argv[])
 #ifdef USA_SSL
 	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
 #endif
+	fprintf(stderr, "\t\t+Cliente SQL %s\n", mysql_get_client_info());
+	fprintf(stderr, "\t\t+Servidor SQL %s\n", mysql_get_server_info(mysql));
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
 	fprintf(stderr, "\t\t(c)2004-2005\n");
 	fprintf(stderr, "\n");
@@ -275,46 +281,22 @@ int main(int argc, char *argv[])
 		return 1;
 	DistribuyeConfiguracion(&config);
 	CargaModulos();
-	/*Info("bleeeeeee %lu", time(0));
-	Info("Blaaaaaa");
-	Info("bleeeeeee %lu", time(0));
-	Info("Blaaaaaa");
-	Info("bleeeeeee %lu", time(0));
-	Info("Blaaaaaa");
-	Info("bleeeeeee %lu", time(0));
-	Info("Blaaaaaa");
-	Info("blee eeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa %lu", time(0));
-	Info("Blaaaaaa");*/
-	if ((val = CargaMySQL()) <= 0)
-	{
-		if (!val) /* no ha emitido mensaje */
-		{
-			char pq[256];
-			pthread_mutex_lock(&mutex);
-			ircsprintf(pq, "No se puede iniciar MySQL\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
-			pthread_mutex_unlock(&mutex);
-#ifdef _WIN32			
-			MessageBox(hwMain, pq, "MySQL", MB_OK|MB_ICONERROR);
-#else
-			fprintf(stderr, "[MySQL: %s]\n", pq);
-#endif
-		}
+	if (CargaSQL())
 		return 1;
-	}
-	if (EsArchivo("backup.sql"))
+/*	if (EsArchivo("backup.sql"))
 	{
 #ifdef _WIN32		
-		if (MessageBox(hwMain, "Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+		if (MessageBox(hwMain, "Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?", "SQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
-		if (pregunta("Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?") == 1)
+		if (Pregunta("Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?") == 1)
 #endif
 		{
-			if (!MySQLRestaura())
+			if (!SQLRestaura())
 			{
 #ifdef _WIN32				
-				if (MessageBox(hwMain, "Se ha restaurado con éxito. ¿Quieres borrar la copia?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+				if (MessageBox(hwMain, "Se ha restaurado con éxito. ¿Quieres borrar la copia?", "SQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
-				if (pregunta("Se ha restaurado con éxito. ¿Quieres borrar la copia?") == 1)
+				if (Pregunta("Se ha restaurado con éxito. ¿Quieres borrar la copia?") == 1)
 #endif
 					remove("backup.sql");
 			}
@@ -325,6 +307,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	*/
 	margv = argv;
 	CargaCache();
 #ifdef UDB
@@ -601,6 +584,8 @@ void CompruebaCronos()
 {
 	Timer *aux, *sig;
 	double ms;
+	if (refrescando)
+		return;
 	ms = microtime();
 	for (aux = timers; aux; aux = sig)
 	{
@@ -676,6 +661,8 @@ void ProcesosAuxiliares()
 void IniciaProceso(int (*func)())
 {
 	Proc *proc;
+	if (refrescando)
+		return;
 	for (proc = procs; proc; proc = proc->sig)
 	{
 		if (proc->func == func)
@@ -829,7 +816,7 @@ void Alerta(char err, char *error, ...)
 			fprintf(stderr, "[ERROR: %s]\n", buf);
 			break;
 		case FSQL:
-			fprintf(stderr, "[MySQL: %s]\n", buf);
+			fprintf(stderr, "[SQL: %s]\n", buf);
 			break;
 		case FADV:
 			fprintf(stderr, "[Advertencia: %s]\n", buf);
@@ -842,48 +829,59 @@ void Alerta(char err, char *error, ...)
 }
 int CargaCache()
 {
-	if (!MySQLEsTabla(MYSQL_CACHE))
+	if (!SQLEsTabla(SQL_CACHE))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`valor` varchar(255) default NULL, "
-  			"`hora` int(11) NOT NULL default '0', "
-  			"`owner` int(11) NOT NULL default '0', "
-  			"`tipo` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla caché';", PREFIJO, MYSQL_CACHE))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MYSQL_CACHE);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"valor varchar(255) default NULL, "
+  			"hora int4 default '0', "
+  			"owner int4 default '0', "
+  			"tipo varchar(255) default NULL "
+			");", PREFIJO, SQL_CACHE))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CACHE);
 	}
 	else
 	{
-		MySQLQuery("ALTER TABLE `%s%s` ADD `owner` int(11) NOT NULL default '0' AFTER `hora`;", PREFIJO, MYSQL_CACHE);
-		MySQLQuery("ALTER TABLE `%s%s` ADD `tipo` VARCHAR(255) default NULL AFTER `owner`;", PREFIJO, MYSQL_CACHE);
+		if (!SQLEsCampo(SQL_CACHE, "owner"))
+			SQLQuery("ALTER TABLE %s%s ADD owner int4 NOT NULL default '0';", PREFIJO, SQL_CACHE);
+		if (!SQLEsCampo(SQL_CACHE, "tipo"))
+			SQLQuery("ALTER TABLE %s%s ADD tipo VARCHAR(255) default NULL;", PREFIJO, SQL_CACHE);
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	IniciaProceso(ProcCache);
 	return 1;
 }
 char *CogeCache(char *tipo, char *item, int id)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes *res;
+	SQLRow row;
 	char *tipo_c, *item_c;
-	tipo_c = MySQLEscapa(tipo);
-	item_c = MySQLEscapa(item);
-	res = MySQLQuery("SELECT `valor`,`hora` FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
+	static char row0[BUFSIZE];
+	tipo_c = SQLEscapa(tipo);
+	item_c = SQLEscapa(item);
+	res = SQLQuery("SELECT valor,hora FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	if (res)
 	{
-		row = mysql_fetch_row(res);
-		mysql_free_result(res);
+		row = SQLFetchRow(res);
 		if ((time_t)atoul(row[1]) < time(0))
 		{
+			SQLFreeRes(res);
 			BorraCache(tipo, item, id);
 			return NULL;
 		}
 		else
-			return BadPtr(row[0]) ? NULL : row[0];
+		{
+			if (BadPtr(row[0]))
+			{
+				SQLFreeRes(res);
+				return NULL;
+			}
+			strncpy(row0, row[0], sizeof(row));
+			SQLFreeRes(res);
+			return row0;
+		}
 	}
 	return NULL;
 }
@@ -897,14 +895,14 @@ void InsertaCache(char *tipo, char *item, int off, int id, char *valor, ...)
 		va_start(vl, valor);
 		ircvsprintf(buf, valor, vl);
 		va_end(vl);
-		valor_c = MySQLEscapa(buf);
+		valor_c = SQLEscapa(buf);
 	}
-	tipo_c = MySQLEscapa(tipo);
-	item_c = MySQLEscapa(item);
+	tipo_c = SQLEscapa(tipo);
+	item_c = SQLEscapa(item);
 	if (CogeCache(tipo, item, 0))
-		MySQLQuery("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
+		SQLQuery("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
 	else
-		MySQLQuery("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, MYSQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
+		SQLQuery("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, SQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	ircfree(valor_c);
@@ -914,19 +912,19 @@ int ProcCache(Proc *proc)
 	u_long ts = time(0);
 	if ((u_long)proc->time + 1800 < ts) /* lo hacemos cada 30 mins */
 	{
+		SQLQuery("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, SQL_CACHE, ts);
 		proc->proc = 0;
 		proc->time = ts;
 		return 1;
 	}
-	MySQLQuery("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, MYSQL_CACHE, ts);
 	return 0;
 }
 void BorraCache(char *tipo, char *item, int id)
 {
 	char *tipo_c, *item_c;
-	tipo_c = MySQLEscapa(tipo);
-	item_c = MySQLEscapa(item);
-	MySQLQuery("DELETE FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, MYSQL_CACHE, item_c, tipo_c, id);
+	tipo_c = SQLEscapa(tipo);
+	item_c = SQLEscapa(item);
+	SQLQuery("DELETE FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 }
@@ -1061,7 +1059,7 @@ void Loguea(int opt, char *formato, ...)
 	close(fp);
 }
 #ifndef _WIN32
-int pregunta(char *preg)
+int Pregunta(char *preg)
 {
 	fprintf(stderr, "%s (s/n)\n", preg);
 	if (getc(stdin) == 's')

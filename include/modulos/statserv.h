@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.h,v 1.3 2005-06-29 21:13:49 Trocotronic Exp $ 
+ * $Id: statserv.h,v 1.4 2005-07-13 14:06:25 Trocotronic Exp $ 
  */
 
 #define SS_MAX_COMS 256
@@ -69,10 +69,10 @@ extern StatServ *statserv;
 #define SS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define SS_ERR_EMPT "\00304ERROR: %s"
 
-#define SS_MYSQL "stats"
+#define SS_SQL "stats"
 
-#define actualiza(x,y) MySQLInserta(SS_MYSQL, x, "valor", "%lu", y)
-#define coge(x) (u_int)atoi(MySQLCogeRegistro(SS_MYSQL, x, "valor"))
+#define actualiza(x,y) SQLInserta(SS_SQL, x, "valor", "%lu", y)
+#define coge(x) (u_int)atoi(SQLCogeRegistro(SS_SQL, x, "valor"))
 
 #define STSUSERS 1
 #define STSCHANS 2

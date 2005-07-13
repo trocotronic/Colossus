@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.14 2005-06-29 21:13:43 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.15 2005-07-13 14:06:22 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -127,7 +127,7 @@ extern void DistribuyeMe(Cliente *, Sock **);
 extern void CargaModulos(void);
 extern MODVAR Cliente me;
 extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[], int, int);
-#define IsReg(x) (x && MySQLCogeRegistro(NS_MYSQL, x, NULL))
+#define IsReg(x) (x && SQLCogeRegistro(NS_SQL, x, NULL))
 #define IsId(x) (x && (x->nivel & USER))
 #define IsRoot(x) (x && (x->nivel & ROOT) && IsId(x))
 #define IsAdmin(x) (x && ((x->nivel & ADMIN) || IsRoot(x)))
@@ -138,19 +138,19 @@ extern void ProcesaModosCliente(Cliente *, char *);
 extern char *MascaraIrcd(char *);
 extern void EntraBot(Cliente *, char *);
 extern char *TipoMascara(char *, int);
-#define SIGN_MYSQL 1
-#define SIGN_UMODE 2
-#define SIGN_QUIT  3
-#define SIGN_EOS 4
-#define SIGN_MODE 5
-#define SIGN_JOIN 6
-#define SIGN_SYNCH 7
-#define SIGN_KICK 8
-#define SIGN_TOPIC 9
-#define SIGN_PRE_NICK 10
-#define SIGN_POST_NICK 11
-#define SIGN_AWAY 12
-#define SIGN_PART 13
+#define SIGN_SQL 0
+#define SIGN_UMODE 1
+#define SIGN_QUIT  2
+#define SIGN_EOS 3
+#define SIGN_MODE 4
+#define SIGN_JOIN 5
+#define SIGN_SYNCH 6
+#define SIGN_KICK 7
+#define SIGN_TOPIC 8
+#define SIGN_PRE_NICK 9
+#define SIGN_POST_NICK 10
+#define SIGN_AWAY 11
+#define SIGN_PART 12
 #define EsCliente(x) (x->tipo == ES_CLIENTE)
 #define EsServer(x) (x->tipo == ES_SERVER)
 #define EsBot(x) (x->tipo == ES_BOT)

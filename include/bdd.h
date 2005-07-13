@@ -1,8 +1,9 @@
 /*
- * $Id: bdd.h,v 1.13 2005-06-29 21:13:43 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.14 2005-07-13 14:06:21 Trocotronic Exp $ 
  */
 
 #ifdef UDB
+#define UDB_VER "3.2"
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #else

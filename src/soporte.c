@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.3 2005-06-29 21:13:56 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.4 2005-07-13 14:06:27 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -25,7 +25,7 @@ const char NTL_tolower_tab[] = {
        /* '@'-'G' */    '@',    'a',    'b',    'c',    'd',    'e',    'f',    'g',
        /* 'H'-'O' */    'h',    'i',    'j',    'k',    'l',    'm',    'n',    'o',
        /* 'P'-'W' */    'p',    'q',    'r',    's',    't',    'u',    'v',    'w',
-       /* 'X'-'_' */    'x',    'y',    'z',    '{',    '|',    '}',    '~',    '_',
+       /* 'X'-'_' */    'x',    'y',    'z',    '[', '\x5c',    ']',    '^',    '_',
        /* '`'-'g' */    '`',    'a',    'b',    'c',    'd',    'e',    'f',    'g',
        /* 'h'-'o' */    'h',    'i',    'j',    'k',    'l',    'm',    'n',    'o',
        /* 'p'-'w' */    'p',    'q',    'r',    's',    't',    'u',    'v',    'w',
@@ -47,7 +47,7 @@ const char NTL_toupper_tab[] = {
        /* '`'-'g' */    '`',    'A',    'B',    'C',    'D',    'E',    'F',    'G',
        /* 'h'-'o' */    'H',    'I',    'J',    'K',    'L',    'M',    'N',    'O',
        /* 'p'-'w' */    'P',    'Q',    'R',    'S',    'T',    'U',    'V',    'W',
-       /* 'x'-x7f */    'X',    'Y',    'Z',    '[', '\x5c',    ']',    '^', '\x7f'
+       /* 'x'-x7f */    'X',    'Y',    'Z',    '{',    '|',    '}',    '~', '\x7f'
 };
 #ifdef NEED_STRCASECMP
 int strcasecmp(const char *a, const char *b)

@@ -963,7 +963,7 @@ void inicia()
 	servidores = NULL;
 	EnviaAServidor("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64 TKLEXT");
 #ifdef UDB
-	EnviaAServidor("PROTOCTL UDB3.2=%s", me.nombre);
+	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s", me.nombre);
 #endif
 #ifdef USA_ZLIB
 	if (conf_server->compresion)

@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.15 2005-06-29 21:14:02 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.16 2005-07-13 14:06:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -41,7 +41,7 @@ int MSCmdAway(Cliente *, char *);
 int MSCmdJoin(Cliente *, Canal *);
 
 int MSSigIdOk	(Cliente *);
-int MSSigMySQL	();
+int MSSigSQL	();
 static void MSNotifica	(Cliente *);
 int MSSigDrop	(char *);
 int MSSigRegistra	(char *);
@@ -121,7 +121,7 @@ int descarga()
 	BorraSenyal(SIGN_AWAY, MSCmdAway);
 	BorraSenyal(SIGN_JOIN, MSCmdJoin);
 	BorraSenyal(NS_SIGN_IDOK, MSSigIdOk);
-	BorraSenyal(SIGN_MYSQL, MSSigMySQL);
+	BorraSenyal(SIGN_SQL, MSSigSQL);
 	BorraSenyal(NS_SIGN_DROP, MSSigDrop);
 	BorraSenyal(NS_SIGN_REG, MSSigRegistra);
 	BorraSenyal(CS_SIGN_DROP, MSSigDrop);
@@ -166,7 +166,7 @@ void MSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_AWAY, MSCmdAway);
 	InsertaSenyal(SIGN_JOIN, MSCmdJoin);
 	InsertaSenyal(NS_SIGN_IDOK, MSSigIdOk);
-	InsertaSenyal(SIGN_MYSQL, MSSigMySQL);
+	InsertaSenyal(SIGN_SQL, MSSigSQL);
 	InsertaSenyal(NS_SIGN_DROP, MSSigDrop);
 	InsertaSenyal(NS_SIGN_REG, MSSigRegistra);
 	InsertaSenyal(CS_SIGN_DROP, MSSigDrop);
@@ -284,8 +284,8 @@ BOTFUNC(MSHelp)
 BOTFUNC(MSRead)
 {
 	int i;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *para, *no;
 	time_t tim;
 	if (params < 2)
@@ -325,16 +325,16 @@ BOTFUNC(MSRead)
 	}
 	if (!strcasecmp(no, "NEW"))
 	{
-		if ((res = MySQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s' AND leido='0'", PREFIJO, MS_MYSQL, para)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s' AND leido='0'", PREFIJO, MS_SQL, strtolower(para))))
 		{
-			while ((row = mysql_fetch_row(res)))
+			while ((row = SQLFetchRow(res)))
 			{
 				tim = atol(row[2]);
 				Responde(cl, CLI(memoserv), "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], Fecha(&tim));
 				Responde(cl, CLI(memoserv), "%s", row[1]);
-				MySQLQuery("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[1], row[0], row[2]);
+				SQLQuery("UPDATE %s%s SET leido=1 where LOWER(para)='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, strtolower(para), row[1], row[0], row[2]);
 			}
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
 		else
 		{
@@ -345,22 +345,22 @@ BOTFUNC(MSRead)
 	else if (!strcasecmp(no, "LAST"))
 	{
 		char *fech = NULL;
-		if ((res = MySQLQuery("SELECT MAX(fecha) FROM %s%s where para='%s'", PREFIJO, MS_MYSQL, para)))
+		if ((res = SQLQuery("SELECT MAX(fecha) FROM %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(para))))
 		{
-			row = mysql_fetch_row(res);
+			row = SQLFetchRow(res);
 			if (!row[0])
 				goto non;
 			fech = strdup(row[0]);
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
-		if ((res = MySQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, fech)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s' AND fecha=%s", PREFIJO, MS_SQL, strtolower(para), fech)))
 		{
-			row = mysql_fetch_row(res);
+			row = SQLFetchRow(res);
 			tim = atol(row[2]);
 			Responde(cl, CLI(memoserv), "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], Fecha(&tim));
 			Responde(cl, CLI(memoserv), "%s", row[1]);
-			MySQLQuery("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[1], row[0], row[2]);
-			mysql_free_result(res);
+			SQLQuery("UPDATE %s%s SET leido=1 where LOWER(para)='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, strtolower(para), row[1], row[0], row[2]);
+			SQLFreeRes(res);
 			Free(fech);
 		}
 		else
@@ -373,22 +373,22 @@ BOTFUNC(MSRead)
 	else
 	{
 		int max = atoi(no);
-		if ((res = MySQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s'", PREFIJO, MS_MYSQL, para)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(para))))
 		{
-			for (i = 0; (row = mysql_fetch_row(res)); i++)
+			for (i = 0; (row = SQLFetchRow(res)); i++)
 			{
 				if ((i + 1) == max) /* hay memo */
 				{
 					tim = atol(row[2]);
 					Responde(cl, CLI(memoserv), "Mensaje de \00312%s\003, enviado el \00312%s\003", row[0], Fecha(&tim));
 					Responde(cl, CLI(memoserv), "%s", row[1]);
-					MySQLQuery("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[1], row[0], row[2]);
-					mysql_free_result(res);
+					SQLQuery("UPDATE %s%s SET leido=1 where LOWER(para)='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, strtolower(para), row[1], row[0], row[2]);
+					SQLFreeRes(res);
 					return 0;
 				}
 			}
 			Responde(cl, CLI(memoserv), MS_ERR_EMPT, "Este mensaje no existe.");
-			mysql_free_result(res);
+			SQLFreeRes(res);
 			return 1;
 		}
 		else
@@ -401,8 +401,8 @@ BOTFUNC(MSRead)
 }
 BOTFUNC(MSMemo)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	if (params < 3)
 	{
 		Responde(cl, CLI(memoserv), MS_ERR_PARA, "SEND nick|#canal mensaje");
@@ -428,9 +428,9 @@ BOTFUNC(MSMemo)
 	}
 	if (!IsOper(cl))
 	{
-		if ((res = MySQLQuery("SELECT MAX(fecha) from %s%s where de='%s'", PREFIJO, MS_MYSQL, cl->nombre)))
+		if ((res = SQLQuery("SELECT MAX(fecha) from %s%s where LOWER(de)='%s'", PREFIJO, MS_SQL, strtolower(cl->nombre))))
 		{
-			row = mysql_fetch_row(res);
+			row = SQLFetchRow(res);
 			if (row[0] && (atol(row[0]) + memoserv.cada) > time(0))
 			{
 				ircsprintf(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv.cada);
@@ -446,8 +446,8 @@ BOTFUNC(MSMemo)
 BOTFUNC(MSDel)
 {
 	int i;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *para, *no;
 	if (params < 2)
 	{
@@ -486,26 +486,26 @@ BOTFUNC(MSDel)
 	}
 	if (!strcasecmp(no, "ALL"))
 	{
-		MySQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_MYSQL, para);
+		SQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_SQL, para);
 		Responde(cl, CLI(memoserv), "Todos los mensajes han sido borrados.");
 	}
 	else
 	{
 		int max = atoi(no);
-		if ((res = MySQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s'", PREFIJO, MS_MYSQL, para)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(para))))
 		{
-			for(i = 0; (row = mysql_fetch_row(res)); i++)
+			for(i = 0; (row = SQLFetchRow(res)); i++)
 			{
 				if (max == (i + 1))
 				{
-					MySQLQuery("DELETE from %s%s where para='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_MYSQL, para, row[0], row[1], row[2]);
+					SQLQuery("DELETE from %s%s where para='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, para, row[0], row[1], row[2]);
 					Responde(cl, CLI(memoserv), "El mensaje \00312%s\003 ha sido borrado.", no);
-					mysql_free_result(res);
+					SQLFreeRes(res);
 					return 0;
 				}
 			}
 			Responde(cl, CLI(memoserv), MS_ERR_EMPT, "No se encuentra el mensaje.");
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
 		else
 			Responde(cl, CLI(memoserv), MS_ERR_EMPT, "No hay mensajes.");
@@ -514,8 +514,8 @@ BOTFUNC(MSDel)
 }
 BOTFUNC(MSList)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *tar;
 	int i;
 	time_t tim;
@@ -535,14 +535,14 @@ BOTFUNC(MSList)
 	}
 	else
 		tar = cl->nombre;
-	if ((res = MySQLQuery("SELECT de,fecha,leido from %s%s where para='%s'", PREFIJO, MS_MYSQL, tar)))
+	if ((res = SQLQuery("SELECT de,fecha,leido from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(tar))))
 	{
-		for (i = 0; (row = mysql_fetch_row(res)); i++)
+		for (i = 0; (row = SQLFetchRow(res)); i++)
 		{
 			tim = atol(row[1]);
 			Responde(cl, CLI(memoserv), "%s \00312%i\003 - \00312%s\003 - \00312%s\003", atoi(row[2]) ? "" : "*", i + 1, row[0], Fecha(&tim));
 		}
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	else
 		Responde(cl, CLI(memoserv), MS_ERR_EMPT, "No hay mensajes para listar.");
@@ -595,7 +595,7 @@ BOTFUNC(MSOpts)
 			Responde(cl, CLI(memoserv), MS_ERR_EMPT, "El límite no puede superar los 30 mensajes.");
 			return 1;
 		}
-		MySQLInserta(MS_SET, para, "limite", val);
+		SQLInserta(MS_SET, para, "limite", val);
 		Responde(cl, CLI(memoserv), "Límite cambiado a \00312%s\003.", val);
 	}
 	else if (!strcasecmp(opt, "NOTIFY"))
@@ -603,9 +603,9 @@ BOTFUNC(MSOpts)
 		if (*para == '#')
 		{
 			if (!strcasecmp(val, "ON"))
-				MySQLInserta(MS_SET, para, "opts", "%i", MS_OPT_CNO);
+				SQLInserta(MS_SET, para, "opts", "%i", MS_OPT_CNO);
 			else if (!strcasecmp(val, "OFF"))
-				MySQLInserta(MS_SET, para, "opts", "0");
+				SQLInserta(MS_SET, para, "opts", "0");
 			else
 			{
 				Responde(cl, CLI(memoserv), MS_ERR_SNTX, "SET #canal NOTIFY ON|OFF");
@@ -614,8 +614,14 @@ BOTFUNC(MSOpts)
 		}
 		else
 		{
-			int opts = atoi(MySQLCogeRegistro(MS_SET, para, "opts"));
-			char f = ADD, *modos = val;
+			int opts;
+			char f = ADD, *modos = val, *regopts;
+			if (!(regopts = SQLCogeRegistro(MS_SET, para, "opts")))
+			{
+				Responde(cl, CLI(memoserv), MS_ERR_EMPT, "Ha ocurrido un error grave: no se encuentra opts (1)");
+				return 1;
+			}
+			opts = atoi(regopts);
 			if (*val != '+' && *val != '-')
 			{
 				Responde(cl, CLI(memoserv), MS_ERR_SNTX, "SET NOTIFY +-modos");
@@ -652,7 +658,7 @@ BOTFUNC(MSOpts)
 				}
 				modos++;
 			}
-			MySQLInserta(MS_SET, para, "opts", "%i", opts);
+			SQLInserta(MS_SET, para, "opts", "%i", opts);
 			Responde(cl, CLI(memoserv), "Notify cambiado a \00312%s\003.", val);
 		}
 	}
@@ -665,8 +671,9 @@ BOTFUNC(MSOpts)
 }
 BOTFUNC(MSInfo)
 {
-	MYSQL_RES *res;
+	SQLRes res;
 	int memos = 0, opts = 0;
+	char *regopts;
 	if (params > 1 && *param[1] == '#')
 	{
 		if (!IsChanReg_dl(param[1]))
@@ -674,32 +681,42 @@ BOTFUNC(MSInfo)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if ((res = MySQLQuery("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, param[1])))
+		if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(param[1]))))
 		{
-			memos = (int)mysql_num_rows(res);
-			mysql_free_result(res);
+			memos = (int)SQLNumRows(res);
+			SQLFreeRes(res);
 		}
-		opts = atoi(MySQLCogeRegistro(MS_SET, param[1], "opts"));
+		if (!(regopts = SQLCogeRegistro(MS_SET, param[1], "opts")))
+		{
+			Responde(cl, CLI(memoserv), "Ha ocurrido un error grave: no se encuentra opts (2)");
+			return 1;
+		}
+		opts = atoi(regopts);
 		Responde(cl, CLI(memoserv), "El canal \00312%s\003 tiene \00312%i\003 mensajes.", param[1], memos);
 		Responde(cl, CLI(memoserv), "La notificación de memos está \002%s\002.", opts ? "ON" : "OFF");
-		Responde(cl, CLI(memoserv), "El límite de mensajes está fijado a \00312%s\003.", MySQLCogeRegistro(MS_SET, param[1], "limite"));
+		Responde(cl, CLI(memoserv), "El límite de mensajes está fijado a \00312%s\003.", SQLCogeRegistro(MS_SET, param[1], "limite"));
 	}
 	else
 	{
 		int noleid = 0;
-		if ((res = MySQLQuery("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, cl->nombre)))
+		if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(cl->nombre))))
 		{
-			memos = (int)mysql_num_rows(res);
-			mysql_free_result(res);
+			memos = (int)SQLNumRows(res);
+			SQLFreeRes(res);
 		}
-		if ((res = MySQLQuery("SELECT * from %s%s where para='%s' AND leido='0'", PREFIJO, MS_MYSQL, cl->nombre)))
+		if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s' AND leido='0'", PREFIJO, MS_SQL, strtolower(cl->nombre))))
 		{
-			noleid = (int)mysql_num_rows(res);
-			mysql_free_result(res);
+			noleid = (int)SQLNumRows(res);
+			SQLFreeRes(res);
 		}
-		opts = atoi(MySQLCogeRegistro(MS_SET, cl->nombre, "opts"));
+		if (!(regopts = SQLCogeRegistro(MS_SET, cl->nombre, "opts")))
+		{
+			Responde(cl, CLI(memoserv), "Ha ocurrido un error grave: no se encuentra opts (3)");
+			return 1;
+		}
+		opts = atoi(regopts);
 		Responde(cl, CLI(memoserv), "Tienes \00312%i\003 mensajes sin leer de un total de \00312%i\003.", noleid, memos);
-		Responde(cl, CLI(memoserv), "El límite de mensajes está fijado a \00312%s\003.", MySQLCogeRegistro(MS_SET, cl->nombre, "limite"));
+		Responde(cl, CLI(memoserv), "El límite de mensajes está fijado a \00312%s\003.", SQLCogeRegistro(MS_SET, cl->nombre, "limite"));
 		Responde(cl, CLI(memoserv), "La notificación de memos está a:");
 		if (opts & MS_OPT_LOG)
 			Responde(cl, CLI(memoserv), "-Al identificarte como propietario de tu nick.");
@@ -712,8 +729,9 @@ BOTFUNC(MSInfo)
 }
 BOTFUNC(MSCancela)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
+	char *de;
 	if (params < 2)
 	{
 		Responde(cl, CLI(memoserv), MS_ERR_PARA, "CANCELAR nick|#canal");
@@ -729,23 +747,26 @@ BOTFUNC(MSCancela)
 		Responde(cl, CLI(memoserv), MS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
-	if ((res = MySQLQuery("SELECT MAX(fecha) from %s%s where de='%s' AND para='%s'", PREFIJO, MS_MYSQL, cl->nombre, param[1])))
+	de = strdup(strtolower(cl->nombre));
+	if ((res = SQLQuery("SELECT MAX(fecha) from %s%s where LOWER(de)='%s' AND LOWER(para)='%s'", PREFIJO, MS_SQL, de, strtolower(param[1]))))
 	{
-		row = mysql_fetch_row(res);
+		row = SQLFetchRow(res);
 		if (!row[0])
 			goto non;
-		MySQLQuery("DELETE from %s%s where para='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_MYSQL, param[1], cl->nombre, row[0]);
-		mysql_free_result(res);
+		SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND LOWER(de)='%s' AND fecha=%s", PREFIJO, MS_SQL, strtolower(param[1]), de, row[0]);
+		SQLFreeRes(res);
 		Responde(cl, CLI(memoserv), "El último mensaje de \00312%s\003 ha sido eliminado.", param[1]);
 	}
 	else
 	{
 		non:
+		Free(de);
 		buf[0] = '\0';
 		ircsprintf(buf, "No has enviado ningún mensaje a %s.", param[1]);
 		Responde(cl, CLI(memoserv), MS_ERR_EMPT, buf);
 		return 1;
 	}
+	Free(de);
 	return 0;
 }
 int MSCmdAway(Cliente *cl, char *away)
@@ -753,9 +774,12 @@ int MSCmdAway(Cliente *cl, char *away)
 	int opts;
 	if (!away)
 	{
+		char *regopts;
 		if (!IsId(cl))
 			return 1;
-		opts = atoi(MySQLCogeRegistro(MS_SET, cl->nombre, "opts"));
+		if (!(regopts = SQLCogeRegistro(MS_SET, cl->nombre, "opts")))
+			return 1; /* no debería pasar nunca! */
+		opts = atoi(regopts);
 		if (opts & MS_OPT_AWY)
 			MSNotifica(cl);
 	}
@@ -764,13 +788,16 @@ int MSCmdAway(Cliente *cl, char *away)
 int MSCmdJoin(Cliente *cl, Canal *cn)
 {
 	int opts;
-	MYSQL_RES *res;
+	SQLRes res;
+	char *regopts;
 	if (!IsChanReg_dl(cn->nombre))
 		return 1;
-	if (!(res = MySQLQuery("SELECT * from %s%s where para='%s'", PREFIJO, MS_MYSQL, cn->nombre)))
+	if (!(res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(cn->nombre))))
 		return 1;
-	mysql_free_result(res);
-	opts = atoi(MySQLCogeRegistro(MS_SET, cn->nombre, "opts"));
+	SQLFreeRes(res);
+	if (!(regopts = SQLCogeRegistro(MS_SET, cn->nombre, "opts")))
+		return 1;
+	opts = atoi(regopts);
 	if (opts & MS_OPT_CNO)
 	{
 		if (tiene_nivel_dl(cl->nombre, cn->nombre, CS_LEV_MEM))
@@ -782,12 +809,15 @@ int MSSend(char *para, char *de, char *mensaje)
 {
 	int opts = 0;
 	Cliente *al;
+	char *regopts;
 	if (para && de && mensaje)
 	{
 		if (!IsChanReg_dl(para) && !IsReg(para))
 			return 1;
-		MySQLQuery("INSERT into %s%s (para,de,fecha,mensaje) values ('%s','%s','%lu','%s')", PREFIJO, MS_MYSQL, para, de, time(0), mensaje);
-		opts = atoi(MySQLCogeRegistro(MS_SET, para, "opts"));
+		SQLQuery("INSERT into %s%s (para,de,fecha,mensaje) values ('%s','%s','%lu','%s')", PREFIJO, MS_SQL, para, de, time(0), mensaje);
+		if (!(regopts = SQLCogeRegistro(MS_SET, para, "opts")))
+			return 1;
+		opts = atoi(regopts);
 		if (*para == '#')
 		{
 			if (opts & MS_OPT_CNO)
@@ -813,7 +843,7 @@ int MSSigIdOk(Cliente *al)
 {
 	int opts;
 	char *reg;
-	if ((reg = MySQLCogeRegistro(MS_SET, al->nombre, "opts")))
+	if ((reg = SQLCogeRegistro(MS_SET, al->nombre, "opts")))
 	{
 		opts = atoi(reg);
 		if ((opts & MS_OPT_LOG) && (!(al->nivel & AWAY) || !(opts & MS_OPT_AWY)))
@@ -821,65 +851,63 @@ int MSSigIdOk(Cliente *al)
 	}
 	return 0;
 }
-int MSSigMySQL()
+int MSSigSQL()
 {
-	if (!MySQLEsTabla(MS_MYSQL))
+	if (!SQLEsTabla(MS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`n` int(11) NOT NULL auto_increment, "
-  			"`mensaje` text NOT NULL, "
-  			"`para` text NOT NULL, "
-  			"`de` text NOT NULL, "
-  			"`fecha` bigint(20) NOT NULL default '0', "
-  			"`leido` int(11) NOT NULL default '0', "
-  			"KEY `n` (`n`) "
-			") TYPE=MyISAM COMMENT='Tabla de mensajes';", PREFIJO, MS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"n SERIAL, "
+  			"mensaje text, "
+  			"para text, "
+  			"de text, "
+  			"fecha int4 default '0', "
+  			"leido int4 default '0' "
+			");", PREFIJO, MS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SQL);
 	}
-	if (!MySQLEsTabla(MS_SET))
+	if (!SQLEsTabla(MS_SET))
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`opts` varchar(255) default NULL, "
-  			"`limite` int(11) NOT NULL default '%i', "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de opciones de mensajes';", PREFIJO, MS_SET, memoserv.def))
+		SQLRes res;
+		SQLRow row;
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"opts varchar(255) default NULL, "
+  			"limite int4 default '%i' "
+			");", PREFIJO, MS_SET, memoserv.def))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
-		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, NS_MYSQL)))
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{
-			while ((row = mysql_fetch_row(res)))
-				MySQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
-			mysql_free_result(res);
+			while ((row = SQLFetchRow(res)))
+				SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
+			SQLFreeRes(res);
 		}
-		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, CS_MYSQL)))
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
 		{
-			while ((row = mysql_fetch_row(res)))
-				MySQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
-			mysql_free_result(res);
+			while ((row = SQLFetchRow(res)))
+				SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
+			SQLFreeRes(res);
 		}
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	return 0;
 }
 void MSNotifica(Cliente *al)
 {
-	MYSQL_RES *res;
-	if ((res = MySQLQuery("SELECT * from %s%s where para='%s' AND leido='0'", PREFIJO, MS_MYSQL, al->nombre)))
+	SQLRes res;
+	if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s' AND leido='0'", PREFIJO, MS_SQL, strtolower(al->nombre))))
 	{
-		Responde(al, CLI(memoserv), "Tienes \00312%i\003 mensaje(s) nuevo(s).", mysql_num_rows(res));
-		mysql_free_result(res);
+		Responde(al, CLI(memoserv), "Tienes \00312%i\003 mensaje(s) nuevo(s).", SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	return;
 }
 int MSSigDrop(char *nick)
 {
-	MySQLBorra(MS_SET, nick);
+	SQLBorra(MS_SET, nick);
 	return 0;
 }
 int MSSigRegistra(char *nick)
 {
-	MySQLInserta(MS_SET, nick, "opts", "%i", MS_OPT_ALL);
+	SQLInserta(MS_SET, nick, "opts", "%i", MS_OPT_ALL);
 	return 0;
 }

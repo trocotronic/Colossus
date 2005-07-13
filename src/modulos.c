@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.9 2005-06-29 21:13:52 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.10 2005-07-13 14:06:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -108,7 +108,20 @@ Modulo *CreaModulo(char *archivo)
 		mod->cargado = 1; /* está en conf */
 		mod->info = inf;
 		id <<= 1;
-		AddItem(mod, modulos);
+		if (!modulos)
+			modulos = mod;
+		else
+		{
+			Modulo *aux;
+			for (aux = modulos; aux; aux = aux->sig)
+			{
+				if (!aux->sig)
+				{
+					aux->sig = mod;
+					break;
+				}
+			}
+		}
 		return mod;
 	}
 	else

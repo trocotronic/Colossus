@@ -1,0 +1,9 @@
+EXPORTS
+	Carga
+	Descarga
+	Query
+	NumRows
+	FetchRow
+	FreeRes
+	Escapa
+	

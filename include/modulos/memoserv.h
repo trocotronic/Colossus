@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.h,v 1.3 2005-06-29 21:13:49 Trocotronic Exp $ 
+ * $Id: memoserv.h,v 1.4 2005-07-13 14:06:24 Trocotronic Exp $ 
  */
 
 typedef struct _ms MemoServ;
@@ -16,7 +16,7 @@ struct _ms
 #define MS_ERR_NOTR "\00304ERROR: Este canal no está registrado."
 #define MS_ERR_EMPT "\00304ERROR: %s"
 
-#define MS_MYSQL "mensajes"
+#define MS_SQL "mensajes"
 #define MS_SET "mopts"
 
 extern MemoServ memoserv;

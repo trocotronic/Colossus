@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.28 2005-06-29 21:13:50 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.29 2005-07-13 14:06:25 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -33,6 +33,9 @@ Udb *ultimo = NULL;
 char bloques[128];
 time_t gmts[128];
 u_int BDD_TOTAL = 0;
+int dataver = 0;
+void SetDataVer(int);
+int GetDataVer();
 void AltaBloque(char letra, char *ruta, Udb **reg, u_int *id)
 {
 	static u_int ids = 0;
@@ -89,6 +92,145 @@ void printea(Udb *bloq, int escapes)
 	if (bloq->mid)
 		printea(bloq->mid, escapes);
 }
+#ifndef _WIN32
+#define PMAX PATH_MAX 
+#else
+#define PMAX MAX_PATH
+#endif
+int ActualizaDataVer2()
+{
+	char *archivos[] = {
+		"set.udb" ,
+		"nicks.udb" ,
+		"canales.udb" ,
+		"ips.udb" ,
+		NULL
+	};
+	char *tokens[][32] = {
+		{
+			"clave_cifrado" , "L" ,
+			"sufijo" , "J" ,
+			"NickServ" , "N" ,
+			"ChanServ" , "C" ,
+			"IpServ" , "I" ,
+			"clones" , "S" ,
+			"quit_ips" , "T" ,
+			"quit_clones" , "Q" ,
+			NULL
+		} ,
+		{
+			"pass" , "P" ,
+			"forbid" , "B" ,
+			"vhost" , "V" ,
+			"suspendido" , "S" ,
+			"oper" , "O" ,
+			"desafio" , "D" ,
+			"modos" , "M" ,
+			"snomasks" , "K" ,
+			"swhois" , "W" ,
+			NULL
+		} ,
+		{		
+			"fundador" , "F" ,
+			"modos" , "M" ,
+			"topic" , "T" ,
+			"accesos" , "A" ,
+			"forbid" , "B" ,
+			"suspendido" , "S" ,
+			NULL
+		} ,
+		{
+			"clones" , "S" ,
+			"nolines" , "E" ,
+			NULL
+		}
+	};
+	int vec[][8] = {
+		{ 1 } ,
+		{ 0 , 1 } ,
+		{ 0 , 1 , 0 } ,
+		{ 0 , 1 }
+	}; 
+	FILE *fp, *tmp;
+	int i, j, k;
+	char *c, *d, buf[8192], f, p1[PMAX], p2[PMAX];
+	strncpy(p2, DB_DIR "temporal", sizeof(p2));
+	for (i = 0; archivos[i]; i++)
+	{
+		ircsprintf(p1, "%s%s", DB_DIR, archivos[i]);
+		if (!(fp = fopen(p1, "rb")))
+			return 1;
+		if (!(tmp = fopen(p2, "wb")))
+			return 1;
+		while (fgets(buf, sizeof(buf), fp))
+		{
+			c = buf;
+			f = 1;
+			k = 0;
+			while (*c != '\r' && *c != '\n')
+			{
+				if ((d = strchr(c, ':')) && *(d+1) == ':')
+				{
+					*d = '\0';
+					f = 0;
+					if (vec[i][k])
+					{
+						for (j = 0; tokens[i][j]; j += 2)
+						{
+							if (!strcmp(tokens[i][j], c))
+							{
+								fwrite(tokens[i][j+1], 1, strlen(tokens[i][j+1]), tmp);
+								f = 1;
+								break;
+							}
+						}
+					}
+					if (!f)
+						fwrite(c, 1, strlen(c), tmp);
+					fwrite("::", 1, 2, tmp);
+					c = d+2;
+					f = 1;
+					k++;
+				}
+				else if (f && (d = strchr(c, ' ')))
+				{
+					*d = '\0';
+					f = 0;
+					if (vec[i][k])
+					{
+						for (j = 0; tokens[i][j]; j += 2)
+						{
+							if (!strcmp(tokens[i][j], c))
+							{
+								fwrite(tokens[i][j+1], 1, strlen(tokens[i][j+1]), tmp);
+								f = 1;
+								break;
+							}
+						}
+					}
+					if (!f)
+						fwrite(c, 1, strlen(c), tmp);
+					f = 0;
+					fwrite(" ", 1, 1, tmp);
+					c = d+1;
+					k++;
+				}
+				else
+				{
+					fwrite(c, 1, strlen(c), tmp);
+					break;
+				}
+			}
+		}
+		fclose(fp);
+		fclose(tmp);
+		unlink(p1);
+		rename(p2, p1);
+		unlink(p2);
+		ActualizaHash(IdAUdb(i));
+	}
+	return 0;
+}
 void BddInit()
 {
 	FILE *fh;
@@ -109,8 +251,13 @@ void BddInit()
 	AltaHash();
 	if ((fh = fopen(DB_DIR "crcs", "a")))
 		fclose(fh);
+	if (!GetDataVer())
+	{
+		ActualizaDataVer2();
+		SetDataVer(2);
+	}
 	CargaBloques();
-	printea(ips, 0);
+	//printea(ips, 0);
 	
 }
 void CifraCadenaAHex(char *origen, char *destino, int len)
@@ -175,6 +322,36 @@ time_t LeeGMT(int id)
 	fread(lee, 1, 10, fp);
 	fclose(fp);
 	return atoul(lee);
+}
+int GetDataVer()
+{
+	if (!dataver)
+	{
+		FILE *fp;
+		char ver[2];
+		if (!(fp = fopen(DB_DIR "crcs", "r")))
+			return 0;
+		fseek(fp, 72, SEEK_SET);
+		bzero(ver, 2);
+		fread(ver, 1, 2, fp);
+		fclose(fp);
+		if (!sscanf(ver, "%X", &dataver))
+			return 0;
+		return dataver;
+	}
+	return dataver;
+}
+void SetDataVer(int v)
+{
+	char ver[2];
+	FILE *fh;
+	bzero(ver, 2);
+	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+		return;
+	fseek(fh, 72, SEEK_SET);
+	ircsprintf(ver, "%X", v);
+	fwrite(ver, 1, 2, fh);
+	fclose(fh);
 }
 DLLFUNC int ActualizaGMT(Udb *bloque, time_t gm)
 {

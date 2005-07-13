@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.15 2005-06-29 21:13:54 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.16 2005-07-13 14:06:26 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -117,6 +117,8 @@ void LiberaMemoriaDb()
 {
 	if (!conf_db)
 		return;
+	LiberaSQL();
+	ircfree(conf_db->tipo);
 	ircfree(conf_db->host);
 	ircfree(conf_db->login);
 	ircfree(conf_db->pass);
@@ -467,7 +469,6 @@ int TestServer(Conf *config, int *errores)
 	short error_parcial = 0;
 	int puerto;
 	Conf *eval, *aux;
-	struct hostent *addr;
 	if (!(eval = BuscaEntrada(config, "addr")))
 	{
 		Error("[%s:%s] No se encuentra la directriz addr.", config->archivo, config->item);
@@ -480,9 +481,9 @@ int TestServer(Conf *config, int *errores)
 			Error("[%s:%s::%s::%i] La directriz addr esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
-		if (!EsIp(eval->data) && !(addr = gethostbyname(eval->data)))
+		if (!EsIp(eval->data) && !gethostbyname(eval->data))
 		{
-			Error("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] No se puede resolver el host %s.", config->archivo, config->item, eval->item, eval->linea, eval->data);
 			error_parcial++;
 		}
 	}
@@ -668,7 +669,6 @@ int TestDb(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
-	struct hostent *db;
 	if (!(eval = BuscaEntrada(config, "host")))
 	{
 		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
@@ -681,9 +681,9 @@ int TestDb(Conf *config, int *errores)
 			Error("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
-		if (!EsIp(eval->data) && !(db = gethostbyname(eval->data)))
+		if (!EsIp(eval->data) && !gethostbyname(eval->data))
 		{
-			Error("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] No se puede resolver el host %s.", config->archivo, config->item, eval->item, eval->linea, eval->data);
 			error_parcial++;
 		}
 	}
@@ -752,6 +752,27 @@ int TestDb(Conf *config, int *errores)
 			}
 		}
 	}
+	if (!(eval = BuscaEntrada(config, "tipo")))
+	{
+		Error("[%s:%s] No se encuentra la directriz tipo.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz tipo esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+		else
+		{
+			if (strcasecmp(eval->data, "MySQL") && strcasecmp(eval->data, "PostGreSQL"))
+			{
+				Error("[%s:%s::%s::%i] Tipo de base de datos incorrecto.", config->archivo, config->item, eval->item, eval->linea);
+				error_parcial++;
+			}
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -774,13 +795,14 @@ void ConfDb(Conf *config)
 			ircstrdup(PREFIJO, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item ,"puerto"))
 			conf_db->puerto = atoi(config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item ,"tipo"))
+			ircstrdup(conf_db->tipo, config->seccion[i]->data);
 	}
 }
 int TestSmtp(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
-	struct hostent *smtp;
 	if (!(eval = BuscaEntrada(config, "host")))
 	{
 		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
@@ -793,9 +815,9 @@ int TestSmtp(Conf *config, int *errores)
 			Error("[%s:%s::%s::%i] La directriz host esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
-		if (!EsIp(eval->data) && !(smtp = gethostbyname(eval->data)))
+		if (!EsIp(eval->data) && !gethostbyname(eval->data))
 		{
-			Error("[%s:%s::%s::%i] No se puede resolver el host.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] No se puede resolver el host %s.", config->archivo, config->item, eval->item, eval->linea, eval->data);
 			error_parcial++;
 		}
 	}
@@ -1233,7 +1255,6 @@ int TestProtocolo(Conf *config, int *errores)
 	*errores += error_parcial;
 	return error_parcial;
 }
-
 #ifndef _WIN32
 void Error(char *formato, ...)
 {

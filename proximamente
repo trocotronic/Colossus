@@ -26,9 +26,9 @@ Versión 1.1.1:
 
 Versión 1.2:
 
-[ ] Integrar varios sistemas de bases de datos
-	[ ] MySQL
-	[ ] PostGres
+[X] Integrar varios sistemas de bases de datos
+	[X] MySQL
+	[X] PostGres
 
 Versión 1.3: 
 

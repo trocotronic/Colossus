@@ -1,5 +1,5 @@
 /*
- * $Id: sprintf_irc.c,v 1.5 2005-06-29 21:13:57 Trocotronic Exp $ 
+ * $Id: ircsprintf.c,v 1.1 2005-07-13 14:06:30 Trocotronic Exp $ 
  */
 
 /*
@@ -31,7 +31,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "sprintf_irc.h"
+#include "ircsprintf.h"
 #define u_char unsigned char
 
 const char atoi_tab[4000] = {

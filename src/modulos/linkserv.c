@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.11 2005-06-29 21:14:01 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.12 2005-07-13 14:06:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -81,7 +81,7 @@ int carga(Modulo *mod)
 }
 int descarga()
 {
-	BorraSenyal(SIGN_MYSQL, linkserv_sig_mysql);
+	BorraSenyal(SIGN_SQL, linkserv_sig_mysql);
 	BorraSenyal(SIGN_EOS, linkserv_sig_eos);
 	BorraSenyal(SIGN_BOT, linkserv_sig_bot);
 	return 0;
@@ -156,7 +156,7 @@ void set(Conf *config, Modulo *mod)
 		Free(linkserv->mascara);
 	linkserv->mascara = (char *)Malloc(sizeof(char) * (strlen(linkserv->nick) + 1 + strlen(linkserv->ident) + 1 + strlen(linkserv->host) + 1));
 	ircsprintf(linkserv->mascara, "%s!%s@%s", linkserv->nick, linkserv->ident, linkserv->host);
-	InsertaSenyal(SIGN_MYSQL, linkserv_sig_mysql);
+	InsertaSenyal(SIGN_SQL, linkserv_sig_mysql);
 	InsertaSenyal(SIGN_EOS, linkserv_sig_eos);
 	InsertaSenyal(SIGN_BOT, linkserv_sig_bot);
 	bot_mod(linkserv);
@@ -189,8 +189,8 @@ int linkserv_conecta_red(char *red)
 	if (!links)
 		links = (Links **)Malloc(sizeof(Links *));
 	links[linkS] = (Links *)Malloc(sizeof(Links));
-	serv = strdup(MySQLCogeRegistro(LS_MYSQL, red, "servidor"));
-	puerto = MySQLCogeRegistro(LS_MYSQL, red, "puerto");
+	serv = strdup(SQLCogeRegistro(LS_SQL, red, "servidor"));
+	puerto = SQLCogeRegistro(LS_SQL, red, "puerto");
 	if (!(links[linkS]->sck = SockOpen(serv, atoi(puerto), linkserv_sockop, linkserv_sockre, NULL, linkserv_sockcl, ADD)))
 	{
 		Free(links[linkS]);
@@ -230,21 +230,21 @@ BOTFUNC(linkserv_red)
 {
 	if (params < 2)
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
-		if (!(res = MySQLQuery("SELECT * from %s%s", PREFIJO, LS_MYSQL)))
+		SQLRes res;
+		SQLRow row;
+		if (!(res = SQLQuery("SELECT * from %s%s", PREFIJO, LS_SQL)))
 		{
 			Responde(cl, linkserv->cl, LS_ERR_EMPT, "No existen redes para listar.");
 			return 1;
 		}
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			if (!BadPtr(row[3]))
 				Responde(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s\003 con el nick \00312%s", row[0], row[1], row[2], row[3]);
 			else
 				Responde(cl, linkserv->cl, "Red: \00312%s\003 Servidor: \00312%s\003:\00312%s", row[0], row[1], row[2]);
 		}
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	else
 	{
@@ -262,32 +262,32 @@ BOTFUNC(linkserv_red)
 				return 1;
 			}
 			param[1]++;
-			if (MySQLCogeRegistro(LS_MYSQL, param[1], NULL))
+			if (SQLCogeRegistro(LS_SQL, param[1], NULL))
 			{
 				Responde(cl, linkserv->cl, LS_ERR_EMPT, "Esta red ya está en la lista.");
 				return 1;
 			}
 			if ((port = strchr(param[2], ':')))
 				*port++ = '\0';
-			MySQLInserta(LS_MYSQL, param[1], "servidor", param[2]);
+			SQLInserta(LS_SQL, param[1], "servidor", param[2]);
 			if (params > 3)
-				MySQLInserta(LS_MYSQL, param[1], "nick", param[3]);
+				SQLInserta(LS_SQL, param[1], "nick", param[3]);
 			else
-				MySQLInserta(LS_MYSQL, param[1], "nick", AleatorioEx("u??????"));
+				SQLInserta(LS_SQL, param[1], "nick", AleatorioEx("u??????"));
 			if (port)
-				MySQLInserta(LS_MYSQL, param[1], "puerto", port);
+				SQLInserta(LS_SQL, param[1], "puerto", port);
 			linkserv_conecta_red(param[1]);
 			Responde(cl, linkserv->cl, "Se ha añadido la red \00312%s", param[1]);
 		}
 		else if (*param[1] == '-')
 		{
 			param[1]++;
-			if (!MySQLCogeRegistro(LS_MYSQL, param[1], NULL))
+			if (!SQLCogeRegistro(LS_SQL, param[1], NULL))
 			{
 				Responde(cl, linkserv->cl, LS_ERR_EMPT, "Esta red no se encuentra.");
 				return 1;
 			}
-			MySQLBorra(LS_MYSQL, param[1]);
+			SQLBorra(LS_SQL, param[1]);
 			linkserv_cierra_red(param[1]);
 			Responde(cl, linkserv->cl, "Se ha borrado la red \00312%s", param[1]);
 		}
@@ -340,30 +340,29 @@ int linkserv_sig_mysql()
 	char buf[1][BUFSIZE], tabla[1];
 	int i;
 	tabla[0] = 0;
-	ircsprintf(buf[0], "%s%s", PREFIJO, LS_MYSQL);
+	ircsprintf(buf[0], "%s%s", PREFIJO, LS_SQL);
 	for (i = 0; i < mysql_tablas.tablas; i++)
 	{
 		if (!strcasecmp(mysql_tablas.tabla[i], buf[0]))
 			tabla[0] = 1;
 	}
-	if (!MySQLEsTabla(LS_MYSQL))
+	if (!SQLEsTabla(LS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`servidor` varchar(255) default NULL, "
-  			"`puerto` varchar(255) NOT NULL default '6667', "
-  			"`nick` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de servidores para links';", PREFIJO, LS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"servidor varchar(255) default NULL, "
+  			"puerto varchar(255) NOT NULL default '6667', "
+  			"nick varchar(255) default NULL "
+			");", PREFIJO, LS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	return 0;
 }
 int linkserv_sig_eos()
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *canal;
 	if (linkserv->residente)
 	{
@@ -373,11 +372,11 @@ int linkserv_sig_eos()
 	}
 	if (!links) /* primer arranque */
 	{
-		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, LS_MYSQL)))
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, LS_SQL)))
 		{
-			while ((row = mysql_fetch_row(res)))
+			while ((row = SQLFetchRow(res)))
 				linkserv_conecta_red(row[0]);
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
 	}
 	return 0;
@@ -393,7 +392,7 @@ int linkserv_sig_bot()
 SOCKFUNC(linkserv_sockop)
 {
 	char *nick, *lnick;
-	nick = MySQLCogeRegistro(LS_MYSQL, GetLinkSock(sck)->red, "nick");
+	nick = SQLCogeRegistro(LS_SQL, GetLinkSock(sck)->red, "nick");
 	lnick = strtolower(nick);
 	SockWrite(sck, OPT_CRLF, "NICK %s", nick);
 	SockWrite(sck, OPT_CRLF, "USER %s %s 0 :Linkaje a la red %s", lnick, lnick, conf_set->red ? conf_set->red : "NULL");

@@ -1,7 +1,10 @@
 /*
- * $Id: zip.h,v 1.4 2005-06-29 21:13:48 Trocotronic Exp $ 
+ * $Id: zip.h,v 1.5 2005-07-13 14:06:22 Trocotronic Exp $ 
  */
- 
+
+#ifdef _WIN32
+ #define ZLIB_WINAPI
+#endif 
 #include <zlib.h>
 
 #define ZIP_MINIMUM     4096

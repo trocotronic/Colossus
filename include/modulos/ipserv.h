@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
+ * $Id: ipserv.h,v 1.3 2005-07-13 14:06:24 Trocotronic Exp $ 
  */
 
 typedef struct _is IpServ;
@@ -17,7 +17,7 @@ struct _is
 #define IS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define IS_ERR_EMPT "\00304ERROR: %s"
 
-#define IS_MYSQL "ips"
+#define IS_SQL "ips"
 #ifndef UDB
 #define IS_CLONS "clons"
 #endif

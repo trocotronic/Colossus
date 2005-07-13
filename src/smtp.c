@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.10 2005-06-29 21:13:55 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.11 2005-07-13 14:06:27 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -264,8 +264,8 @@ char *Mx(char *dominio)
 			{
 				_pclose(pp);
 				strcpy(host, ++mx);
-				MySQLInserta(MYSQL_CACHE, dominio, "valor", host);
-				MySQLInserta(MYSQL_CACHE, dominio, "hora", "%lu", time(0));
+				SQLInserta(SQL_CACHE, dominio, "valor", host);
+				SQLInserta(SQL_CACHE, dominio, "hora", "%lu", time(0));
 				return host;
 			}
 		}

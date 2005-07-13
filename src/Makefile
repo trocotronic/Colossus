@@ -1,7 +1,7 @@
-## $Id: Makefile,v 1.15 2005-06-29 22:33:18 Trocotronic Exp $
+## $Id: Makefile,v 1.16 2005-07-13 14:06:26 Trocotronic Exp $
 
-OBJS=bdd.o hash.o ircd.o main.o match.o md5.o modulos.o mysql.o \
-	parseconf.o protocolos.o smtp.o socks.o soporte.o sprintf_irc.o ssl.o zlib.o
+OBJS=bdd.o hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
+	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'LDFLAGS=${LDFLAGS}' 'BINDIR=${BINDIR}' 'INSTALL=${INSTALL}' \
@@ -10,9 +10,9 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 MAKE = make $(MAKEARGS)
 INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
-	../include/sprintf_irc.h ../include/struct.h
+	../include/ircsprintf.h ../include/struct.h
 all: build
-build: ircd mods prots
+build: ircd mods prots sql
 ircd: $(OBJS)
 	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
 mods:
@@ -26,6 +26,12 @@ prots:
 		ln -s ../include include; \
 	fi
 	cd protocolos; $(MAKE) all
+	
+prots:
+	@if [ ! -r include ] ; then \
+		ln -s ../include include; \
+	fi
+	cd sql; $(MAKE) all
 	
 bdd.o: bdd.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c bdd.c
@@ -53,13 +59,17 @@ socks.o: socks.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c socks.c
 soporte.o: soporte.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c soporte.c
-sprintf_irc.o: sprintf_irc.c $(INCLUDES)
-	$(CC) $(CFLAGS) -c sprintf_irc.c
+ircsprintf.o: ircsprintf.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c ircsprintf.c
 ssl.o: ssl.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c ssl.c
+sql.o: sql.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c sql.c
 zlib.o: zlib.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c zlib.c
 clean:
 	$(RM) -f *.o *.so *~ core colossus; \
 	cd modulos; make clean; cd ..; \
-	cd protocolos; make clean
+	cd protocolos; make clean; cd ..; \
+	cd sql; make clean
+	

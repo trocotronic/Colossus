@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.3 2005-06-29 21:14:07 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.4 2005-07-13 14:06:35 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -123,10 +123,6 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e)
 	char file[512], text[1024];
 	FILE *fd;
 	time_t timet = time(NULL);
-#ifdef UDB
-#include "bdd.h"
-	printea(ips, 0);
-#endif
 	sprintf(file, "colossus.%d.core", getpid());
 	fd = fopen(file, "w");
 	GlobalMemoryStatus(&memStats);

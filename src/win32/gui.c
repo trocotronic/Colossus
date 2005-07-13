@@ -1,11 +1,17 @@
 /*
- * $Id: gui.c,v 1.8 2005-06-29 21:14:07 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.9 2005-07-13 14:06:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "resource.h"
+#ifdef USA_ZLIB
+#include "zip.h"
+#endif
+#ifdef UDB
+#include "bdd.h"
+#endif
 #include <commctrl.h>
 #include <windows.h>
 
@@ -41,6 +47,7 @@ void TaskBarCreated()
 }
 LRESULT CALLBACK MainDLG(HWND, UINT, WPARAM, LPARAM);
 LRESULT CALLBACK ConfErrorDLG(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK AcercaDLG(HWND, UINT, WPARAM, LPARAM);
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
 	HWND hWnd;
@@ -97,13 +104,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
 	InitDebug();
-	if (IniciaPrograma(__argc, __argv))
-		exit(-1);
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{
 		MessageBox(hWnd, "No se ha podido inicializar winsock.", "Error", MB_OK|MB_ICONERROR);
 		exit(-1);
 	}
+	if (IniciaPrograma(__argc, __argv))
+		exit(-1);
 	ShowWindow(hWnd, SW_SHOW);
 	if ((hThreadPrincipal = (HANDLE)_beginthread(LoopPrincipal, 0, NULL)) < 0)
 	{
@@ -119,7 +126,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 }
 LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	static HMENU hTray, hConfig;
+	static HMENU hTray, hConfig, hHelp;
 	POINT p;
 	if (message == WM_TASKBARCREATED)
 	{
@@ -171,6 +178,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					MENUITEMINFO mitem;
 					GetCursorPos(&p);
 					DestroyMenu(hConfig);
+					DestroyMenu(hHelp);
 					hConfig = CreatePopupMenu();
 					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
@@ -183,8 +191,13 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					mitem.fMask = MIIM_SUBMENU;
 					mitem.hSubMenu = hConfig;
 					SetMenuItemInfo(hTray, IDM_CONFIG, MF_BYCOMMAND, &mitem);
+					hHelp = CreatePopupMenu();
+					AppendMenu(hHelp, MF_STRING, IDM_AYUDA, "&Ayuda");
+					AppendMenu(hHelp, MF_SEPARATOR, 0, NULL);
+					AppendMenu(hHelp, MF_STRING, IDM_ACERCA, "Acerca &de Colossus...");
+					mitem.hSubMenu = hHelp;
+					SetMenuItemInfo(hTray, IDM_AYUDA_MENU, MF_BYCOMMAND, &mitem);
 					TrackPopupMenu(hTray, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
-					/* Kludge for a win bug */
 					SendMessage(hDlg, WM_NULL, 0, 0);
 					break;
 				}
@@ -231,13 +244,26 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 							AppendMenu(hConfig, MF_STRING, i++, ex->config);
 					}
 					TrackPopupMenu(hConfig, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
-					/* Kludge for a win bug */
+					SendMessage(hDlg, WM_NULL, 0, 0);
+					break;
+				}
+				case BT_AYUDA:
+				{
+					GetCursorPos(&p);
+					DestroyMenu(hHelp);
+					hHelp = CreatePopupMenu();
+					AppendMenu(hHelp, MF_STRING, IDM_AYUDA, "&Ayuda");
+					AppendMenu(hHelp, MF_SEPARATOR, 0, NULL);
+					AppendMenu(hHelp, MF_STRING, IDM_ACERCA, "Acerca &de Colossus...");
+					TrackPopupMenu(hHelp, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
 					SendMessage(hDlg, WM_NULL, 0, 0);
 					break;
 				}
 				case IDM_AYUDA:
-				case BT_AYUDA:
 					ShellExecute(NULL, "open", "colossusdoc.html", NULL, NULL, SW_MAXIMIZE);
+					break;
+				case IDM_ACERCA:
+					DialogBox(hInst, "Acerca", hDlg, (DLGPROC)AcercaDLG);
 					break;
 				case IDM_REHASH:
 				case BT_REHASH:
@@ -274,6 +300,80 @@ LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 			EndDialog(hDlg, TRUE);
 			break;
 		case WM_DESTROY:
+			break;
+	}
+	return FALSE;
+}
+LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
+{
+	static HFONT hFont;
+	static HCURSOR hCursor;
+	switch (message) 
+	{
+		case WM_INITDIALOG: 
+		{
+			char pth[8];
+			ShowWindow(hDlg, SW_HIDE);
+			SetWindowText(hDlg, "Acerca de Colossus...");
+			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_SMALL, 
+				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE));
+			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_BIG, 
+				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
+			hFont = CreateFont(8,0,0,0,0,0,1,0,ANSI_CHARSET,0,0,PROOF_QUALITY,0,"MS Sans Serif");
+			SendMessage(GetDlgItem(hDlg, IDC_WEB), WM_SETFONT, (WPARAM)hFont,TRUE);
+#ifdef UDB
+			SetDlgItemText(hDlg, IDC_UDBV, UDB_VER);
+#endif
+#ifdef USA_SSL
+			SetDlgItemText(hDlg, IDC_OPENV, strchr(OPENSSL_VERSION_TEXT, ' ')+1);
+#endif
+#ifdef USA_ZLIB
+			SetDlgItemText(hDlg, IDC_ZLIBV, zlibVersion());
+#endif
+			if (sql->clientinfo[0])
+				SetDlgItemText(hDlg, IDC_SQLCV, sql->clientinfo);
+			if (sql->servinfo[0])
+				SetDlgItemText(hDlg, IDC_SQLSV, sql->servinfo);
+			ircsprintf(pth, "%i.%i.%i", PTW32_VERSION);
+			SetDlgItemText(hDlg, IDC_PTHV, pth);
+			return TRUE;
+		}
+		case WM_DRAWITEM: 
+		{
+			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
+			unsigned char text[500];
+			COLORREF oldtext;
+			RECT focus;
+			GetWindowText(lpdis->hwndItem, text, 500);
+			if (wParam == IDC_WEB) 
+			{
+				FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(COLOR_3DFACE));
+				oldtext = SetTextColor(lpdis->hDC, RGB(0,0,255));
+				DrawText(lpdis->hDC, text, strlen(text), &lpdis->rcItem, DT_LEFT);
+				SetTextColor(lpdis->hDC, oldtext);
+				if (lpdis->itemState & ODS_FOCUS) 
+				{
+					CopyRect(&focus, &lpdis->rcItem);
+					focus.left += 2;
+					focus.right -= 2;
+					focus.top += 1;
+					focus.bottom -= 1;
+					DrawFocusRect(lpdis->hDC, &focus);
+				}
+				return TRUE;
+			}
+		}
+		case WM_COMMAND:
+			if (HIWORD(wParam) == BN_DBLCLK) 
+			{
+				if (LOWORD(wParam) == IDC_WEB) 
+					ShellExecute(NULL, "open", "http://www.rallados.net", NULL, NULL, SW_MAXIMIZE);
+				EndDialog(hDlg, TRUE);
+				return 0;
+			}
+			break;
+		case WM_CLOSE:
+			EndDialog(hDlg, TRUE);
 			break;
 	}
 	return FALSE;
@@ -323,6 +423,7 @@ int Info(char *formato, ...)
 	va_start(vl, formato);
 	ircsprintf(texto, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
 	ircvsprintf(txt, texto, vl);
+	va_end(vl);
 	len += strlen(txt);
 	if (len > sizeof(info))
 	{
@@ -333,4 +434,51 @@ int Info(char *formato, ...)
 		strcat(info, txt);
 	SetDlgItemText(hwMain, EDT_INFO, info);
 	return -1;
+}
+typedef struct {
+	char *pregunta;
+	char *def;
+	char resp[512];
+	char *titu;
+}CampoST;
+CampoST preg;
+LRESULT CampoDLG(HWND hDlg, UINT Message, WPARAM wParam, LPARAM lParam) 
+{
+	int len;
+	switch (Message) 
+	{
+		case WM_INITDIALOG:
+			SetWindowText(hDlg, preg.titu);
+			SetDlgItemText(hDlg, IDC_OPENV, preg.pregunta);
+			if (preg.def)
+				SetDlgItemText(hDlg, IDC_PASS, preg.def);
+			return TRUE;
+		case WM_COMMAND:
+			if (LOWORD(wParam) == IDCANCEL) 
+			{
+				preg.resp[0] = '\0';
+				EndDialog(hDlg, TRUE);
+			}
+			else if (LOWORD(wParam) == IDOK) 
+			{
+				GetDlgItemText(hDlg, IDC_PASS, preg.resp, sizeof(preg.resp));
+				EndDialog(hDlg, TRUE);
+			}
+			return FALSE;
+		case WM_CLOSE:
+			preg.resp[0] = '\0';
+			EndDialog(hDlg, TRUE);
+		default:
+			return FALSE;
+	}
+}
+char *PreguntaCampo(char *titu, char *texto, char *def)
+{
+	preg.titu = titu;
+	preg.pregunta = texto;
+	preg.def = def;
+	DialogBoxParam(hInst, "PreguntaCampo", hwMain, (DLGPROC)CampoDLG, (LPARAM)NULL); 
+	if (!preg.resp[0])
+		return NULL;
+	return preg.resp;
 }

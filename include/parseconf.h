@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.9 2005-06-29 21:13:44 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.10 2005-07-13 14:06:22 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -53,6 +53,7 @@ struct Conf_db
 	char *bd;
 	char *prefijo;
 	int puerto;
+	char *tipo;
 };
 struct Conf_smtp
 {

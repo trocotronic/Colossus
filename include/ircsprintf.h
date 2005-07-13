@@ -1,5 +1,5 @@
 /*
- * $Id: sprintf_irc.h,v 1.3 2005-06-29 21:13:45 Trocotronic Exp $ 
+ * $Id: ircsprintf.h,v 1.1 2005-07-13 14:06:23 Trocotronic Exp $ 
  */
 
 #if !defined(SPRINTF_IRC)

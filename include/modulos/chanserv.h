@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.5 2005-06-29 21:13:48 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.6 2005-07-13 14:06:24 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -83,7 +83,7 @@ struct _akick
 
 extern ChanServ chanserv;
 
-#define CS_MYSQL "canales"
+#define CS_SQL "canales"
 #define CS_TOK "ctokens"
 #ifndef UDB
 #define CS_FORBIDS "cforbids"
@@ -97,11 +97,11 @@ extern ChanServ chanserv;
 #define CS_ERR_SUSP "\00304ERROR: No puedes aplicar este comando sobre un canal suspendido."
 #define CS_ERR_FORB ERR_FORB
 
-#define IsChanDebug(x) (x && (atoi(MySQLCogeRegistro(CS_MYSQL, x, "opts")) & CS_OPT_DEBUG))
+#define IsChanDebug(x) (x && (atoi(SQLCogeRegistro(CS_SQL, x, "opts")) & CS_OPT_DEBUG))
 DLLFUNC extern u_long tiene_nivel(char *, char *, u_long);
 DLLFUNC extern CsRegistros *busca_cregistro(char *);
 #ifdef UDB
-#define IsChanUDB(x) (atoi(MySQLCogeRegistro(CS_MYSQL, x, "opts")) & CS_OPT_UDB)
+#define IsChanUDB(x) (atoi(SQLCogeRegistro(CS_SQL, x, "opts")) & CS_OPT_UDB)
 #endif
 DLLFUNC extern int ChanReg(char *);
 extern char *IsChanSuspend(char *);

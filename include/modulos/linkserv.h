@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.h,v 1.2 2004-12-31 12:27:55 Trocotronic Exp $ 
+ * $Id: linkserv.h,v 1.3 2005-07-13 14:06:24 Trocotronic Exp $ 
  */
 
 #define LS_MAX_COMS 256
@@ -28,7 +28,7 @@ extern LinkServ *linkserv;
 #define LS_ERR_EMPT "\00304ERROR: %s"
 #define LS_ERR_FORB ERR_FORB
 
-#define LS_MYSQL "links"
+#define LS_SQL "links"
 
 typedef struct _links Links;
 struct _links

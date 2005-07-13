@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.4 2005-03-14 20:08:32 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.5 2005-07-13 14:06:18 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -63,6 +63,8 @@ install: all
 	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
 	$(INSTALL) -m 0700 -d ~/Colossus/protocolos
 	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos
+	$(INSTALL) -m 0700 -d ~/Colossus/sql
+	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/sql
 
 pem:	src/ssl.cnf
 	@echo "Generating certificate request .. "

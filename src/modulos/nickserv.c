@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.24 2005-06-29 21:14:03 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.25 2005-07-13 14:06:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -38,7 +38,7 @@ BOTFUNC(NSDemigrar);
 #endif
 BOTFUNC(NSForbid);
 
-int NSSigMySQL		();
+int NSSigSQL		();
 int NSCmdPreNick 	(Cliente *, char *);
 int NSCmdPostNick 	(Cliente *);
 int NSCmdUmode		(Cliente *, char *);
@@ -151,7 +151,7 @@ int descarga()
 	BorraSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	BorraSenyal(SIGN_POST_NICK, NSCmdPostNick);
 	BorraSenyal(SIGN_UMODE, NSCmdUmode);
-	BorraSenyal(SIGN_MYSQL, NSSigMySQL);
+	BorraSenyal(SIGN_SQL, NSSigSQL);
 	BorraSenyal(SIGN_QUIT, NSSigQuit);
 #ifdef UDB
 	BorraSenyal(SIGN_EOS, NSSigEOS);
@@ -238,7 +238,7 @@ void NSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	InsertaSenyal(SIGN_POST_NICK, NSCmdPostNick);
 	InsertaSenyal(SIGN_UMODE, NSCmdUmode);
-	InsertaSenyal(SIGN_MYSQL, NSSigMySQL);
+	InsertaSenyal(SIGN_SQL, NSSigSQL);
 	InsertaSenyal(SIGN_QUIT, NSSigQuit);
 #ifdef UDB
 	InsertaSenyal(SIGN_EOS, NSSigEOS);
@@ -253,7 +253,7 @@ char *NSRegeneraClave(char *nick)
 	char *pass, *passmd5;
 	pass = AleatorioEx(nickserv.securepass);
 	passmd5 = MDString(pass);
-	MySQLInserta(NS_MYSQL, nick, "pass", passmd5);
+	SQLInserta(NS_SQL, nick, "pass", passmd5);
 #ifdef UDB
 	if (IsNickUDB(nick))
 	{
@@ -532,7 +532,7 @@ BOTFUNC(NSRegister)
 	u_long ultimo;
 	char *dominio;
 	char *mail, *pass, *usermask, *cache;
-	MYSQL_RES *res = NULL;
+	SQLRes res = NULL;
 	usermask = strchr(cl->mask, '!') + 1;
 	if (params < ((nickserv.opts & NS_SMAIL) ? 2 : 3))
 	{
@@ -586,29 +586,29 @@ BOTFUNC(NSRegister)
 			return 1;
 		}
 	}
-	if (nickserv.nicks && ((res = MySQLQuery("SELECT * from %s%s where email='%s'", PREFIJO, NS_MYSQL, mail)) && mysql_num_rows(res) == nickserv.nicks))
+	if (nickserv.nicks && ((res = SQLQuery("SELECT * from %s%s where LOWER(email)='%s'", PREFIJO, NS_SQL, strtolower(mail))) && SQLNumRows(res) == nickserv.nicks))
 	{
-		mysql_free_result(res);
+		SQLFreeRes(res);
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes registrar más nicks en esta cuenta.");
 		return 1;
 	}
-	mysql_free_result(res);
+	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
 #ifdef UDB
 	if (nickserv.opts & NS_AUTOMIGRAR)
 		opts |= NS_OPT_UDB;
 #endif
 	if (pass)
-		MySQLInserta(NS_MYSQL, parv[0], "pass", MDString(pass));
-	MySQLInserta(NS_MYSQL, parv[0], "email", mail);
-	MySQLInserta(NS_MYSQL, parv[0], "gecos", cl->info);
-	MySQLInserta(NS_MYSQL, parv[0], "host", "%s@%s", cl->ident, cl->host);
-	MySQLInserta(NS_MYSQL, parv[0], "opts", "%i", opts);
-	MySQLInserta(NS_MYSQL, parv[0], "id", "%i", nickserv.opts & NS_SMAIL ? 0 : time(0));
-	MySQLInserta(NS_MYSQL, parv[0], "reg", "%i", time(0));
-	MySQLInserta(NS_MYSQL, parv[0], "last", "%i", time(0));
+		SQLInserta(NS_SQL, parv[0], "pass", MDString(pass));
+	SQLInserta(NS_SQL, parv[0], "email", mail);
+	SQLInserta(NS_SQL, parv[0], "gecos", cl->info);
+	SQLInserta(NS_SQL, parv[0], "host", "%s@%s", cl->ident, cl->host);
+	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
+	SQLInserta(NS_SQL, parv[0], "id", "%i", nickserv.opts & NS_SMAIL ? 0 : time(0));
+	SQLInserta(NS_SQL, parv[0], "reg", "%i", time(0));
+	SQLInserta(NS_SQL, parv[0], "last", "%i", time(0));
 	if (nickserv.opts & NS_SMAIL)
-		Email(MySQLCogeRegistro(NS_MYSQL, parv[0], "email"), "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
+		Email(mail, "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(parv[0]), nickserv.hmod->nick, conf_set->red);
 	else if (UMODE_REGNICK)
 		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
@@ -646,7 +646,7 @@ BOTFUNC(NSIdentify)
 #endif
 	 )
 	{
-		ircsprintf(buf, "Tienes el nick suspendido: %s", MySQLCogeRegistro(NS_MYSQL, parv[0], "suspend"));
+		ircsprintf(buf, "Tienes el nick suspendido: %s", SQLCogeRegistro(NS_SQL, parv[0], "suspend"));
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, buf);
 		return 1;
 	}
@@ -656,7 +656,7 @@ BOTFUNC(NSIdentify)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, buf);
 		return 1;
 	}
-	if (!strcmp(MDString(param[1]), MySQLCogeRegistro(NS_MYSQL, parv[0], "pass")))
+	if (!strcmp(MDString(param[1]), SQLCogeRegistro(NS_SQL, parv[0], "pass")))
 	{
 		if (UMODE_REGNICK)
 			port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
@@ -692,13 +692,13 @@ BOTFUNC(NSOpts)
 	}
 	if (!strcasecmp(param[1], "EMAIL"))
 	{
-		MySQLInserta(NS_MYSQL, parv[0], "email", param[2]);
+		SQLInserta(NS_SQL, parv[0], "email", param[2]);
 		Responde(cl, CLI(nickserv), "Tu email se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
 	}
 	else if (!strcasecmp(param[1], "URL"))
 	{
-		MySQLInserta(NS_MYSQL, parv[0], "url", param[2]);
+		SQLInserta(NS_SQL, parv[0], "url", param[2]);
 		Responde(cl, CLI(nickserv), "Tu url se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
 	}
@@ -709,7 +709,7 @@ BOTFUNC(NSOpts)
 			Responde(cl, CLI(nickserv), NS_ERR_SNTX, "El valor kill debe ser un número mayor que 10.");
 			return 1;
 		}
-		MySQLInserta(NS_MYSQL, parv[0], "kill", param[2]);
+		SQLInserta(NS_SQL, parv[0], "killtime", param[2]);
 		Responde(cl, CLI(nickserv), "Tu kill se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
 	}
@@ -717,12 +717,12 @@ BOTFUNC(NSOpts)
 	{
 		if (IsOper(cl))
 		{
-			int opts = atoi(MySQLCogeRegistro(NS_MYSQL, parv[0], "opts"));
+			int opts = atoi(SQLCogeRegistro(NS_SQL, parv[0], "opts"));
 			if (!strcasecmp(param[2], "ON"))
 				opts |= NS_OPT_NODROP;
 			else
 				opts &= ~NS_OPT_NODROP;
-			MySQLInserta(NS_MYSQL, parv[0], "opts", "%i", opts);
+			SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
 			Responde(cl, CLI(nickserv), "El DROP de tu nick se ha cambiado a \00312%s\003.", param[2]);
 		}
 		else
@@ -735,7 +735,7 @@ BOTFUNC(NSOpts)
 	else if (!strcasecmp(param[1], "PASS"))
 	{
 		char *passmd5 = MDString(param[2]);
-		MySQLInserta(NS_MYSQL, parv[0], "pass", passmd5);
+		SQLInserta(NS_SQL, parv[0], "pass", passmd5);
 #ifdef UDB
 		if (IsNickUDB(parv[0]))
 			PropagaRegistro("N::%s::P %s", parv[0], passmd5);
@@ -745,7 +745,7 @@ BOTFUNC(NSOpts)
 	}
 	else if (!strcasecmp(param[1], "HIDE"))
 	{
-		int opts = atoi(MySQLCogeRegistro(NS_MYSQL, parv[0], "opts"));
+		int opts = atoi(SQLCogeRegistro(NS_SQL, parv[0], "opts"));
 		if (params < 4)
 		{
 			Responde(cl, CLI(nickserv), NS_ERR_PARA, "SET HIDE valor on|off");
@@ -798,7 +798,7 @@ BOTFUNC(NSOpts)
 			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
 			return 1;
 		}
-		MySQLInserta(NS_MYSQL, parv[0], "opts", "%i", opts);
+		SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
 		Responde(cl, CLI(nickserv), "Hide %s cambiado a \00312%s\003.", param[2], param[3]);
 		return 0;
 	}
@@ -821,7 +821,7 @@ BOTFUNC(NSDrop)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (!IsAdmin(cl) && (atoi(MySQLCogeRegistro(NS_MYSQL, param[1], "opts")) & NS_OPT_NODROP))
+	if (!IsAdmin(cl) && (atoi(SQLCogeRegistro(NS_SQL, param[1], "opts")) & NS_OPT_NODROP))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no se puede dropear.");
 		return 1;
@@ -836,7 +836,7 @@ int NSBaja(char *nick, char opt)
 {
 	Cliente *al;
 	int opts = 0;
-	if (!opt && (opts = atoi(MySQLCogeRegistro(NS_MYSQL, nick, "opts"))) & NS_OPT_NODROP)
+	if (!opt && (opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"))) & NS_OPT_NODROP)
 		return 1;
 	al = BuscaCliente(nick, NULL);
 	Senyal1(NS_SIGN_DROP, nick);
@@ -846,7 +846,7 @@ int NSBaja(char *nick, char opt)
 	if (opts & NS_OPT_UDB)
 		PropagaRegistro("N::%s", nick);
 #endif
-	MySQLBorra(NS_MYSQL, nick);
+	SQLBorra(NS_SQL, nick);
 	return 0;
 }
 BOTFUNC(NSSendpass)
@@ -861,7 +861,7 @@ BOTFUNC(NSSendpass)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	Email(MySQLCogeRegistro(NS_MYSQL, param[1], "email"), "Reenvío de la contraseña", "Debido a la pérdida de tu contraseña, se te ha generado otra clave totalmente segura.\r\n"
+	Email(SQLCogeRegistro(NS_SQL, param[1], "email"), "Reenvío de la contraseña", "Debido a la pérdida de tu contraseña, se te ha generado otra clave totalmente segura.\r\n"
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(param[1]), nickserv.hmod->nick, conf_set->red);
 	Responde(cl, CLI(nickserv), "Se ha generado y enviado otra contraseña al email de \00312%s\003.", param[1]);
 	return 0;
@@ -869,8 +869,8 @@ BOTFUNC(NSSendpass)
 BOTFUNC(NSInfo)
 {
 	int comp;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	time_t reg;
 	int opts;
 	if (params < 2)
@@ -884,8 +884,8 @@ BOTFUNC(NSInfo)
 		return 1;
 	}
 	comp = strcasecmp(param[1], parv[0]);
-	res = MySQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,`kill`,item from %s%s where item='%s'", PREFIJO, NS_MYSQL, param[1]);
-	row = mysql_fetch_row(res);
+	res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, strtolower(param[1]));
+	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
 	Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
 	Responde(cl, CLI(nickserv), "Realname: \00312%s", row[1]);
@@ -919,7 +919,7 @@ BOTFUNC(NSInfo)
 	if (opts & NS_OPT_UDB)
 		Responde(cl, CLI(nickserv), "Este nick está migrado a la \2BDD");
 #endif
-	mysql_free_result(res);
+	SQLFreeRes(res);
 	if ((!strcasecmp(parv[0], param[1]) && IsId(cl)) || IsOper(cl))
 	{
 		CsRegistros *regs;
@@ -932,12 +932,12 @@ BOTFUNC(NSInfo)
 					ModosAFlags(regs->sub[i].flags, cFlags_dl, NULL),
 					regs->sub[i].flags);
 		}
-		if ((res = MySQLQuery("SELECT item from %s%s where founder='%s'", PREFIJO, CS_MYSQL, param[1])))
+		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, strtolower(param[1]))))
 		{
-			while ((row = mysql_fetch_row(res)))
+			while ((row = SQLFetchRow(res)))
 				Responde(cl, CLI(nickserv), "Canal: \00312%s flags: \00312+%s\003 (\00312FUNDADOR\003)", row[0], 
 					ModosAFlags(CS_LEV_ALL, cFlags_dl, NULL));
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
 	}
 	return 0;
@@ -945,8 +945,8 @@ BOTFUNC(NSInfo)
 BOTFUNC(NSList)
 {
 	char *rep;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	u_int i;
 	if (params < 2)
 	{
@@ -954,21 +954,21 @@ BOTFUNC(NSList)
 		return 1;
 	}
 	rep = str_replace(param[1], '*', '%');
-	if (!(res = MySQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, NS_MYSQL, rep)))
+	if (!(res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s'", PREFIJO, NS_SQL, strtolower(rep))))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
 		return 1;
 	}
 	Responde(cl, CLI(nickserv), "*** Nicks que coinciden con el patrón \00312%s\003 ***", param[1]);
-	for (i = 0; i < nickserv.maxlist && (row = mysql_fetch_row(res)); i++)
+	for (i = 0; i < nickserv.maxlist && (row = SQLFetchRow(res)); i++)
 	{
-		if (IsOper(cl) || !(atoi(MySQLCogeRegistro(NS_MYSQL, row[0], "opts")) & NS_OPT_LIST))
+		if (IsOper(cl) || !(atoi(SQLCogeRegistro(NS_SQL, row[0], "opts")) & NS_OPT_LIST))
 			Responde(cl, CLI(nickserv), "\00312%s", row[0]);
 		else
 			i--;
 	}
-	Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
-	mysql_free_result(res);
+	Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+	SQLFreeRes(res);
 	return 0;
 }
 BOTFUNC(NSGhost)
@@ -994,7 +994,7 @@ BOTFUNC(NSGhost)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes ejecutar este comando sobre ti mismo.");
 		return 1;
 	}
-	if (strcmp(MySQLCogeRegistro(NS_MYSQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(NS_SQL, param[1], "pass"), MDString(param[2])))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
@@ -1023,7 +1023,7 @@ BOTFUNC(NSSuspender)
 		return 1;
 	}
 	motivo = Unifica(param, params, 2, -1);
-	MySQLInserta(NS_MYSQL, param[1], "suspend", motivo);
+	SQLInserta(NS_SQL, param[1], "suspend", motivo);
 #ifdef UDB
 	if ((al = BuscaCliente(param[1], NULL)))
 	{
@@ -1052,12 +1052,12 @@ BOTFUNC(NSLiberar)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (!MySQLCogeRegistro(NS_MYSQL, param[1], "suspend"))
+	if (!SQLCogeRegistro(NS_SQL, param[1], "suspend"))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está suspendido.");
 		return 1;
 	}
-	MySQLInserta(NS_MYSQL, param[1], "suspend", "");
+	SQLInserta(NS_SQL, param[1], "suspend", "");
 #ifdef UDB
 	if ((al = BuscaCliente(param[1], NULL)))
 		port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-S");
@@ -1094,7 +1094,7 @@ BOTFUNC(NSSwhois)
 			PropagaRegistro("N::%s::W %s", param[1], swhois);
 		else
 #endif
-		MySQLInserta(NS_MYSQL, param[1], "swhois", swhois);
+		SQLInserta(NS_SQL, param[1], "swhois", swhois);
 		if ((al = (BuscaCliente(param[1], NULL))))
 			port_func(P_WHOIS_ESPECIAL)(al, swhois);
 		Responde(cl, CLI(nickserv), "El swhois de \00312%s\003 ha sido cambiado.", param[1]);
@@ -1106,7 +1106,7 @@ BOTFUNC(NSSwhois)
 			PropagaRegistro("N::%s::W", param[1]);
 		else
 #endif		
-		MySQLInserta(NS_MYSQL, param[1], "swhois", NULL);
+		SQLInserta(NS_SQL, param[1], "swhois", NULL);
 		Responde(cl, CLI(nickserv), "Se ha eliminado el swhois de \00312%s", param[1]);
 	}
 	return 0;
@@ -1162,7 +1162,7 @@ BOTFUNC(NSForbid)
 			Responde(cl, CLI(nickserv), ERR_NSUP);
 			return 1;
 		}
-		MySQLInserta(NS_FORBIDS, param[1] + 1, "motivo", motivo);
+		SQLInserta(NS_FORBIDS, param[1] + 1, "motivo", motivo);
 		port_func(P_FORB_NICK)(param[1] + 1, ADD,  motivo);
 #endif
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1] + 1);
@@ -1172,7 +1172,7 @@ BOTFUNC(NSForbid)
 #ifdef UDB
 		PropagaRegistro("N::%s::B", param[1] + 1);
 #else
-		MySQLBorra(NS_FORBIDS, param[1] + 1);
+		SQLBorra(NS_FORBIDS, param[1] + 1);
 		if (!port_existe(P_FORB_NICK))
 			port_func(P_FORB_NICK)(param[1] + 1, DEL, NULL);
 #endif
@@ -1199,12 +1199,12 @@ BOTFUNC(NSMigrar)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (strcmp(MySQLCogeRegistro(NS_MYSQL, parv[0], "pass"), MDString(param[1])))
+	if (strcmp(SQLCogeRegistro(NS_SQL, parv[0], "pass"), MDString(param[1])))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(MySQLCogeRegistro(NS_MYSQL, parv[0], "opts"));
+	opts = atoi(SQLCogeRegistro(NS_SQL, parv[0], "opts"));
 	if (opts & NS_OPT_UDB)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ya tienes el nick migrado.");
@@ -1214,7 +1214,7 @@ BOTFUNC(NSMigrar)
 	PropagaRegistro("N::%s::D md5", parv[0]);
 	Responde(cl, CLI(nickserv), "Migración realizada.");
 	opts |= NS_OPT_UDB;
-	MySQLInserta(NS_MYSQL, parv[0], "opts", "%i", opts);
+	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
 	NSCambiaInv(cl);
 	return 0;
 }
@@ -1231,12 +1231,12 @@ BOTFUNC(NSDemigrar)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (strcmp(MySQLCogeRegistro(NS_MYSQL, parv[0], "pass"), MDString(param[1])))
+	if (strcmp(SQLCogeRegistro(NS_SQL, parv[0], "pass"), MDString(param[1])))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(MySQLCogeRegistro(NS_MYSQL, parv[0], "opts"));
+	opts = atoi(SQLCogeRegistro(NS_SQL, parv[0], "opts"));
 	if (!(opts & NS_OPT_UDB))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Tu nick no está migrado.");
@@ -1245,7 +1245,7 @@ BOTFUNC(NSDemigrar)
 	PropagaRegistro("N::%s", parv[0]);
 	Responde(cl, CLI(nickserv), "Demigración realizada.");
 	opts &= ~NS_OPT_UDB;
-	MySQLInserta(NS_MYSQL, parv[0], "opts", "%i", opts);
+	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
 	return 0;
 }
 #endif
@@ -1265,7 +1265,7 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 		if (IsReg(cl->nombre))
 		{
 			if (IsId(cl))
-				MySQLInserta(NS_MYSQL, cl->nombre, "last", "%i", time(0));
+				SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
 			else
 				ApagaCrono(cl->nombre, cl->sck); /* es posible que tenga kill */
 		}
@@ -1276,7 +1276,7 @@ int NSCmdPostNick(Cliente *cl)
 {
 #ifndef UDB
 	char *motivo = NULL;
-	if ((motivo = MySQLCogeRegistro(NS_FORBIDS, cl->nombre, "motivo")))
+	if ((motivo = SQLCogeRegistro(NS_FORBIDS, cl->nombre, "motivo")))
 	{
 		Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", motivo);
 		NSCambiaInv(cl);
@@ -1293,7 +1293,7 @@ int NSCmdPostNick(Cliente *cl)
 			else
 				ircsprintf(buf, "%s", nickserv.hmod->nick);
 			Responde(cl, CLI(nickserv), "Este nick está protegido. Si es tu nick escribe \00312/msg %s IDENTIFY tupass\003. Si no lo es, escoge otro.", buf);
-			kill = MySQLCogeRegistro(NS_MYSQL, cl->nombre, "kill");
+			kill = SQLCogeRegistro(NS_SQL, cl->nombre, "killtime");
 			if (kill && atoi(kill))
 			{
 				Responde(cl, CLI(nickserv), "De no hacerlo, serás desconectado en \00312%s\003 segundos.", kill);
@@ -1307,50 +1307,60 @@ int NSCmdPostNick(Cliente *cl)
 	}		
 	return 0;
 }
-int NSSigMySQL()
+int NSSigSQL()
 {
-	if (!MySQLEsTabla(NS_MYSQL))
+	if (!SQLEsTabla(NS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`n` int(11) NOT NULL auto_increment, "
-  			"`item` text NOT NULL, "
-  			"`pass` text NOT NULL, "
-  			"`email` text NOT NULL, "
-  			"`url` text NOT NULL, "
-  			"`gecos` text NOT NULL, "
-  			"`host` text NOT NULL, "
-  			"`opts` mediumint(9) NOT NULL default '0', "
-  			"`id` bigint(20) NOT NULL default '0', "
-  			"`reg` bigint(20) NOT NULL default '0', "
-  			"`last` bigint(20) NOT NULL default '0', "
-  			"`quit` text NOT NULL, "
-  			"`suspend` text, "
-  			"`kill` smallint(6) NOT NULL default '0', "
-  			"`swhois` text NOT NULL, "
-  			"KEY `item` (`n`) "
-			") TYPE=MyISAM COMMENT='Tabla de nicks';", PREFIJO, NS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"n SERIAL, "
+  			"item text, "
+  			"pass text, "
+  			"email text, "
+  			"url text, "
+  			"gecos text, "
+  			"host text, "
+  			"opts int2 default '0', "
+  			"id int4 default '0', "
+  			"reg int4 default '0', "
+  			"last int4 default '0', "
+  			"quit text, "
+  			"suspend text, "
+  			"killtime int2 default '0', "
+  			"swhois text "
+			");", PREFIJO, NS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
 	}
-#ifndef UDB
-	if (!MySQLEsTabla(NS_FORBIDS))
+	else
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`motivo` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de nicks prohibidos';", PREFIJO, NS_FORBIDS))
+		if (!SQLEsCampo(NS_SQL, "killtime"))
+		{
+			SQLRes res;
+			SQLRow row;
+			SQLQuery("ALTER TABLE %s%s ADD COLUMN killtime int2 DEFAULT '0'", PREFIJO, NS_SQL);
+			res = SQLQuery("SELECT * FROM %s%s", PREFIJO, NS_SQL);
+			while ((row = SQLFetchRow(res)))
+				SQLQuery("UPDATE %s%s SET killtime=%s WHERE item='%s'", PREFIJO, NS_SQL, row[13], row[1]);
+		}
+	}	
+#ifndef UDB
+	if (!SQLEsTabla(NS_FORBIDS))
+	{
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"motivo varchar(255) default NULL "
+			");", PREFIJO, NS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}
 #endif
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	return 1;
 }
 int NSSigQuit(Cliente *cl, char *msg)
 {
 	if (IsId(cl) && IsReg(cl->nombre))
 	{
-		MySQLInserta(NS_MYSQL, cl->nombre, "quit", msg);
-		MySQLInserta(NS_MYSQL, cl->nombre, "last", "%i", time(0));
+		SQLInserta(NS_SQL, cl->nombre, "quit", msg);
+		SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
 	}
 	return 0;
 }
@@ -1359,15 +1369,15 @@ int NSSigIdOk(Cliente *cl)
 	if (IsReg(cl->nombre))
 	{
 		char *swhois;
-		MySQLInserta(NS_MYSQL, cl->nombre, "id", "%i", time(0));
-		MySQLInserta(NS_MYSQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
-		MySQLInserta(NS_MYSQL, cl->nombre, "gecos", cl->info);
+		SQLInserta(NS_SQL, cl->nombre, "id", "%i", time(0));
+		SQLInserta(NS_SQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
+		SQLInserta(NS_SQL, cl->nombre, "gecos", cl->info);
 		ApagaCrono(cl->nombre, cl->sck);
 		if (
 #ifdef UDB
 		!IsNickUDB(cl->nombre) && 
 #endif
-		(swhois = MySQLCogeRegistro(NS_MYSQL, cl->nombre, "swhois")))
+		(swhois = SQLCogeRegistro(NS_SQL, cl->nombre, "swhois")))
 			port_func(P_WHOIS_ESPECIAL)(cl, swhois);
 		cl->nivel |= USER;
 	}
@@ -1387,17 +1397,17 @@ int NSKillea(char *quien)
 }
 int NSDropanicks(Proc *proc)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = MySQLQuery("SELECT item,reg,id from %s%s LIMIT %i,30", PREFIJO, NS_MYSQL, proc->proc)) || !mysql_num_rows(res))
+		if (!(res = SQLQuery("SELECT item,reg,id from %s%s OFFSET %i LIMIT 30", PREFIJO, NS_SQL, proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);
 			return 1;
 		}
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			if (atoi(row[2]) == 0) /* primer registro */
 			{
@@ -1408,7 +1418,7 @@ int NSDropanicks(Proc *proc)
 				NSBaja(row[0], 0);
 		}
 		proc->proc += 30;
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	return 0;
 }

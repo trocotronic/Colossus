@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.13 2005-06-29 21:14:04 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.14 2005-07-13 14:06:34 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -90,7 +90,7 @@ int descarga()
 	BorraSenyal(SIGN_QUIT, statserv_quit);
 	//BorraSenyal(SIGN_CREATE_CHAN, statserv_create_channel);
 	//BorraSenyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
-	BorraSenyal(SIGN_MYSQL, statserv_mysql);
+	BorraSenyal(SIGN_SQL, statserv_mysql);
 	BorraSenyal(SIGN_BOT, statserv_sig_bot);
 	BorraSenyal(SIGN_EOS, statserv_sig_eos);
 	return 0;
@@ -234,7 +234,7 @@ void set(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_QUIT, statserv_quit);
 	//InsertaSenyal(SIGN_CREATE_CHAN, statserv_create_channel);
 	//InsertaSenyal(SIGN_DESTROY_CHAN, statserv_destroy_channel);
-	InsertaSenyal(SIGN_MYSQL, statserv_mysql);
+	InsertaSenyal(SIGN_SQL, statserv_mysql);
 	InsertaSenyal(SIGN_BOT, statserv_sig_bot);
 	InsertaSenyal(SIGN_EOS, statserv_sig_eos);
 	bot_mod(statserv);
@@ -496,7 +496,7 @@ IRCFUNC(statserv_local_uptime)
 	m = atoi(strtok(NULL, ":"));
 	s = atoi(strtok(NULL, ":"));
 	statserv->servidor[cl->numeric].uptime = d*86400 + h*3600 + m*60 + s;
-	if (!MySQLCogeRegistro(SS_MYSQL, cl->nombre, "valor") || coge(cl->nombre) < statserv->servidor[cl->numeric].uptime)
+	if (!SQLCogeRegistro(SS_SQL, cl->nombre, "valor") || coge(cl->nombre) < statserv->servidor[cl->numeric].uptime)
 		actualiza(cl->nombre, statserv->servidor[cl->numeric].uptime);
 	return 0;
 }
@@ -617,51 +617,51 @@ int statserv_destroy_channel(char *nombre)
 }
 int statserv_mysql()
 {
-	if (!MySQLEsTabla(SS_MYSQL))
+	if (!SQLEsTabla(SS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-			"`item` varchar(255) default NULL, "
-  			"`valor` varchar(255) NOT NULL default '0', "
-			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla estadísticas';", PREFIJO, SS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+			"item varchar(255) default NULL, "
+  			"valor varchar(255) NOT NULL default '0', "
+			"KEY item (item) "
+			") TYPE=MyISAM COMMENT='Tabla estadísticas';", PREFIJO, SS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
 		else
 		{
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_max");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_hoy");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_semana");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_mes");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_time");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_hoytime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_semanatime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "users_mestime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_max");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_hoy");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_semana");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_mes");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_time");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_hoytime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_semanatime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "canales_mestime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_max");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_hoy");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_semana");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_mes");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_time");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_hoytime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_semanatime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "servers_mestime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_max");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_hoy");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_semana");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_mes");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_time");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_hoytime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_semanatime");
-			MySQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_MYSQL, "opers_mestime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_max");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_hoy");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_semana");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_mes");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_time");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_hoytime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_semanatime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_mestime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_max");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_hoy");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_semana");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_mes");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_time");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_hoytime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_semanatime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_mestime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_max");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_hoy");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_semana");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_mes");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_time");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_hoytime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_semanatime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_mestime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_max");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_hoy");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_semana");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_mes");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_time");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_hoytime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_semanatime");
+			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_mestime");
 		}
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	vuelca();
 	return 1;
 }

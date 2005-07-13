@@ -1,18 +1,15 @@
 /*
- * $Id: struct.h,v 1.39 2005-06-29 22:31:13 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.40 2005-07-13 14:06:22 Trocotronic Exp $ 
  */
 
 #include "setup.h"
 #ifdef _WIN32
 #include <Winsock.h>
 #include <direct.h>
-#include "win32/mysql.h"
 #include <sys/timeb.h>
 #include <process.h>
-#include "win32/pthread.h"
 #else
 #define DWORD int
-#include <mysql/mysql.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -22,8 +19,8 @@
 #include <unistd.h>
 #endif
 #include <sys/time.h>
-#include <pthread.h>
 #endif /* _WIN32 */
+#include <pthread.h>
 #ifdef FCNTLH
 #include <fcntl.h>
 #endif
@@ -51,8 +48,9 @@
 #include "ssl.h"
 #endif
 
-#include "sprintf_irc.h"
+#include "ircsprintf.h"
 #include "parseconf.h"
+#include "sql.h"
 
 extern void carga_socks(void);
 #ifdef NEED_STRCASECMP
@@ -143,25 +141,6 @@ extern int match(char *, char *);
 
 extern char *Fecha(time_t *);
 #define PROTOCOL 2305
-
-extern int CargaMySQL();
-extern MODVAR MYSQL *mysql;
-extern MYSQL_RES *MySQLQuery(char *format, ...);
-extern char *MySQLCogeRegistro(char *, char *, char *);
-extern char *MySQLCogeNumero(MYSQL *, char *, int, char *);
-extern void MySQLInserta(char *, char *, char *, char *, ...);
-extern void MySQLBorra(char *, char *);
-extern int MySQLRestaura(void);
-extern int MySQLBackup(void);
-extern int MySQLEsTabla(char *);
-struct mysql_t
-{
-	char *tabla[256]; /* espero que no haya tantas tablas */
-	int tablas;
-};
-extern MODVAR struct mysql_t mysql_tablas;
-extern char *MySQLEscapa(char *);
-extern char *MySQLFetchArray(MYSQL_RES *, const char *, MYSQL_ROW);
 
 typedef struct _smtpData SmtpData;
 struct _smtpData
@@ -280,7 +259,7 @@ extern char *ExMalloc(size_t, char *, long);
 #define ADD 1
 #define DEL 2
 extern struct in_addr *Resuelve(char *);
-#define MYSQL_CACHE "cache"
+#define SQL_CACHE "cache"
 extern MODVAR char tokbuf[BUFSIZE];
 #define MAX_LISTN 256
 extern Sock *SockListen(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
@@ -300,13 +279,14 @@ extern int EsArchivo(char *);
 #define OPT_EOS 0x4
 #ifdef _WIN32
 extern void ChkBtCon(int, int);
+extern char *PreguntaCampo(char *, char *, char *);
 extern OSVERSIONINFO VerInfo;
 extern char SO[256];
 extern HWND hwMain;
 extern void CleanUp(void);
 extern void LoopPrincipal(void *);
 #endif
-extern void MySQLCargaTablas(void);
+extern void SQLCargaTablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
 extern void Error(char *, ...);
 extern int Info(char *, ...);
@@ -321,7 +301,7 @@ extern void Loguea(int, char *, ...);
 extern void CleanUpSegv(int);
 #endif
 extern VOIDSIG Reinicia();
-extern int pregunta(char *);
+extern int Pregunta(char *);
 extern VOIDSIG Refresca();
 extern int copyfile(char *, char *);
 #ifdef USA_SSL

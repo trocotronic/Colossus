@@ -1,3 +1,7 @@
+/*
+ * $Id: protocolos.h,v 1.4 2005-07-13 14:06:22 Trocotronic Exp $ 
+ */
+
 typedef struct _com
 {
 	char *msg;

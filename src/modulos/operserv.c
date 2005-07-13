@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.19 2005-06-29 21:14:03 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.20 2005-07-13 14:06:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -27,8 +27,8 @@ BOTFUNC(OSHelp);
 BOTFUNC(OSRaw);
 BOTFUNC(OSRestart);
 BOTFUNC(OSRehash);
-BOTFUNC(OSBackup);
-BOTFUNC(OSRestaura);
+//BOTFUNC(OSBackup);
+//BOTFUNC(OSRestaura);
 BOTFUNC(OSGline);
 BOTFUNC(OSOpers);
 BOTFUNC(OSSajoin);
@@ -50,9 +50,9 @@ static bCom operserv_coms[] = {
 	{ "raw" , OSRaw , OPERS } ,
 	{ "restart" , OSRestart , ROOTS } ,
 	{ "rehash" , OSRehash , ROOTS } ,
-	{ "backup" , OSBackup , ROOTS } ,
+	//{ "backup" , OSBackup , ROOTS } ,
 	{ "close" , OSClose , ROOTS } ,
-	{ "restaura" , OSRestaura , ROOTS } ,
+	//{ "restaura" , OSRestaura , ROOTS } ,
 	{ "gline" , OSGline , OPERS } ,
 	{ "opers" , OSOpers , ADMINS } ,
 	{ "sajoin" , OSSajoin , OPERS } ,
@@ -73,7 +73,7 @@ static bCom operserv_coms[] = {
 #ifndef UDB
 int OSSigIdOk	(Cliente *);
 #endif
-int OSSigMySQL	();
+int OSSigSQL	();
 int OSSigSynch	();
 void OSCargaNoticias();
 void OSDescargaNoticias();
@@ -147,8 +147,6 @@ int carga(Modulo *mod)
 		}
 	}
 #endif	
-	if (mysql)
-		OSCargaNoticias();
 	return errores;
 }
 int descarga()
@@ -158,7 +156,7 @@ int descarga()
 #ifndef UDB
 	BorraSenyal(NS_SIGN_IDOK, OSSigIdOk);
 #endif
-	BorraSenyal(SIGN_MYSQL, OSSigMySQL);
+	BorraSenyal(SIGN_SQL, OSSigSQL);
 	BorraSenyal(SIGN_SYNCH, OSSigSynch);
 	OSDescargaNoticias();
 	BotUnset(operserv);
@@ -204,7 +202,7 @@ void OSSet(Conf *config, Modulo *mod)
 #ifndef UDB
 	InsertaSenyal(NS_SIGN_IDOK, OSSigIdOk);
 #endif
-	InsertaSenyal(SIGN_MYSQL, OSSigMySQL);
+	InsertaSenyal(SIGN_SQL, OSSigSQL);
 	InsertaSenyal(SIGN_SYNCH, OSSigSynch);
 	BotSet(operserv);
 }
@@ -222,8 +220,8 @@ void OSCargaNoticia(int id)
 {
 	int i;
 	Noticia *not, *gn;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	time_t aux;
 	for (i = 0; i < gnoticias; i++)
 	{
@@ -234,9 +232,9 @@ void OSCargaNoticia(int id)
 		}
 	}
 	BMalloc(not, Noticia);
-	if ((res = MySQLQuery("SELECT bot,noticia,fecha FROM %s%s WHERE n=%i", PREFIJO, OS_NOTICIAS, id)))
+	if ((res = SQLQuery("SELECT bot,noticia,fecha FROM %s%s WHERE n=%i", PREFIJO, OS_NOTICIAS, id)))
 	{
-		row = mysql_fetch_row(res);
+		row = SQLFetchRow(res);
 		not->botname = strdup(row[0]);
 		not->noticia = strdup(row[1]);
 		aux = atoul(row[2]);
@@ -287,8 +285,8 @@ void OSDescargaNoticias()
 int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 {
 	Noticia *not;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	Cliente *cl = NULL;
 	Noticia *gn = NULL;
 	time_t aux;
@@ -306,11 +304,13 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 	not->cl = cl ? cl : NULL;
 	if (!id)
 	{
-		MySQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, aux);
-		res = MySQLQuery("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, noticia, botname);
-		row = mysql_fetch_row(res);
+		char *bot = strdup(strtolower(botname));
+		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, aux);
+		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(noticia), bot);
+		row = SQLFetchRow(res);
 		not->id = atoi(row[0]);
-		mysql_free_result(res);
+		SQLFreeRes(res);
+		Free(bot);
 	}
 	else
 		not->id = id;
@@ -319,18 +319,18 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 }
 int OSBorraNoticia(int id)
 {
-	MySQLQuery("DELETE from %s%s where n='%i'", PREFIJO, OS_NOTICIAS, id);
+	SQLQuery("DELETE from %s%s where n='%i'", PREFIJO, OS_NOTICIAS, id);
 	return OSDescargaNoticia(id);
 }
 void OSCargaNoticias()
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
-	if ((res = MySQLQuery("SELECT * from %s%s", PREFIJO, OS_NOTICIAS)))
+	SQLRes res;
+	SQLRow row;
+	if ((res = SQLQuery("SELECT * from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 			OSCargaNoticia(atoi(row[0]));
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 }
 int OSReinicia()
@@ -367,8 +367,8 @@ BOTFUNC(OSHelp)
 		{
 			FuncResp(operserv, "RESTART", "Reinicia los servicios.");
 			FuncResp(operserv, "REHASH", "Refresca los servicios.");
-			FuncResp(operserv, "BACKUP", "Crea una copia de seguridad de la base de datos.");
-			FuncResp(operserv, "RESTAURA", "Restaura la base de datos.");
+			//FuncResp(operserv, "BACKUP", "Crea una copia de seguridad de la base de datos.");
+			//FuncResp(operserv, "RESTAURA", "Restaura la base de datos.");
 			FuncResp(operserv, "CLOSE", "Cierra el programa.");
 			FuncResp(operserv, "VACIAR", "Elimina todos los registros de la base de datos.");
 		}
@@ -541,7 +541,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312REHASH");
 	}
-	else if (!strcasecmp(param[1], "BACKUP") && IsRoot(cl) && ExFunc("BACKUP"))
+	/*else if (!strcasecmp(param[1], "BACKUP") && IsRoot(cl) && ExFunc("BACKUP"))
 	{
 		Responde(cl, CLI(operserv), "\00312BACKUP");
 		Responde(cl, CLI(operserv), " ");
@@ -557,7 +557,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "Restaura una copia de base de datos realizada con el comando BACKUP");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR");
-	}
+	}*/
 	else if (!strcasecmp(param[1], "CLOSE") && IsRoot(cl) && ExFunc("CLOSE"))
 	{
 		Responde(cl, CLI(operserv), "\00312CLOSE");
@@ -604,9 +604,10 @@ BOTFUNC(OSRehash)
 	Refresca();
 	return 0;
 }
+/*
 BOTFUNC(OSBackup)
 {
-	if (MySQLBackup())
+	if (SQLBackup())
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error al intentar hacer una copia de seguridad de la base de datos.");
 	else
 		Responde(cl, CLI(operserv), "Base de datos copiada con éxito.");
@@ -614,12 +615,13 @@ BOTFUNC(OSBackup)
 }
 BOTFUNC(OSRestaura)
 {
-	if (MySQLRestaura())
+	if (SQLRestaura())
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error al intentar restaurar la base de datos.");
 	else
 		Responde(cl, CLI(operserv), "Base de datos restaurada con éxito.");
 	return 0;
 }
+*/
 BOTFUNC(OSGline)
 {
 	char *user, *host;
@@ -723,7 +725,7 @@ BOTFUNC(OSOpers)
 #ifdef UDB
 		PropagaRegistro("N::%s::O %c%s", param[1] + 1, CHAR_NUM, oper);
 #else
-		MySQLInserta(OS_MYSQL, param[1] + 1, "nivel", oper);
+		SQLInserta(OS_SQL, param[1] + 1, "nivel", oper);
 #endif		
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1] + 1, param[2]);
 	}
@@ -732,12 +734,12 @@ BOTFUNC(OSOpers)
 #ifdef UDB
 		PropagaRegistro("N::%s::O", param[1] + 1);
 #else
-		if (!MySQLCogeRegistro(OS_MYSQL, param[1] + 1, "nivel"))
+		if (!SQLCogeRegistro(OS_SQL, param[1] + 1, "nivel"))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
 			return 1;
 		}
-		MySQLBorra(OS_MYSQL, param[1]);
+		SQLBorra(OS_SQL, param[1]);
 #endif
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1] + 1);
 	}
@@ -876,17 +878,17 @@ BOTFUNC(OSGlobal)
 	}
 	if (opts & 0x8)
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
-		if ((res = MySQLQuery("SELECT item from %s%s", PREFIJO, NS_MYSQL)))
+		SQLRes res;
+		SQLRow row;
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{
 			int level;
-			while ((row = mysql_fetch_row(res)))
+			while ((row = SQLFetchRow(res)))
 			{
 #ifdef UDB
 				level = NivelOperBdd(row[0]);
 #else
-				level = atoi(MySQLCogeRegistro(OS_MYSQL, row[0], "nivel"));
+				level = atoi(SQLCogeRegistro(OS_SQL, row[0], "nivel"));
 #endif
 				if ((opts & 0x1) && !(level & BDD_OPER))
 					continue;
@@ -897,7 +899,7 @@ BOTFUNC(OSGlobal)
 				else
 					memoserv_send_dl(row[0], operserv.hmod->nick, Unifica(param, params, 2, -1));
 			}
-			mysql_free_result(res);
+			SQLFreeRes(res);
 		}
 		Responde(cl, CLI(operserv), "Mensaje global enviado vía memo.");
 	}
@@ -942,20 +944,22 @@ BOTFUNC(OSNoticias)
 	}
 	if (!strcasecmp(param[1], "ADD"))
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
-		char *noticia;
+		SQLRes res;
+		SQLRow row;
+		char *noticia, *bot;
 		if (params < 4)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS ADD botname noticia");
 			return 1;
 		}
 		noticia = Unifica(param, params, 3, -1);
-		MySQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, param[2], noticia, time(0));
-		res = MySQLQuery("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, noticia, param[2]);
-		row = mysql_fetch_row(res);
+		bot = strdup(strtolower(param[2]));
+		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, param[2], noticia, time(0));
+		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(noticia), bot);
+		row = SQLFetchRow(res);
 		OSCargaNoticia(atoi(row[0]));
-		mysql_free_result(res);
+		SQLFreeRes(res);
+		Free(bot);
 		Responde(cl, CLI(operserv), "Noticia añadida.");
 	}
 	else if (!strcasecmp(param[1], "DEL"))
@@ -970,16 +974,16 @@ BOTFUNC(OSNoticias)
 	}
 	else if (!strcasecmp(param[1], "LIST"))
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
+		SQLRes res;
+		SQLRow row;
 		time_t ti;
-		if (!(res = MySQLQuery("SELECT n,bot,noticia,fecha from %s%s", PREFIJO, OS_NOTICIAS)))
+		if (!(res = SQLQuery("SELECT n,bot,noticia,fecha from %s%s", PREFIJO, OS_NOTICIAS)))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No hay noticias.");
 			return 1;
 		}
 		Responde(cl, CLI(operserv), "Noticias de la red");
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			if (strlen(row[2]) > 35)
 			{
@@ -991,7 +995,7 @@ BOTFUNC(OSNoticias)
 			strftime(buf, sizeof(buf), "%d/%m/%Y", localtime(&ti));
 			Responde(cl, CLI(operserv), "\00312%s\003 - %s - \00312%s\003 por \00312%s\003.", row[0], buf, row[2], row[1]);
 		}
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	else
 	{
@@ -1026,7 +1030,7 @@ BOTFUNC(OSAkill)
 		else
 			ircsprintf(buf, "*@%s", param[1]);
 		motivo = Unifica(param, params, 2, -1);
-		MySQLInserta(OS_AKILL, buf, "motivo", motivo);
+		SQLInserta(OS_AKILL, buf, "motivo", motivo);
 		c = strchr(buf, '@');
 		*c++ = '\0';
 		port_func(P_GLINE)(CLI(operserv), ADD, buf, c, 0, motivo);
@@ -1040,12 +1044,12 @@ BOTFUNC(OSAkill)
 			strcpy(buf, param[1]);
 		else
 			ircsprintf(buf, "*@%s", param[1]);
-		if (!MySQLCogeRegistro(OS_AKILL, buf, "motivo"))
+		if (!SQLCogeRegistro(OS_AKILL, buf, "motivo"))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Esta máscara no tiene akill.");
 			return 1;
 		}
-		MySQLBorra(OS_AKILL, buf);
+		SQLBorra(OS_AKILL, buf);
 		c = strchr(buf, '@');
 		*c++ = '\0';
 		port_func(P_GLINE)(CLI(operserv), DEL, buf, c, 0, NULL);
@@ -1053,21 +1057,21 @@ BOTFUNC(OSAkill)
 	}
 	else
 	{
-		MYSQL_RES *res;
-		MYSQL_ROW row;
+		SQLRes res;
+		SQLRow row;
 		u_int i;
 		char *rep;
 		rep = str_replace(param[1], '*', '%');
-		if (!(res = MySQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, OS_AKILL, rep)))
+		if (!(res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s'", PREFIJO, OS_AKILL, strtolower(rep))))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;
 		}
 		Responde(cl, CLI(operserv), "*** AKILLS que coinciden con \00312%s\003 ***", param[1]);
-		for (i = 0; i < operserv.maxlist && (row = mysql_fetch_row(res)); i++)
+		for (i = 0; i < operserv.maxlist && (row = SQLFetchRow(res)); i++)
 			Responde(cl, CLI(operserv), "\00312%s", row[0]);
-		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, mysql_num_rows(res));
-		mysql_free_result(res);
+		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -1156,7 +1160,7 @@ BOTFUNC(OSVaciar)
 	}
 	else
 	{
-		int i;
+		int i = 0;
 		if (!confirm)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No ha solicitado confirmación. Ejecute el comando nuevamente sin parámetros.");
@@ -1168,11 +1172,8 @@ BOTFUNC(OSVaciar)
 			return 1;
 		}
 		confirm = NULL;
-		for (i = 0; i < mysql_tablas.tablas; i++)
-		{
-			if (!strncmp(PREFIJO, mysql_tablas.tabla[i], strlen(PREFIJO)))
-				MySQLQuery("TRUNCATE %s", mysql_tablas.tabla[i]);
-		}
+		while (sql->tablas[i])
+			SQLQuery("TRUNCATE %s", sql->tablas[i++]);
 		Responde(cl, CLI(operserv), "Se ha vaciado toda la base de datos. Se procederá a reiniciar el programa en 5 segundos...");
 		IniciaCrono("reinicia", NULL, 1, 5, OSReinicia, NULL, 0);
 	}
@@ -1209,7 +1210,7 @@ int OSSigIdOk(Cliente *cl)
 	{	
 #else
 	char *modos;
-	if ((modos = MySQLCogeRegistro(OS_MYSQL, cl->nombre, "nivel")))
+	if ((modos = SQLCogeRegistro(OS_SQL, cl->nombre, "nivel")))
 	{
 		char tmp[5];
 		if ((nivel = atoi(modos)))
@@ -1241,40 +1242,37 @@ int OSSigIdOk(Cliente *cl)
 #endif
 	return 0;
 }
-int OSSigMySQL()
+int OSSigSQL()
 {
-	if (!MySQLEsTabla(OS_NOTICIAS))
+	if (!SQLEsTabla(OS_NOTICIAS))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`n` int(11) NOT NULL auto_increment, "
-  			"`bot` text NOT NULL, "
-  			"`noticia` text NOT NULL, "
-  			"`fecha` bigint(20) NOT NULL default '0', "
-  			"KEY `n` (`n`) "
-			") TYPE=MyISAM COMMENT='Tabla de noticias';", PREFIJO, OS_NOTICIAS))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"n SERIAL, "
+  			"bot text, "
+  			"noticia text, "
+  			"fecha int4 default '0' "
+			");", PREFIJO, OS_NOTICIAS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
 	}
 #ifndef UDB
-	if (!MySQLEsTabla(OS_MYSQL))
+	if (!SQLEsTabla(OS_SQL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`nivel` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de operadores';", PREFIJO, OS_MYSQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_MYSQL);
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"nivel varchar(255) default NULL "
+			");", PREFIJO, OS_SQL))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_SQL);
 	}
 #endif
-	if (!MySQLEsTabla(OS_AKILL))
+	if (!SQLEsTabla(OS_AKILL))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-			"`item` varchar(255) default NULL, "
-			"`motivo` varchar(255) default NULL, "
-			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de akills';", PREFIJO, OS_AKILL))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+			"item varchar(255) default NULL, "
+			"motivo varchar(255) default NULL "
+			");", PREFIJO, OS_AKILL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	OSCargaNoticias();
 	return 1;
 }
@@ -1282,12 +1280,12 @@ int OSSigSynch()
 {
 	Cliente *bl;
 	int i = 0;
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *c;
-	if ((res = MySQLQuery("SELECT DISTINCT bot from %s%s", PREFIJO, OS_NOTICIAS)))
+	if ((res = SQLQuery("SELECT DISTINCT bot from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			bl = CreaBot(row[0], operserv.hmod->ident, operserv.hmod->host, me.nombre, "+oqkBd", "Servicio de noticias");
 			for (i = 0; i < gnoticias; i++)
@@ -1296,17 +1294,17 @@ int OSSigSynch()
 					gnoticia[i]->cl = bl;
 			}
 		}
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
-	if ((res = MySQLQuery("SELECT item,motivo from %s%s ", PREFIJO, OS_AKILL)))
+	if ((res = SQLQuery("SELECT item,motivo from %s%s ", PREFIJO, OS_AKILL)))
 	{
-		while ((row = mysql_fetch_row(res)))
+		while ((row = SQLFetchRow(res)))
 		{
 			if ((c = strchr(row[0], '@')))
 				*c++ = '\0';
 			port_func(P_GLINE)(CLI(operserv), ADD, row[0], c, 0, row[1]);
 		}
-		mysql_free_result(res);
+		SQLFreeRes(res);
 	}
 	return 0;
 }

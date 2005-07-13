@@ -1,6 +1,8 @@
-; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/MYSQL.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SPRINTF_IRC.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
 	untea
+
+	AcercaDLG
 
 	ActualizaGMT
 
@@ -86,6 +88,8 @@ EXPORTS
 
 	CambiaNick
 
+	CampoDLG
+
 	CargaBloque
 
 	CargaBloques
@@ -94,9 +98,9 @@ EXPORTS
 
 	CargaModulos
 
-	CargaMySQL
-
 	CargaProtocolo
+
+	CargaSQL
 
 	CharAId
 
@@ -306,6 +310,8 @@ EXPORTS
 
 	LiberaMemoriaUdb
 
+	LiberaSQL
+
 	ListaSocks
 
 	Loguea
@@ -326,28 +332,6 @@ EXPORTS
 
 	Mx
 
-	MySQLBackup
-
-	MySQLBorra
-
-	MySQLCargaTablas
-
-	MySQLCogeNumero
-
-	MySQLCogeRegistro
-
-	MySQLEsTabla
-
-	MySQLEscapa
-
-	MySQLFetchArray
-
-	MySQLInserta
-
-	MySQLQuery
-
-	MySQLRestaura
-
 	NTL_tolower_tab
 
 	NTL_toupper_tab
@@ -365,6 +349,8 @@ EXPORTS
 	ParseaConfiguracion
 
 	ParseaLinea
+
+	PreguntaCampo
 
 	ProcCache
 
@@ -393,6 +379,28 @@ EXPORTS
 	ResuelveHost
 
 	SO
+
+	SQLBorra
+
+	SQLCargaTablas
+
+	SQLCogeRegistro
+
+	SQLEsCampo
+
+	SQLEsTabla
+
+	SQLEscapa
+
+	SQLFetchRow
+
+	SQLFreeRes
+
+	SQLInserta
+
+	SQLNumRows
+
+	SQLQuery
 
 	SSLAccept
 
@@ -582,13 +590,11 @@ EXPORTS
 
 	my_itoa
 
-	mysql
-
-	mysql_tablas
-
 	nicks
 
 	parabuf
+
+	preg
 
 	print_r
 
@@ -597,6 +603,8 @@ EXPORTS
 	procs
 
 	protocolo
+
+	refrescando
 
 	reset
 
@@ -607,6 +615,8 @@ EXPORTS
 	sets
 
 	spath
+
+	sql
 
 	str_replace
 

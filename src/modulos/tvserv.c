@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.2 2005-06-29 22:59:57 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.3 2005-07-13 14:06:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -22,7 +22,7 @@ BOTFUNC(TSHoroscopo);
 Sock *prog = NULL, *hor = NULL;
 Cadena *viendo = NULL;
 int horosc = 1;
-int TSSigMySQL();
+int TSSigSQL();
 
 static bCom tvserv_coms[] = {
 	{ "help" , TSHelp , USERS } ,
@@ -135,7 +135,7 @@ int carga(Modulo *mod)
 }
 int descarga()
 {
-	BorraSenyal(SIGN_MYSQL, TSSigMySQL);
+	BorraSenyal(SIGN_SQL, TSSigSQL);
 	BotUnset(tvserv);
 	return 0;
 }
@@ -170,7 +170,7 @@ void TSSet(Conf *config, Modulo *mod)
 		}
 		mod->comando[mod->comandos] = NULL;
 	}
-	InsertaSenyal(SIGN_MYSQL, TSSigMySQL);
+	InsertaSenyal(SIGN_SQL, TSSigSQL);
 	BotSet(tvserv);
 }
 char *TSQuitaTags(char *str, char *dest)
@@ -192,6 +192,8 @@ char *TSQuitaTags(char *str, char *dest)
 				*dest++ = ' ';
 				c += 6;
 			}
+			else
+				*dest++ = *c++;
 		}
 		else if (*c == '\t')
 			break;
@@ -214,6 +216,8 @@ void TSActualizaProg()
 	static int i = 0;
 	if (prog)
 		return;
+	if (!i)
+		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_TV);
 	if (cadenas[i].nombre)
 	{
 		viendo = &cadenas[i];
@@ -229,6 +233,8 @@ void TSActualizaHoroscopo()
 	static int i = 1;
 	if (hor)
 		return;
+	if (i == 1)
+		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_HO);
 	if (i <= 12)
 	{
 		horosc = i++;
@@ -240,8 +246,8 @@ void TSActualizaHoroscopo()
 }
 BOTFUNC(TSTv)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	if (params < 2)
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TV cadena");
@@ -252,14 +258,13 @@ BOTFUNC(TSTv)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta cadena no existe");
 		return 1;
 	}
-	if (!(res = MySQLQuery("SELECT programacion from %s%s where TSFecha='%s' AND item='%s'", PREFIJO, TS_TV, TSFecha(time(NULL)), param[1])))
+	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_TV, TSFecha(time(NULL)), strtolower(param[1]))))
 	{
-		MySQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_TV);
 		TSActualizaProg();
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
 		return 1;
 	}
-	while ((row = mysql_fetch_row(res)))
+	while ((row = SQLFetchRow(res)))
 		Responde(cl, CLI(tvserv), row[0]);
 	return 0;
 }
@@ -313,8 +318,8 @@ BOTFUNC(TSHelp)
 }
 BOTFUNC(TSHoroscopo)
 {
-	MYSQL_RES *res;
-	MYSQL_ROW row;
+	SQLRes res;
+	SQLRow row;
 	char *h;
 	if (params < 2)
 	{
@@ -326,15 +331,14 @@ BOTFUNC(TSHoroscopo)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este horóscopo no existe");
 		return 1;
 	}
-	if (!(res = MySQLQuery("SELECT prediccion from %s%s where TSFecha='%s' AND item='%s'", PREFIJO, TS_HO, TSFecha(time(NULL)), param[1])))
+	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_HO, TSFecha(time(NULL)), strtolower(param[1]))))
 	{
-		MySQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_HO);
 		TSActualizaHoroscopo();
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
 		return 1;
 	}
 	Responde(cl, CLI(tvserv), "\00312%s", h);
-	while ((row = mysql_fetch_row(res)))
+	while ((row = SQLFetchRow(res)))
 		Responde(cl, CLI(tvserv), row[0]);
 	return 0;
 }
@@ -360,7 +364,7 @@ SOCKFUNC(TSLeeProg)
 	else if (imp && !strcmp(data, "</tr>"))
 	{
 		imp = 0;
-		MySQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, viendo->nombre, TSFecha(time(NULL)), txt);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, viendo->nombre, TSFecha(time(NULL)), txt);
 	}
 	else if (!strcmp(data, "</html>"))
 		SockClose(prog, LOCAL);
@@ -395,7 +399,7 @@ SOCKFUNC(TSLeeHoroscopo)
 	if (!strncmp("<TD class=texto5 style=\"FONT-SIZE:8pt\" style=\"COLOR:#222222\" >", data, 62))
 	{
 		TSQuitaTags(data, txt);
-		MySQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
 	}
 	else if (!strncmp("src=\"I/AMOR", data, 11))
 		a = &amor;
@@ -411,7 +415,7 @@ SOCKFUNC(TSLeeHoroscopo)
 		strcat(txt, Repite('*', dinero));
 		strcat(txt, "\003 - Amor: \00312");
 		strcat(txt, Repite('*', amor));
-		MySQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
 		salud = dinero = amor = 0;
 		a = NULL;
 		SockClose(hor, LOCAL);
@@ -424,28 +428,26 @@ SOCKFUNC(TSCierraHoroscopo)
 	TSActualizaHoroscopo();
 	return 0;
 }
-int TSSigMySQL()
+int TSSigSQL()
 {
-	if (!MySQLEsTabla(TS_TV))
+	if (!SQLEsTabla(TS_TV))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`TSFecha` varchar(255) default NULL, "
-  			"`programacion` varcjar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de programación de TV';", PREFIJO, TS_TV))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"fecha varchar(255) default NULL, "
+  			"programacion varchar(255) default NULL "
+			");", PREFIJO, TS_TV))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
 	}
-	if (!MySQLEsTabla(TS_HO))
+	if (!SQLEsTabla(TS_HO))
 	{
-		if (MySQLQuery("CREATE TABLE `%s%s` ( "
-  			"`item` varchar(255) default NULL, "
-  			"`TSFecha` varchar(255) default NULL, "
-  			"`prediccion` varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
-			") TYPE=MyISAM COMMENT='Tabla de horóscopo';", PREFIJO, TS_HO))
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"fecha varchar(255) default NULL, "
+  			"prediccion text default NULL "
+			");", PREFIJO, TS_HO))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
 	}
-	MySQLCargaTablas();
+	SQLCargaTablas();
 	return 1;
 }
