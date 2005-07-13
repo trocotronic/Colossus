@@ -1,0 +1,19 @@
+## $Id: Makefile.in,v 1.1 2005-07-13 14:59:55 Trocotronic Exp $
+
+INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
+	../include/modulos.h ../include/parseconf.h \
+	../include/sql.h ../include/struct.h
+R_MODULES=mysql.so postgresql.so
+COMMANDS=mysql.o postgresql.o
+MODULES=$(R_MODULES)
+MODULEFLAGS=@MODULEFLAGS@
+all: build
+build: $(MODULES)
+custommodule: $(MODULEFILE).c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o $(MODULEFILE).so $(MODULEFILE).c 
+mysql.so: mysql.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o mysql.so mysql.c
+postgresql.so: postgresql.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -o postgresql.so postgresql.c
+clean:
+	$(RM) -f *.o *.so *~ core
