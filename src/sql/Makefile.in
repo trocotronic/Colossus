@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.4 2005-07-13 15:32:48 Trocotronic Exp $
+## $Id: Makefile.in,v 1.5 2005-07-13 15:39:45 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/parseconf.h \
@@ -12,7 +12,7 @@ build: $(MODULES)
 custommodule: $(MODULEFILE).c
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o $(MODULEFILE).so $(MODULEFILE).c 
 mysql.so: mysql.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) @MYSQLLIBS@ -o mysql.so mysql.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) @MYSQLHEAD@ @MYSQLLIBS@ -o mysql.so mysql.c
 postgresql.so: postgresql.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) @POSTGREHEAD@ @POSTGRELIBS@ -o postgresql.so postgresql.c
 clean:

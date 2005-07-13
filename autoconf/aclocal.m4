@@ -100,7 +100,9 @@ AC_MSG_CHECKING(para zlib)
 AC_DEFUN([CHECK_MYSQL],
 [
 AC_MSG_CHECKING(para mysql)
-MYSQLLIBS="-L/usr/lib/mysql -lmysqlclient";
+MYSQLHEAD=`mysql_config --include`;
+MYSQLLIBS=`mysql_config --libs`;
+AC_SUBST(MYSQLHEAD)
 AC_SUBST(MYSQLLIBS)
 AC_MSG_RESULT(ok);
 ])
