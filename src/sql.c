@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.1 2005-07-13 14:06:30 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.2 2005-07-13 14:50:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -30,12 +30,12 @@ void LiberaSQL()
 }
 int CargaSQL()
 {
-	char *ar, *dll, tmppath[128];
+	char *ar = NULL, *dll, tmppath[128];
 #ifdef _WIN32
 	char tmppdb[128], pdb[128];
 #endif
 	int (*Carga)();
-	int tipo;
+	int tipo = 0;
 	if (!strcasecmp(conf_db->tipo, "MySQL"))
 	{
 #ifdef _WIN32

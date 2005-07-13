@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.16 2005-07-13 14:06:26 Trocotronic Exp $
+## $Id: Makefile,v 1.17 2005-07-13 14:45:53 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
 	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
@@ -27,7 +27,7 @@ prots:
 	fi
 	cd protocolos; $(MAKE) all
 	
-prots:
+sql:
 	@if [ ! -r include ] ; then \
 		ln -s ../include include; \
 	fi

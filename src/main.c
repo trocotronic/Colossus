@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.47 2005-07-13 14:06:25 Trocotronic Exp $ 
+ * $Id: main.c,v 1.48 2005-07-13 14:45:53 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -233,26 +233,9 @@ int main(int argc, char *argv[])
 	Conf config;
 	int i;
 #ifndef _WIN32
-#ifdef FORCE_CORE
+  #ifdef FORCE_CORE
 	struct rlimit corelim;
-#endif
-	for (i = 0; logo[i] != 0; i++)
-		fprintf(stderr, "%c", logo[i]);
-	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
-#ifdef UDB
-	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
-#endif
-#ifdef USA_ZLIB
-	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
-#endif
-#ifdef USA_SSL
-	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
-#endif
-	fprintf(stderr, "\t\t+Cliente SQL %s\n", mysql_get_client_info());
-	fprintf(stderr, "\t\t+Servidor SQL %s\n", mysql_get_server_info(mysql));
-	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
-	fprintf(stderr, "\t\t(c)2004-2005\n");
-	fprintf(stderr, "\n");
+  #endif
 #endif
 	iniciado = time(0);
 	ListaSocks.abiertos = ListaSocks.tope = 0;
@@ -345,6 +328,27 @@ int main(int argc, char *argv[])
 	signal(SIGTERM, CierraColossus);
 	signal(SIGINT, Reinicia);
   #endif
+#endif
+#ifndef _WIN32
+	for (i = 0; logo[i] != 0; i++)
+		fprintf(stderr, "%c", logo[i]);
+	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
+#ifdef UDB
+	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
+#endif
+#ifdef USA_ZLIB
+	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
+#endif
+#ifdef USA_SSL
+	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
+#endif
+	if (sql->clientinfo)
+		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
+	if (sql->servinfo)
+		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
+	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
+	fprintf(stderr, "\t\t(c)2004-2005\n");
+	fprintf(stderr, "\n");
 #endif
 #ifndef _WIN32
 	if (fork())

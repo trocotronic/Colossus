@@ -1,9 +1,9 @@
 /*
- * $Id: ssl.c,v 1.8 2005-07-13 14:06:27 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.9 2005-07-13 14:50:08 Trocotronic Exp $ 
  */
  
-#ifdef USA_SSL
 #include "struct.h"
+#ifdef USA_SSL
 #include "ircd.h"
 #include "ssl.h"
 #include <string.h>
