@@ -102,6 +102,7 @@ AC_DEFUN([CHECK_MYSQL],
 AC_MSG_CHECKING(para mysql)
 MYSQLLIBS="-L/usr/lib/mysql -lmysqlclient ";
 AC_SUBST(MYSQLLIBS)
+AC_MSG_RESULT(ok);
 ])
 AC_DEFUN([CHECK_POSTGRE],
 [
@@ -110,4 +111,5 @@ POSTGREHEAD="-I$(pg_config --includedir)";
 POSTGRELIBS="-L$(pg_config --libdir)";
 AC_SUBST(POSTGREHEAD)
 AC_SUBST(POSTGRELIBS)
+AC_MSG_RESULT(include en $POSTGREHEAD y lib en $POSTGRELIBS);
 ])
