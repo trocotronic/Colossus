@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.25 2005-07-13 14:06:33 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.26 2005-07-16 15:25:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,9 +12,6 @@
 #endif
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 NickServ nickserv;
 #define ExFunc(x) BuscaFuncion(nickserv.hmod, x, NULL)
@@ -54,16 +51,9 @@ int NSDropanicks	(Proc *);
 int NSBaja(char *, char);
 void NSCambiaInv(Cliente *);
 
-#ifndef _WIN32
-CsRegistros *(*busca_cregistro_dl)(char *);
-mTab *cFlags_dl;
-#else
-extern MODVAR mTab cFlags[];
-#define busca_cregistro_dl busca_cregistro
-#define cFlags_dl cFlags
-#endif
 void NSSet(Conf *, Modulo *);
 int NSTest(Conf *, int *);
+extern MODVAR mTab cFlags[];
 
 static bCom nickserv_coms[] = {
 	{ "help" , NSHelp , TODOS } ,
@@ -87,66 +77,52 @@ static bCom nickserv_coms[] = {
 	{ "forbid" , NSForbid , ADMINS } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
-ModInfo info = {
+ModInfo MOD_INFO(NickServ) = {
 	"NickServ" ,
 	0.10 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
 	
-int carga(Modulo *mod)
+int MOD_CARGA(NickServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(NickServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(NickServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(NickServ).nombre))
 			{
 				if (!NSTest(modulo.seccion[0], &errores))
 					NSSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el NSTest", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el NSTest", mod->archivo, MOD_INFO(NickServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(NickServ).nombre);
 				errores++;
 			}
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
-#ifndef _WIN32
-	{
-		Modulo *ex;
-		for (ex = modulos; ex; ex = ex->sig)
-		{
-			if (!strcasecmp(ex->info->nombre, "ChanServ"))
-			{
-				irc_dlsym(ex->hmod, "busca_cregistro", busca_cregistro_dl);
-				irc_dlsym(ex->hmod, "cFlags", cFlags_dl);
-				break;
-			}
-		}
-	}
-#endif
 	return errores;
 }	
-int descarga()
+int MOD_DESCARGA(NickServ)()
 {
 	BorraSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	BorraSenyal(SIGN_POST_NICK, NSCmdPostNick);
@@ -611,7 +587,7 @@ BOTFUNC(NSRegister)
 		Email(mail, "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(parv[0]), nickserv.hmod->nick, conf_set->red);
 	else if (UMODE_REGNICK)
-		port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
+		ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
 	InsertaCache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, nickserv.hmod->id, "%lu", time(0));
 	Responde(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
 #ifdef UDB
@@ -659,7 +635,7 @@ BOTFUNC(NSIdentify)
 	if (!strcmp(MDString(param[1]), SQLCogeRegistro(NS_SQL, parv[0], "pass")))
 	{
 		if (UMODE_REGNICK)
-			port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
+			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
 		Responde(cl, CLI(nickserv), "Ok \00312%s\003, bienvenid@ a casa :)", parv[0]);
 		Senyal1(NS_SIGN_IDOK, cl);
 	}
@@ -672,7 +648,7 @@ BOTFUNC(NSIdentify)
 		if (++intentos == nickserv.intentos)
 		{
 			BorraCache(CACHE_INTENTOS_ID, cl->nombre, nickserv.hmod->id);
-			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
+			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, CLI(nickserv), "Demasiadas contraseñas inválidas.");
 		}
 		else
 		{
@@ -841,7 +817,7 @@ int NSBaja(char *nick, char opt)
 	al = BuscaCliente(nick, NULL);
 	Senyal1(NS_SIGN_DROP, nick);
 	if (al)
-		port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
+		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
 #ifdef UDB
 	if (opts & NS_OPT_UDB)
 		PropagaRegistro("N::%s", nick);
@@ -924,19 +900,19 @@ BOTFUNC(NSInfo)
 	{
 		CsRegistros *regs;
 		int i;
-		if ((regs = busca_cregistro_dl(param[1])))
+		if ((regs = busca_cregistro(param[1])))
 		{
 			Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
 			for (i = 0; i < regs->subs; i++)
 				Responde(cl, CLI(nickserv), "Canal: \00312%s \003flags: \00312+%s\003 (\00312%lu\003)", regs->sub[i].canal, 
-					ModosAFlags(regs->sub[i].flags, cFlags_dl, NULL),
+					ModosAFlags(regs->sub[i].flags, cFlags, NULL),
 					regs->sub[i].flags);
 		}
 		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, strtolower(param[1]))))
 		{
 			while ((row = SQLFetchRow(res)))
 				Responde(cl, CLI(nickserv), "Canal: \00312%s flags: \00312+%s\003 (\00312FUNDADOR\003)", row[0], 
-					ModosAFlags(CS_LEV_ALL, cFlags_dl, NULL));
+					ModosAFlags(CS_LEV_ALL, cFlags, NULL));
 			SQLFreeRes(res);
 		}
 	}
@@ -1000,7 +976,7 @@ BOTFUNC(NSGhost)
 		return 1;
 	}
 	if (nickserv.opts & NS_PROT_KILL)
-		port_func(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Comando GHOST utilizado por %s.", parv[0]);
+		ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Comando GHOST utilizado por %s.", parv[0]);
 	else
 		NSCambiaInv(al);
 	Responde(cl, CLI(nickserv), "Nick \00312%s\003 liberado.", param[1]);
@@ -1028,7 +1004,7 @@ BOTFUNC(NSSuspender)
 	if ((al = BuscaCliente(param[1], NULL)))
 	{
 		if (UMODE_SUSPEND || UMODE_REGNICK)
-			port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "+%c-%c", UMODEF_SUSPEND, UMODEF_REGNICK);
+			ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "+%c-%c", UMODEF_SUSPEND, UMODEF_REGNICK);
 		Responde(al, CLI(nickserv), "Tu nick ha sido suspendido por \00312%s\003: %s", cl->nombre, motivo);
 	}
 	if (IsNickUDB(param[1]))
@@ -1060,7 +1036,7 @@ BOTFUNC(NSLiberar)
 	SQLInserta(NS_SQL, param[1], "suspend", "");
 #ifdef UDB
 	if ((al = BuscaCliente(param[1], NULL)))
-		port_func(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-S");
+		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-S");
 	if (IsNickUDB(param[1]))
 		PropagaRegistro("N::%s::S", param[1]);
 #endif
@@ -1069,7 +1045,7 @@ BOTFUNC(NSLiberar)
 }
 BOTFUNC(NSSwhois)
 {
-	if (!port_existe(P_WHOIS_ESPECIAL))
+	if (!ProtFunc(P_WHOIS_ESPECIAL))
 	{
 		Responde(cl, CLI(nickserv), ERR_NSUP);
 		return 1;
@@ -1096,7 +1072,7 @@ BOTFUNC(NSSwhois)
 #endif
 		SQLInserta(NS_SQL, param[1], "swhois", swhois);
 		if ((al = (BuscaCliente(param[1], NULL))))
-			port_func(P_WHOIS_ESPECIAL)(al, swhois);
+			ProtFunc(P_WHOIS_ESPECIAL)(al, swhois);
 		Responde(cl, CLI(nickserv), "El swhois de \00312%s\003 ha sido cambiado.", param[1]);
 	}
 	else
@@ -1114,7 +1090,7 @@ BOTFUNC(NSSwhois)
 BOTFUNC(NSRename)
 {
 	Cliente *al;
-	if (!port_existe(P_CAMBIO_USUARIO_REMOTO))
+	if (!ProtFunc(P_CAMBIO_USUARIO_REMOTO))
 	{
 		Responde(cl, CLI(nickserv), ERR_NSUP);
 		return 1;
@@ -1134,7 +1110,7 @@ BOTFUNC(NSRename)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está conectado.");
 		return 1;
 	}
-	port_func(P_CAMBIO_USUARIO_REMOTO)(al, param[2]);
+	ProtFunc(P_CAMBIO_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha cambiado su nick a \00312%s\003.", param[1], param[2]);
 	return 0;
 }
@@ -1157,13 +1133,13 @@ BOTFUNC(NSForbid)
 #ifdef UDB
 		PropagaRegistro("N::%s::B %s", param[1] + 1, motivo);
 #else
-		if (!port_existe(P_FORB_NICK))
+		if (!ProtFunc(P_FORB_NICK))
 		{
 			Responde(cl, CLI(nickserv), ERR_NSUP);
 			return 1;
 		}
 		SQLInserta(NS_FORBIDS, param[1] + 1, "motivo", motivo);
-		port_func(P_FORB_NICK)(param[1] + 1, ADD,  motivo);
+		ProtFunc(P_FORB_NICK)(param[1] + 1, ADD,  motivo);
 #endif
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1] + 1);
 	}
@@ -1173,8 +1149,8 @@ BOTFUNC(NSForbid)
 		PropagaRegistro("N::%s::B", param[1] + 1);
 #else
 		SQLBorra(NS_FORBIDS, param[1] + 1);
-		if (!port_existe(P_FORB_NICK))
-			port_func(P_FORB_NICK)(param[1] + 1, DEL, NULL);
+		if (!ProtFunc(P_FORB_NICK))
+			ProtFunc(P_FORB_NICK)(param[1] + 1, DEL, NULL);
 #endif
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1] + 1);
 	}
@@ -1252,7 +1228,7 @@ BOTFUNC(NSDemigrar)
 int NSCmdUmode(Cliente *cl, char *modos)
 {
 	//if (conf_set->modos && conf_set->modos->usuarios)
-	//	port_func(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), conf_set->modos->usuarios);
+	//	ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), conf_set->modos->usuarios);
 	if (strchr(modos, 'r') && (cl->modos & UMODE_REGNICK))
 		Senyal1(NS_SIGN_IDOK, cl);
 	return 0;
@@ -1378,7 +1354,7 @@ int NSSigIdOk(Cliente *cl)
 		!IsNickUDB(cl->nombre) && 
 #endif
 		(swhois = SQLCogeRegistro(NS_SQL, cl->nombre, "swhois")))
-			port_func(P_WHOIS_ESPECIAL)(cl, swhois);
+			ProtFunc(P_WHOIS_ESPECIAL)(cl, swhois);
 		cl->nivel |= USER;
 	}
 	return 0;
@@ -1389,7 +1365,7 @@ int NSKillea(char *quien)
 	if ((al = BuscaCliente(quien, NULL)) && !IsId(al))
 	{
 		if (nickserv.opts & NS_PROT_KILL)
-			port_func(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Protección de NICK.");
+			ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Protección de NICK.");
 		else
 			NSCambiaInv(al);
 	}
@@ -1425,10 +1401,10 @@ int NSDropanicks(Proc *proc)
 void NSCambiaInv(Cliente *cl)
 {
 	char buf[BUFSIZE];
-	if (!port_existe(P_CAMBIO_USUARIO_REMOTO))
+	if (!ProtFunc(P_CAMBIO_USUARIO_REMOTO))
 		return;
 	ircsprintf(buf, nickserv.recovernick, cl->nombre);
-	port_func(P_CAMBIO_USUARIO_REMOTO)(cl, AleatorioEx(buf));
+	ProtFunc(P_CAMBIO_USUARIO_REMOTO)(cl, AleatorioEx(buf));
 }
 #ifdef UDB
 int NSSigEOS()

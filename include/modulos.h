@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.9 2005-06-29 21:13:44 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.10 2005-07-16 15:25:27 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -95,3 +95,13 @@ extern const char *ErrorDl(void);
 #define BotUnset(x) x.hmod->conf = NULL; x.hmod = NULL; 
 extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
 #define FuncResp(x,y,z) do { if (BuscaFuncion(x.hmod,y,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
+
+#ifdef ENLACE_DINAMICO
+ #define MOD_INFO(name) Mod_Info
+ #define MOD_CARGA(name) Mod_Carga
+ #define MOD_DESCARGA(name) Mod_Descarga
+#else
+ #define MOD_INFO(name) name##_Info
+ #define MOD_CARGA(name) name##_Carga
+ #define MOD_DESCARGA(name) name##_Descarga
+#endif

@@ -46,9 +46,9 @@ IRCFUNC(m_burst);
 IRCFUNC(m_create);
 IRCFUNC(m_tburst);
 
-ProtInfo info = {
+ProtInfo PROT_INFO(RH) = {
 	"Protocolo P10" ,
-	0.1 ,
+	0.2 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net" 
 };
@@ -159,7 +159,7 @@ ProtInfo info = {
 #define C_REGMOD 0x400000
 #define C_NOCTCPS 0x800000
 
-mTab umodos[] = {
+mTab PROT_UMODOS(RH)[] = {
 	{ U_REG , 'r' } , /* reg */
 	{ U_ADM , 'A' } , /* netadmin */
 	{ U_OPER , 'o' } , /* oper */
@@ -182,7 +182,7 @@ mTab umodos[] = {
   	{ U_IDED , 'n' } ,
 	{0x0, '0'}
 };
-mTab cmodos[] = {
+mTab PROT_CMODOS(RH)[] = {
 	{ C_REG , 'r' } ,
 	{ C_REGONLY , 'R' } , /* rgstronly */
 	{ C_OPERONLY , 'O' } , /* operonly */
@@ -514,7 +514,7 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_NOTICE, cl->trio, buf);
 	return 0;
 }
-Com comandos_especiales[] = {
+Com PROT_COMANDOS(RH)[] = {
 	{ MSG_NULL , TOK_NULL , (void *)p_trio } ,
 	{ MSG_MODE , TOK_MODE , (void *)p_umode } ,
 	{ MSG_NULL, TOK_NULL , (void *)p_svsmode } ,
@@ -604,7 +604,7 @@ void set(Conf *config)
 		}
 	}
 }
-int carga(Conf *config)
+int PROT_CARGA(RH)(Conf *config)
 {
 	int errores = 0;
 #ifdef UDB
@@ -615,7 +615,7 @@ int carga(Conf *config)
 		set(config);
 	else
 	{
-		Error("[%s] La configuracion de %s es errónea", config->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es errónea", config->archivo, Mod_Info.nombre);
 		return ++errores;
 	}
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
@@ -644,7 +644,7 @@ int carga(Conf *config)
 	InsertaComando(MSG_TBURST , TOK_TBURST , m_tburst , INI , 5);
 	return 0;
 }
-int descarga()
+int PROT_DESCARGA(RH)()
 {
 	BorraComando(MSG_PRIVATE, m_msg);
 	BorraComando(MSG_WHOIS, m_whois);
@@ -672,7 +672,7 @@ int descarga()
 	BorraComando(MSG_TBURST, m_tburst);
 	return 0;
 }
-void inicia()
+void PROT_INICIA(RH)()
 {
 	char buf[3];
 	int2b64(buf, me.numeric, sizeof(buf));
@@ -682,7 +682,7 @@ void inicia()
 	EnviaAServidor("PASS :%s", conf_server->password.local);
 	EnviaAServidor("SERVER %s 1 %lu %lu J10 %s]]] +hs :%s", me.nombre, iniciado, time(0), me.trio, me.info);
 }
-SOCKFUNC(parsea)
+SOCKFUNC(PROT_PARSEA(RH))
 {
 	char *p, *para[MAXPARA + 1], sender[HOSTLEN + 1], *s;
 	Comando *comd = NULL;
@@ -952,7 +952,7 @@ IRCFUNC(m_nick)
 				if ((d = strchr(parv[7], ':')))
 				{
 					if (strncasecmp(parv[7], parv[1], d - parv[7]))
-						port_func(P_MODO_USUARIO_REMOTO)(cl, &me, "-r");
+						ProtFunc(P_MODO_USUARIO_REMOTO)(cl, &me, "-r");
 				}
 			}
 		}

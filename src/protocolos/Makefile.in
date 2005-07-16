@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.5 2005-07-13 14:51:47 Trocotronic Exp $
+## $Id: Makefile.in,v 1.6 2005-07-16 15:25:34 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -10,13 +10,19 @@ MODULEFLAGS=@MODULEFLAGS@
 all: build
 build: $(MODULES)
 custommodule: $(MODULEFILE).c
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o $(MODULEFILE).so $(MODULEFILE).c 
-unreal.so: unreal.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o unreal.so unreal.c
-p10.so: p10.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o p10.so p10.c
-redhispana.so: redhispana.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o redhispana.so redhispana.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(MODULEFILE).so $(MODULEFILE).c 
+unreal.so: unreal.c $(INCLUDES) unreal.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o unreal.so unreal.c
+unreal.o: unreal.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c unreal.c
+p10.so: p10.c $(INCLUDES) p10.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o p10.so p10.c
+p10.o: p10.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c p10.c
+redhispana.so: redhispana.c $(INCLUDES) redhispana.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o redhispana.so redhispana.c
+redhispana.o: redhispana.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c redhispana.c
 
 clean:
 	$(RM) -f *.o *.so *~ core

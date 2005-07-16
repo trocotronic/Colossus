@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.17 2005-07-13 14:06:31 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.18 2005-07-16 15:25:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -19,6 +19,7 @@ BOTFUNC(ISTemphost);
 BOTFUNC(ISClones);
 #ifdef UDB
 BOTFUNC(ISOpts);
+BOTFUNC(ISDns);
 #endif
 
 int ISSigSQL	();
@@ -42,6 +43,7 @@ static bCom ipserv_coms[] = {
 	{ "clones" , ISClones , ADMINS } ,
 #ifdef UDB
 	{ "set" , ISOpts , ADMINS } ,
+	{ "dns" , ISDns , ADMINS } ,
 #endif
 	{ 0x0 , 0x0 , 0x0 }
 };
@@ -49,44 +51,44 @@ static bCom ipserv_coms[] = {
 void ISSet(Conf *, Modulo *);
 int ISTest(Conf *, int *);
 
-ModInfo info = {
+ModInfo MOD_INFO(IpServ) = {
 	"IpServ" ,
-	0.9 ,
+	0.10 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
 	
-int carga(Modulo *mod)
+int MOD_CARGA(IpServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(IpServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(IpServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(IpServ).nombre))
 			{
 				if (!ISTest(modulo.seccion[0], &errores))
 					ISSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, MOD_INFO(IpServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(IpServ).nombre);
 				errores++;
 			}
 		}
@@ -94,7 +96,7 @@ int carga(Modulo *mod)
 	}
 	return errores;
 }	
-int descarga()
+int MOD_DESCARGA(IpServ)()
 {
 #ifndef UDB
 	BorraSenyal(SIGN_UMODE, ISSigUmode);
@@ -310,7 +312,7 @@ BOTFUNC(ISSetipv)
 BOTFUNC(ISTemphost)
 {
 	Cliente *al;
-	if (!port_existe(P_CAMBIO_HOST_REMOTO))
+	if (!ProtFunc(P_CAMBIO_HOST_REMOTO))
 	{
 		Responde(cl, CLI(ipserv), ERR_NSUP);
 		return 1;
@@ -325,7 +327,7 @@ BOTFUNC(ISTemphost)
 		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	port_func(P_CAMBIO_HOST_REMOTO)(al, param[2]);
+	ProtFunc(P_CAMBIO_HOST_REMOTO)(al, param[2]);
 	Responde(cl, CLI(ipserv), "El host de \00312%s\003 se ha cambiado por \00312%s\003.", param[1], param[2]);
 	return 0;
 }
@@ -362,6 +364,30 @@ BOTFUNC(ISOpts)
 	{
 		Responde(cl, CLI(ipserv), IS_ERR_SNTX, "SET quit_ips|quit_clones|clones valor");
 		return 1;
+	}
+	return 0;
+}
+BOTFUNC(ISDns)
+{
+	if (params < 2)
+	{
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, "DNS ip [host]");
+		return 1;
+	}
+	if (!EsIp(param[1]))
+	{
+		Responde(cl, CLI(ipserv), IS_ERR_SNTX, "No parece ser una ip");
+		return 1;
+	}
+	if (params == 3)
+	{
+		PropagaRegistro("I::%s::H %s", param[1], param[2]);
+		Responde(cl, CLI(ipserv), "Se ha cambiado la resolución de la ip \00312%s\003 a \00312%s", param[1], param[2]);
+	}
+	else
+	{
+		PropagaRegistro("I::%s::H", param[1]);
+		Responde(cl, CLI(ipserv), "Se ha eliminado al resolución de la ip \00312%s", param[1]);
 	}
 	return 0;
 }
@@ -428,7 +454,7 @@ int ISSigNick(Cliente *cl, int nuevo)
 		if ((cc = SQLCogeRegistro(IS_CLONS, cl->host, "clones")))
 			clons = atoi(cc);
 		if (i > clons)
-			port_func(P_QUIT_USUARIO_REMOTO)(cl, CLI(ipserv), "Demasiados clones.");
+			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, CLI(ipserv), "Demasiados clones.");
 	}
 	return 0;
 }
@@ -557,7 +583,7 @@ char *CifraIpTEA(char *ipreal)
 char *ISMakeVirtualhost(Cliente *al, int mostrar)
 {
 	char *cifrada, buf[BUFSIZE], *sufix, *vip;
-	if (!port_existe(P_CAMBIO_HOST_REMOTO))
+	if (!ProtFunc(P_CAMBIO_HOST_REMOTO))
 		return NULL;
 	cifrada = CifraIpTEA(al->host);
 	sufix = ipserv.sufijo ? ipserv.sufijo : "virtual";
@@ -581,9 +607,9 @@ char *ISMakeVirtualhost(Cliente *al, int mostrar)
 	if (al->vhost && strcmp(al->vhost, cifrada))
 	{
 		if (al->modos & UMODE_HIDE)
-			port_func(P_CAMBIO_HOST_REMOTO)(al, al->vhost);
+			ProtFunc(P_CAMBIO_HOST_REMOTO)(al, al->vhost);
 		if (mostrar)
-			port_func(P_NOTICE)(al, CLI(ipserv), "*** Protección IP: tu dirección virtual es %s", cifrada);
+			ProtFunc(P_NOTICE)(al, CLI(ipserv), "*** Protección IP: tu dirección virtual es %s", cifrada);
 	}
 	return al->vhost;
 }

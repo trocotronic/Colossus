@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.4 2005-07-13 14:06:22 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.5 2005-07-16 15:25:27 Trocotronic Exp $ 
  */
 
 typedef struct _com
@@ -37,10 +37,9 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #define TOK_NULL NULL
 #define p_null NULL
 #define COM_NULL { MSG_NULL , TOK_NULL , p_null }
-#define port_msg(x) (protocolo->especiales + x)->msg
-#define port_tok(x) (protocolo->especiales + x)->tok
-#define port_func(x) (protocolo->especiales + x)->func
-#define port_existe(x) port_func(x)
+#define ProtMsg(x) (protocolo->especiales + x)->msg
+#define ProtTok(x) (protocolo->especiales + x)->tok
+#define ProtFunc(x) (protocolo->especiales + x)->func
 #define P_TRIO 0
 #define P_MODO_USUARIO_LOCAL 1
 #define P_MODO_USUARIO_REMOTO 2
@@ -67,44 +66,64 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #define P_INVITE 23
 #define P_MSG_VL 24
 
-#define port_umodo(x) (protocolo->umodos + x)->mode
-#define port_cmodo(x) (protocolo->cmodos + x)->mode
-#define port_umodo_f(x) (protocolo->umodos + x)->flag
-#define port_cmodo_f(x) (protocolo->cmodos + x)->flag
-#define TRIO(x) port_func(P_TRIO)(x)
+#define ProtUmodo(x) (protocolo->umodos + x)->mode
+#define ProtCmodo(x) (protocolo->cmodos + x)->mode
+#define ProtUmodo_f(x) (protocolo->umodos + x)->flag
+#define ProtCmodo_f(x) (protocolo->cmodos + x)->flag
+#define TRIO(x) ProtFunc(P_TRIO)(x)
 
 //estas macros corresponden a la posición dentro de la tabla
 // *** NO CAMBIAR EL ORDEN ***
-#define UMODE_REGNICK 	port_umodo(0)
-#define UMODE_NETADMIN	port_umodo(1)
-#define UMODE_OPER	port_umodo(2)
-#define UMODE_HELPOP	port_umodo(3)
-#define UMODE_HIDE	port_umodo(4)
+#define UMODE_REGNICK 	ProtUmodo(0)
+#define UMODE_NETADMIN	ProtUmodo(1)
+#define UMODE_OPER	ProtUmodo(2)
+#define UMODE_HELPOP	ProtUmodo(3)
+#define UMODE_HIDE	ProtUmodo(4)
 #ifdef UDB
-#define UMODE_SUSPEND	port_umodo(5)
+#define UMODE_SUSPEND	ProtUmodo(5)
 #endif
 
-#define MODE_RGSTR	port_cmodo(0)
-#define MODE_RGSTRONLY 	port_cmodo(1)
-#define MODE_OPERONLY   port_cmodo(2)
-#define MODE_ADMONLY   	port_cmodo(3)
-#define MODE_HALF	port_cmodo(4)
-#define MODE_ADM	port_cmodo(5)
-#define MODE_OWNER	port_cmodo(6)
+#define MODE_RGSTR	ProtCmodo(0)
+#define MODE_RGSTRONLY 	ProtCmodo(1)
+#define MODE_OPERONLY   ProtCmodo(2)
+#define MODE_ADMONLY   	ProtCmodo(3)
+#define MODE_HALF	ProtCmodo(4)
+#define MODE_ADM	ProtCmodo(5)
+#define MODE_OWNER	ProtCmodo(6)
 
-#define UMODEF_REGNICK 	port_umodo_f(0)
-#define UMODEF_NETADMIN	port_umodo_f(1)
-#define UMODEF_OPER	port_umodo_f(2)
-#define UMODEF_HELPOP	port_umodo_f(3)
-#define UMODEF_HIDE	port_umodo_f(4)
+#define UMODEF_REGNICK 	ProtUmodo_f(0)
+#define UMODEF_NETADMIN	ProtUmodo_f(1)
+#define UMODEF_OPER	ProtUmodo_f(2)
+#define UMODEF_HELPOP	ProtUmodo_f(3)
+#define UMODEF_HIDE	ProtUmodo_f(4)
 #ifdef UDB
-#define UMODEF_SUSPEND	port_umodo_f(5)
+#define UMODEF_SUSPEND	ProtUmodo_f(5)
 #endif
 
-#define MODEF_RGSTR	port_cmodo_f(0)
-#define MODEF_RGSTRONLY port_cmodo_f(1)
-#define MODEF_OPERONLY  port_cmodo_f(2)
-#define MODEF_ADMONLY   port_cmodo_f(3)
-#define MODEF_HALF	port_cmodo_f(4)
-#define MODEF_ADM	port_cmodo_f(5)
-#define MODEF_OWNER	port_cmodo_f(6)
+#define MODEF_RGSTR	ProtCmodo_f(0)
+#define MODEF_RGSTRONLY ProtCmodo_f(1)
+#define MODEF_OPERONLY  ProtCmodo_f(2)
+#define MODEF_ADMONLY   ProtCmodo_f(3)
+#define MODEF_HALF	ProtCmodo_f(4)
+#define MODEF_ADM	ProtCmodo_f(5)
+#define MODEF_OWNER	ProtCmodo_f(6)
+
+#ifdef ENLACE_DINAMICO
+ #define PROT_INFO(name) Prot_Info
+ #define PROT_CARGA(name) Prot_Carga
+ #define PROT_DESCARGA(name) Prot_Descarga
+ #define PROT_PARSEA(name) Prot_Parsea
+ #define PROT_INICIA(name) Prot_Inicia
+ #define PROT_UMODOS(name) Prot_Umodos
+ #define PROT_CMODOS(name) Prot_Cmodos
+ #define PROT_COMANDOS(name) Prot_Comandos
+#else
+ #define PROT_INFO(name) name##_Info
+ #define PROT_CARGA(name) name##_Carga
+ #define PROT_DESCARGA(name) name##_Descarga
+ #define PROT_PARSEA(name) name##_Parsea
+ #define PROT_INICIA(name) name##_Inicia
+ #define PROT_UMODOS(name) name##_Umodos
+ #define PROT_CMODOS(name) name##_Cmodos
+ #define PROT_COMANDOS(name) name##_Comandos
+#endif

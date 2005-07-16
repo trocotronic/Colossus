@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.16 2005-07-13 14:06:32 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.17 2005-07-16 15:25:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,9 +9,6 @@
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 MemoServ memoserv;
 #define ExFunc(x) BuscaFuncion(memoserv.hmod, x, NULL)
@@ -45,75 +42,52 @@ int MSSigSQL	();
 static void MSNotifica	(Cliente *);
 int MSSigDrop	(char *);
 int MSSigRegistra	(char *);
-#ifndef _WIN32
-u_long (*tiene_nivel_dl)(char *, char *, u_long);
-int (*ChanReg_dl)(char *);
-#else
-#define tiene_nivel_dl tiene_nivel
-#define ChanReg_dl ChanReg
-#endif
-#define IsChanReg_dl(x) (ChanReg_dl(x) == 1)
-#define IsChanPReg_dl(x) (ChanReg_dl(x) == 2)
 void MSSet(Conf *, Modulo *);
 int MSTest(Conf *, int *);
 
-ModInfo info = {
+ModInfo MOD_INFO(MemoServ) = {
 	"MemoServ" ,
 	0.8 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
 	
-int carga(Modulo *mod)
+int MOD_CARGA(MemoServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(MemoServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(MemoServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(MemoServ).nombre))
 			{
 				if (!MSTest(modulo.seccion[0], &errores))
 					MSSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, MOD_INFO(MemoServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(MemoServ).nombre);
 				errores++;
 			}
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
-#ifndef _WIN32
-	{
-		Modulo *ex;
-		for (ex = modulos; ex; ex = ex->sig)
-		{
-			if (!strcasecmp(ex->info->nombre, "ChanServ"))
-			{
-				irc_dlsym(ex->hmod, "tiene_nivel", tiene_nivel_dl);
-				irc_dlsym(ex->hmod, "ChanReg", ChanReg_dl);
-				break;
-			}
-		}
-	}
-#endif
 	return errores;
 }	
 int descarga()
@@ -300,12 +274,12 @@ BOTFUNC(MSRead)
 			Responde(cl, CLI(memoserv), MS_ERR_PARA, "READ #canal nº|LAST|NEW");
 			return 1;
 		}
-		if (!IsChanReg_dl(param[1]))
+		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -415,12 +389,12 @@ BOTFUNC(MSMemo)
 	}
 	else if (*param[1] == '#')
 	{
-		if (!IsChanReg_dl(param[1]))
+		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -461,12 +435,12 @@ BOTFUNC(MSDel)
 			Responde(cl, CLI(memoserv), MS_ERR_PARA, "DEL #canal nº|ALL");
 			return 1;
 		}
-		if (!IsChanReg_dl(param[1]))
+		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -486,19 +460,20 @@ BOTFUNC(MSDel)
 	}
 	if (!strcasecmp(no, "ALL"))
 	{
-		SQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_SQL, para);
+		SQLQuery("DELETE from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(para));
 		Responde(cl, CLI(memoserv), "Todos los mensajes han sido borrados.");
 	}
 	else
 	{
 		int max = atoi(no);
-		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(para))))
+		char *paralow = strtolower(para);
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, paralow)))
 		{
 			for(i = 0; (row = SQLFetchRow(res)); i++)
 			{
 				if (max == (i + 1))
 				{
-					SQLQuery("DELETE from %s%s where para='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, para, row[0], row[1], row[2]);
+					SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, paralow, row[0], row[1], row[2]);
 					Responde(cl, CLI(memoserv), "El mensaje \00312%s\003 ha sido borrado.", no);
 					SQLFreeRes(res);
 					return 0;
@@ -521,12 +496,12 @@ BOTFUNC(MSList)
 	time_t tim;
 	if (params > 1 && *param[1] == '#')
 	{
-		if (!IsChanReg_dl(param[1]))
+		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -563,12 +538,12 @@ BOTFUNC(MSOpts)
 			Responde(cl, CLI(memoserv), MS_ERR_PARA, "SET #canal opción valor");
 			return 1;
 		}
-		if (!IsChanReg_dl(param[1]))
+		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!tiene_nivel_dl(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -676,7 +651,7 @@ BOTFUNC(MSInfo)
 	char *regopts;
 	if (params > 1 && *param[1] == '#')
 	{
-		if (!IsChanReg_dl(param[1]))
+		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
@@ -737,7 +712,7 @@ BOTFUNC(MSCancela)
 		Responde(cl, CLI(memoserv), MS_ERR_PARA, "CANCELAR nick|#canal");
 		return 1;
 	}
-	if (*param[1] == '#' && !IsChanReg_dl(param[1]))
+	if (*param[1] == '#' && !IsChanReg(param[1]))
 	{
 		Responde(cl, CLI(memoserv), MS_ERR_EMPT, "Este canal no está registrado.");
 		return 1;
@@ -790,7 +765,7 @@ int MSCmdJoin(Cliente *cl, Canal *cn)
 	int opts;
 	SQLRes res;
 	char *regopts;
-	if (!IsChanReg_dl(cn->nombre))
+	if (!IsChanReg(cn->nombre))
 		return 1;
 	if (!(res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(cn->nombre))))
 		return 1;
@@ -800,8 +775,8 @@ int MSCmdJoin(Cliente *cl, Canal *cn)
 	opts = atoi(regopts);
 	if (opts & MS_OPT_CNO)
 	{
-		if (tiene_nivel_dl(cl->nombre, cn->nombre, CS_LEV_MEM))
-			port_func(P_NOTICE)(cl, CLI(memoserv), "Hay mensajes en el canal");
+		if (CSTieneNivel(cl->nombre, cn->nombre, CS_LEV_MEM))
+			ProtFunc(P_NOTICE)(cl, CLI(memoserv), "Hay mensajes en el canal");
 	}
 	return 0;
 }
@@ -812,7 +787,7 @@ int MSSend(char *para, char *de, char *mensaje)
 	char *regopts;
 	if (para && de && mensaje)
 	{
-		if (!IsChanReg_dl(para) && !IsReg(para))
+		if (!IsChanReg(para) && !IsReg(para))
 			return 1;
 		SQLQuery("INSERT into %s%s (para,de,fecha,mensaje) values ('%s','%s','%lu','%s')", PREFIJO, MS_SQL, para, de, time(0), mensaje);
 		if (!(regopts = SQLCogeRegistro(MS_SET, para, "opts")))
@@ -821,7 +796,7 @@ int MSSend(char *para, char *de, char *mensaje)
 		if (*para == '#')
 		{
 			if (opts & MS_OPT_CNO)
-				port_func(P_NOTICE)((Cliente *)BuscaCanal(para, NULL), CLI(memoserv), "Hay un mensaje nuevo en el canal");
+				ProtFunc(P_NOTICE)((Cliente *)BuscaCanal(para, NULL), CLI(memoserv), "Hay un mensaje nuevo en el canal");
 		}
 		else
 		{

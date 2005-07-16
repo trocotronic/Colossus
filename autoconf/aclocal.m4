@@ -101,7 +101,7 @@ AC_DEFUN([CHECK_MYSQL],
 [
 AC_MSG_CHECKING(para mysql)
 MYSQLHEAD=`mysql_config --include`;
-MYSQLLIBS=`mysql_config --libs`;
+MYSQLLIBS="-lmysqlclient";
 AC_SUBST(MYSQLHEAD)
 AC_SUBST(MYSQLLIBS)
 AC_MSG_RESULT(ok);

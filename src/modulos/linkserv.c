@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.12 2005-07-13 14:06:32 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.13 2005-07-16 15:25:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -54,14 +54,14 @@ int carga(Modulo *mod)
 	int errores = 0;
 	if (ParseaConfiguracion(mod->config, &modulo, 1))
 		return 1;
-	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+	if (!strcasecmp(modulo.seccion[0]->item, Mod_Info.nombre))
 	{
 		if (!test(modulo.seccion[0], &errores))
 			set(modulo.seccion[0], mod);
 	}
 	else
 	{
-		Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es erronea", mod->archivo, Mod_Info.nombre);
 		errores++;
 	}
 #ifndef _WIN32

@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.3 2005-07-13 14:06:34 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.4 2005-07-16 15:25:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -34,7 +34,7 @@ static bCom tvserv_coms[] = {
 void TSSet(Conf *, Modulo *);
 int TSTest(Conf *, int *);
 
-ModInfo info = {
+ModInfo MOD_INFO(TvServ) = {
 	"TvServ" ,
 	0.3 ,
 	"Trocotronic" ,
@@ -95,37 +95,37 @@ char *TSBuscaHoroscopo(char *horo)
 	}
 	return NULL;
 }
-int carga(Modulo *mod)
+int MOD_CARGA(TvServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(TvServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(TvServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(TvServ).nombre))
 			{
 				if (!TSTest(modulo.seccion[0], &errores))
 					TSSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, MOD_INFO(TvServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(TvServ).nombre);
 				errores++;
 			}
 		}
@@ -133,7 +133,7 @@ int carga(Modulo *mod)
 	}
 	return errores;
 }
-int descarga()
+int MOD_DESCARGA(TvServ)()
 {
 	BorraSenyal(SIGN_SQL, TSSigSQL);
 	BotUnset(tvserv);

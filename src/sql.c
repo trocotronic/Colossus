@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.2 2005-07-13 14:50:07 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.3 2005-07-16 15:25:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -78,7 +78,7 @@ int CargaSQL()
 	if (sql)
 		LiberaSQL();
 	BMalloc(sql, struct _sql);
-	if ((sql->hmod = irc_dlopen(tmppath, RTLD_NOW)))
+	if ((sql->hmod = irc_dlopen(tmppath, RTLD_LAZY)))
 	{
 		irc_dlsym(sql->hmod, "Carga", Carga);
 		if (!Carga)
@@ -226,7 +226,7 @@ void SQLBorra(char *tabla, char *registro)
 		char *reg_c;
 		reg_c = SQLEscapa(registro);
 		if (SQLCogeRegistro(tabla, registro, NULL))
-			SQLQuery("DELETE from %s%s where item='%s'", PREFIJO, tabla, reg_c);
+			SQLQuery("DELETE from %s%s where LOWER(item)='%s'", PREFIJO, tabla, strtolower(reg_c));
 		Free(reg_c);
 	}
 	else

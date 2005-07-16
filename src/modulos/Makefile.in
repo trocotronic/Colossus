@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.5 2005-07-13 14:51:46 Trocotronic Exp $
+## $Id: Makefile.in,v 1.6 2005-07-16 15:25:31 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -10,24 +10,34 @@ MODULEFLAGS=@MODULEFLAGS@
 all: build
 build: $(MODULES)
 custommodule: $(MODULEFILE).c
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o $(MODULEFILE).so $(MODULEFILE).c 
-chanserv.so: chanserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o chanserv.so chanserv.c
-nickserv.so: nickserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o nickserv.so nickserv.c
-operserv.so: operserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o operserv.so operserv.c
-ipserv.so: ipserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o ipserv.so ipserv.c
-memoserv.so: memoserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o memoserv.so memoserv.c
-statserv.so: statserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o statserv.so statserv.c
-proxyserv.so: proxyserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o proxyserv.so proxyserv.c
-linkserv.so: linkserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o linkserv.so linkserv.c
-tvserv.so: tvserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -o tvserv.so tvserv.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(MODULEFILE).so $(MODULEFILE).c 
+chanserv.so: chanserv.c $(INCLUDES) chanserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o chanserv.so chanserv.c
+chanserv.o: chanserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c chanserv.c
+nickserv.so: nickserv.c $(INCLUDES) nickserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO chanserv.o -o nickserv.so nickserv.c
+nickserv.o: nickserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c nickserv.c
+operserv.so: operserv.c $(INCLUDES) operserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO memoserv.o chanserv.o -o operserv.so operserv.c
+operserv.o: operserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c operserv.c
+ipserv.so: ipserv.c $(INCLUDES) ipserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o ipserv.so ipserv.c
+ipserv.o: ipserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c ipserv.c
+memoserv.so: memoserv.c $(INCLUDES) memoserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO chanserv.o -o memoserv.so memoserv.c
+memoserv.o: memoserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c memoserv.c
+proxyserv.so: proxyserv.c $(INCLUDES) proxyserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o proxyserv.so proxyserv.c
+proxyserv.o: proxyserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c proxyserv.c
+tvserv.so: tvserv.c $(INCLUDES) tvserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o tvserv.so tvserv.c
+tvserv.o: tvserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c tvserv.c
 clean:
 	$(RM) -f *.o *.so *~ core

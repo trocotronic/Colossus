@@ -1,10 +1,10 @@
 EXPORTS
-	info
-	carga
-	descarga
-	inicia
-	parsea
-	umodos
-	cmodos
-	comandos_especiales
+	Prot_Info
+	Prot_Carga
+	Prot_Descarga
+	Prot_Inicia
+	Prot_Parsea
+	Prot_Umodos
+	Prot_Cmodos
+	Prot_Comandos
 	

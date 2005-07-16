@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.23 2005-07-13 14:06:30 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.24 2005-07-16 15:25:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -128,44 +128,44 @@ DLLFUNC mTab cFlags[] = {
 	{ 0x0 , '0' }
 };
 
-ModInfo info = {
+ModInfo MOD_INFO(ChanServ) = {
 	"ChanServ" ,
-	0.9 ,
+	0.10 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net" 
 };
 	
-int carga(Modulo *mod)
+int MOD_CARGA(ChanServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(ChanServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(ChanServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(ChanServ).nombre))
 			{
 				if (!CSTest(modulo.seccion[0], &errores))
 					CSSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el test", mod->archivo, MOD_INFO(ChanServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(ChanServ).nombre);
 				errores++;
 			}
 		}
@@ -173,7 +173,7 @@ int carga(Modulo *mod)
 	}
 	return errores;
 }
-int descarga()
+int MOD_DESCARGA(ChanServ)()
 {
 	BorraSenyal(SIGN_MODE, CSCmdMode);
 	BorraSenyal(SIGN_TOPIC, CSCmdTopic);
@@ -1089,7 +1089,7 @@ BOTFUNC(CSInfo)
 		Responde(cl, CLI(chanserv), "URL: \00312%s", row[5]);
 	if (!BadPtr(row[6]))
 		Responde(cl, CLI(chanserv), "Email: \00312%s", row[6]);
-	if (tiene_nivel(cl->nombre, param[1], CS_LEV_SET))
+	if (CSTieneNivel(cl->nombre, param[1], CS_LEV_SET))
 		modos = row[7];
 	else
 		modos = strtok(row[7], " ");
@@ -1126,7 +1126,7 @@ BOTFUNC(CSInvite)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!tiene_nivel(cl->nombre, param[1], CS_LEV_INV))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_INV))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB);
 		return 1;
@@ -1137,10 +1137,10 @@ BOTFUNC(CSInvite)
 		return 1;
 	}
 	cn = BuscaCanal(param[1], NULL);
-	port_func(P_INVITE)(al ? al : cl, CLI(chanserv), cn);
+	ProtFunc(P_INVITE)(al ? al : cl, CLI(chanserv), cn);
 	Responde(cl, CLI(chanserv), "El usuario \00312%s\003 ha sido invitado a \00312%s\003.", params == 3 ? param[2] : parv[0], param[1]);
 	if (IsChanDebug(param[1]))
-		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s invita a %s", parv[0], params == 3 ? param[2] : parv[0]);
+		ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s invita a %s", parv[0], params == 3 ? param[2] : parv[0]);
 	return 0;
 }
 BOTFUNC(CSModos)
@@ -1168,7 +1168,7 @@ BOTFUNC(CSModos)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!tiene_nivel(parv[0], param[1], CS_LEV_RMO))
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_RMO))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1180,9 +1180,9 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->admin, al))
 				continue;
-			if (!tiene_nivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
+			if (!CSTieneNivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_ADM, TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_ADM, TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "DEADMIN") && MODE_ADM)
@@ -1191,7 +1191,7 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->admin, al))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "OP"))
@@ -1200,9 +1200,9 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->op, al))
 				continue;
-			if (!tiene_nivel(param[i], param[1], CS_LEV_AOP) && (opts & CS_OPT_SOP))
+			if (!CSTieneNivel(param[i], param[1], CS_LEV_AOP) && (opts & CS_OPT_SOP))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+o %s", TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+o %s", TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "DEOP"))
@@ -1211,7 +1211,7 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->op, al))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "HALF") && MODE_HALF)
@@ -1220,9 +1220,9 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->half, al))
 				continue;
-			if (!tiene_nivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
+			if (!CSTieneNivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_HALF, TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_HALF, TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "DEHALF") && MODE_HALF)
@@ -1231,7 +1231,7 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->half, al))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "VOICE"))
@@ -1240,9 +1240,9 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->voz, al))
 				continue;
-			if (!tiene_nivel(param[i], param[1], CS_LEV_AVO) && (opts & CS_OPT_SOP))
+			if (!CSTieneNivel(param[i], param[1], CS_LEV_AVO) && (opts & CS_OPT_SOP))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+v %s", TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+v %s", TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "DEVOICE"))
@@ -1251,27 +1251,27 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->voz, al))
 				continue;
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al));
 		}
 	}
 	else if (!strcasecmp(param[0], "BAN"))
 	{
 		for (i = 2; i < params; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", MascaraIrcd(param[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", MascaraIrcd(param[i]));
 	}
 	else if (!strcasecmp(param[0], "UNBAN"))
 	{
 		for (i = 2; i < params; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-b %s", MascaraIrcd(param[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-b %s", MascaraIrcd(param[i]));
 	}
 	else if (!strcasecmp(param[0], "KICK"))
 	{
 		if (!(al = BuscaCliente(param[2], NULL)))
 			return 1;
-		port_func(P_KICK)(al, CLI(chanserv), cn, Unifica(param, params, 3, -1));
+		ProtFunc(P_KICK)(al, CLI(chanserv), cn, Unifica(param, params, 3, -1));
 	}
 	if (IsChanDebug(param[1]))
-		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace %s a %s", parv[0], strtoupper(param[0]), Unifica(param, params, 2, -1));
+		ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace %s a %s", parv[0], strtoupper(param[0]), Unifica(param, params, 2, -1));
 	return 0;
 }
 BOTFUNC(CSClear)
@@ -1299,7 +1299,7 @@ BOTFUNC(CSClear)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!tiene_nivel(parv[0], param[1], CS_LEV_RES))
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_RES))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1311,31 +1311,31 @@ BOTFUNC(CSClear)
 		if (params > 3)
 			motivo = Unifica(param, params, 3, -1);
 		for (i = 0; al[i]; i++)
-			port_func(P_KICK)(al[i], CLI(chanserv), cn, motivo);
+			ProtFunc(P_KICK)(al[i], CLI(chanserv), cn, motivo);
 	}
 	else if (!strcasecmp(param[2], "ADMINS") && MODE_ADM)
 	{
 		al = CSEmpaquetaClientes(cn, cn->admin, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "OPS"))
 	{
 		al = CSEmpaquetaClientes(cn, cn->op, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "HALFS") && MODE_HALF)
 	{
 		al = CSEmpaquetaClientes(cn, cn->half, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "VOCES"))
 	{
 		al = CSEmpaquetaClientes(cn, cn->voz, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
 	}
 	else if (!strcasecmp(param[2], "ACCESOS"))
 	{
@@ -1356,14 +1356,14 @@ BOTFUNC(CSClear)
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%s", ModosAFlags(cn->modos, protocolo->cmodos, cn));
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%c", IsChanReg(param[1]) && MODE_RGSTR ? MODEF_RGSTR : 0);
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%s", ModosAFlags(cn->modos, protocolo->cmodos, cn));
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%c", IsChanReg(param[1]) && MODE_RGSTR ? MODEF_RGSTR : 0);
 		Responde(cl, CLI(chanserv), "Modos resetados a +nt.");
 	}
 	else if (!strcasecmp(param[2], "BANS"))
 	{
 		while (cn->ban)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-b %s", cn->ban->ban);
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-b %s", cn->ban->ban);
 	}
 	else if (!strcasecmp(param[2], "KILL"))
 	{
@@ -1377,7 +1377,7 @@ BOTFUNC(CSClear)
 			motivo = Unifica(param, params, 3, -1);
 		al = CSEmpaquetaClientes(cn, NULL, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_QUIT_USUARIO_REMOTO)(al[i], CLI(chanserv), motivo);
+			ProtFunc(P_QUIT_USUARIO_REMOTO)(al[i], CLI(chanserv), motivo);
 		Responde(cl, CLI(chanserv), "Usuarios de \00312%s\003 desconectados.", param[1]);
 	}
 	else if (!strcasecmp(param[2], "GLINE"))
@@ -1404,7 +1404,7 @@ BOTFUNC(CSClear)
 		for (aux = cn->miembro; aux; aux = aux->sig)
 		{
 			if (!EsBot(aux->user) && !IsOper(aux->user))
-				port_func(P_GLINE)(CLI(chanserv), ADD, aux->user->ident, aux->user->host, atoi(param[3]), motivo);
+				ProtFunc(P_GLINE)(CLI(chanserv), ADD, aux->user->ident, aux->user->host, atoi(param[3]), motivo);
 		}
 		Responde(cl, CLI(chanserv), "Usuarios de \00312%s\003 con gline durante \00312%s\003 segundos.", param[1], param[3]);
 	}
@@ -1414,7 +1414,7 @@ BOTFUNC(CSClear)
 		return 1;
 	}
 	if (IsChanDebug(param[1]))
-		port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace CLEAR %s", parv[0], strtoupper(param[2]));
+		ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), "%s hace CLEAR %s", parv[0], strtoupper(param[2]));
 	ircfree(al);
 	return 0;
 }
@@ -1435,7 +1435,7 @@ BOTFUNC(CSOpts)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!tiene_nivel(parv[0], param[1], CS_LEV_SET))
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_SET))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1474,7 +1474,7 @@ BOTFUNC(CSOpts)
 		{
 			Responde(cl, CLI(chanserv), "TOPIC cambiado.");
 #ifndef UDB
-			port_func(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1], NULL), topic);
+			ProtFunc(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1], NULL), topic);
 #endif
 		}
 		else
@@ -1526,7 +1526,7 @@ BOTFUNC(CSOpts)
 				}
 			}
 			modos = Unifica(param, params, 3, -1);
-			port_func(P_MODO_CANAL)(CLI(chanserv), BuscaCanal(param[1], NULL), modos);
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), BuscaCanal(param[1], NULL), modos);
 			Responde(cl, CLI(chanserv), "Modos cambiados.");
 			
 		}
@@ -1713,7 +1713,7 @@ BOTFUNC(CSAkick)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!tiene_nivel(parv[0], param[1], CS_LEV_ACK))
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_ACK))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1751,7 +1751,7 @@ BOTFUNC(CSAkick)
 			CSBorraAkickDb(param[2] + 1, param[1]);
 			CSInsertaAkickDb(param[2] + 1, param[1], parv[0], motivo);
 			if ((al = BuscaCliente(param[2] + 1, NULL)))
-				port_func(P_KICK)(al, CLI(chanserv), cn, motivo);
+				ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
 			Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2] + 1);
 		}
 		else if (*param[2] == '-')
@@ -1793,7 +1793,7 @@ BOTFUNC(CSAccess)
 	if (params == 2)
 	{
 		char *tok;
-		if (!tiene_nivel(parv[0], param[1], CS_LEV_LIS))
+		if (!CSTieneNivel(parv[0], param[1], CS_LEV_LIS))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
@@ -1814,7 +1814,7 @@ BOTFUNC(CSAccess)
 	else
 	{
 		u_long prev;
-		if (!tiene_nivel(parv[0], param[1], CS_LEV_EDT))
+		if (!CSTieneNivel(parv[0], param[1], CS_LEV_EDT))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
@@ -1874,7 +1874,7 @@ BOTFUNC(CSAccess)
 				{
 					Canal *cn;
 					cn = BuscaCanal(param[1], NULL);
-					port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s cambiado a %s", param[2], param[3]);
+					ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s cambiado a %s", param[2], param[3]);
 				}
 			}
 			else
@@ -1884,7 +1884,7 @@ BOTFUNC(CSAccess)
 				{
 					Canal *cn;
 					cn = BuscaCanal(param[1], NULL);
-					port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s eliminado", param[2]);
+					ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s eliminado", param[2]);
 				}
 			}
 		}
@@ -1897,7 +1897,7 @@ BOTFUNC(CSAccess)
 			{
 				Canal *cn;
 				cn = BuscaCanal(param[1], NULL);
-				port_func(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s eliminado", param[2]);
+				ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), "Acceso de %s eliminado", param[2]);
 			}
 		}
 	}	
@@ -2104,7 +2104,7 @@ BOTFUNC(CSForbid)
 		int i;
 		al = CSEmpaquetaClientes(cn, NULL, !ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_KICK)(al[i], CLI(chanserv), cn, "Canal \2PROHIBIDO\2: %s", motivo);
+			ProtFunc(P_KICK)(al[i], CLI(chanserv), cn, "Canal \2PROHIBIDO\2: %s", motivo);
 		ircfree(al);
 	}
 #ifdef UDB
@@ -2154,32 +2154,32 @@ BOTFUNC(CSBlock)
 	{
 		al = CSEmpaquetaClientes(cn, cn->owner, ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_OWNER, TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_OWNER, TRIO(al[i]));
 		ircfree(al);
 	}
 	if (MODE_ADM)
 	{
 		al = CSEmpaquetaClientes(cn, cn->admin, ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al[i]));
 		ircfree(al);
 	}
 	al = CSEmpaquetaClientes(cn, cn->op, ADD);
 	for (i = 0; al[i]; i++)
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al[i]));
 	ircfree(al);
 	if (MODE_HALF)
 	{
 		al = CSEmpaquetaClientes(cn, cn->half, ADD);
 		for (i = 0; al[i]; i++)
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al[i]));
 		ircfree(al);
 	}
 	al = CSEmpaquetaClientes(cn, cn->voz, ADD);
 	for (i = 0; al[i]; i++)
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al[i]));
 	ircfree(al);
-	port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+iml 1");
+	ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+iml 1");
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido bloqueado.", param[1]);
 	/* aun asi podrán opearse si tienen nivel, se supone que este comando lo utilizan los operadores 
 	   y estan supervisando el canal, para que si alguno se opea se le killee, o simplemente por hacer 
@@ -2307,8 +2307,8 @@ BOTFUNC(CSRegister)
 				if (RedOverride)
 					EntraBot(CLI(chanserv), cn->nombre);
 				if (MODE_RGSTR)
-					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", MODEF_RGSTR);
-				port_func(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
+					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", MODEF_RGSTR);
+				ProtFunc(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
 			}
 			Senyal1(CS_SIGN_REG, param[1]);
 		}
@@ -2458,7 +2458,7 @@ BOTFUNC(CSProteger)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!tiene_nivel(parv[0], param[1], CS_LEV_EDT))
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_EDT))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -2511,8 +2511,8 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 			/* buscamos el -k */
 			k = strchr(modebuf, '-');
 			if (k && strchr(k, 'k') && cn->clave)
-				port_func(P_MODO_CANAL)(CLI(chanserv), cn, "-k %s", mods[max-1]); /* siempre está en el último */
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
+				ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-k %s", mods[max-1]); /* siempre está en el último */
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
 			modebuf[0] = parabuf[0] = '\0';
 		}
 		if (opts & CS_OPT_SOP)
@@ -2530,7 +2530,7 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 				{
 					if (f == ADD)
 					{
-						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AOP))
+						if (!CSTieneNivel(mods[pars], cn->nombre, CS_LEV_AOP))
 						{
 							strcat(modebuf, "-o");
 							strcat(parabuf, TRIO(BuscaCliente(mods[pars], NULL)));
@@ -2543,7 +2543,7 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 				{
 					if (f == ADD)
 					{
-						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AHA))
+						if (!CSTieneNivel(mods[pars], cn->nombre, CS_LEV_AHA))
 						{
 							char tmp[3];
 							ircsprintf(tmp, "-%c", MODEF_HALF);
@@ -2558,7 +2558,7 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 				{
 					if (f == ADD)
 					{
-						if (!tiene_nivel(mods[pars], cn->nombre, CS_LEV_AAD))
+						if (!CSTieneNivel(mods[pars], cn->nombre, CS_LEV_AAD))
 						{
 							char tmp[3];
 							ircsprintf(tmp, "-%c", MODEF_ADM);
@@ -2578,7 +2578,7 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 		}
 	}
 	if (modebuf[0] != '\0')
-		port_func(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
 	return 0;
 }
 int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
@@ -2592,7 +2592,7 @@ int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 		if (opts & CS_OPT_KTOP)
 		{
 			if (topic && strcmp(cn->topic, topic))
-				port_func(P_TOPIC)(CLI(chanserv), cn, topic);
+				ProtFunc(P_TOPIC)(CLI(chanserv), cn, topic);
 		}
 		else if (opts & CS_OPT_RTOP)
 		{
@@ -2606,8 +2606,8 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 {
 	if (IsChanReg(cn->nombre))
 	{
-		if (tiene_nivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
-			port_func(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
+		if (CSTieneNivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
+			ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
 	}	
 	return 0;
 }
@@ -2622,10 +2622,10 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	Akick *akicks;
 	if (!IsOper(cl) && (forb = IsChanForbid(cn->nombre)))
 	{
-		if (port_existe(P_PART_USUARIO_REMOTO))
+		if (ProtFunc(P_PART_USUARIO_REMOTO))
 		{
-			port_func(P_PART_USUARIO_REMOTO)(cl, cn, "Este canal está \2PROHIBIDO\2: %s", forb);
-			port_func(P_NOTICE)(cl, CLI(chanserv), "Este canal está \2PROHIBIDO\2: %s", forb);
+			ProtFunc(P_PART_USUARIO_REMOTO)(cl, cn, "Este canal está \2PROHIBIDO\2: %s", forb);
+			ProtFunc(P_NOTICE)(cl, CLI(chanserv), "Este canal está \2PROHIBIDO\2: %s", forb);
 		}
 		return 0;
 	}
@@ -2642,7 +2642,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		aux = 0L;
 		if ((susp = IsChanSuspend(cn->nombre)))
 		{
-			port_func(P_NOTICE)(cl, CLI(chanserv), "Este canal está suspendido: %s", susp);
+			ProtFunc(P_NOTICE)(cl, CLI(chanserv), "Este canal está suspendido: %s", susp);
 			if (!IsOper(cl))
 				return 0;
 		}
@@ -2650,10 +2650,10 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		if (((opts & CS_OPT_RMOD) && (((aux & MODE_OPERONLY) && !IsOper(cl)) || 
 			((aux & MODE_ADMONLY) && !IsAdmin(cl)) ||
 			((aux & MODE_RGSTRONLY) && !IsId(cl)))) ||
-			(((opts & CS_OPT_SEC) && !IsPreo(cl) && (!tiene_nivel(cl->nombre, cn->nombre, 0L) || !IsId(cl)))))
+			(((opts & CS_OPT_SEC) && !IsPreo(cl) && (!CSTieneNivel(cl->nombre, cn->nombre, 0L) || !IsId(cl)))))
 		{
-			if (port_existe(P_PART_USUARIO_REMOTO))
-				port_func(P_PART_USUARIO_REMOTO)(cl, cn, NULL);
+			if (ProtFunc(P_PART_USUARIO_REMOTO))
+				ProtFunc(P_PART_USUARIO_REMOTO)(cl, cn, NULL);
 			return 0;
 		}
 		akicks = CSBuscaAkicks(cn->nombre);
@@ -2665,15 +2665,15 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 				if (!match(MascaraIrcd(akicks->akick[i].nick), cl->mask))
 				{
 					find = 1;
-					port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", TipoMascara(cl->mask, chanserv.bantype));
-					port_func(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", akicks->akick[i].motivo, akicks->akick[i].puesto);
+					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", TipoMascara(cl->mask, chanserv.bantype));
+					ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", akicks->akick[i].motivo, akicks->akick[i].puesto);
 					break;
 				}
 			}
 		}
 		if (find)
 			return 0;
-		nivel = IsId(cl) ? tiene_nivel(cl->nombre, cn->nombre, 0L) : 0L;
+		nivel = IsId(cl) ? CSTieneNivel(cl->nombre, cn->nombre, 0L) : 0L;
 		buf[0] = tokbuf[0] = '\0';
 		if (MODE_OWNER && IsId(cl))
 		{
@@ -2734,11 +2734,11 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 			}
 		}
 		if (buf[0])
-			port_func(P_MODO_CANAL)(CLI(chanserv), cn, "+%s %s", buf, tokbuf);
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%s %s", buf, tokbuf);
 		if (cn->miembros == 1 && opts & CS_OPT_RTOP)
-			port_func(P_TOPIC)(CLI(chanserv), cn, topic);
+			ProtFunc(P_TOPIC)(CLI(chanserv), cn, topic);
 		if (!BadPtr(entry))
-			port_func(P_NOTICE)(cl, CLI(chanserv), entry);
+			ProtFunc(P_NOTICE)(cl, CLI(chanserv), entry);
 		Free(entry);
 		Free(modos);
 		Free(topic);
@@ -2844,7 +2844,7 @@ int CSBaja(char *canal, char opt)
 	an = BuscaCanal(canal, NULL);
 	if (an)
 	{
-		port_func(P_MODO_CANAL)(CLI(chanserv), an, "-r");
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), an, "-r");
 		if (RedOverride)
 			SacaBot(CLI(chanserv), canal, NULL);
 	}
@@ -3064,7 +3064,7 @@ void CSCargaAkicks()
 	}
 	SQLFreeRes(res);
 }
-u_long tiene_nivel(char *nick, char *canal, u_long flag)
+u_long CSTieneNivel(char *nick, char *canal, u_long flag)
 {
 	CsRegistros *aux;
 	Cliente *al;
@@ -3101,7 +3101,7 @@ int CSDropachans(Proc *proc)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' OFFSET %i LIMIT 30", PREFIJO, CS_SQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' OFFSET %i LIMIT 30", PREFIJO, CS_SQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);

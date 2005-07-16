@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.26 2005-06-29 21:13:51 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.27 2005-07-16 15:25:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -153,7 +153,7 @@ SOCKFUNC(ProcesaIrcd)
 	if (!canal_debug)
 		canal_debug = BuscaCanal(conf_set->debug, NULL);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
-		port_func(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
+		ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
 	return protocolo->parsea(sck, data);
 }
 SOCKFUNC(CierraIrcd)
@@ -548,9 +548,9 @@ void EntraBot(Cliente *bl, char *canal)
 	cn = InfoCanal(canal, !0);
 	//InsertaCanalEnCliente(bl, cn);
 	//InsertaClienteEnCanal(cn, bl);
-	port_func(P_JOIN_USUARIO_LOCAL)(bl, cn);
+	ProtFunc(P_JOIN_USUARIO_LOCAL)(bl, cn);
 	if (conf_set->opts & AUTOBOP)
-		port_func(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
+		ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
 }
 void SacaBot(Cliente *bl, char *canal, char *motivo)
 {
@@ -558,7 +558,7 @@ void SacaBot(Cliente *bl, char *canal, char *motivo)
 	cn = InfoCanal(canal, 0);
 	//BorraCanalDeCliente(bl, cn);
 	//BorraClienteDeCanal(cn, bl);
-	port_func(P_PART_USUARIO_LOCAL)(bl, cn, motivo);
+	ProtFunc(P_PART_USUARIO_LOCAL)(bl, cn, motivo);
 }
 char *TipoMascara(char *mask, int tipo)
 {
@@ -752,11 +752,11 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *server, char *modos,
 	Cliente *al;
 	static int num = 0;
 	if ((al = BuscaCliente(nick, NULL)) && !EsBot(al))
-		port_func(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
+		ProtFunc(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
 	al = NuevoCliente(nick, ident, host, NULL, server, host, modos, realname);
 	al->tipo = ES_BOT;
 	al->numeric = num;
-	port_func(P_NUEVO_USUARIO)(al);
+	ProtFunc(P_NUEVO_USUARIO)(al);
 	num++;
 	return al;
 }
@@ -764,7 +764,7 @@ void DesconectaBot(char *bot, char *motivo)
 {
 	Cliente *bl;
 	if ((bl = BuscaCliente(bot, NULL)) && EsBot(bl))
-		port_func(P_QUIT_USUARIO_LOCAL)(bl, motivo);
+		ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, motivo);
 }
 void ReconectaBot(char *nick)
 {
@@ -896,9 +896,9 @@ void Responde(Cliente *cl, Cliente *bot, char *formato, ...)
 		return;
 	va_start(vl, formato);
 	if (RESP_PRIVMSG)
-		port_func(P_MSG_VL)(cl, bot, 1, formato, &vl);
+		ProtFunc(P_MSG_VL)(cl, bot, 1, formato, &vl);
 	else
-		port_func(P_MSG_VL)(cl, bot, 0, formato, &vl);
+		ProtFunc(P_MSG_VL)(cl, bot, 0, formato, &vl);
 	va_end(vl);
 }
 int EntraResidentes()

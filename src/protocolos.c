@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.2 2005-06-29 21:13:54 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.3 2005-07-16 15:25:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -72,65 +72,64 @@ int CargaProtocolo(Conf *config)
 		return 1;
 	}
 #endif
-	if ((prot = irc_dlopen(tmppath, RTLD_NOW)))
+	if ((prot = irc_dlopen(tmppath, RTLD_LAZY)))
 	{
-		irc_dlsym(prot, "carga", mod_carga);
+		irc_dlsym(prot, "Prot_Carga", mod_carga);
 		if (!mod_carga)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (carga)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Carga)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "descarga", mod_descarga);
+		irc_dlsym(prot, "Prot_Descarga", mod_descarga);
 		if (!mod_descarga)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (descarga)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Descarga)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "info", inf);
+		irc_dlsym(prot, "Prot_Info", inf);
 		if (!inf || !inf->nombre)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (info)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Info)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "inicia", ini);
+		irc_dlsym(prot, "Prot_Inicia", ini);
 		if (!ini)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (inicia)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Inicia)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "parsea", parsea);
+		irc_dlsym(prot, "Prot_Parsea", parsea);
 		if (!parsea)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (parsea)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Parsea)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "comandos_especiales", comandos_especiales);
+		irc_dlsym(prot, "Prot_Comandos", comandos_especiales);
 		if (!comandos_especiales)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (comandos_especiales)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Comandos)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "umodos", um);
+		irc_dlsym(prot, "Prot_Umodos", um);
 		if (!um)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (umodos)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Umodos)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "cmodos", cm);
+		irc_dlsym(prot, "Prot_Cmodos", cm);
 		if (!cm)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (cmodos)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Cmodos)", amod);
 			irc_dlclose(prot);
 			return 1;
 		}
-		irc_dlsym(prot, "comandos_especiales", comandos_especiales);
 		/* una vez está todo correcto, liberamos el anterior si hubiera uno */
 		if (protocolo)
 			LiberaMemoriaProtocolo(protocolo);
@@ -149,7 +148,7 @@ int CargaProtocolo(Conf *config)
 		protocolo->cmodos = cm;
 		if (mod_carga(config))
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (mod_carga())", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Carga())", amod);
 			LiberaMemoriaProtocolo(protocolo);
 			return 1;
 		}

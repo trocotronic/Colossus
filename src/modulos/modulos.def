@@ -1,5 +1,5 @@
 EXPORTS
-	info
-	carga
-	descarga
+	Mod_Info
+	Mod_Carga
+	Mod_Descarga
 	

@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.6 2005-07-13 14:06:24 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.7 2005-07-16 15:25:28 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -98,7 +98,7 @@ extern ChanServ chanserv;
 #define CS_ERR_FORB ERR_FORB
 
 #define IsChanDebug(x) (x && (atoi(SQLCogeRegistro(CS_SQL, x, "opts")) & CS_OPT_DEBUG))
-DLLFUNC extern u_long tiene_nivel(char *, char *, u_long);
+DLLFUNC extern u_long CSTieneNivel(char *, char *, u_long);
 DLLFUNC extern CsRegistros *busca_cregistro(char *);
 #ifdef UDB
 #define IsChanUDB(x) (atoi(SQLCogeRegistro(CS_SQL, x, "opts")) & CS_OPT_UDB)

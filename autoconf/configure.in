@@ -83,7 +83,6 @@ if test "$ac_cv_underscore" = "yes"; then
 AC_DEFINE(UNDERSCORE)
 fi
 MODULEFLAGS=$ac_cv_pic
-AC_DEFINE(DYNAMIC_LINKING)
 ])
 
 AC_DEFUN(AC_ENABLE_INET6,[

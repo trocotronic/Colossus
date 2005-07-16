@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.25 2005-07-13 14:06:17 Trocotronic Exp $
+ * $Id: cambios,v 1.26 2005-07-16 15:25:26 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -296,3 +296,4 @@
 110705252 - Se arreglan varias inconsistencias en MySQL.
 110705253 - Se unifican los privados SQL.
 110705254 - Se crea un motor SQL para poder usar distintos tipos de bases de datos (MySQL, PostGreSQL, etc.).
+160705255 - Cambio algunas macros de los módulos y protocolos.

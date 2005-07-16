@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.15 2005-07-13 14:06:34 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.16 2005-07-16 15:25:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -37,44 +37,44 @@ static bCom proxyserv_coms[] = {
 void PSSet(Conf *, Modulo *);
 int PSTest(Conf *, int *);
 
-ModInfo info = {
+ModInfo MOD_INFO(ProxyServ) = {
 	"ProxyServ" ,
 	0.9 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
 	
-int carga(Modulo *mod)
+int MOD_CARGA(ProxyServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(ProxyServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(ProxyServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(ProxyServ).nombre))
 			{
 				if (!PSTest(modulo.seccion[0], &errores))
 					PSSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el PSTest", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el PSTest", mod->archivo, MOD_INFO(ProxyServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(ProxyServ).nombre);
 				errores++;
 			}
 		}
@@ -82,7 +82,7 @@ int carga(Modulo *mod)
 	}
 	return errores;
 }
-int descarga()
+int MOD_DESCARGA(ProxyServ)()
 {
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
 	BorraSenyal(SIGN_SQL, PSSigSQL);
@@ -269,7 +269,7 @@ int PSCmdNick(Cliente *cl, int nuevo)
 			if (!strcasecmp(px->host, host))
 				return 1;
 		}
-		port_func(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
+		ProtFunc(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
 		PSEscanea(host);
 		Debug("iee");
 	}
@@ -327,7 +327,7 @@ SOCKFUNC(PSFin)
 		{
 			char motivo[300];
 			ircsprintf(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos + 1);
-			port_func(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv.tiempo, motivo);
+			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv.tiempo, motivo);
 		}
 		else
 			InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv.hmod->id, px->host);

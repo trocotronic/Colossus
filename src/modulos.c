@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.10 2005-07-13 14:06:26 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.11 2005-07-16 15:25:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -74,27 +74,27 @@ Modulo *CreaModulo(char *archivo)
 		return NULL;
 	}
 #endif
-	if ((modulo = irc_dlopen(tmppath, RTLD_NOW)))
+	if ((modulo = irc_dlopen(tmppath, RTLD_LAZY)))
 	{
 		Modulo *mod;
-		irc_dlsym(modulo, "carga", mod_carga);
+		irc_dlsym(modulo, "Mod_Carga", mod_carga);
 		if (!mod_carga)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (carga)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Carga)", amod);
 			irc_dlclose(modulo);
 			return NULL;
 		}
-		irc_dlsym(modulo, "descarga", mod_descarga);
+		irc_dlsym(modulo, "Mod_Descarga", mod_descarga);
 		if (!mod_descarga)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (descarga)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Descarga)", amod);
 			irc_dlclose(modulo);
 			return NULL;
 		}
-		irc_dlsym(modulo, "info", inf);
+		irc_dlsym(modulo, "Mod_Info", inf);
 		if (!inf || !inf->nombre)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (info)", amod);
+			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Info)", amod);
 			irc_dlclose(modulo);
 			return NULL;
 		}

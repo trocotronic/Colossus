@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.14 2005-07-13 14:06:34 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.15 2005-07-16 15:25:33 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -61,14 +61,14 @@ int carga(Modulo *mod)
 	int errores = 0;
 	if (ParseaConfiguracion(mod->config, &modulo, 1))
 		return 1;
-	if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+	if (!strcasecmp(modulo.seccion[0]->item, Mod_Info.nombre))
 	{
 		if (!test(modulo.seccion[0], &errores))
 			set(modulo.seccion[0], mod);
 	}
 	else
 	{
-		Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es erronea", mod->archivo, Mod_Info.nombre);
 		errores++;
 	}
 	return errores;
@@ -80,12 +80,12 @@ int descarga()
 	BorraComando("242", statserv_local_uptime);
 	BorraComando("265", statserv_local_users);
 	BorraComando(MSG_SERVER, statserv_server);
-	if (port_existe(MODO_USUARIO))
-		BorraComando(port_msg(MODO_USUARIO),  statserv_umode2);
+	if (ProtFunc(MODO_USUARIO))
+		BorraComando(ProtMsg(MODO_USUARIO),  statserv_umode2);
 	BorraComando(MSG_SQUIT, statserv_squit);
 	BorraComando("351", statserv_version);
-	if (port_existe(EOS))
-		BorraComando(port_msg(EOS), statserv_eos);
+	if (ProtFunc(EOS))
+		BorraComando(ProtMsg(EOS), statserv_eos);
 	BorraSenyal(SIGN_UMODE, statserv_umode);
 	BorraSenyal(SIGN_QUIT, statserv_quit);
 	//BorraSenyal(SIGN_CREATE_CHAN, statserv_create_channel);
@@ -224,12 +224,12 @@ void set(Conf *config, Modulo *mod)
 	InsertaComando("242", "242", statserv_local_uptime, INI, 0);
 	InsertaComando("265", "265", statserv_local_users, INI, 0);
 	InsertaComando(MSG_SERVER, TOK_SERVER, statserv_server, INI, 0);
-	if (port_existe(MODO_USUARIO))
-		InsertaComando(port_msg(MODO_USUARIO), port_tok(MODO_USUARIO), statserv_umode2, INI, 0);
+	if (ProtFunc(MODO_USUARIO))
+		InsertaComando(ProtMsg(MODO_USUARIO), ProtTok(MODO_USUARIO), statserv_umode2, INI, 0);
 	InsertaComando(MSG_SQUIT, TOK_SQUIT, statserv_squit, INI, 0);
 	InsertaComando("351", "351", statserv_version, INI, 0);
-	if (port_existe(EOS))
-		InsertaComando(port_msg(EOS), port_tok(EOS), statserv_eos, INI, 0);
+	if (ProtFunc(EOS))
+		InsertaComando(ProtMsg(EOS), ProtTok(EOS), statserv_eos, INI, 0);
 	InsertaSenyal(SIGN_UMODE, statserv_umode);
 	InsertaSenyal(SIGN_QUIT, statserv_quit);
 	//InsertaSenyal(SIGN_CREATE_CHAN, statserv_create_channel);
@@ -534,9 +534,9 @@ IRCFUNC(statserv_server)
 	EnviaAServidor(":%s %s :%s", statserv->nick, TOK_VERSION, al->nombre);
 	EnviaAServidor(":%s %s :%s", statserv->nick, TOK_LUSERS, al->nombre);
 	EnviaAServidor(":%s %s u %s", statserv->nick, TOK_STATS, al->nombre);
-	if (port_existe(LAG))
+	if (ProtFunc(LAG))
 	{
-		EnviaAServidor(":%s %s %s", statserv->nick, port_tok(LAG), al->nombre);
+		EnviaAServidor(":%s %s %s", statserv->nick, ProtTok(LAG), al->nombre);
 		IniciaCrono(al->nombre, cl->sck, 0, statserv->laguea, statserv_laguea, al->nombre, sizeof(char) * (strlen(al->nombre) + 1));
 	}
 	return 0;
@@ -667,7 +667,7 @@ int statserv_mysql()
 }
 int statserv_laguea(char *servidor)
 {
-	EnviaAServidor(":%s %s %s", statserv->nick, port_tok(LAG), servidor);
+	EnviaAServidor(":%s %s %s", statserv->nick, ProtTok(LAG), servidor);
 	return 0;
 }
 SOCKFUNC(statserv_escribe_web)

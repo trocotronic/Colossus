@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.20 2005-07-13 14:06:33 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.21 2005-07-16 15:25:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,9 +13,6 @@
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 OperServ operserv;
 #define ExFunc(x) BuscaFuncion(operserv.hmod, x, NULL)
@@ -80,76 +77,55 @@ void OSDescargaNoticias();
 
 int OSCmdJoin(Cliente *, Canal *);
 int OSCmdNick(Cliente *, int);
-#ifndef _WIN32
-int (*ChanReg_dl)(char *);
-int (*memoserv_send_dl)(char *, char *, char *);
-#else
-#define ChanReg_dl ChanReg
-#define memoserv_send_dl MSSend
-#endif
-#define IsChanReg_dl(x) (ChanReg_dl(x) == 1)
-#define IsChanPReg_dl(x) (ChanReg_dl(x) == 2)
 void OSSet(Conf *, Modulo *);
 int OSTest(Conf *, int *);
 
-ModInfo info = {
+ModInfo MOD_INFO(OperServ) = {
 	"OperServ" ,
 	0.10 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net"
 };
 	
-int carga(Modulo *mod)
+int MOD_CARGA(OperServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
 	if (!mod->config)
 	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, info.nombre);
+		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(OperServ).nombre);
 		errores++;
 	}
 	else
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
-			Error("[%s] Hay errores en la configuración de %s", mod->archivo, info.nombre);
+			Error("[%s] Hay errores en la configuración de %s", mod->archivo, MOD_INFO(OperServ).nombre);
 			errores++;
 		}
 		else
 		{
-			if (!strcasecmp(modulo.seccion[0]->item, info.nombre))
+			if (!strcasecmp(modulo.seccion[0]->item, MOD_INFO(OperServ).nombre))
 			{
 				if (!OSTest(modulo.seccion[0], &errores))
 					OSSet(modulo.seccion[0], mod);
 				else
 				{
-					Error("[%s] La configuración de %s no ha pasado el OSTest", mod->archivo, info.nombre);
+					Error("[%s] La configuración de %s no ha pasado el OSTest", mod->archivo, MOD_INFO(OperServ).nombre);
 					errores++;
 				}
 			}
 			else
 			{
-				Error("[%s] La configuracion de %s es erronea", mod->archivo, info.nombre);
+				Error("[%s] La configuracion de %s es erronea", mod->archivo, MOD_INFO(OperServ).nombre);
 				errores++;
 			}
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
-#ifndef _WIN32
-	{
-		Modulo *ex;
-		for (ex = modulos; ex; ex = ex->sig)
-		{
-			if (!strcasecmp(ex->info->nombre, "ChanServ"))
-				irc_dlsym(ex->hmod, "ChanReg", ChanReg_dl);
-			else if (!strcasecmp(ex->info->nombre, "MemoServ"))
-				irc_dlsym(ex->hmod, "MSSend", memoserv_send_dl);
-		}
-	}
-#endif	
 	return errores;
 }
-int descarga()
+int MOD_DESCARGA(OperServ)()
 {
 	BorraSenyal(SIGN_JOIN, OSCmdJoin);
 	BorraSenyal(SIGN_POST_NICK, OSCmdNick);
@@ -270,7 +246,7 @@ int OSDescargaNoticia(int id)
 	{
 		Cliente *bl = BuscaCliente(not->botname, NULL);
 		if (bl)
-			port_func(P_QUIT_USUARIO_LOCAL)(bl, "Mensajería global %s", conf_set->red);
+			ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, "Mensajería global %s", conf_set->red);
 	}
 	ircfree(not->botname);
 	ircfree(not->noticia);
@@ -663,12 +639,12 @@ BOTFUNC(OSGline)
 	}
 	if (*param[1] == '+')
 	{
-		port_func(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
+		ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
 		Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
 	}
 	else if (*param[1] == '-')
 	{
-		port_func(P_GLINE)(cl, DEL, user, host, 0, NULL);
+		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);
 		Responde(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
 	}
 	return 0;
@@ -753,7 +729,7 @@ BOTFUNC(OSOpers)
 BOTFUNC(OSSajoin)
 {
 	Cliente *al;
-	if (!port_existe(P_JOIN_USUARIO_REMOTO))
+	if (!ProtFunc(P_JOIN_USUARIO_REMOTO))
 	{
 		Responde(cl, CLI(operserv), ERR_NSUP);
 		return 1;
@@ -773,14 +749,14 @@ BOTFUNC(OSSajoin)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	port_func(P_JOIN_USUARIO_REMOTO)(al, param[2]);
+	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a entrar en \00312%s\003.", param[1], param[2]);
 	return 0;
 }
 BOTFUNC(OSSapart)
 {
 	Cliente *al;
-	if (!port_existe(P_PART_USUARIO_REMOTO))
+	if (!ProtFunc(P_PART_USUARIO_REMOTO))
 	{
 		Responde(cl, CLI(operserv), ERR_NSUP);
 		return 1;
@@ -800,14 +776,14 @@ BOTFUNC(OSSapart)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	port_func(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
+	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir de \00312%s\003.", param[1], param[2]);
 	return 0;
 }
 BOTFUNC(OSRejoin)
 {
 	Cliente *al;
-	if (!port_existe(P_JOIN_USUARIO_REMOTO) || !port_existe(P_PART_USUARIO_REMOTO))
+	if (!ProtFunc(P_JOIN_USUARIO_REMOTO) || !ProtFunc(P_PART_USUARIO_REMOTO))
 	{
 		Responde(cl, CLI(operserv), ERR_NSUP);
 		return 1;
@@ -827,8 +803,8 @@ BOTFUNC(OSRejoin)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	port_func(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
-	port_func(P_JOIN_USUARIO_REMOTO)(al, param[2]);
+	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
+	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir y a entrar en \00312%s\003.", param[1], param[2]);
 	return 0;
 }
@@ -850,7 +826,7 @@ BOTFUNC(OSKill)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	port_func(P_QUIT_USUARIO_REMOTO)(al, CLI(operserv), Unifica(param, params, 2, -1));
+	ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(operserv), Unifica(param, params, 2, -1));
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido desconectado.", param[1]);
 	return 0;
 }
@@ -895,9 +871,9 @@ BOTFUNC(OSGlobal)
 				if ((opts & 0x2) && !(level & BDD_PREO))
 					continue;
 				if (opts & 0x4)
-					memoserv_send_dl(row[0], param[2], Unifica(param, params, 3, -1));
+					MSSend(row[0], param[2], Unifica(param, params, 3, -1));
 				else
-					memoserv_send_dl(row[0], operserv.hmod->nick, Unifica(param, params, 2, -1));
+					MSSend(row[0], operserv.hmod->nick, Unifica(param, params, 2, -1));
 			}
 			SQLFreeRes(res);
 		}
@@ -930,7 +906,7 @@ BOTFUNC(OSGlobal)
 				Responde(al, bl, msg);
 		}
 		if (opts & 0x4)
-			port_func(P_QUIT_USUARIO_LOCAL)(bl, conf_set->red);
+			ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, conf_set->red);
 		Responde(cl, CLI(operserv), "Mensaje global enviado.");
 	}
 	return 0;
@@ -1033,7 +1009,7 @@ BOTFUNC(OSAkill)
 		SQLInserta(OS_AKILL, buf, "motivo", motivo);
 		c = strchr(buf, '@');
 		*c++ = '\0';
-		port_func(P_GLINE)(CLI(operserv), ADD, buf, c, 0, motivo);
+		ProtFunc(P_GLINE)(CLI(operserv), ADD, buf, c, 0, motivo);
 		Responde(cl, CLI(operserv), "Se ha insertado un AKILL para \00312%s\003 indefinido.", param[1]);
 	}
 	else if (*param[1] == '-')
@@ -1052,7 +1028,7 @@ BOTFUNC(OSAkill)
 		SQLBorra(OS_AKILL, buf);
 		c = strchr(buf, '@');
 		*c++ = '\0';
-		port_func(P_GLINE)(CLI(operserv), DEL, buf, c, 0, NULL);
+		ProtFunc(P_GLINE)(CLI(operserv), DEL, buf, c, 0, NULL);
 		Responde(cl, CLI(operserv), "Se ha retirado el AKILL a \00312%s", param[1]);
 	}
 	else
@@ -1197,8 +1173,8 @@ int OSCmdJoin(Cliente *cl, Canal *cn)
 {
 	if (!IsOper(cl) || !(operserv.opts & OS_OPTS_AOP))
 		return 0;
-	if (!IsChanReg_dl(cn->nombre))
-		port_func(P_MODO_CANAL)(RedOverride ? &me : CLI(operserv), cn, "+o %s", TRIO(cl));
+	if (!IsChanReg(cn->nombre))
+		ProtFunc(P_MODO_CANAL)(RedOverride ? &me : CLI(operserv), cn, "+o %s", TRIO(cl));
 	return 0;
 }
 
@@ -1218,12 +1194,12 @@ int OSSigIdOk(Cliente *cl)
 			if (nivel & BDD_ADMIN)
 			{
 				ircsprintf(tmp, "+%c%c%c", (protocolo->umodos+1)->flag, (protocolo->umodos+2)->flag, (protocolo->umodos+3)->flag);
-				port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
+				ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
 			}
 			else
 			{
 				ircsprintf(tmp, "+%c", (protocolo->umodos+3)->flag);
-				port_func(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
+				ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
 			}
 #endif
 		if (nivel & BDD_PREO)
@@ -1302,7 +1278,7 @@ int OSSigSynch()
 		{
 			if ((c = strchr(row[0], '@')))
 				*c++ = '\0';
-			port_func(P_GLINE)(CLI(operserv), ADD, row[0], c, 0, row[1]);
+			ProtFunc(P_GLINE)(CLI(operserv), ADD, row[0], c, 0, row[1]);
 		}
 		SQLFreeRes(res);
 	}

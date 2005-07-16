@@ -1,4 +1,4 @@
-## $Id: make,v 1.23 2005-07-13 14:06:18 Trocotronic Exp $
+## $Id: make,v 1.24 2005-07-16 15:25:26 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -85,16 +85,16 @@ PROT_DLL=SRC/PROTOCOLOS/UNREAL_UDB.DLL
 !ELSE
 PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL SRC/PROTOCOLOS/REDHISPANA.DLL
 !ENDIF
-DB_DLL=SRC/SQL/MYSQL.DLL SRC/SQL/POSTGRESQL.DLL
+SQL_DLL=SRC/SQL/MYSQL.DLL SRC/SQL/POSTGRESQL.DLL
 
 INCLUDES = ./include/ircd.h ./include/md5.h ./include/modulos.h ./include/parseconf.h ./include/protocolos.h \
 	./include/ircsprintf.h ./include/sql.h ./include/struct.h ./include/ssl.h ./include/zip.h ./include/sistema.h 
-MODCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /D MODULE_COMPILE
+MODCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ws2_32.lib
-PROTCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /D MODULE_COMPILE
+PROTCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) ws2_32.lib
-DBCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/sql/ /Fosrc/sql/ /D MODULE_COMPILE
-DBLFLAGS=/link /def:src/sql/sql.def colossus.lib
+SQLCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fesrc/sql/ /Fosrc/sql/ /D ENLACE_DINAMICO /D MODULE_COMPILE
+SQLLFLAGS=/link /def:src/sql/sql.def colossus.lib
 
 ALL: SETUP COLOSSUS.EXE MODULES
 
@@ -210,7 +210,7 @@ DEF:
 	dlltool --output-def colossus.def.in --export-all-symbols $(EXP_OBJ_FILES)
 	def-clean colossus.def.in colossus.def
        
-MODULES: $(MOD_DLL) $(PROT_DLL) $(DB_DLL)
+MODULES: $(MOD_DLL) $(PROT_DLL) $(SQL_DLL)
         
 src/modulos/chanserv.dll: src/modulos/chanserv.c $(INCLUDES) ./include/modulos/chanserv.h ./include/modulos/nickserv.h
         $(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)
@@ -276,15 +276,15 @@ src/protocolos/unreal_udb.dll: src/protocolos/unreal.c $(INCLUDES)
 	-@erase src\protocolos\unreal_udb.c >NUL
 
 src/sql/mysql.dll: src/sql/mysql.c $(INCLUDES)
-	$(CC) $(DBCFLAGS) /I "C:\Archivos de Programa\MySQL\MySQL Server 4.1\include" src/sql/mysql.c \
-	$(DBLFLAGS) /LIBPATH:"C:\Archivos de Programa\MySQL\MySQL Server 4.1\lib\opt" mysqlclient.lib \
+	$(CC) $(SQLCFLAGS) /I "C:\Archivos de Programa\MySQL\MySQL Server 4.1\include" src/sql/mysql.c \
+	$(SQLLFLAGS) /LIBPATH:"C:\Archivos de Programa\MySQL\MySQL Server 4.1\lib\opt" mysqlclient.lib \
 	user32.lib ws2_32.lib Advapi32.lib libcmt.lib  /NODEFAULTLIB:msvcrt
 	-@copy src\sql\mysql.dll sql\mysql.dll >NUL
 	-@copy src\sql\mysql.pdb sql\mysql.pdb >NUL
 
 src/sql/postgresql.dll: src/sql/postgresql.c $(INCLUDES)
-	$(CC) $(DBCFLAGS) /I "C:\Archivos de programa\PostgreSQL\8.0\include" src/sql/postgresql.c \
-	$(DBLFLAGS) /LIBPATH:"C:\Archivos de programa\PostgreSQL\8.0\lib\ms" libpq.lib \
+	$(CC) $(SQLCFLAGS) /I "C:\Archivos de programa\PostgreSQL\8.0\include" src/sql/postgresql.c \
+	$(SQLLFLAGS) /LIBPATH:"C:\Archivos de programa\PostgreSQL\8.0\lib\ms" libpq.lib \
 	user32.lib
 	-@copy src\sql\postgresql.dll sql\postgresql.dll >NUL
 	-@copy src\sql\postgresql.pdb sql\postgresql.pdb >NUL

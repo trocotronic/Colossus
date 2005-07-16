@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.49 2005-07-13 15:14:26 Trocotronic Exp $ 
+ * $Id: main.c,v 1.50 2005-07-16 15:25:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -928,7 +928,7 @@ void BorraCache(char *tipo, char *item, int id)
 	char *tipo_c, *item_c;
 	tipo_c = SQLEscapa(tipo);
 	item_c = SQLEscapa(item);
-	SQLQuery("DELETE FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, item_c, tipo_c, id);
+	SQLQuery("DELETE FROM %s%s WHERE LOWER(item)='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, strtolower(item_c), tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 }
