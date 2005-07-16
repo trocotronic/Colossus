@@ -271,7 +271,7 @@ PACKAGE_VERSION=
 PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
-ac_unique_file="src/ircd.c"
+ac_unique_file="src/main.c"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT RM CP TOUCH OPENSSLPATH INSTALL IRCDLIBS CPP EGREP MODULEFLAGS IRCDDIR BINDIR FD_SETSIZE LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT RM CP TOUCH OPENSSLPATH INSTALL IRCDLIBS CPP EGREP MODULEFLAGS CRYPTOLIB MYSQLHEAD MYSQLLIBS POSTGREHEAD POSTGRELIBS FD_SETSIZE LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -841,10 +841,9 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-udb            Activa el soporte UDB
-  --enable-hub            Compile as a hub server
   --enable-ssl=           enable ssl will check /usr/local/ssl /usr/lib/ssl
                           /usr/ssl /usr/pkg /usr/local /usr
-  --enable-ziplinks       enable ziplinks will check /usr/local /usr /usr/pkg
+  --enable-zlib           enable zlib will check /usr/local /usr /usr/pkg
   --enable-dynamic-linking
                           Make the IRCd dynamically link shared objects rather
                           than statically
@@ -858,7 +857,6 @@ Optional Packages:
                           Specify the default permissions for configuration
                           files
   --with-fd-setsize=size  Specify the max file descriptors to use
-  --with-spath            Specify the location of the executable
 
 Some influential environment variables:
   CC          C compiler command
@@ -2640,6 +2638,74 @@ echo "$as_me:$LINENO: result: $ac_cv_lib_nsl_inet_ntoa" >&5
 echo "${ECHO_T}$ac_cv_lib_nsl_inet_ntoa" >&6
 if test $ac_cv_lib_nsl_inet_ntoa = yes; then
   IRCDLIBS="$IRCDLIBS-lnsl " INETLIB="-lnsl"
+fi
+
+echo "$as_me:$LINENO: checking for pthread_create in -lpthread" >&5
+echo $ECHO_N "checking for pthread_create in -lpthread... $ECHO_C" >&6
+if test "${ac_cv_lib_pthread_pthread_create+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpthread  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char pthread_create ();
+int
+main ()
+{
+pthread_create ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_pthread_pthread_create=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_pthread_pthread_create=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_pthread_pthread_create" >&5
+echo "${ECHO_T}$ac_cv_lib_pthread_pthread_create" >&6
+if test $ac_cv_lib_pthread_pthread_create = yes; then
+  IRCDLIBS="$IRCDLIBS-lpthread "
 fi
 
 
@@ -8129,6 +8195,7 @@ done
 LIBS="$save_libs"
 
 
+
 # Check whether --with-listen or --without-listen was given.
 if test "${with_listen+set}" = set; then
   withval="$with_listen"
@@ -8168,33 +8235,11 @@ cat >>confdefs.h <<_ACEOF
 #define MAXCONNECTIONS $ac_fd
 _ACEOF
 
-
-# Check whether --with-spath or --without-spath was given.
-if test "${with_spath+set}" = set; then
-  withval="$with_spath"
-  cat >>confdefs.h <<_ACEOF
-#define SPATH "$withval"
-_ACEOF
- BINDIR="$withval"
-else
-  cat >>confdefs.h <<_ACEOF
-#define SPATH "`pwd`/src/ircd"
-_ACEOF
- BINDIR="`pwd`/src/ircd"
-fi;
 # Check whether --enable-udb or --disable-udb was given.
 if test "${enable_udb+set}" = set; then
   enableval="$enable_udb"
   cat >>confdefs.h <<\_ACEOF
 #define UDB 1
-_ACEOF
-
-fi;
-# Check whether --enable-hub or --disable-hub was given.
-if test "${enable_hub+set}" = set; then
-  enableval="$enable_hub"
-  cat >>confdefs.h <<\_ACEOF
-#define HUB 1
 _ACEOF
 
 fi;
@@ -8245,9 +8290,9 @@ _ACEOF
 fi;
 
 
-# Check whether --enable-ziplinks or --disable-ziplinks was given.
-if test "${enable_ziplinks+set}" = set; then
-  enableval="$enable_ziplinks"
+# Check whether --enable-zlib or --disable-zlib was given.
+if test "${enable_zlib+set}" = set; then
+  enableval="$enable_zlib"
 
 echo "$as_me:$LINENO: checking para zlib" >&5
 echo $ECHO_N "checking para zlib... $ECHO_C" >&6
@@ -8257,11 +8302,6 @@ echo $ECHO_N "checking para zlib... $ECHO_C" >&6
 	    echo "$as_me:$LINENO: result: encontrado en $zlibdir" >&5
 echo "${ECHO_T}encontrado en $zlibdir" >&6
             found_zlib="yes";
-	    if test "$zlibdir" = "/usr" ; then
-		CFLAGS="$CFLAGS -DZIP_LINKS";
-	    else
-	        CFLAGS="$CFLAGS -I$zlibdir/include -DZIP_LINKS";
-	    fi
             break;
         fi
     done
@@ -8271,7 +8311,7 @@ echo "${ECHO_T}no encontrado" >&6
 	{ echo "$as_me:$LINENO: WARNING: deshabilitando soporte zlib" >&5
 echo "$as_me: WARNING: deshabilitando soporte zlib" >&2;}
     else
-        IRCDLIBS="$IRCDLIBS -lz";
+        IRCDLIBS="$IRCDLIBS-lz ";
 	if test "$zlibdir" != "/usr" ; then
              LDFLAGS="$LDFLAGS -L$zlibdir/lib";
 	fi
@@ -8282,6 +8322,26 @@ _ACEOF
     fi
 
 fi;
+
+
+echo "$as_me:$LINENO: checking para mysql" >&5
+echo $ECHO_N "checking para mysql... $ECHO_C" >&6
+MYSQLHEAD=`mysql_config --include`;
+MYSQLLIBS="-lmysqlclient";
+
+
+echo "$as_me:$LINENO: result: ok" >&5
+echo "${ECHO_T}ok" >&6;
+
+
+echo "$as_me:$LINENO: checking para postgresql" >&5
+echo $ECHO_N "checking para postgresql... $ECHO_C" >&6
+POSTGREHEAD="-I$(pg_config --includedir)";
+POSTGRELIBS="-L$(pg_config --libdir) -lpq";
+
+
+echo "$as_me:$LINENO: result: include en $POSTGREHEAD y lib en $POSTGRELIBS" >&5
+echo "${ECHO_T}include en $POSTGREHEAD y lib en $POSTGRELIBS" >&6;
 
 # Check whether --enable-dynamic-linking or --disable-dynamic-linking was given.
 if test "${enable_dynamic_linking+set}" = set; then
@@ -8352,7 +8412,7 @@ fi
 echo "$as_me:$LINENO: result: $ac_cv_lib_dl_dlopen" >&5
 echo "${ECHO_T}$ac_cv_lib_dl_dlopen" >&6
 if test $ac_cv_lib_dl_dlopen = yes; then
-  IRCDLIBS="$IRCDLIBS -ldl"
+  IRCDLIBS="$IRCDLIBS-ldl "
 else
 
 { echo "$as_me:$LINENO: WARNING: No se puede activar el linkaje dinamico porque no se encuentra la libreria" >&5
@@ -8480,10 +8540,6 @@ _ACEOF
 
 fi
 MODULEFLAGS=$ac_cv_pic
-cat >>confdefs.h <<\_ACEOF
-#define DYNAMIC_LINKING 1
-_ACEOF
-
 
 else
   cat >>confdefs.h <<\_ACEOF
@@ -8564,8 +8620,6 @@ fi
 LIBS="$save_libs"
 
 fi;
-
-
 echo "$as_me:$LINENO: checking if FD_SETSIZE is large enough to allow $ac_fd file descriptors" >&5
 echo $ECHO_N "checking if FD_SETSIZE is large enough to allow $ac_fd file descriptors... $ECHO_C" >&6
 if test "$cross_compiling" = yes; then
@@ -8630,7 +8684,7 @@ IRCDLIBS="$IRCDLIBS -lresolv "
 ;;
 esac
 
-                                        ac_config_files="$ac_config_files Makefile src/modulos/Makefile servicios src/protocolos/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile src/modulos/Makefile Colossus src/protocolos/Makefile src/sql/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -9157,8 +9211,9 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/modulos/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/modulos/Makefile" ;;
-  "servicios" ) CONFIG_FILES="$CONFIG_FILES servicios" ;;
+  "Colossus" ) CONFIG_FILES="$CONFIG_FILES Colossus" ;;
   "src/protocolos/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/protocolos/Makefile" ;;
+  "src/sql/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/sql/Makefile" ;;
   "include/setup.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/setup.h" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -9259,11 +9314,12 @@ s,@INSTALL@,$INSTALL,;t t
 s,@IRCDLIBS@,$IRCDLIBS,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
-s,@ALLOCA@,$ALLOCA,;t t
-s,@CRYPTOLIB@,$CRYPTOLIB,;t t
 s,@MODULEFLAGS@,$MODULEFLAGS,;t t
-s,@IRCDDIR@,$IRCDDIR,;t t
-s,@BINDIR@,$BINDIR,;t t
+s,@CRYPTOLIB@,$CRYPTOLIB,;t t
+s,@MYSQLHEAD@,$MYSQLHEAD,;t t
+s,@MYSQLLIBS@,$MYSQLLIBS,;t t
+s,@POSTGREHEAD@,$POSTGREHEAD,;t t
+s,@POSTGRELIBS@,$POSTGRELIBS,;t t
 s,@FD_SETSIZE@,$FD_SETSIZE,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
@@ -9753,4 +9809,4 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
-chmod 0700 servicios
+chmod 0700 Colossus
