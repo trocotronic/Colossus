@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.17 2005-07-16 15:25:31 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.18 2005-07-16 15:33:00 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -90,7 +90,7 @@ int MOD_CARGA(MemoServ)(Modulo *mod)
 	}
 	return errores;
 }	
-int descarga()
+int MOD_DESCARGA(MemoServ)()
 {
 	BorraSenyal(SIGN_AWAY, MSCmdAway);
 	BorraSenyal(SIGN_JOIN, MSCmdJoin);

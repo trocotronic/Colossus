@@ -615,7 +615,7 @@ int PROT_CARGA(RH)(Conf *config)
 		set(config);
 	else
 	{
-		Error("[%s] La configuracion de %s es errónea", config->archivo, Mod_Info.nombre);
+		Error("[%s] La configuracion de %s es errónea", config->archivo, PROT_INFO(RH).nombre);
 		return ++errores;
 	}
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
