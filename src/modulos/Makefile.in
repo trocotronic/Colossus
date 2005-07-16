@@ -1,9 +1,9 @@
-## $Id: Makefile.in,v 1.6 2005-07-16 15:25:31 Trocotronic Exp $
+## $Id: Makefile.in,v 1.7 2005-07-16 15:28:18 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
 	../include/struct.h
-R_MODULES=chanserv.so nickserv.so operserv.so ipserv.so memoserv.so proxyserv.so tvserv.so
+R_MODULES=chanserv.so nickserv.so memoserv.so operserv.so ipserv.so proxyserv.so tvserv.so
 COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o proxyserv.o tvserv.o	
 MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@

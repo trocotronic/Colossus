@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.3 2005-07-13 15:12:10 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.4 2005-07-16 15:25:35 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -102,7 +102,7 @@ int Carga()
 SQLRes Query(const char *query)
 {
 	PGresult *resultado;
-#ifdef DEBUG
+#ifndef DEBUG
 	Debug(query);
 #endif
 	if (!postgres)

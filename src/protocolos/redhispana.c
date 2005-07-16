@@ -418,7 +418,7 @@ int p_nuevonick(Cliente *al)
 	int2b64(al->trio + 2, al->numeric, sizeof(char) * 4);
 	al->numeric = b642int(al->trio);
 	InsertaClienteEnNumerico(al, al->trio, uTab);
-	modos = ModosAFlags(al->modos, umodos, NULL);
+	modos = ModosAFlags(al->modos, PROT_UMODOS(RH), NULL);
 	EnviaAServidor("%s %s %s 1 %lu %s %s +%s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, ipb64, al->trio, al->info);
 	return 0;
 }
@@ -1295,14 +1295,14 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (modo == ADD)
 				{
 					ircstrdup(cn->clave, parv[param]);
-					cn->modos |= FlagAModo('k', cmodos);
+					cn->modos |= FlagAModo('k', PROT_CMODOS(RH));
 				}
 				else
 				{
 					if (cn->clave)
 						Free(cn->clave);
 					cn->clave = NULL;
-					cn->modos &= ~FlagAModo('k', cmodos);
+					cn->modos &= ~FlagAModo('k', PROT_CMODOS(RH));
 				}
 				param++;
 				break;
@@ -1312,13 +1312,13 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					if (!parv[param])
 						break;
 					cn->limite = atoi(parv[param]);
-					cn->modos |= FlagAModo('l', cmodos);
+					cn->modos |= FlagAModo('l', PROT_CMODOS(RH));
 					param++;
 				}
 				else
 				{
 					cn->limite = 0;
-					cn->modos &= ~FlagAModo('l', cmodos);
+					cn->modos &= ~FlagAModo('l', PROT_CMODOS(RH));
 				}
 				break;
 			case 'o':
@@ -1341,9 +1341,9 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				break;
 			default:
 				if (modo == ADD)
-					cn->modos |= FlagAModo(*mods, cmodos);
+					cn->modos |= FlagAModo(*mods, PROT_CMODOS(RH));
 				else
-					cn->modos &= ~FlagAModo(*mods, cmodos);
+					cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(RH));
 		}
 		mods++;
 	}

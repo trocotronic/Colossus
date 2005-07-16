@@ -66,9 +66,9 @@ IRCFUNC(sincroniza);
 IRCFUNC(m_sjoin);
 IRCFUNC(m_tkl);
 
-ProtInfo info = {
+ProtInfo PROT_INFO(Unreal) = {
 	"Protocolo UnrealIRCd" ,
-	0.4 ,
+	0.5 ,
 	"Trocotronic" ,
 	"trocotronic@rallados.net" 
 };
@@ -369,7 +369,7 @@ ProtInfo info = {
 #define C_ONLYSECURE	0x40000000
 #define C_NONICKCHANGE	0x80000000
 
-mTab umodos[] = {
+mTab PROT_UMODOS(Unreal)[] = {
 	{ U_REGNICK , 'r' },
 	{ U_NETADMIN , 'N' },
 	{ U_OPER , 'o' },
@@ -407,7 +407,7 @@ mTab umodos[] = {
 	{ 0x0 , '0' } /* el caracter 0 (no \0) indica fin de array */
 };
 
-mTab cmodos[] = {
+mTab PROT_CMODOS(Unreal)[] = {
 	{ C_RGSTR , 'r' },
 	{ C_RGSTRONLY , 'R' },
 	{ C_OPERONLY , 'O' },
@@ -601,7 +601,7 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 int p_nuevonick(Cliente *al)
 {
 	gethostname(buf, sizeof(buf));
-	EnviaAServidor("%s %s 1 %lu %s %s %s 0 +%s %s %s :%s", TOK_NICK, al->nombre, time(0), al->ident, al->host, al->server->nombre, ModosAFlags(al->modos, umodos, NULL), al->host, EncodeIP(buf), al->info);
+	EnviaAServidor("%s %s 1 %lu %s %s %s 0 +%s %s %s :%s", TOK_NICK, al->nombre, time(0), al->ident, al->host, al->server->nombre, ModosAFlags(al->modos, PROT_UMODOS(Unreal), NULL), al->host, EncodeIP(buf), al->info);
 	return 0;
 }
 int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
@@ -726,7 +726,7 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
  * Cada posición está asignada, no debe alterarse el orden
  * Si un comando no existe, debe especificarse COM_NULL en esa posición
  */
-Com comandos_especiales[] = {
+Com PROT_COMANDOS(Unreal)[] = {
 	{ MSG_NULL , TOK_NULL , (void *)p_trio } ,
 	{ MSG_UMODE2 , TOK_UMODE2 , (void *)p_umode } ,
 #ifdef UDB
@@ -861,14 +861,14 @@ void set(Conf *config)
 	IniciaProceso(UdbCompruebaOpts);
 #endif
 }
-int carga(Conf *config)
+int PROT_CARGA(Unreal)(Conf *config)
 {
 	int errores = 0;
 	if (!test(config, &errores))
 		set(config);
 	else
 	{
-		Error("[%s] La configuracion de %s es errónea", config->archivo, info.nombre);
+		Error("[%s] La configuracion de %s es errónea", config->archivo, PROT_INFO(Unreal).nombre);
 		return ++errores;
 	}
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
@@ -909,7 +909,7 @@ int carga(Conf *config)
 	InsertaComando(MSG_TKL, TOK_TKL, m_tkl, INI, MAXPARA);
 	return 0;
 }
-int descarga()
+int PROT_DESCARGA(Unreal)()
 {
 	BorraComando(MSG_PRIVATE, m_msg);
 	BorraComando(MSG_WHOIS, m_whois);
@@ -952,7 +952,7 @@ int descarga()
 #endif
 	return 0;
 }
-void inicia()
+void PROT_INICIA(Unreal)()
 {
 	LinkCliente *aux, *tmp;
 	for (aux = servidores; aux; aux = tmp)
@@ -972,7 +972,7 @@ void inicia()
 	EnviaAServidor("PASS :%s", conf_server->password.local);
 	EnviaAServidor("SERVER %s 1 :U%i-%s-%i %s", me.nombre, me.protocol, me.trio, me.numeric, me.info);
 }
-SOCKFUNC(parsea)
+SOCKFUNC(PROT_PARSEA(Unreal))
 {
 	char *p, *para[MAXPARA + 1], sender[HOSTLEN + 1], *s;
 	u_char tpref = 0;
@@ -1975,14 +1975,14 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (modo == ADD)
 				{
 					ircstrdup(cn->clave, parv[param]);
-					cn->modos |= FlagAModo('k', cmodos);
+					cn->modos |= FlagAModo('k', PROT_CMODOS(Unreal));
 				}
 				else
 				{
 					if (cn->clave)
 						Free(cn->clave);
 					cn->clave = NULL;
-					cn->modos &= ~FlagAModo('k', cmodos);
+					cn->modos &= ~FlagAModo('k', PROT_CMODOS(Unreal));
 				}
 				param++;
 				break;
@@ -1992,14 +1992,14 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (modo == ADD)
 				{
 					ircstrdup(cn->flood, parv[param]);
-					cn->modos |= FlagAModo('f', cmodos);
+					cn->modos |= FlagAModo('f', PROT_CMODOS(Unreal));
 				}
 				else
 				{
 					if (cn->flood)
 						Free(cn->flood);
 					cn->flood = NULL;
-					cn->modos &= ~FlagAModo('f', cmodos);
+					cn->modos &= ~FlagAModo('f', PROT_CMODOS(Unreal));
 				}
 				param++;
 				break;
@@ -2009,13 +2009,13 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					if (!parv[param])
 						break;
 					cn->limite = atoi(parv[param]);
-					cn->modos |= FlagAModo('l', cmodos);
+					cn->modos |= FlagAModo('l', PROT_CMODOS(Unreal));
 					param++;
 				}
 				else
 				{
 					cn->limite = 0;
-					cn->modos &= ~FlagAModo('l', cmodos);
+					cn->modos &= ~FlagAModo('l', PROT_CMODOS(Unreal));
 				}
 				break;
 			case 'L':
@@ -2024,14 +2024,14 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (modo == ADD)
 				{
 					ircstrdup(cn->link, parv[param]);
-					cn->modos |= FlagAModo('L', cmodos);
+					cn->modos |= FlagAModo('L', PROT_CMODOS(Unreal));
 				}
 				else
 				{
 					if (cn->link)
 						Free(cn->link);
 					cn->link = NULL;
-					cn->modos &= ~FlagAModo('L', cmodos);
+					cn->modos &= ~FlagAModo('L', PROT_CMODOS(Unreal));
 				}
 				param++;
 				break;
@@ -2082,9 +2082,9 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				break;
 			default:
 				if (modo == ADD)
-					cn->modos |= FlagAModo(*mods, cmodos);
+					cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
 				else
-					cn->modos &= ~FlagAModo(*mods, cmodos);
+					cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(Unreal));
 		}
 		mods++;
 	}

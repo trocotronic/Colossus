@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.9 2005-07-13 14:06:36 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.10 2005-07-16 15:25:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -444,7 +444,6 @@ typedef struct {
 CampoST preg;
 LRESULT CampoDLG(HWND hDlg, UINT Message, WPARAM wParam, LPARAM lParam) 
 {
-	int len;
 	switch (Message) 
 	{
 		case WM_INITDIALOG:
