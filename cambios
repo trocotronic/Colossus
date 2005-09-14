@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.26 2005-07-16 15:25:26 Trocotronic Exp $
+ * $Id: cambios,v 1.27 2005-09-14 14:45:03 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -34,7 +34,7 @@
 300604xxx - Añado un resource al programa (icono y versión).
 010704xxx - Añado el ctcpreply del version.
 010704xxx - Arreglado un fallo en comentarios en achivos de configuración.
-010704xxx - *** Primera release pública: 0.7 ***
+010704000 - *** Primera release pública: 0.7 ***
 030704001 - Arreglado un posible core al no poner ciertos valores de la configuración.
 030704002 - Paso de consola a GUI cambiando todo lo que supone. Este nuevo GUI incluye cuatro botones (de funcionalidad obvia) y
 	la opción de minimizar el programa al SysTray.
@@ -287,7 +287,7 @@
 150605243 - Arreglado un fallo en que no se autentificaban los usuarios bajo UDB.
 240605244 - Los archivos pdb se copian a la carpeta temporal para mejorar la depuración.
 300605245 - Arreglados unos desajustes sin importancia.
-010705246 - Mi cumpleaños. Es que nadie me va a felicitar!!!
+010705246 - Mi cumpleaños.
 070705247 - Cambio el logo.
 070705248 - Reestructuro las dependencias.
 070705249 - Añado un submenú al menú Ayuda: Acerca de Colossus... Contiene toda la información del autor y las librerías usadas.
@@ -297,3 +297,14 @@
 110705253 - Se unifican los privados SQL.
 110705254 - Se crea un motor SQL para poder usar distintos tipos de bases de datos (MySQL, PostGreSQL, etc.).
 160705255 - Cambio algunas macros de los módulos y protocolos.
+210705256 - Se añade una comprobación para verificar que los nicks no sean demasiado largos.
+270705257 - Añado el comando NOLINES en IpServ.
+310705258 - Cambio los DBQ al nuevo formato y funcionalidades.
+190805259 - Arreglado un fallo en el drop de un nick.
+190805260 - Arreglado un fallo del nombre de red.
+240805261 - Se adapta al nuevo DBQ.
+240805262 - Cuando se registra un canal o se cambia su pass, se propaga por la red con la directriz C::#canal::P.
+270805263 - Las fechas para la TV empiezan a partir de las 6.00h.
+080905264 - Adaptado el TvServ al nuevo formato (hacía 3 años que no lo cambiaban... y tenían que hacerlo ahora).
+140905265 - Se cambia la carga del motor SQL.
+150905266 - *** Octava release pública: 1.2 ***

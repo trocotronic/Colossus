@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.5 2005-06-29 21:13:52 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.6 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "md5.h"
@@ -312,8 +312,15 @@ unsigned int len;
  ((char *)output)[i] = (char)value;
 }
 #endif
-char* MDString (string)
-char *string;
+
+/*!
+ * @desc: Genera una cadena MD5.
+ * @params: $string [in] Cadena a cifrar.
+ * @ret: Devuelve la cadena cifrada en MD5.
+ * @cat: Programa
+ !*/
+ 
+char *MDString(char *string)
 {
   MD5_CTX context;
   unsigned char digest[16], tmp[2];

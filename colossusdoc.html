@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.12 2005-07-13 14:06:18 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.13 2005-09-14 14:45:03 Trocotronic Exp $ -->
 
 <body>
 
@@ -21,7 +21,7 @@
   <font size="+1">2.- <a href="#instalacion">Instalaci&oacute;n</a></font><br>
   <font size="+1">3.- <a href="#caracteristicas">Caracter&iacute;sticas</a></font><br>
   <font size="+1">4.- <a href="#udb">UDB</a></font><br>
-  <font size="+1">5.- <a href="#mysql">MySQL</a></font><br>
+  <font size="+1">5.- <a href="#mysql">SQL y bases de datos</a></font><br>
   <font size="+1">6.- <a href="#remoto">Conexi&oacute;n remota</a> </font><br>
   <font size="+1">7.- <a href="#zlib">SSL y ZLib</a></font><br>
   <font size="+1">8.- <a href="#configuracion">Configuraci&oacute;n</a></font><br>
@@ -105,17 +105,17 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p>Colossus tiene integrado soporte UDB de forma opcional (definido a voluntad del compilador). Est&aacute;n elaborados para explotar al m&aacute;ximo todas las opciones que ofrece UDB. 
   Todas las tablas est&aacute;n preparadas para ser usadas con Colossus.</p>
   <p>&nbsp;</p>
-  <p><b><font size="6"><a name="mysql"></a>5.0 MySQL</font></b></p>
-  <p>Colossus utiliza el sistema de base de datos libre MySQL. Para ello es necesario tener instalado este servicio en alguna m&aacute;quina. Puede descargarlo de 
-  <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
+  <p><b><font size="6"><a name="mysql"></a>5.0 SQL y bases de datos</font></b></p>
+  <p>Colossus utiliza sistemas de bases de datos SQL para guardar informaci&oacute;n de forma permanente. Actualmente se soportan dos motores SQL que deber&aacute;n indicarse en el bloque db { }.<br />Estos bloques son:</p>
+  <ul><li><p>MySQL: Descarga de <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
   <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Hecho esto, tendr&aacute; 
   que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots. 
   Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>. 
   Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a> 
-  y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p>
-  <p>Es posible que no sepa a&ntilde;adir o quitar permisos y que a la hora de crear las tablas no se creen o lo hagan mal. Por esta raz&oacute;n se incluye el archivo mysql.tablas, 
-  en el que contiene todas las sintaxis para crear las tablas &quot;manualmente&quot; a trav&eacute;s de alg&uacute;n editor como <a href="http://www.phpmyadmin.net" target="_blank">phpMyAdmin</a>. Tan s&oacute;lo tiene que abrir el archivo 
-  y cambiar el prefijo por el que use. Recuerde que este proceso debe hacerse con Colossus cerrado. </p>
+  y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p></li>
+  <li><p>PostgreSQL: Descarga de <a href="http://www.postgresql.org/download/" target="_blank">http://www.postgresql.org/download/</a>.</p>
+  <p>PostgreSQL es otro motor mucho m&aacute;s flexible y con grandes posibilidades. Para poder administrarlo deber&aacute; instalar el paquete <b>pgAdmin III</b> y leer sus instrucciones.</p>
+  <p>As&iacute;mismo, tambi&eacute;n dispone de un editor como <a href="http://phppgadmin.sourceforge.net/" target="_blank">PhpPgAdmin</a>.</p></li></ul>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="remoto"></a>6.0 Conexi&oacute;n remota</font></b></p>
   <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha 
@@ -207,7 +207,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="5"><a name="db"></a>8.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
-  <pre>db {
+  <pre>db &quot;ruta/archivo.[dll|so]&quot; {
 	host host;
 	login login;
 	pass pass;
@@ -215,14 +215,14 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	prefijo prefijo_;
 	puerto puerto;
 };</pre>
-  <p>Establece la configuraci&oacute;n para utilizar MySQL. </p>
+  <p>Establece la configuraci&oacute;n para utilizar el motor SQL. </p>
   <p><b>host</b><br>Indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>. </p>
   <p><b>login</b><br>Es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios. </p>
-  <p><b>pass</b><br>ES <i>opcional</i>Define una contrase&ntilde;a si fuera necesario para el login anterior. </p>
+  <p><b>pass</b><br>Es <i>opcional</i>. Define una contrase&ntilde;a si fuera necesario para el login anterior. </p>
   <p><b>nombre</b><br>Es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. </p>
   <p><b>prefijo</b><br>Se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
   <p>Ejemplo:</p>
-  <pre>db {
+  <pre>db sql/mysql.dll {
 	host localhost;
 	login milogin;
 	pass mipass;
@@ -585,9 +585,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		raw;
 		restart;
 		rehash;
-		backup;
 		close;
-		restaura;
 		gline;
 		opers;
 		sajoin;
@@ -598,6 +596,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		noticias;
 		modos; // S&oacute;lo en soporte UDB
 		snomask; // S&oacute;lo en soporte UDB
+		optimiza; // S&oacute;lo en soporte UDB
 		vaciar;
 		akill;
 	};
@@ -612,8 +611,6 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		raw;
 		help;
 		restart;
-		backup;
-		restaura;
 		gline;
 		opers;
 		sajoin;
@@ -680,6 +677,8 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		temphost;
 		clones;
 		set; // S&oacute;lo en soporte UDB
+		dns; // S&oacute;lo en soporte UDB
+		nolines; // S&oacute;lo en soporte UDB
 	};
 };</pre>
 <p><b>sufijo</b><br>Es el sufijo que se a&ntilde;adir&aacute; a la ip virtual si se precisa. </p>

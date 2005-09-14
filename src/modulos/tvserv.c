@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.4 2005-07-16 15:25:33 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.5 2005-09-14 14:45:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -54,10 +54,11 @@ Cadena cadenas[] = {
 	{ "TVG" , "TVG" , 'a' } ,
 	{ "ETB1" , "ETB+1" , 'a' } ,
 	{ "ETB2" , "ETB+2" , 'a' } ,
-	{ "PUN2" , "PUNT+2" , 'a' } ,
+	{ "PUNT2" , "PUNT+2" , 'a' } ,
 	{ "CanalSur", "Canal+Sur" , 'a' } ,
 	{ "Telemadrid" , "TVAM" , 'a' } ,
 	{ "TVCanaria" , "TV+Canaria" , 'a' } ,
+	{ "LaMancha" , "Castilla-La+Mancha" , 'a' } ,
 	{ NULL, NULL, 0 }
 };
 char *horoscopos[] = {
@@ -186,17 +187,23 @@ char *TSQuitaTags(char *str, char *dest)
 		}
 		else if (*c == '&')
 		{
-			if (!strncmp("&nbsp;", c, 6))
+			/*if (!strncmp("&nbsp;", c, 6))
 			{
 				*dest++ = 2;
 				*dest++ = ' ';
 				c += 6;
 			}
-			else
+			else*/
 				*dest++ = *c++;
 		}
 		else if (*c == '\t')
 			break;
+		else if (*c == '\'')
+		{
+			*dest++ = '\\';
+			*dest++ = '\'';
+			c++;
+		}
 		else
 			*dest++ = *c++;
 	}
@@ -207,6 +214,7 @@ char *TSFecha(time_t ts)
 {
 	static char TSFecha[9];
 	struct tm *timeptr;
+	ts -= 21600;
     	timeptr = localtime(&ts);
     	ircsprintf(TSFecha, "%.2d/%.2d/%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100);
     	return TSFecha;
@@ -344,7 +352,7 @@ BOTFUNC(TSHoroscopo)
 }
 SOCKFUNC(TSAbreProg)
 {
-	SockWrite(prog, OPT_CRLF, "GET /Categorias/ProgramacionTV/subcategoria/General/default.asp?c=%s&p=%c&f=%s HTTP/1.1", viendo->texto, viendo->tipo, TSFecha(time(NULL)));
+	SockWrite(prog, OPT_CRLF, "GET /teletexto.asp?c=%s&p=%c&f=%s HTTP/1.1", viendo->texto, viendo->tipo, TSFecha(time(NULL)));
 	SockWrite(prog, OPT_CRLF, "Accept: */*");
 	SockWrite(prog, OPT_CRLF, "Host: www.teletexto.com");
 	SockWrite(prog, OPT_CRLF, "Connection: Keep-alive");
@@ -355,24 +363,25 @@ SOCKFUNC(TSAbreProg)
 SOCKFUNC(TSLeeProg)
 {
 	static char imp = 0, txt[BUFSIZE];
-	if (!imp && !strcmp(data, "<tr class=\"textofino\">"))
+	if (!imp && !strncmp("<td width=12", data, 12))
 	{
 		imp = 1;
-		txt[0] = 2;
-		txt[1] = '\0';
+		txt[0] = '\0';
 	}
-	else if (imp && !strcmp(data, "</tr>"))
+	else if (imp && !strcmp(data, "\t"))
 	{
 		imp = 0;
-		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, viendo->nombre, TSFecha(time(NULL)), txt);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, viendo->nombre, TSFecha(time(NULL)), txt[0] == ' ' ? &txt[1] : &txt[0]);
 	}
-	else if (!strcmp(data, "</html>"))
+	else if (strstr(data, "</html>"))
 		SockClose(prog, LOCAL);
 	if (imp)
 	{
+		if (strstr(data, "bgcolor=#C9E7F8") || strstr(data, "bgcolor=#EBF5FC"))
+			strcat(txt, " \x02");
 		TSQuitaTags(data, buf);
-		if (*buf)
-			strcat(txt, buf);
+		if (buf[0])
+			strcat(txt, buf[0] == ' ' ? &buf[1] : &buf[0]);
 	}
 	return 0;
 }
@@ -384,7 +393,7 @@ SOCKFUNC(TSCierraProg)
 }
 SOCKFUNC(TSAbreHoroscopo)
 {
-	SockWrite(hor, OPT_CRLF, "GET /categorias/Horoscopos/horoscopo.asp?o=%i HTTP/1.1", horosc);
+	SockWrite(hor, OPT_CRLF, "GET /teletexto.asp?horoscopo=%i HTTP/1.1", horosc);
 	SockWrite(hor, OPT_CRLF, "Accept: */*");
 	SockWrite(hor, OPT_CRLF, "Host: www.teletexto.com");
 	SockWrite(hor, OPT_CRLF, "Connection: Keep-alive");
@@ -395,21 +404,20 @@ SOCKFUNC(TSAbreHoroscopo)
 SOCKFUNC(TSLeeHoroscopo)
 {
 	static char txt[BUFSIZE];
-	static int salud = 0, dinero = 0, amor = 0, *a = NULL;
-	if (!strncmp("<TD class=texto5 style=\"FONT-SIZE:8pt\" style=\"COLOR:#222222\" >", data, 62))
+	char *c;
+	static int salud = 0, dinero = 0, amor = 0;
+	if ((c = strstr(data, "d><f")))
 	{
-		TSQuitaTags(data, txt);
+		TSQuitaTags(strchr(c+10, '>')+1, txt);
 		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
 	}
-	else if (!strncmp("src=\"I/AMOR", data, 11))
-		a = &amor;
-	else if (!strncmp("src=\"I/SALUD", data, 12))
-		a = &salud;
-	else if (!strncmp("src=\"I/DINERO", data, 13))
-		a = &dinero;
-	else if (!strncmp("src=\"I/ESTRELLA", data, 15))
-		(*a)++;
-	else if (salud && dinero && amor && !strcmp("</tr>", data))
+	else if (strstr(data, "dinero.gif"))
+		dinero = StrCount(data, "dinero.gif");
+	else if (strstr(data, "salud.gif"))
+		salud = StrCount(data, "salud.gif");
+	else if (strstr(data, "amor.gif"))
+		amor = StrCount(data, "amor.gif");
+	if (!strcmp(data, "</td></tr>"))
 	{
 		ircsprintf(txt, "Salud: \00312%s\003 - Dinero: \00312", Repite('*', salud));
 		strcat(txt, Repite('*', dinero));
@@ -417,7 +425,6 @@ SOCKFUNC(TSLeeHoroscopo)
 		strcat(txt, Repite('*', amor));
 		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
 		salud = dinero = amor = 0;
-		a = NULL;
 		SockClose(hor, LOCAL);
 	}
 	return 0;
@@ -435,7 +442,7 @@ int TSSigSQL()
 		if (SQLQuery("CREATE TABLE %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
-  			"programacion varchar(255) default NULL "
+  			"programacion text default NULL "
 			");", PREFIJO, TS_TV))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
 	}

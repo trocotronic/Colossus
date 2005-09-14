@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.10 2005-07-13 14:06:22 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.11 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -9,16 +9,8 @@
 #define RESP_NOTICE 0x8
 #define REJOIN 0x10
 #define NO_OVERRIDE 0x20
-typedef struct _conf Conf;
-typedef struct _conf_com cComConf;
 
-extern int ParseaConfiguracion(char *, Conf *, char);
-extern void LiberaMemoriaConfiguracion(Conf *);
-extern void DistribuyeConfiguracion(Conf *);
-extern Conf *BuscaEntrada(Conf *, char *);
-extern void DescargaConfiguracion();
-
-struct _conf
+typedef struct _conf
 {
 	char *item;
 	char *data;
@@ -27,7 +19,7 @@ struct _conf
 	int secciones;
 	char *archivo;
 	int linea;
-};
+}Conf;
 struct Conf_server
 {
 	char *addr;
@@ -53,7 +45,6 @@ struct Conf_db
 	char *bd;
 	char *prefijo;
 	int puerto;
-	char *tipo;
 };
 struct Conf_smtp
 {
@@ -94,24 +85,30 @@ struct Conf_ssl
 	char *cifrados;
 };
 #endif
-typedef struct _opts Opts;
-struct _opts
+typedef struct _opts
 {
 	int opt;
 	char *item;
-};
+}Opts;
 #define LOG_ERROR 0x1
 #define LOG_SERVER 0x2
 #define LOG_CONN 0x4
 
-struct _conf_com
+typedef struct _conf_com
 {
 	char *nombre;
 	int (*testfunc)(Conf *, int *);
 	void (*func)(Conf *);
 	short opt;
 	DWORD min_os;
-};
+}cComConf;
+
+extern int ParseaConfiguracion(char *, Conf *, char);
+extern void LiberaMemoriaConfiguracion(Conf *);
+extern void DistribuyeConfiguracion(Conf *);
+extern Conf *BuscaEntrada(Conf *, char *);
+extern void DescargaConfiguracion();
+
 extern MODVAR struct Conf_server *conf_server;
 extern MODVAR struct Conf_db *conf_db;
 extern MODVAR struct Conf_smtp *conf_smtp;

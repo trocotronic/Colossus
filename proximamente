@@ -1,6 +1,6 @@
 TODO 
 
-Trocotronic / 03-11-2004 16:00
+$Id: proximamente,v 1.5 2005-09-14 14:45:03 Trocotronic Exp $
 
 
 Versión 1.1:
@@ -15,7 +15,25 @@ Versión 1.1:
 
 [/] Extender la ayuda de los módulos
 
-Versión 1.1.1:
+
+Versión 1.2:
+
+[X] Integrar varios sistemas de bases de datos
+	[X] MySQL
+	[X] PostGres
+
+
+Versión 1.3: 
+
+[ ] Flexibilizar niveles de acción
+	[ ] Implementar sistema de niveles de acceso
+	[ ] Funcionalizar los comandos según el nivel de acceso	
+	[ ] Niveles de acción por modo y por rutinas de identificación
+[ ] Marcas 
+[ ] Modos por mallas
+
+
+Versión 1.4:
 
 [ ] Modularizar la BDD
 	[ ] Incluir soporte UDB
@@ -24,37 +42,25 @@ Versión 1.1.1:
 	
 [ ] Incluir el protocolo Bahamut
 
-Versión 1.2:
 
-[X] Integrar varios sistemas de bases de datos
-	[X] MySQL
-	[X] PostGres
+Versión 1.5: 
 
-Versión 1.3: 
-
-[ ] Implementar sistema de niveles de acceso
-	[ ] Funcionalizar los comandos según el nivel de acceso
-	
-[ ] Permitir el enlace estático
-
-
-Versión 1.4: 
-
+[ ] SQL Embedded
 [ ] Añadir soporte para varios idiomas
 	[ ] Soporte para castellano
 	[ ] Soporte para catalán
 	[ ] Soporte para inglés
 	
 
-Versión 1.5:
+Versión 1.6:
 
-[ ] Adaptar los módulos o bots a la semántica de IRCServices e irc-hispano
+[ ] Adaptar los módulos o bots a la semántica de IRCServices
 	[ ] ChanServ
 	[ ] NickServ
 	[ ] OperServ
 	[ ] MemoServ
 	
 
-Versión 1.6:
+Versión 1.7:
 
 [ ] Administración por vía web

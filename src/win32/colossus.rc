@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.8 2005-07-13 14:06:35 Trocotronic Exp $
+// $Id: colossus.rc,v 1.9 2005-09-14 14:45:07 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -163,17 +163,17 @@ BEGIN
     CONTROL         BMP_LOGO,IDC_STATIC,"Static",SS_BITMAP,111,3,64,64
     GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,70,BS_LEFT
     LTEXT           "OpenSSL: ",IDC_STATIC,14,56,40,8
-    LTEXT           "No soportado",IDC_OPENV,75,56,78,8
+    LTEXT           "Desconocido",IDC_OPENV,75,56,78,8
     LTEXT           "ZLib: ",IDC_STATIC,14,66,25,8
-    LTEXT           "No soportado",IDC_ZLIBV,75,66,78,8
+    LTEXT           "Desconocido",IDC_ZLIBV,75,66,78,8
     LTEXT           "UDB: ",IDC_STATIC,14,76,18,8
-    LTEXT           "No soportado",IDC_UDBV,75,76,78,8
+    LTEXT           "Desconocido",IDC_UDBV,75,76,78,8
     LTEXT           "Cliente SQL: ",IDC_STATIC,14,86,60,8
-    LTEXT           "No soportado",IDC_SQLCV,75,86,78,8
+    LTEXT           "Desconocido",IDC_SQLCV,75,86,78,8
     LTEXT           "Servidor SQL: ",IDC_STATIC,14,96,60,8
-    LTEXT           "No soportado",IDC_SQLSV,75,96,78,8
+    LTEXT           "Desconocido",IDC_SQLSV,75,96,78,8
     LTEXT           "PThread: ",IDC_STATIC,14,106,30,8
-    LTEXT           "No soportado",IDC_PTHV,75,106,78,8
+    LTEXT           "Desconocido",IDC_PTHV,75,106,78,8
 END
 
 PREGUNTACAMPO DIALOG DISCARDABLE  0, 0, 174, 67

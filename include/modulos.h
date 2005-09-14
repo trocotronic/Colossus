@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.10 2005-07-16 15:25:27 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.11 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -34,13 +34,12 @@
 #define ROOTS (BOT | ROOT)
 #define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params)
 typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int);
-typedef struct _bcom bCom;
-struct _bcom
+typedef struct _bcom
 {
 	char *com;
 	Mod_Func func;
 	int nivel;
-};
+}bCom;
 typedef struct _info
 {
 	char *nombre;
@@ -90,10 +89,39 @@ extern Modulo *CreaModulo(char *);
 extern const char *ErrorDl(void);
 #endif
 
+/*!
+ * @desc: Devuelve el recurso cliente del módulo.
+ * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
+ * @sntx: Cliente *CLI(void mod)
+ * @cat: Modulos
+ * @ret: Devuelve el recurso cliente del módulo.
+ !*/
 #define CLI(x) x.hmod->cl
+/*!
+ * @desc: Función a ejecutar dentro de cada módulo una vez se haya cargado.
+ * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
+ * @sntx: void BotSet(void mod)
+ * @cat: Modulos
+ * @ver: BotUnset
+ !*/
 #define BotSet(x) x.hmod = mod; mod->conf = &(x)
+/*!
+ * @desc: Función a ejecutar dentro de cada módulo una vez se haya descargado.
+ * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
+ * @sntx: void BotUnset(void mod)
+ * @cat: Modulos
+ * @ver: BotSet
+ !*/
 #define BotUnset(x) x.hmod->conf = NULL; x.hmod = NULL; 
 extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
+/*!
+ * @desc: Responde a un usuario con especificación de una función si esta función existe y está cargada. Muy útil para sistemas de AYUDA.
+ * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
+ 	    $nombre [in] Nombre de la función.
+ 	    $cont [in] Especificación de la función.
+ * @cat: Modulos
+ * @sntx: void FuncResp(void mod, char *nombre, char *cont)
+ !*/
 #define FuncResp(x,y,z) do { if (BuscaFuncion(x.hmod,y,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
 
 #ifdef ENLACE_DINAMICO

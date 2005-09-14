@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.15 2005-07-16 15:25:33 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.16 2005-09-14 14:45:07 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -563,7 +563,7 @@ IRCFUNC(statserv_version)
 }
 IRCFUNC(statserv_notice)
 {
-	if (cl && EsServer(cl))
+	if (cl && EsServidor(cl))
 	{
 		strcpy(tokbuf, parv[2]);
 		if (!strcmp(strtok(tokbuf, " "), "Lag"))

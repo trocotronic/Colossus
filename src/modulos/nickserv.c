@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.26 2005-07-16 15:25:32 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.27 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -510,6 +510,12 @@ BOTFUNC(NSRegister)
 	char *mail, *pass, *usermask, *cache;
 	SQLRes res = NULL;
 	usermask = strchr(cl->mask, '!') + 1;
+	if (strlen(cl->nombre) > (u_int)(conf_set->nicklen - 7)) /* 6 minimo de contraseña +1 de los ':' */
+	{
+		ircsprintf(buf, "Tu nick es demasiado largo. Sólo puede tener %i caracteres como máximo.", (conf_set->nicklen - 7));
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, buf);
+		return 1;
+	}
 	if (params < ((nickserv.opts & NS_SMAIL) ? 2 : 3))
 	{
 		if (nickserv.opts & NS_SMAIL)
@@ -811,8 +817,8 @@ BOTFUNC(NSDrop)
 int NSBaja(char *nick, char opt)
 {
 	Cliente *al;
-	int opts = 0;
-	if (!opt && (opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"))) & NS_OPT_NODROP)
+	int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
+	if (!opt && (opts & NS_OPT_NODROP))
 		return 1;
 	al = BuscaCliente(nick, NULL);
 	Senyal1(NS_SIGN_DROP, nick);

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.40 2005-07-13 14:06:22 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.41 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -56,38 +56,87 @@ extern void carga_socks(void);
 #ifdef NEED_STRCASECMP
 extern int strcasecmp(const char *, const char *);
 #endif
+/*!
+ * @desc: Hace una copia y libera el anterior contenido si no estuviera liberado.
+ Es decir, si no apunta a NULL:
+ * @params: $destino [out] Destino de la copia. Si no apunta a NULL, es liberado.
+ 	    $origen [in] Origen a copiar.
+ * @sntx: void ircstrdup(char *destino, char *origen)
+ * @cat: Programa
+ !*/
 #define ircstrdup(destino, origen) strcopia(&destino, origen)
 extern void strcopia(char **, const char *);
+/*!
+ * @desc: Libera una zona de memoria apuntada por un puntero. Es un alias de free() pero se recomienda usar éste con fines de debug.
+ * @params: $x [in] Puntero a liberar.
+ * @cat: Programa
+ * @sntx: void Free(void *x)
+ !*/
 #ifdef DEBUG
 #define Free(x) free(x); Debug("Liberando %X", x)
 #else
 #define Free free
 #endif
+typedef struct _sock Sock;
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data)
 #define MAXSOCKS MAXCONNECTIONS
 #define BUFSIZE 1024
 #define BUF_SOCK 8192
 #define DBUF 2032
+/*!
+ * @desc: Devuelve el mínimo de dos números.
+ * @params: $x [in] Primer número.
+ 	    $y [in] Segundo número.
+ * @ret: Devuelve el mínimo de dos números.
+ * @cat: Programa
+ * @sntx: int MIN(int x, int y)
+ !*/
 #define MIN(x,y) (x < y ? x : y)
 
-typedef struct _dbuf DBuf;
-
-struct _dbuf
+typedef struct _dbuf
 {
 	u_int len; /* para datos binarios */
 	u_int slots;
 	struct _dbufdata *wslot, *rslot; /* al slot de escritura y lectura: nunca wslot < rslot */
 	char *wchar, *rchar; /* a la posición para escribir y leer */
-};
-typedef struct _dbufdata DbufData;
-struct _dbufdata
+}DBuf;
+typedef struct _dbufdata
 {
 	struct _dbufdata *sig;
 	char data[DBUF];
 	u_int len;
-};
-typedef struct _sock Sock;
-struct _sock
+}DbufData;
+
+/*!
+ * @desc: Es un recurso de conexión.
+ * @params: $host Host o ip de la conexión.
+ 	    $puerto Puerto remoto.
+ 	    $pres Recurso de red (no modificar).
+ 	    $server Estructura de dirección de conexión.
+ 	    $openfunc Función a ejecutar cuando se abra la conexión.
+ 	    $readfunc Función a ejecutar cuando se reciban datos en la conexión.
+ 	    $closefunc Función a ejecutar cuando se cierre la conexión.
+ 	    $writefunc Función a ejecutar cuando se escriban datos en la conexión.
+ 	    $recvQ Cola de datos entrante.
+ 	    $sendQ Cola de datos saliente.
+ 	    $estado Tipos de estado de la conexión.
+ 	    	- EST_DESC: Estado desconocido.
+ 	    	- EST_CONN: Conectando.
+ 	    	- EST_LIST: Conexión de escucha.
+ 	    	- EST_OK: Conexión establecida.
+ 	    	- EST_CERR: Conexión cerrada.
+ 	    $opts: Opciones para la conexión.
+ 	    	- OPT_SSL: Conexión bajo SSL.
+ 	    	- OPT_ZLIB: Conexión con compresión de datos ZLib.
+ 	    $slot: Posición de la lista de conexiones.
+ 	    $buffer: Buffer de parseo de datos.
+ 	    $pos: Posición de escritura en el buffer.
+ 	    $zlib: Estructura del manejo de compresión de datos.
+ 	    $ssl: Estructura del manejo de ssl.
+ * @ver: SockOpen SockClose SockListen
+ * @cat: Conexiones
+ !*/
+typedef struct _sock
 {
 	char *host;
 	int puerto;
@@ -110,7 +159,7 @@ struct _sock
 #ifdef USA_SSL
 	SSL *ssl;
 #endif
-};
+}Sock;
 struct Sockets
 {
 	Sock *socket[MAXSOCKS];
@@ -122,11 +171,23 @@ extern Sock *SockOpen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFU
 extern void SockWrite(Sock *, int, char *, ...);
 extern void SockClose(Sock *, char);
 
-typedef struct _hash Hash;
-struct _hash {
-	int items;
+/*!
+ * @desc: Estructura de datos Hash. Se utiliza para definir una lista de entradas enlazadas.
+ * @params: $item Apunta al primer elemento de la lista.
+ 	    $items Cantidad de elementos en esa lista.
+ * @cat: Programa
+ * @ex: 	Hash tabla[100];
+ 	UnaEstructura *st;
+ 	...
+ 	//UnaEstructura debe tener como miembro a hsig
+ 	st->hsig = tabla[0].item;
+ 	tabla[0].item = cl;
+ 	tabla[0].items++;
+ !*/	
+typedef struct _hash {
 	void *item;
-};
+	int items;
+}Hash;
 
 extern const char NTL_tolower_tab[];
 extern MODVAR char buf[BUFSIZE];
@@ -140,10 +201,7 @@ extern int BorraCanalDeHash(struct _canal *, char *, Hash *);
 extern int match(char *, char *);
 
 extern char *Fecha(time_t *);
-#define PROTOCOL 2305
-
-typedef struct _smtpData SmtpData;
-struct _smtpData
+typedef struct _smtpData
 {
 	char *para;
 	char *de;
@@ -151,7 +209,7 @@ struct _smtpData
 	char *cuerpo;
 	char enviado;
 	int intentos;
-};
+}SmtpData;
 extern void EnviaEmail(char *, char *, char *, char *);
 extern void Email(char *, char *, char *, ...);
 
@@ -160,13 +218,12 @@ extern int Aleatorio(int, int);
 extern char *Mx(char *);
 
 /* senyals */
-typedef struct _senyal Senyal;
-struct _senyal
+typedef struct _senyal
 {
 	struct _senyal *sig;
 	short senyal;
 	int (*func)();
-};
+}Senyal;
 #define MAXSIGS 256
 extern MODVAR Senyal *senyals[MAXSIGS];
 extern void InsertaSenyal(short, int (*)());
@@ -179,8 +236,7 @@ extern int BorraSenyal(short, int (*)());
 #define Senyal5(s,x,y,z,t,u) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t,u); } while(0)
 
 /* timers */
-typedef struct _timer Timer;
-struct _timer
+typedef struct _timer
 {
 	struct _timer *sig;
 	char *nombre;
@@ -191,7 +247,7 @@ struct _timer
 	int veces;
 	int lleva;
 	int cada;
-};
+}Timer;
 extern void IniciaCrono(char *, Sock *, int, int, int (*)(), void *, size_t);
 extern int ApagaCrono(char *, Sock *);
 extern void CompruebaCronos(void);
@@ -201,14 +257,24 @@ extern char *strtolower(char *);
 extern char *strtoupper(char *);
 extern char *Unifica(char *[], int, int, int);
 extern char *gettok(char *, int, char);
-typedef struct _proc Proc;
-struct _proc
+extern int StrCount(char *, char *);
+/*!
+ * @desc: Estructura que se pasa a una función de tipo Proceso.
+ * @params: $sig [in] Obviar.
+ 	    $func [in] Función que se ejecuta.
+ 	    $proc [in] Índice que se está siguiendo. Una vez se ha llegado a su fin, hay que ponerlo a 0 y setear el miembro time para la siguiente hora a ejecutar.
+ 	    $time [in] Contiene el timestamp en el que hay que ejecutar la función.
+ * @cat: Procesos
+ * @ver: IniciaProceso DetieneProceso
+ !*/
+typedef struct _proc
 {
 	struct _proc *sig;
 	int (*func)();
 	int proc;
 	time_t time;
-};
+}Proc;
+#define ProcFunc(x) int (x)(Proc *proc)
 extern void ProcesosAuxiliares(void);
 extern void IniciaProceso(int(*)());
 extern int DetieneProceso(int (*)());
@@ -224,6 +290,18 @@ extern MODVAR Hash cTab[CHMAX];
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 extern char **margv;
 #define Malloc(x) ExMalloc(x, __FILE__, __LINE__)
+/*!
+ * @desc: Aloja memoria y pone a 0 toda la cantidad de memoria solicitada. Es un alias de malloc y memset.
+ * @params: $p [in] Puntero a la zona de memoria a reservar.
+	    $s [in] Tamaño o tipo de puntero.
+ * @ex: 	MiEstructura *puntero;
+ 	BMalloc(puntero, MiEstructura);
+ 	//Hace lo mismo que
+ 	puntero = (MiEstructura *)malloc(sizeof(MiEstructura));
+ 	memset(puntero, 0, sizeof(MiEstructura));
+ * @sntx: void BMalloc(void *p, s )
+ * @cat: Programa
+ !*/
 #define BMalloc(p,s) do { p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s)); }while(0)
 #define EST_DESC 0
 #define EST_CONN 1
@@ -276,7 +354,6 @@ extern int EsArchivo(char *);
 #define OPT_SSL 0x2
 #define EsSSL(x) (x->opts & OPT_SSL)
 #endif
-#define OPT_EOS 0x4
 #ifdef _WIN32
 extern void ChkBtCon(int, int);
 extern char *PreguntaCampo(char *, char *, char *);
@@ -287,6 +364,13 @@ extern void CleanUp(void);
 extern void LoopPrincipal(void *);
 #endif
 extern void SQLCargaTablas(void);
+/*!
+ * @desc: Convierte una cadena a entero largo.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve el entero largo.
+ * @cat: Programa
+ * @sntx: u_long atoul(char *str)
+ !*/
 #define atoul(x) strtoul(x, NULL, 10)
 extern void Error(char *, ...);
 extern int Info(char *, ...);
@@ -295,6 +379,12 @@ extern void SockWriteVL(Sock *, int, char *, va_list);
 #define REMOTO 1
 extern VOIDSIG CierraColossus(int);
 extern void Loguea(int, char *, ...);
+/*!
+ * @desc: Pone a NULL un puntero y lo libera si es necesario.
+ * @params: $x [in] Puntero a setear.
+ * @cat: Programa
+ * @sntx: void ircfree(void *x)
+ !*/
 #define ircfree(x) do { if (x) Free(x); x = NULL; }while(0)
 #define PID "colossus.pid"
 #ifdef _WIN32
@@ -320,7 +410,6 @@ extern MODVAR time_t iniciado;
 	Responde(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\
 		"aportando su semilla, a que este programa vea la luz.");									\
 	Responde(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
-	Responde(cl, bl, "Y, en especial, a MaD y a Davidlig por las ayudas de infrastructuras prestadas altruístamente."); 			\
 	Responde(cl, bl, " "); 															\
 	Responde(cl, bl, "Puedes descargar este programa de forma gratuíta en %c\00312http://www.rallados.net", 31); 				\
 	Responde(cl, bl, "Sé feliz. Paz.")
@@ -350,11 +439,10 @@ extern MODVAR char spath[MAX_PATH];
 extern MODVAR char spath[PATH_MAX];
 #endif
 #define SPATH spath
-typedef struct item Item;
-struct item
+typedef struct item
 {
-	Item *sig;
-};
+	struct item *sig;
+}Item;
 void add_item(Item *, Item **);
 Item *del_item(Item *, Item **, char);
 #define AddItem(item, lista) add_item((Item *)item, (Item **)&lista)

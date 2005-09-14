@@ -18,6 +18,8 @@
 #define TKL_QLINE 4
 #define TKL_MAX 5 /* máximo! */
 
+#define PROTOCOL 2305
+
 double tburst;
 static char *modcanales = NULL;
 static char *modusers = NULL;
@@ -665,7 +667,7 @@ int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
 	if (!cl || !cn)
 		return 1;
-	if (EsServer(cl) || EsBot(cl))
+	if (EsServidor(cl) || EsBot(cl))
 		return 1;
 	if (motivo)
 	{
@@ -970,7 +972,7 @@ void PROT_INICIA(Unreal)()
 		EnviaAServidor("PROTOCTL ZIP");
 #endif
 	EnviaAServidor("PASS :%s", conf_server->password.local);
-	EnviaAServidor("SERVER %s 1 :U%i-%s-%i %s", me.nombre, me.protocol, me.trio, me.numeric, me.info);
+	EnviaAServidor("SERVER %s 1 :U%i-%s-%i %s", me.nombre, PROTOCOL, me.trio, me.numeric, me.info);
 }
 SOCKFUNC(PROT_PARSEA(Unreal))
 {
@@ -1132,7 +1134,7 @@ IRCFUNC(m_msg)
 				return 0;
 			}
 		}
-		if (!EsServer(cl))
+		if (!EsServidor(cl))
 			Responde(cl, bl, ERR_DESC, "");
 	}
 	return 0;
@@ -1249,7 +1251,7 @@ IRCFUNC(m_quit)
 IRCFUNC(m_kill)
 {
 	Cliente *al;
-	if (EsServer(cl))
+	if (EsServidor(cl))
 		return 0;
 	if ((al = BuscaCliente(parv[1], NULL)))
 	{
@@ -1304,7 +1306,7 @@ IRCFUNC(m_mode)
 	modebuf[0] = parabuf[0] = '\0';
 	cn = InfoCanal(parv[1], !0);
 	ProcesaModo(cl, cn, parv + 2, parc - 2);
-	if (EsServer(cl) && (conf_set->opts & NOSERVDEOP))
+	if (EsServidor(cl) && (conf_set->opts & NOSERVDEOP))
 	{
 		int i = 3, j = 1, f = ADD;
 		char *modos = parv[2];
@@ -1348,7 +1350,7 @@ IRCFUNC(m_mode)
 		strcat(modebuf, modcanales);
 	if (modebuf[0] != '\0')
 		p_mode(&me, cn, "%s %s", modebuf, parabuf);
-	Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServer(cl) ? parc - 3 : parc - 2);
+	Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	return 0;
 }
 IRCFUNC(m_sjoin)
@@ -1493,7 +1495,7 @@ IRCFUNC(m_server)
 	al = NuevoCliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, inf);
 	al->protocol = protocol ? atoi(protocol + 1) : 0;
 	al->numeric = numeric ? atoi(numeric) : 0;
-	al->tipo = ES_SERVER;
+	al->tipo = TSERVIDOR;
 	al->trio = strdup(opts);
 	BMalloc(aux, LinkCliente);
 	aux->user = al;
@@ -1621,7 +1623,7 @@ IRCFUNC(m_db)
 		time_t gm;
 		bloq = IdAUdb(*parv[3]);
 		gm = atoul(parv[5]);
-		if (gm != gmts[ID(bloq)]) /* se ha efectuado un OPT en algún momento */
+		if (strcmp(parv[4], bloq->data_char))
 		{
 			if (gm > gmts[ID(bloq)])
 			{
@@ -1631,9 +1633,10 @@ IRCFUNC(m_db)
 				if (++bloqs == BDD_TOTAL)
 					EnviaAServidor(":%s %s", me.nombre, TOK_EOS);
 			}
+			else if (gm == gmts[ID(bloq)])
+				EnviaAServidor(":%s DB %s RES %c %lu", me.nombre, parv[0], *parv[3], bloq->data_long);
+			/* si es menor, el otro nodo vaciará su db y nos mandará un RES, será cuando empecemos el resumen. abremos terminado nuestro burst */
 		}
-		else if (strcmp(parv[4], bloq->data_char))
-			EnviaAServidor(":%s DB %s RES %c %lu", me.nombre, parv[0], *parv[3], bloq->data_long);
 		else
 		{
 			if (++bloqs == BDD_TOTAL)
@@ -1777,34 +1780,62 @@ IRCFUNC(m_dbq)
 	pos = cur = strdup(parv[2]);
 	if (!(bloq = IdAUdb(*pos)))
 	{
-		EnviaAServidor(":%s NOTICE %s :La base de datos %c no existe.", me.nombre, cl->nombre, *pos);
+		EnviaAServidor(":%s 339 %s :La base de datos %c no existe.", me.nombre, cl->nombre, *pos);
 		return 0;
 	}
-	cur += 3;
-	while ((ds = strchr(cur, ':')))
+	if (parc == 3)
+		parv[1] = parv[2];
+	if (*(++cur) != '\0')
 	{
-		if (*(ds + 1) == ':')
+		if (*cur++ != ':' || *cur++ != ':' || *cur == '\0')
 		{
-			*ds++ = '\0';
-			if (!(bloq = BuscaBloque(cur, bloq)))
-				goto nobloq;
+			EnviaAServidor(":%s 339 %s :Formato de bloque incorrecto.", me.nombre, cl->nombre);
+			return 1;
+		}
+		
+		while ((ds = strchr(cur, ':')))
+		{
+			if (*(ds + 1) == ':')
+			{
+				*ds++ = '\0';
+				if (!(bloq = BuscaBloque(cur, bloq)))
+					goto nobloq;
+			}
+			else
+				break;
+			cur = ++ds;
+		}
+		if (!(bloq = BuscaBloque(cur, bloq)))
+		{
+			nobloq:
+			EnviaAServidor(":%s 339 %s :No se encuentra el bloque %s.", me.nombre, cl->nombre, cur);
 		}
 		else
-			break;
-		cur = ++ds;
-	}
-	if (!(bloq = BuscaBloque(cur, bloq)))
-	{
-		nobloq:
-		EnviaAServidor(":%s NOTICE %s :No se encuentra el bloque %s.", me.nombre, cl->nombre, cur);
+		{
+			if (bloq->data_long)
+				EnviaAServidor(":%s 339 %s :DBQ %s %lu", me.nombre, cl->nombre, parv[1], bloq->data_long);
+			else if (bloq->data_char)
+				EnviaAServidor(":%s 339 %s :DBQ %s %s", me.nombre, cl->nombre, parv[1], bloq->data_char);
+			else
+			{
+				Udb *aux;
+				for (aux = bloq->down; aux; aux = aux->mid)
+				{
+					if (aux->data_long)
+						EnviaAServidor(":%s 339 %s :DBQ %s::%c %lu", me.nombre, cl->nombre, parv[1], aux->id, aux->data_long);
+					else if (aux->data_char)
+						EnviaAServidor(":%s 339 %s :DBQ %s::%c %s", me.nombre, cl->nombre, parv[1], aux->id, aux->data_char);
+					else
+						EnviaAServidor(":%s 339 %s :DBQ %s::%c (no tiene datos)", me.nombre, cl->nombre, parv[1], aux->id);
+				}
+			}
+		}
 	}
 	else
 	{
-		if (bloq->data_long)
-			EnviaAServidor(":%s NOTICE %s :DBQ %s %lu", me.nombre, cl->nombre, parv[2], bloq->data_long);
-		else
-			EnviaAServidor(":%s NOTICE %s :DBQ %s %s", me.nombre, cl->nombre, parv[2], bloq->data_char);
-	}
+		int id = ID(bloq);
+		EnviaAServidor(":%s 339 %s :%i %i %lu %s %lu %X", me.nombre, cl->nombre, id, regs[id], bloq->data_long, bloq->data_char, LeeGMT(id), LeeHash(id));
+	} 
 	Free(pos);
 	return 0;
 }
@@ -1874,12 +1905,13 @@ IRCFUNC(m_module)
 }
 IRCFUNC(sincroniza)
 {
+#ifdef UDB
+	Udb *aux;
+#endif
 	tburst = microtime();
 #ifdef UDB
-	EnviaAServidor(":%s DB %s INF N %s %lu", me.nombre, cl->nombre, nicks->data_char, gmts[ID(nicks)]);
-	EnviaAServidor(":%s DB %s INF C %s %lu", me.nombre, cl->nombre, chans->data_char, gmts[ID(chans)]);
-	EnviaAServidor(":%s DB %s INF I %s %lu", me.nombre, cl->nombre, ips->data_char, gmts[ID(ips)]);
-	EnviaAServidor(":%s DB %s INF S %s %lu", me.nombre, cl->nombre, sets->data_char, gmts[ID(sets)]);
+	for (aux = ultimo; aux; aux = aux->mid)
+		EnviaAServidor(":%s DB %s INF %c %s %lu", me.nombre, cl->nombre, LETRA(aux), aux->data_char, gmts[ID(aux)]);
 #endif	
 	Senyal(SIGN_SYNCH);
 	return 0;
@@ -1955,18 +1987,18 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaBan(cl, cn, parv[param]);
+					InsertaBan(cl, &cn->ban, parv[param]);
 				else
-					BorraBanDeCanal(cn, parv[param]);
+					BorraBanDeCanal(&cn->ban, parv[param]);
 				param++;
 				break;
 			case 'e':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					inserta_exc_en_canal(cl, cn, parv[param]);
+					InsertaBan(cl, &cn->exc, parv[param]);
 				else
-					borra_exc_de_canal(cn, parv[param]);
+					BorraBanDeCanal(&cn->exc, parv[param]);
 				param++;
 				break;
 			case 'k':
@@ -1979,9 +2011,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				}
 				else
 				{
-					if (cn->clave)
-						Free(cn->clave);
-					cn->clave = NULL;
+					ircfree(cn->clave);
 					cn->modos &= ~FlagAModo('k', PROT_CMODOS(Unreal));
 				}
 				param++;
@@ -1996,9 +2026,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				}
 				else
 				{
-					if (cn->flood)
-						Free(cn->flood);
-					cn->flood = NULL;
+					ircfree(cn->flood);
 					cn->modos &= ~FlagAModo('f', PROT_CMODOS(Unreal));
 				}
 				param++;
@@ -2028,9 +2056,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				}
 				else
 				{
-					if (cn->link)
-						Free(cn->link);
-					cn->link = NULL;
+					ircfree(cn->link);
 					cn->modos &= ~FlagAModo('L', PROT_CMODOS(Unreal));
 				}
 				param++;

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.50 2005-07-16 15:25:29 Trocotronic Exp $ 
+ * $Id: main.c,v 1.51 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -40,10 +40,18 @@ char spath[MAX_PATH];
 #else
 char spath[PATH_MAX];
 #endif
+/*!
+ * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
+ * @cat: Programa
+ !*/
 int refrescando = 0;
 
 
 MODVAR char **margv;
+/*!
+ * @desc: Hora timestamp en la que se inició el programa.
+ * @cat: Programa
+ !*/
 time_t iniciado;
 
 int CargaCache();
@@ -182,7 +190,7 @@ VOIDSIG Refresca()
 	ParseaConfiguracion(CPATH, &config, 1);
 	DistribuyeConfiguracion(&config);
 	CargaModulos();
-	CargaSQL();
+	Senyal(SIGN_SQL);
 #ifdef UDB
 	CargaBloques();
 #endif
@@ -216,6 +224,12 @@ VOIDSIG Reinicia()
 	execv(SPATH, margv);
 	exit(-1);
 }
+/*!
+ * @desc: Cierra el programa
+ * @params: $excode [in] Indica el código de salida. Este número es el que se pasa en la llamada exit()
+ * @cat: Programa
+ !*/
+
 VOIDSIG CierraColossus(int excode)
 {
 	CierraTodo();
@@ -276,8 +290,7 @@ int main(int argc, char *argv[])
 		return 1;
 	DistribuyeConfiguracion(&config);
 	CargaModulos();
-	if (CargaSQL())
-		return 1;
+	Senyal(SIGN_SQL);
 #ifndef _WIN32
 	if (sql->clientinfo)
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
@@ -368,6 +381,14 @@ void LoopPrincipal(void *args)
 	return 0;
 #endif
 }
+
+/*!
+ * @desc: Indica si un archivo existe o no
+ * @params: $archivo [in] Ruta completa del archivo
+ * @ret: Devuelve 1 si existe; 0, si no.
+ * @cat: Programa
+ !*/
+
 int EsArchivo(char *archivo)
 {
 	FILE *fp;
@@ -376,6 +397,14 @@ int EsArchivo(char *archivo)
 	fclose(fp);
 	return 1;
 }
+
+/*!
+ * @desc: Indica si se trata de una ip en notación por puntos (X.X.X.X)
+ * @params: $ip [in] Ip a analizar
+ * @ret: Devuelve 1 si se trata de una ip en notación por puntos; 0, si no.
+ * @cat: Internet
+ !*/
+
 int EsIp(char *ip)
 {
 	char *oct;
@@ -408,6 +437,14 @@ void Dominio(Host *aux)
 	Free(aux->ip);
 	Free(aux);
 }
+
+/*!
+ * @desc: Resuelve una ip asíncronamente
+ * @params: destino [out] Dirección del puntero que apunta a la zona de memoria donde se guardará el resultado
+ 	    ip [in] Dirección IP en notación de puntos a resolver
+ * @cat: Internet
+ !*/
+
 void ResuelveHost(char **destino, char *ip)
 {
 	char *cache;
@@ -428,6 +465,15 @@ void ResuelveHost(char **destino, char *ip)
 	else
 		*destino = strdup(ip);
 }
+
+/*!
+ * @desc: Genera un número aleatorio entre márgenes
+ * @params: $ini [in] Margen inferior
+ 	    $fin [in] Margen superior
+ * @ret: Devuelve el número generado
+ * @cat: Programa
+ !*/
+
 int Aleatorio(int ini, int fin)
 {
 	int r, i;
@@ -449,7 +495,22 @@ int Aleatorio(int ini, int fin)
 	if (r < ini)
 		return fin - r;
 	return r;
-}	
+}
+
+/*!
+ * @desc: Genera una cadena aleatoria siguiendo un patrón
+ * @params: $patron [in] Patrón a seguir.
+ * Existen algunos comodines para sustituir.
+ * - ? : Cifra aleatoria
+ * - º : Letra mayúscula aleatoria
+ * - ! : Letra minúscula aleatoria
+ * - # : Letra aleatoria (min/may)
+ * - * : Cifra o letra aleatoria
+ * El resto de símbolos se copiarán sin sustituir
+ * @ret: Devuelve la cadena generada
+ * @cat: Programa
+ !*/
+
 char *AleatorioEx(char *patron)
 {
 	char *ptr;
@@ -486,6 +547,40 @@ char *AleatorioEx(char *patron)
 	*ptr = '\0';
 	return buf;
 }
+
+/*! 
+ * @desc: Inserta una señal
+ * Durante el transcurso del programa se generan varias señales. Cada vez que salta una señal se ejecutan las funciones que estén asociadas a ella.
+ * @params: $senyal [in] Tipo de señal a seguir. Estas señales pueden pasar un número indefinido de parámetros, según sea el tipo de señal
+ * 	    Sólo se aceptan las siguientes señales (entre paréntesis se detallan los parámetros que aceptan):
+ 		- SIGN_SQL (): Ha terminado la carga del motor SQL
+ 		- SIGN_UMODE (Cliente *cl, char *umodos): Se ha producido un cambio en los modos de usuario del cliente <i>cl</i>. La cadena <i>umodos</i> contiene los cambios.
+ 		- SIGN_QUIT (Cliente *cl, char *mensaje: El cliente <i>cl</i> ha sido desconectado con el mensaje <i>mensaje</i>.
+ 		- SIGN_EOS (): Se ha terminado la unión entre servidores.
+ 		- SIGN_MODE (Cliente *cl, Canal *cn, char *modos): El cliente <i>cl</i> ha efectuado el cambio de modos <i>modos</i> del canal <i>cn</i>.
+ 		- SIGN_JOIN (Cliente *cl, Canal *cn): El cliente <i>cl</i> se une al canal <i>cn</i>.
+ 		- SIGN_SYNCH (): Se inicia la sincronización con el servidor.
+ 		- SIGN_KICK (Cliente *cl, Cliente *al, Canal *cn, char *motivo): El cliente <i>cl</i> expulsa al cliente <i>al</i> del canal <i>cn</i> con el motivo <i>motivo</i>.
+ 		- SIGN_TOPIC (Cliente *cl, Canal *cn, char *topic): El cliente <i>cl</i> pone el topic <i>topic</i> en el canal <i>cn</i>.
+ 		- SIGN_PRE_NICK (Cliente *cl, char *nuevo): El cliente <i>cl</i> va a cambiarse el nick a <i>nuevo</i>.
+ 		- SIGN_POST_NICK (Cliente *cl, int modo): El cliente <i>cl</i> ha efectuado una operación de nick. Si es una nueva conexión, <i>modo</i> vale 0.
+ 		- SIGN_AWAY (Cliente *cl, char *mensaje): El cliente <i>cl</i> se pone away con el mensaje <i>mensaje</i>. Si mensaje apunta a NULL, el cliente regresa de away.
+ 		- SIGN_PART (Cliente *cl, Canal *cn, char *mensaje): El cliente <i>cl</i> abandona el canal <i>cn</i> con el mensaje <i>mensaje</i>. Si no hay mensaje, apunta a NULL.
+ *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
+ 		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
+ * @ex: 	int Umodos(Cliente *, char *);
+ 	InsertaSenyal(SIGN_UMODE, Umodos);
+ 	...
+ 	int Umodos(Cliente *cl, char *umodos)
+ 	{
+ 		...
+ 		printf("El usuario ha cambiado sus modos");
+ 		return 0;
+ 	}
+ * @ver: BorraSenyal
+ * @cat: Señales
+ !*/
+
 void InsertaSenyal(short senyal, int (*func)())
 {
 	Senyal *sign, *aux;
@@ -511,6 +606,16 @@ void InsertaSenyal(short senyal, int (*func)())
 		}
 	}
 }
+
+/*!
+ * @desc: Elimina una señal
+ * @params: $senyal [in] Tipo de señal. Ver InsertaSenyal para más información.
+ * 	    $func [in] Función que se desea eliminar.
+ * @ret: Devuelve 1 en caso de que sea eliminado; 0, si no.
+ * @ver: InsertaSenyal
+ * @cat: Señales
+ !*/
+
 int BorraSenyal(short senyal, int (*func)())
 {
 	Senyal *aux, *prev = NULL;
@@ -529,6 +634,13 @@ int BorraSenyal(short senyal, int (*func)())
 	}
 	return 0;
 }
+
+/*!
+ * @desc: Devuelve el valor TimeStamp actual con milisegundos
+ * @ret: Devuelve el valor TimeStamp actual con milisegundos.
+ * @cat: Programa
+ !*/
+
 double microtime()
 {
 	double segs, milisegs;
@@ -547,6 +659,22 @@ double microtime()
 		milisegs /= 10;
 	return (segs + milisegs);
 }
+
+/*!
+ * @desc: Inicia un cronométro.
+ * Estos cronómetros permiten ejecutar funciones varias veces en un intervalo de tiempo.
+ * @params: $nombre [in] Cadena que indica el nombre del crono.
+ 	    $sck [in] Socket relacionado. Si es un cronómetro independiente, dejarlo en NULL.
+ 	    Esto permite tener varios cronómetros con el mismo nombre siempre que tengan conexiones distintas.
+ 	    $veces [in] Entero que indica el número de veces que se ejecutará la función. Si es 0, la función se ejecuta indefinidamente.
+ 	    $cada [in] Entero que indica los segundos entre veces que se ejecuta la función.
+ 	    $func [in] Puntero a la función a ejecutar. Debe ser de tipo int.
+ 	    $args [in] Puntero genérico que apunta a un tipo de datos que se le pasaran a la función cada vez que sea ejecutada.
+ 	    $sizearg [in] Tamaño del tipo de datos que se pasa a la función.
+ * @ver: ApagaCrono
+ * @cat: Cronometros
+ !*/
+
 void IniciaCrono(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *args, size_t sizearg)
 {
 	Timer *aux;
@@ -564,6 +692,16 @@ void IniciaCrono(char *nombre, Sock *sck, int veces, int cada, int (*func)(), vo
 	}
 	AddItem(aux, timers);
 }
+
+/*!
+ * @desc: Detiene un cronómetro
+ * @params: $nombre [in] Nombre del cronómetro.
+ 	    $sck [in] Conexión a la que pertenece.
+ * @ret: Devuelve 1 si se detiene; 0, si no.
+ * @ver: IniciaCrono
+ * @cat: Cronometros
+ !*/
+
 int ApagaCrono(char *nombre, Sock *sck)
 {
 	Timer *aux, *prev = NULL;
@@ -607,6 +745,26 @@ void CompruebaCronos()
 		}
 	}
 }
+
+/*!
+ * @desc: Convierte un array a una cadena, cuyos elementos se separan con espacios.
+ * @params: $array [in] Array a concatenar.
+  	    $total [in] Número total de elementos.
+ 	    $parte [in] Inicio de la concatenación.
+ 	    $hasta [in] Final de la concatenación. Si vale -1, se une hasta el final del array.
+ * @ret: Devuelve la cadena concatenada.
+ * @ex: char *prueba[5] = {
+ 		"Esto" ,
+ 		"quedará",
+ 		"unido",
+ 		"por",
+ 		"espacios"
+ 	};
+ 	printf("%s", Unifica(array, 5, 0, -1));
+ 	//Imprimirá "Esto quedará unido por espacios"
+ * @cat: Programa
+ !*/
+
 char *Unifica(char *array[], int total, int parte, int hasta)
 {
 	static char imp[BUFSIZE];
@@ -659,14 +817,40 @@ char *gettok(char *str, int pos, char sep)
 void ProcesosAuxiliares()
 {
 	Proc *aux;
+	if (refrescando)
+		return;
 	for (aux = procs; aux; aux = aux->sig)
 		aux->func(aux);
 }
+
+/*!
+ * @desc: Inicia un proceso.
+ 	Durante la ejecución del programa, puede ser necesario procesar una cantidad de datos suficiente como para no detener el programa.
+ 	Estas funciones son un principio de hilos o "threads", pero en su forma más primitiva.
+ 	Por eso tiene un contador que permite partir o dividir el proceso de datos en partes.
+ * @params: $func [in] Función a ejecutar.
+	Es importante que la propia función especifique próximo tiempo TS para volver a ser ejecutada.
+	Cuando se llame a esta función se le pasará como primer parámetro el proceso que la llama.
+ * @ex: ProcFunc(MiProc)
+ {
+ 	if (proc->proc == 50) //Se ha ejecutado 50 veces
+ 	{
+ 		proc->proc = 0;
+ 		proc->time = time(NULL) + 3600; //No se volverá a ejecutar hasta pasada 1 hora
+ 	}
+ 	else
+ 		proc->proc++;
+ 	return 0;
+}
+	...
+	IniciaProceso(MiProc);
+ * @ver: DetieneProceso
+ * @cat: Procesos
+ !*/
+
 void IniciaProceso(int (*func)())
 {
 	Proc *proc;
-	if (refrescando)
-		return;
 	for (proc = procs; proc; proc = proc->sig)
 	{
 		if (proc->func == func)
@@ -678,6 +862,14 @@ void IniciaProceso(int (*func)())
 	proc->time = (time_t) 0;
 	AddItem(proc, procs);
 }
+
+/*!
+ * @desc: Detiene un proceso.
+ * @params: $func [in] Función a detener.
+ * @ret: Devuelve 1 si se detiene con éxito; 0, si no.
+ * @cat: Procesos
+ !*/
+
 int DetieneProceso(int (*func)())
 {
 	Proc *proc, *prev = NULL;
@@ -767,6 +959,17 @@ int mainn(int argc, char *argv[])
 	return 1;
 }
 */
+
+/*!
+ * @desc: Convierte una fecha en TS a formato legible.
+ * @params: $tim [in] Puntero a fecha en TS.
+ * @ret: Devuelve esa fecha de forma legible.
+ * @ex: time_t tm;
+ tm = time(NULL);
+ printf("%s", Fecha(&tm));
+ * @cat: Programa
+ !*/
+ 
 char *Fecha(time_t *tim)
 {
     static char *wday_name[] = {
@@ -788,6 +991,19 @@ char *Fecha(time_t *tim)
         timeptr->tm_min, timeptr->tm_sec);
     return result;
 }
+
+/*!
+ * @desc: Genera una ventana de información.
+ * @params: $err [in] Tipo de información.
+ 		- FERR: Se trata de un error. Mostrará una aspa roja.
+ 		- FSQL: Se trata de una advertencia en el motor SQL.
+ 		- FADV: Se trata de una advertencia. Mostrará una admiración amarilla.
+ 		- FOK: Se trata de un información. Mostrará una "i" azúl.
+ 	    $error [in] Cadena con formato a mostrar.
+ 	    $... [in] Argumentos variables según la cadena de formato.
+ * @cat: Programa
+ !*/
+ 
 void Alerta(char err, char *error, ...)
 {
 	char buf[BUFSIZE];
@@ -855,6 +1071,17 @@ int CargaCache()
 	IniciaProceso(ProcCache);
 	return 1;
 }
+
+/*!
+ * @desc: Coge un valor de la Caché interna.
+ * @params: $tipo [in] Tipo de datos.
+ 	    $item [in] Ítem a solicitar.
+ 	    $id [in] Dueño o propietario de esta Caché.
+ * @ret: Devuelve el valor del ítem solicitado correspondiente a su dueño.
+ * @ver: InsertaCache BorraCache
+ * @cat: Cache
+ !*/
+
 char *CogeCache(char *tipo, char *item, int id)
 {
 	SQLRes *res;
@@ -889,6 +1116,19 @@ char *CogeCache(char *tipo, char *item, int id)
 	}
 	return NULL;
 }
+
+/*!
+ * @desc: Inserta un dato en la Caché interna.
+ * @params: $tipo [in] Tipo de datos a insertar, a definir por el usuario.
+ 	    $item [in] Ítem a insertar.
+ 	    $off [in] Tiempo de validez, en segundos. Pasado estos segundos, esta entrada se borrará automáticamente.
+ 	    $id [in] Propietario o dueño de la entrada.
+ 	    $valor [in] Cadena con formato que corresponde al valor de ese ítem. Puede ser NULL si no tiene valor.
+ 	    $... [in] Argumentos variables según la cadena de formato.
+ * @ver: CogeCache BorraCache
+ * @cat: Cache
+ !*/
+ 
 void InsertaCache(char *tipo, char *item, int off, int id, char *valor, ...)
 {
 	char *tipo_c, *item_c, *valor_c = NULL, buf[BUFSIZE];
@@ -903,7 +1143,7 @@ void InsertaCache(char *tipo, char *item, int off, int id, char *valor, ...)
 	}
 	tipo_c = SQLEscapa(tipo);
 	item_c = SQLEscapa(item);
-	if (CogeCache(tipo, item, 0))
+	if (CogeCache(tipo, item, id))
 		SQLQuery("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
 	else
 		SQLQuery("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, SQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
@@ -923,6 +1163,16 @@ int ProcCache(Proc *proc)
 	}
 	return 0;
 }
+
+/*!
+ * @desc: Elimina una entrada de la Caché interna.
+ * @params: $tipo [in] Tipo de datos.
+ 	    $item [in] Ítem a eliminar.
+ 	    $id [in] Dueño o propietario de la entrada.
+ * @ver: CogeCache InsertaCache
+ * @cat: Cache
+ !*/
+ 
 void BorraCache(char *tipo, char *item, int id)
 {
 	char *tipo_c, *item_c;
@@ -1012,7 +1262,7 @@ void Debug(char *formato, ...)
 #ifndef DEBUG
 	return;
 #else
-	char debugbuf[BUFSIZE*4];
+	char debugbuf[8000];
 	va_list vl;
 #ifdef _WIN32
 	static HANDLE *conh = NULL;
@@ -1037,6 +1287,18 @@ void Debug(char *formato, ...)
 #endif
 #endif
 }
+
+/*!
+ * @desc: Guarda en el archivo .log los datos especificados, según se haya especificado en la configuración del programa.
+ * @params: $opt [in] Tipo de información.
+ 		- LOG_CONN: Relacionado con conexiones.
+ 		- LOG_SERVER: Relacionado con servidores.
+ 		- LOG_ERROR: Relacionado con errores.
+ 	    $formato [in] Cadena con formato a loguear.
+ 	    $... [in] Argumentos variables según cadena de formato.
+ * @cat: Programa
+ !*/
+ 
 void Loguea(int opt, char *formato, ...)
 {
 	char buf[256], auxbuf[512];
@@ -1252,6 +1514,15 @@ char *CifraNick(char *nickname, char *pass)
 	Free(tmpnick);
 	return clave;
 }
+
+/*!
+ * @desc: Añade un caracter a una cadena. Análogo a strcat.
+ * @params: $dest [in] Cadena de destino. El usuario es responsable de garantizar que haya espacio suficiente.
+ 	    $car [in] Caracter a añadir.
+ * @ret: Devuelve la nueva cadena.
+ * @cat: Programa
+ !*/
+ 
 char *chrcat(char *dest, char car)
 {
 	char *c;
@@ -1287,6 +1558,15 @@ Item *del_item(Item *item, Item **lista, char borra)
 	}
 	return NULL;
 }
+
+/*!
+ * @desc: Repite un caracter varias veces.
+ * @params: $car [in] Caracter a repetir.
+ 	    $veces [in] Número de veces a repetir.
+ * @ret: Devuelve una cadena con el caracter repetido varias veces.
+ * @cat: Programa
+ !*/
+ 
 char *Repite(char car, int veces)
 {
 	static char ret[128];

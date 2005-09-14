@@ -430,7 +430,7 @@ int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
 	if (!cl || !cn)
 		return 1;
-	if (EsServer(cl) || EsBot(cl))
+	if (EsServidor(cl) || EsBot(cl))
 		return 1;
 	if (motivo)
 	{
@@ -880,7 +880,7 @@ IRCFUNC(m_msg)
 				return 0;
 			}
 		}
-		if (!EsServer(cl))
+		if (!EsServidor(cl))
 			Responde(cl, bl, ERR_DESC, "");
 	}
 	return 0;
@@ -967,7 +967,7 @@ IRCFUNC(m_quit)
 IRCFUNC(m_kill)
 {
 	Cliente *al;
-	if (EsServer(cl))
+	if (EsServidor(cl))
 		return 0;
 	if ((al = BuscaCliente(parv[1], NULL)))
 	{
@@ -1031,7 +1031,7 @@ IRCFUNC(m_mode)
 		Canal *cn;
 		cn = InfoCanal(parv[1], !0);
 		ProcesaModo(cl, cn, parv + 2, parc - 2);
-		Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServer(cl) ? parc - 3 : parc - 2);
+		Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	}
 	return 0;
 }
@@ -1088,7 +1088,7 @@ IRCFUNC(m_server)
 	al = NuevoCliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);
 	al->protocol = atoi(parv[5] + 1);
 	al->numeric = b642int(numeric);
-	al->tipo = ES_SERVER;
+	al->tipo = TSERVIDOR;
 	al->trio = strdup(numeric);
 	InsertaClienteEnNumerico(al, numeric, uTab);
 	if (!cl) /* primer link */
@@ -1159,7 +1159,7 @@ IRCFUNC(m_burst)
 				p = strchr(b, ' ');
 				if (p)
 					*p++ = '\0';
-				InsertaBan(cl, cn, b);
+				InsertaBan(cl, &cn->ban, b);
 			}
 			Free(bans);
 		}
@@ -1234,9 +1234,9 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaBan(cl, cn, parv[param]);
+					InsertaBan(cl, &cn->ban, parv[param]);
 				else
-					BorraBanDeCanal(cn, parv[param]);
+					BorraBanDeCanal(&cn->ban, parv[param]);
 				param++;
 				break;
 			case 'k':

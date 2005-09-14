@@ -1,5 +1,5 @@
 /*
- * $Id: match.c,v 1.2 2004-09-11 16:08:04 Trocotronic Exp $ 
+ * $Id: match.c,v 1.3 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 
 /*
@@ -159,7 +159,16 @@ static int match2(char *mask, char *name)
 }
 
 /* Old match() plus some optimizations from bahamut */
-int match(char *mask, char *name) {
+/*!
+ * @desc: Establece una relación entre dos cadenas, una con comodines.
+ * @params: $mask [in] Patrón con comodines.
+ 	    $name [in] Cadena a comparar.
+ * @ret: Devuelve 0 si coincide y se ajusta al patrón; 0, si no.
+ * @cat: Programa
+ !*/
+ 
+int match(char *mask, char *name) 
+{
 	if (mask[0] == '*' && mask[1] == '!') {
 		mask += 2;
 		while (*name != '!' && *name)

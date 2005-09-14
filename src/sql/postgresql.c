@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.4 2005-07-16 15:25:35 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.5 2005-09-14 14:45:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -102,14 +102,16 @@ int Carga()
 SQLRes Query(const char *query)
 {
 	PGresult *resultado;
-#ifndef DEBUG
+#ifdef DEBUG
 	Debug(query);
 #endif
 	if (!postgres)
 		return NULL;
+	pthread_mutex_lock(&mutex);
 	if (!(resultado = PQexec(postgres, query)))
 	{
 		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%s]\n", query, PQerrorMessage(postgres));
+		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
 	switch(PQresultStatus(resultado))
@@ -118,6 +120,7 @@ SQLRes Query(const char *query)
 			if (PQntuples(resultado) > 0)
 			{
 				fila = 0; /* preparamos para la primera fila */
+				pthread_mutex_unlock(&mutex);
 				return (SQLRes)resultado;
 			}
 			break;
@@ -129,11 +132,14 @@ SQLRes Query(const char *query)
 			break;
 	}
 	PQclear(resultado);
+	pthread_mutex_unlock(&mutex);
 	return NULL;
 }
 void FreeRes(SQLRes res)
 {
+	pthread_mutex_lock(&mutex);
 	PQclear((PGresult *)res);
+	pthread_mutex_unlock(&mutex);
 }
 int NumRows(SQLRes res)
 {
@@ -142,26 +148,36 @@ int NumRows(SQLRes res)
 SQLRow FetchRow(SQLRes res)
 {
 	static char *row[512]; /* espero que haya suficiente */
-	int i, max = PQnfields((PGresult *)res), filas = PQntuples((PGresult *)res);
+	int i, max, filas;
+	pthread_mutex_lock(&mutex);
+	max = PQnfields((PGresult *)res);
+	filas = PQntuples((PGresult *)res);
 	if (filas == fila)
+	{
+		pthread_mutex_unlock(&mutex);
 		return NULL;
+	}
 	for (i = 0; i < max; i++)
 		row[i] = PQgetvalue((PGresult *)res, fila, i);
 	row[i] = NULL;
 	fila++;
+	pthread_mutex_unlock(&mutex);
 	return (SQLRow)row;
 }
 void Descarga()
 {
 	//PQexec(postgres, "END");
+	pthread_mutex_lock(&mutex);
 	PQfinish(postgres);
 	postgres = NULL;
+	pthread_mutex_unlock(&mutex);
 }
 void CargaTablas()
 {
 	PGresult *resultado, *cp;
 	int i, max, j, campos;
 	char *tabla;
+	pthread_mutex_lock(&mutex);
 	resultado = PQexec(postgres, "select relname from pg_stat_user_tables order by relname");
 	max = PQntuples(resultado);
 	for (i = 0; i < max; i++)
@@ -180,11 +196,14 @@ void CargaTablas()
 	}
 	sql->tablas[i][0] = NULL;
 	PQclear(resultado);
+	pthread_mutex_unlock(&mutex);
 }
 char *Escapa(const char *item)
 {
 	char *tmp;
 	tmp = (char *)Malloc(sizeof(char) * (strlen(item) * 2 + 1));
+	pthread_mutex_lock(&mutex);
 	PQescapeString(tmp, item, strlen(item));
+	pthread_mutex_unlock(&mutex);
 	return tmp;
 }

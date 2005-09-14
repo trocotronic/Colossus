@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.7 2005-06-29 21:14:07 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.8 2005-09-14 14:45:07 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -35,15 +35,14 @@ Source: "..\..\Colossus.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\Colossus.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignoreversion
 Source: "..\..\proximamente"; DestDir: "{app}"; DestName: "proximamente.txt"; Flags: ignoreversion
-Source: "..\..\libmysql.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\mx.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\pthreadVC2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\mysql.tablas"; DestDir: "{app}"; DestName: "mysql.tablas.txt"; Flags: ignoreversion
 Source: "..\..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\modulos\*.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.dll"; DestDir: "{app}\protocolos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.pdb"; DestDir: "{app}\protocolos"; Flags: ignoreversion
+Source: "..\..\sql\*.dll"; DestDir: "{app}\sql"; Flags: ignoreversion
+Source: "..\..\sql\*.pdb"; DestDir: "{app}\sql"; Flags: ignoreversion
 #ifdef USA_SSL
 Source: "c:\dev\openssl\out32dll\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "c:\dev\openssl\out32dll\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -180,5 +179,5 @@ Filename: "{app}\encpem.bat"; WorkingDir: "{app}"; Tasks: enccert
 [UninstallRun]
 
 [Languages]
-Name: "Castellano"; MessagesFile: "compiler:Languages\SpanishStd-2-5.1.0.isl"
+Name: "Castellano"; MessagesFile: "compiler:Languages\Spanish.isl"
 

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.16 2005-07-16 15:25:33 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.17 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -271,7 +271,6 @@ int PSCmdNick(Cliente *cl, int nuevo)
 		}
 		ProtFunc(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
 		PSEscanea(host);
-		Debug("iee");
 	}
 	return 0;
 }

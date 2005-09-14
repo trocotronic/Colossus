@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.21 2005-07-16 15:25:32 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.22 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -39,6 +39,8 @@ BOTFUNC(OSVaciar);
 #ifdef UDB
 BOTFUNC(OSModos);
 BOTFUNC(OSSnomask);
+BOTFUNC(OSOpt);
+BOTFUNC(OSBck);
 #endif
 BOTFUNC(OSAkill);
 
@@ -62,6 +64,8 @@ static bCom operserv_coms[] = {
 #ifdef UDB
 	{ "modos" , OSModos , ADMINS } ,
 	{ "snomask" , OSSnomask , ADMINS } ,
+	{ "optimiza" , OSOpt , ADMINS } ,
+	//{ "backup" , OSBck , ADMINS } ,
 #endif
 	{ "akill" , OSAkill , OPERS } ,
 	{ 0x0 , 0x0 , 0x0 }
@@ -220,7 +224,7 @@ void OSCargaNoticia(int id)
 	}
 	sigue:
 	if (!(gn = OSEsBotNoticia(not->botname)))
-		not->cl = CreaBot(not->botname, operserv.hmod->ident, operserv.hmod->host, me.nombre, "kdBq", operserv.hmod->realname);
+		not->cl = CreaBot(not->botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
 	else
 		not->cl = gn->cl;
 }
@@ -269,7 +273,7 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 	if (gnoticias == MAXNOT)
 		return 0;
 	if (!id && !(gn = OSEsBotNoticia(botname)))
-		cl = CreaBot(botname, operserv.hmod->ident, operserv.hmod->host, me.nombre, "kdBq", operserv.hmod->realname);
+		cl = CreaBot(botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
 	if (gn)
 		cl = gn->cl;
 	not = (Noticia *)Malloc(sizeof(Noticia));
@@ -884,7 +888,7 @@ BOTFUNC(OSGlobal)
 		Cliente *al, *bl = CLI(operserv);
 		if (opts & 0x4)
 		{
-			bl = CreaBot(param[2], operserv.hmod->ident, operserv.hmod->host, me.nombre, operserv.hmod->modos, operserv.hmod->realname);
+			bl = CreaBot(param[2], operserv.hmod->ident, operserv.hmod->host, operserv.hmod->modos, operserv.hmod->realname);
 			msg = Unifica(param, params, 3, -1);
 		}
 		else
@@ -900,7 +904,7 @@ BOTFUNC(OSGlobal)
 				continue;
 			if ((opts & 0x2) && !IsPreo(al))
 				continue;
-			if (EsBot(al) || EsServer(al))
+			if (EsBot(al) || EsServidor(al))
 				continue;
 			if (!t)
 				Responde(al, bl, msg);
@@ -1126,6 +1130,36 @@ BOTFUNC(OSSnomask)
 	}
 	return 0;
 }
+BOTFUNC(OSOpt)
+{
+	u_int i;
+	time_t hora = time(0);
+	Udb *aux;
+	for (i = 0; i < BDD_TOTAL; i++)
+	{
+		aux = IdAUdb(i);
+		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, IdAChar(i), hora);
+		Optimiza(aux);
+		ActualizaGMT(aux, hora);
+	}
+	Responde(cl, CLI(operserv), "Se han optimizado todos los bloques");
+	return 0;
+}		
+BOTFUNC(OSBck)
+{
+	u_int i;
+	time_t hora = time(0);
+	Udb *aux;
+	for (i = 0; i < BDD_TOTAL; i++)
+	{
+		aux = IdAUdb(i);
+		EnviaAServidor(":%s DB * BCK %c %lu", me.nombre, IdAChar(i), hora);
+		//Optimiza(aux);
+		//ActualizaGMT(aux, hora);
+	}
+	Responde(cl, CLI(operserv), "Todos los servidores han hecho una copia de sus bloques");
+	return 0;
+}
 #endif
 BOTFUNC(OSVaciar)
 {
@@ -1263,7 +1297,7 @@ int OSSigSynch()
 	{
 		while ((row = SQLFetchRow(res)))
 		{
-			bl = CreaBot(row[0], operserv.hmod->ident, operserv.hmod->host, me.nombre, "+oqkBd", "Servicio de noticias");
+			bl = CreaBot(row[0], operserv.hmod->ident, operserv.hmod->host, "+oqkBd", "Servicio de noticias");
 			for (i = 0; i < gnoticias; i++)
 			{
 				if (!strcmp(row[0], gnoticia[i]->botname))

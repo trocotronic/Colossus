@@ -1,5 +1,5 @@
 /*
- * $Id: ircsprintf.c,v 1.1 2005-07-13 14:06:30 Trocotronic Exp $ 
+ * $Id: ircsprintf.c,v 1.2 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 
 /*
@@ -407,6 +407,15 @@ char *ircvsprintf(register char *str, register const char *format, register va_l
 	return str;
 }
 
+/*!
+ * @desc: Es un alias de sprintf()
+ * @params: $str [out] Cadena de salida.
+ 	    $format [in] Cadena con formato.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @ret: Devuelve la cadena final.
+ * @cat: Programa
+ !*/
+ 
 char *ircsprintf(register char *str, const char *format, ...)
 {
   va_list vl;

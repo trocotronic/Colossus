@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.16 2005-07-13 14:06:26 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.17 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -88,6 +88,14 @@ static Opts Opts_Log[] = {
 	{ LOG_CONN , "conexiones" } ,
 	{ 0x0 , 0x0 }
 };
+
+/*!
+ * @desc: Libera una estructura de configuración.
+ * @params: $seccion [in] Sección a liberar.
+ * @ver: ParseaConfiguracion
+ * @cat: Configuracion
+ !*/
+ 
 void LiberaMemoriaConfiguracion(Conf *seccion)
 {
 	int i;
@@ -118,7 +126,6 @@ void LiberaMemoriaDb()
 	if (!conf_db)
 		return;
 	LiberaSQL();
-	ircfree(conf_db->tipo);
 	ircfree(conf_db->host);
 	ircfree(conf_db->login);
 	ircfree(conf_db->pass);
@@ -137,15 +144,19 @@ void LiberaMemoriaSmtp()
 }
 void LiberaMemoriaSet()
 {
+	char *tmp = NULL;
 	if (!conf_set)
 		return;
 	ircfree(conf_set->root);
 	ircfree(conf_set->admin);
-	if (!SockIrcd)
-		ircfree(conf_set->red);
+	if (conf_set->red)
+		tmp = strdup(conf_set->red);
+	ircfree(conf_set->red);
 	ircfree(conf_set->debug);
 	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
 	bzero(conf_set, sizeof(struct Conf_set));
+	conf_set->red = strdup(tmp);
+	Free(tmp);
 }
 void LiberaMemoriaLog()
 {
@@ -185,6 +196,16 @@ void DescargaConfiguracion()
  * 0 Error
  * 1 Ok
  */
+/*!
+ * @desc: Parsea un archivo de configuración
+ * @params: $archivo [in] Ruta del archivo a parsear.
+ 	    $rama [out] Rama o raíz.
+ 	    $avisa [in] Si vale 1, se mostrarán mensajes de error; si no, 0.
+ * @ret: Devuelve 0 si no ocurre ningún error.
+ * @ver: LiberaMemoriaConfiguracion
+ * @cat: Configuracion
+ !*/
+ 
 int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 {
 	int fp, linea;
@@ -669,6 +690,11 @@ int TestDb(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
+	if (BadPtr(config->data))
+	{
+		Error("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
+		error_parcial++;
+	}
 	if (!(eval = BuscaEntrada(config, "host")))
 	{
 		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
@@ -795,9 +821,9 @@ void ConfDb(Conf *config)
 			ircstrdup(PREFIJO, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item ,"puerto"))
 			conf_db->puerto = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item ,"tipo"))
-			ircstrdup(conf_db->tipo, config->seccion[i]->data);
 	}
+	if (CargaSQL(config->data))
+		Error("[%s:%s] Ha sido imposible cargar el motor SQL %s.", config->archivo, config->item, config->data);
 }
 int TestSmtp(Conf *config, int *errores)
 {

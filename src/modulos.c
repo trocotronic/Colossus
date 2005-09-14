@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.11 2005-07-16 15:25:29 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.12 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -17,7 +17,7 @@ int id = 1;
 Modulo *modulos = NULL;
 Modulo *CreaModulo(char *archivo)
 {
-	char tmppath[128];
+	char *amod, tmppath[128];
 #ifdef _WIN32
 	HMODULE modulo;
 	char tmppdb[128], pdb[128];
@@ -26,7 +26,6 @@ Modulo *CreaModulo(char *archivo)
 #endif
 	int (*mod_carga)(Modulo *), (*mod_descarga)(Modulo *);
 	ModInfo *inf;
-	char *amod;
 	Modulo *ex;
 	amod = strrchr(archivo, '/');
 	if (!amod)

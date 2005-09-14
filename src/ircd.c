@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.27 2005-07-16 15:25:28 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.28 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,9 +10,25 @@
 #include "bdd.h"
 #endif
 
+/*!
+ * @desc: Contiene la fecha de inicio de la conexión con el servidor IRCd.
+ * @cat: IRCd
+ !*/
+
 time_t inicio;
+
+/*!
+ * @desc: Variable de uso general para cualquier trato con cadenas.
+ * @cat: Programa
+ !*/
+ 
 char buf[BUFSIZE];
 char backupbuf[BUFSIZE];
+/*!
+ * @desc: Cliente local del servidor de servicios.
+ * @cat: IRCd
+ !*/
+ 
 Cliente me;
 Modulo *modulos;
 Cliente *linkado = NULL;
@@ -232,6 +248,13 @@ SOCKFUNC(EscuchaAbre) /* nos aceptan el sock, lo renombramos */
 	return 0;
 }
 
+/*!
+ * @desc: Envía una cadena al servidor, talmente como un RAW.
+ * @params: $formato [in] Cadena con formato a enviar al servidor.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @cat: IRCd
+ !*/
+ 
 void EnviaAServidor(char *formato, ...)
 {
 	va_list vl;
@@ -240,12 +263,30 @@ void EnviaAServidor(char *formato, ...)
 		SockWriteVL(SockIrcd, OPT_CRLF, formato, vl);
 	va_end(vl);
 }
+
+/*!
+ * @desc: Busca un cliente por su nick.
+ * @params: $nick [in] Nickname del cliente.
+ 	    $lugar [in] En desuso. Usar NULL.
+ * @ret: Devuelve la estructura del cliente en caso de encontrarlo. Devuelve NULL si el cliente no existe.
+ * @cat: IRCd
+ !*/
+ 
 Cliente *BuscaCliente(char *nick, Cliente *lugar)
 {
 	if (nick)
 		lugar = BuscaClienteEnHash(nick, lugar, uTab);
 	return lugar;
 }
+
+/*!
+ * @desc: Busca un canal por su nombre.
+ * @params: $canal [in] Nombre del canal.
+ 	    $lugar [in] En desuso. Usar NULL.
+ * @ret: Devuelve la estructura del canal en caso de encontrarlo. Devuelve NULL si el canal no existe.
+ * @cat: IRCd
+ !*/
+ 
 Canal *BuscaCanal(char *canal, Canal *lugar)
 {
 	if (canal)
@@ -277,7 +318,7 @@ Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *ser
 	if (info)
 		cl->info = strdup(info);
 	cl->sck = SockActual;
-	cl->tipo = ES_CLIENTE;
+	cl->tipo = TCLIENTE;
 	GeneraMascara(cl);
 	if (clientes)
 		clientes->prev = cl;
@@ -383,7 +424,7 @@ int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 		LiberaMemoriaCanal(cn);
 	return 0;
 }
-void InsertaBan(Cliente *cl, Canal *cn, char *ban)
+void InsertaBan(Cliente *cl, Ban **bn, char *ban)
 {
 	Ban *banid;
 	if (!ban)
@@ -391,52 +432,21 @@ void InsertaBan(Cliente *cl, Canal *cn, char *ban)
 	banid = (Ban *)Malloc(sizeof(Ban));
 	banid->quien = cl;
 	banid->ban = strdup(ban);
-	AddItem(banid, cn->ban);
+	AddItem(banid, *bn);
 }
-int BorraBanDeCanal(Canal *cn, char *ban)
+int BorraBanDeCanal(Ban **bn, char *ban)
 {
 	Ban *aux, *prev = NULL;
 	if (!ban)
 		return 0;
-	for (aux = cn->ban; aux; aux = aux->sig)
+	for (aux = *bn; aux; aux = aux->sig)
 	{
 		if (!strcmp(aux->ban, ban))
 		{
 			if (prev)
 				prev->sig = aux->sig;
 			else
-				cn->ban = aux->sig;
-			Free(aux->ban);
-			Free(aux);
-			return 1;
-		}
-		prev = aux;
-	}
-	return 0;
-}
-void inserta_exc_en_canal(Cliente *cl, Canal *cn, char *exc)
-{
-	Ban *excid;
-	if (!exc)
-		return;
-	excid = (Ban *)Malloc(sizeof(Ban));
-	excid->quien = cl;
-	excid->ban = strdup(exc);
-	AddItem(excid, cn->exc);
-}
-int borra_exc_de_canal(Canal *cn, char *exc)
-{
-	Ban *aux, *prev = NULL;
-	if (!exc)
-		return 0;
-	for (aux = cn->exc; aux; aux = aux->sig)
-	{
-		if (!strcmp(aux->ban, exc))
-		{
-			if (prev)
-				prev->sig = aux->sig;
-			else
-				cn->exc = aux->sig;
+				*bn = aux->sig;
 			Free(aux->ban);
 			Free(aux);
 			return 1;
@@ -497,9 +507,8 @@ void GeneraMascara(Cliente *cl)
 void DistribuyeMe(Cliente *me, Sock **sck)
 {
 	ircstrdup(me->nombre, conf_server->host);
-	me->tipo = ES_SERVER;
+	me->tipo = TSERVIDOR;
 	me->numeric = conf_server->numeric;
-	me->protocol = PROTOCOL;
 	ircfree(me->trio);
 	me->trio = (char *)Malloc(sizeof(char) * 21); /* hay 20 flags posibles */
 	*(me->trio) = '\0';
@@ -523,6 +532,14 @@ void DistribuyeMe(Cliente *me, Sock **sck)
 		InsertaClienteEnHash(me, conf_server->host, uTab);
 	}
 }
+
+/*!
+ * @desc: Genera una máscara válida para ban.
+ * @params: $mascara [in] Máscara a corregir. Puede ser sólo el nickname, el username, el host, o cualquier combinación de ambas.
+ * @ret: Devuelve esa máscara corregida.
+ * @cat: IRCd
+ !*/
+ 
 char *MascaraIrcd(char *mascara)
 {
 	buf[0] = '\0';
@@ -542,6 +559,15 @@ char *MascaraIrcd(char *mascara)
 	}
 	return buf;
 }
+
+/*!
+ * @desc: Entra un bot a un canal.
+ * @params: $bl [in] Estructura Cliente del bot a entrar.
+ 	    $canal [in] Nombre del canal.
+ * @ver: SacaBot
+ * @cat: Modulos
+ !*/
+ 
 void EntraBot(Cliente *bl, char *canal)
 {
 	Canal *cn;
@@ -552,6 +578,15 @@ void EntraBot(Cliente *bl, char *canal)
 	if (conf_set->opts & AUTOBOP)
 		ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
 }
+
+/*!
+ * @desc: Saca un bot de un canal.
+ * @params: $bl [in] Estructura Cliente del bot a sacar.
+ 	    $canal [in] Nombre del canal.
+ 	    $motivo [in] Motivo de la salida. Si no se precisa ninguno, usar NULL.
+ * @cat: Modulos
+ !*/
+ 
 void SacaBot(Cliente *bl, char *canal, char *motivo)
 {
 	Canal *cn;
@@ -560,6 +595,14 @@ void SacaBot(Cliente *bl, char *canal, char *motivo)
 	//BorraClienteDeCanal(cn, bl);
 	ProtFunc(P_PART_USUARIO_LOCAL)(bl, cn, motivo);
 }
+
+/*!
+ * @desc: Genera una máscara según los 9 tipos de máscara irc.
+ * @params: $mask [in] Máscara completa con nickname, username y host.
+ 	    $tipo [in] Tipo de máscara. Número del 1 al 9.
+ * @cat: IRCd
+ !*/
+ 
 char *TipoMascara(char *mask, int tipo)
 {
 	char *nick, *user, *host, *host2;
@@ -626,6 +669,14 @@ int EsLinkCanal(LinkCanal *link, Canal *cn)
 	return 0;
 }
 #ifdef UDB
+
+/*!
+ * @desc: Propaga un registro UDB por la red.
+ * @params: $item [in] Cadena con formato a propagar.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @cat: IRCd
+ !*/
+ 
 void PropagaRegistro(char *item, ...)
 {
 	va_list vl;
@@ -747,23 +798,47 @@ void LiberaMemoriaCanal(Canal *cn)
 	ircfree(cn->nombre);
 	Free(cn);
 }
-Cliente *CreaBot(char *nick, char *ident, char *host, char *server, char *modos, char *realname)
+
+/*!
+ * @desc: Crea una estructura Cliente para un bot.
+ Esta función se llama durante la creación de los módulos y NO debe ser llamada por los propios módulos.
+ Sólo debe utilizarse cuando se quieran introducir otros bots adicionales.
+ * @params: $nick [in] Nickname del bot.
+ 	    $ident [in] Username del bot.
+ 	    $host [in] Host del bot.
+ 	    $modos [in] Modos de usuario del bot.
+ 	    $realname [in] Realname del bot.
+ * @ret: Devuelve la estructura Cliente creada a partir de estos datos. 
+ * @ver: DesconectaBot
+ * @cat: Modulos
+ !*/
+ 
+Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realname)
 {
 	Cliente *al;
 	static int num = 0;
 	if ((al = BuscaCliente(nick, NULL)) && !EsBot(al))
 		ProtFunc(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
-	al = NuevoCliente(nick, ident, host, NULL, server, host, modos, realname);
-	al->tipo = ES_BOT;
+	al = NuevoCliente(nick, ident, host, NULL, me.nombre, host, modos, realname);
+	al->tipo = TBOT;
 	al->numeric = num;
 	ProtFunc(P_NUEVO_USUARIO)(al);
 	num++;
 	return al;
 }
-void DesconectaBot(char *bot, char *motivo)
+
+/*!
+ * @desc: Desconecta un bot llamado previamente por CreaBot.
+ * @params: $nick [in] Nickname del bot.
+ 	    $motivo [in] Motivo de la desconexión. Si no se precisa, usar NULL.
+ * @ver: CreaBot
+ * @cat: Modulos
+ !*/
+ 
+void DesconectaBot(char *nick, char *motivo)
 {
 	Cliente *bl;
-	if ((bl = BuscaCliente(bot, NULL)) && EsBot(bl))
+	if ((bl = BuscaCliente(nick, NULL)) && EsBot(bl))
 		ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, motivo);
 }
 void ReconectaBot(char *nick)
@@ -773,7 +848,7 @@ void ReconectaBot(char *nick)
 	char *canal;
 	if (!(ex = BuscaModulo(nick, modulos)) || ex->cargado == 0)
 		return;
-	bl = CreaBot(ex->nick, ex->ident, ex->host, me.nombre, ex->modos, ex->realname);
+	bl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
 	{
 		strcpy(tokbuf, ex->residente);
@@ -887,6 +962,16 @@ void ProcesaModosCliente(Cliente *cl, char *modos)
 	else
 		cl->nivel &= ~USER;		
 }
+
+/*!
+ * @desc: Envía un mensaje privado a un cliente desde un bot.
+ * @params: $cl [in] Cliente receptor del mensaje.
+ 	    $bot [in] Cliente bot origen del mensaje.
+ 	    $formato [in] Cadena con formato que se desea enviar.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @cat: IRCd
+ !*/
+ 
 void Responde(Cliente *cl, Cliente *bot, char *formato, ...)
 {
 	va_list vl;
@@ -922,7 +1007,7 @@ int EntraBots()
 	for (aux = modulos; aux; aux = aux->sig)
 	{
 		if (aux->cargado == 2)
-			aux->cl = CreaBot(aux->nick, aux->ident, aux->host, me.nombre, aux->modos, aux->realname);
+			aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
 	}
 	return 0;
 }

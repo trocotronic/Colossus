@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.11 2005-07-13 14:06:27 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.12 2005-09-14 14:45:05 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -218,7 +218,7 @@ char *Mx(char *dominio)
 		return cache;
 	if (VerInfo.dwMajorVersion == 5)
 	{
-		if ((api = LoadLibrary("mx.dll")))
+		if ((api = LoadLibrary("modulos/mx.dll")))
 		{
 			char *(*mx)(char *);
 			char *host;
@@ -253,7 +253,7 @@ char *Mx(char *dominio)
 		{
 			if (!(i =ReadFile(hStdout, host, 512, &btr, NULL)) || !btr)
 				break;
-			Debug("%s %i %i", host, i, btr);
+		//	Debug("%s %i %i", host, i, btr);
 		}
 		/*while ((fgets(buf, BUFSIZE, pp)))
 		{
@@ -324,6 +324,16 @@ void EnviaEmail(char *para, char *de, char *tema, char *cuerpo)
 	if (totalcola == 1)
 		DesencolaSmtp();
 }
+
+/*!
+ * @desc: Envía un email.
+ * @params: $para [in] Email de destino.
+ 	    $tema [in] Tema del mensaje.
+ 	    $cuerpo [in] Cuerpo del mensaje. Es una cadena con formato.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @cat: Programa
+ !*/
+ 
 void Email(char *para, char *tema, char *cuerpo, ...)
 {
 	char buf[BUFSIZE];

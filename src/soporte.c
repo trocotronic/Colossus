@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.4 2005-07-13 14:06:27 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.5 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -217,6 +217,16 @@ int copyfile(char *src, char *dest)
 	setfilemodtime(dest, mtime);
 	return 1;	
 }
+
+/*!
+ * @desc: Reemplaza un caracter por otro.
+ * @params: $str [in/out] Cadena a examinar
+ 	    $orig [in] Caracter original.
+ 	    $rep [in] Caracter final.
+ * @ret: Devuelve la cadena reemplazada.
+ * @cat: Programa
+ !*/
+ 
 char *str_replace(char *str, char orig, char rep)
 {
 	static char rem[BUFSIZE];
@@ -231,6 +241,15 @@ char *str_replace(char *str, char orig, char rep)
 	}
 	return rem;
 }
+
+/*!
+ * @desc: Convierte una cadena a minúsculas.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve la cadena convertida a minúsculas.
+ * @cat: Programa
+ * @ver: strtoupper
+ !*/
+ 
 char *strtolower(char *str)
 {
 	static char tol[BUFSIZE];
@@ -244,6 +263,15 @@ char *strtolower(char *str)
 	}
 	return tol;
 }
+
+/*!
+ * @desc: Convierte una cadena a mayúsculas.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve la cadena convertida a mayúsculas.
+ * @cat: Programa
+ * @ver: strtolower
+ !*/
+ 
 char *strtoupper(char *str)
 {
 	static char tou[BUFSIZE];
@@ -256,4 +284,24 @@ char *strtoupper(char *str)
 		toup++;
 	}
 	return tou;
+}
+
+/*!
+ * @desc: Cuenta el número de apariciones de una cadena dentro de otra.
+ * @params: $pajar [in] Cadena donde buscar.
+ 	    $aguja [in] Cadena que debe buscarse.
+ * @ret: Devuelve el número de veces que aparece <i>aguja</i> dentro del <i>pajar</i>
+ * @cat: Programa
+ !*/
+ 
+int StrCount(char *pajar, char *aguja)
+{
+	char *c = pajar;
+	int tot = 0;
+	while ((c = strstr(c, aguja)))
+	{
+		c++;
+		tot++;
+	}
+	return tot;
 }

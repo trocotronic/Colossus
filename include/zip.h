@@ -1,5 +1,5 @@
 /*
- * $Id: zip.h,v 1.5 2005-07-13 14:06:22 Trocotronic Exp $ 
+ * $Id: zip.h,v 1.6 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -10,8 +10,7 @@
 #define ZIP_MINIMUM     4096
 #define ZIP_MAXIMUM     8192
 
-typedef struct _zlib Zlib;
-struct _zlib
+typedef struct _zlib
 {
 	z_stream *in;
 	z_stream *out;
@@ -20,7 +19,7 @@ struct _zlib
 	int incount;
 	int outcount;
 	int primero;
-};
+}Zlib;
 
 extern char *ZLibDescomprime(Sock *, char *, int *);
 extern char *ZLibComprime(Sock *, char *, int *, int);

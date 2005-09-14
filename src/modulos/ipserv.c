@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.18 2005-07-16 15:25:31 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.19 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -20,6 +20,7 @@ BOTFUNC(ISClones);
 #ifdef UDB
 BOTFUNC(ISOpts);
 BOTFUNC(ISDns);
+BOTFUNC(ISNolines);
 #endif
 
 int ISSigSQL	();
@@ -44,6 +45,7 @@ static bCom ipserv_coms[] = {
 #ifdef UDB
 	{ "set" , ISOpts , ADMINS } ,
 	{ "dns" , ISDns , ADMINS } ,
+	{ "nolines" , ISNolines , OPERS } ,
 #endif
 	{ 0x0 , 0x0 , 0x0 }
 };
@@ -170,6 +172,12 @@ BOTFUNC(ISHelp)
 		FuncResp(ipserv, "SETIPV", "Agrega o elimina una ip virtual.");
 		FuncResp(ipserv, "SETIPV2", "Agrega o elimina una ip virtual de tipo 2.");
 		FuncResp(ipserv, "TEMPHOST", "Cambia el host de un usuario.");
+#ifdef UDB
+		if (IsOper(cl))
+		{
+			FuncResp(ipserv, "NOLINES", "Controla las excepciones para una ip.");
+		}
+#endif
 		if (IsAdmin(cl))
 		{
 			FuncResp(ipserv, "CLONES", "Administra la lista de ips con más clones.");
@@ -241,6 +249,37 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), " ");
 		Responde(cl, CLI(ipserv), "Sintaxis: \00312SET quit_ips|quit_clones|clones valor");
 	}
+	else if (!strcasecmp(param[1], "DNS") && IsAdmin(cl) && ExFunc("DNS"))
+	{
+		Responde(cl, CLI(ipserv), "\00312DNS");
+		Responde(cl, CLI(ipserv), " ");
+		Responde(cl, CLI(ipserv), "Establece una resolución inversa de una ip.");
+		Responde(cl, CLI(ipserv), "Este comando permite hacer una relación a partir de una ip hacia un host.");
+		Responde(cl, CLI(ipserv), "Cuando conecte un usuario al servidor, si su ip está en DNS, se le asignará automáticamente este host relacionado, sin necesidad de resoluciones inversas.");
+		Responde(cl, CLI(ipserv), "NOTA: Debe ser una ip");
+		Responde(cl, CLI(ipserv), "Si no se especifica ningún host, la ip es eliminada de la lista.");
+		Responde(cl, CLI(ipserv), " ");
+		Responde(cl, CLI(ipserv), "Sintaxis: \00312DNS ip [host]");
+	}
+	else if (!strcasecmp(param[1], "NOLINES") && IsOper(cl) && ExFunc("NOLINES"))
+	{
+		Responde(cl, CLI(ipserv), "\00312NOLINES");
+		Responde(cl, CLI(ipserv), " ");
+		Responde(cl, CLI(ipserv), "Gestiona las excepciones para una ip.");
+		Responde(cl, CLI(ipserv), "Con estas excepciones, la conexión es capaz de saltarse restricciones.");
+		Responde(cl, CLI(ipserv), "Excepciones:");
+		Responde(cl, CLI(ipserv), "\00312G\003 - GLines");
+		Responde(cl, CLI(ipserv), "\00312Z\003 - ZLines");
+		Responde(cl, CLI(ipserv), "\00312Q\003 - QLines");
+		Responde(cl, CLI(ipserv), "\00312S\003 - Shuns");
+		Responde(cl, CLI(ipserv), "\00312T\003 - Throttle");
+		Responde(cl, CLI(ipserv), "La ip que tenga estas excepciones será inmune.");
+		Responde(cl, CLI(ipserv), "Sin parámetros, se borran las excepciones para esa ip.");
+		Responde(cl, CLI(ipserv), " ");
+		Responde(cl, CLI(ipserv), "Sintaxis: \00312NOLINES ip [nolines]");
+		Responde(cl, CLI(ipserv), "Ejemplo: \00312NOLINES 127.0.01 GZQST");
+	}
+		
 #endif
 	else
 		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Opción desconocida.");
@@ -391,6 +430,34 @@ BOTFUNC(ISDns)
 	}
 	return 0;
 }
+BOTFUNC(ISNolines)
+{
+	if (params < 2)
+	{
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, "NOLINES ip [G|Z|Q|S|T]");
+		return 1;
+	}
+	if (params == 3)
+	{
+		char *c;
+		for (c = param[2]; !BadPtr(c); c++)
+		{
+			if (!strchr("GZQST", *c))
+			{
+				Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Sólo se aceptan las nolines G|Z|Q|S|T");
+				return 1;
+			}
+		}
+		PropagaRegistro("I::%s::E %s", param[1], param[2]);
+		Responde(cl, CLI(ipserv), "Se han cambiado las excepciones para la ip \00312%s\003 a \00312%s", param[1], param[2]);
+	}
+	else
+	{
+		PropagaRegistro("I::%s::E", param[1]);
+		Responde(cl, CLI(ipserv), "Se han eliminado las excepciones para la ip \00312%s", param[1]);
+	}
+	return 0;
+}
 #endif
 BOTFUNC(ISClones)
 {
@@ -446,7 +513,7 @@ int ISSigNick(Cliente *cl, int nuevo)
 		char *cc;
 		for (aux = clientes; aux; aux = aux->sig)
 		{
-			if (EsServer(aux) || EsBot(aux))
+			if (EsServidor(aux) || EsBot(aux))
 				continue;
 			if (!strcmp(cl->host, aux->host))
 				i++;

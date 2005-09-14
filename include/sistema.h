@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.7 2005-06-29 21:13:45 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.8 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -101,12 +101,35 @@
 #define FALSE (0)
 #define TRUE  (!FALSE)
 
+/*!
+ * @desc: Convierte un caracter a su minúsculo.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve el caracter en minúscula.
+ * @cat: Programa
+ * @sntx: char ToLower(char c)
+ * @ver: ToUpper
+ !*/
 #define ToLower(c) (NTL_tolower_tab[(int)(c)])
+/*!
+ * @desc: Convierte un caracter a su mayúsculo.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve el caracter en mayúscula.
+ * @cat: Programa
+ * @sntx: char ToUpper(char c)
+ * @ver: ToLower
+ !*/
 #define ToUpper(c) (NTL_toupper_tab[(int)(c)])
 #define u_long unsigned long
 #define u_char unsigned char
 #define u_int unsigned int
 #define u_short unsigned short
+/*!
+ * @desc: Decide si un puntero apunta a NULL o su contenido está vacío.
+ * @params: $ptr [in] Puntero a evaluar.
+ * @ret: Devuelve 1 si apunta a NULL o su contenido está vacío; 0, si no.
+ * @cat: Programa
+ * @sntx: int BadPtr(void *ptr)
+ !*/
 #define BadPtr(x) (!(x) || (*(x) == '\0'))
 
 #ifdef NEED_BZERO

@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.2 2005-07-13 15:10:47 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.3 2005-09-14 14:45:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,7 +23,10 @@ int Carga()
 	if (!(mysql = mysql_init(NULL)))
 		return -1;
 	if (!mysql_real_connect(mysql, conf_db->host, conf_db->login, conf_db->pass, NULL, conf_db->puerto, NULL, CLIENT_COMPRESS))
+	{
+		Alerta(FERR, "MySQL no puede conectar\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
 		return -1;
+	}
 	if (mysql_get_server_version(mysql) < 40100)
 	{
 		Alerta(FERR, "Versión incorrecta de SQL. Use almenos la versión 4.1.0");
@@ -78,13 +81,13 @@ SQLRes Query(const char *query)
 #ifdef DEBUG
 	Debug(query);
 #endif
-	//pthread_mutex_lock(&mutex);
 	if (!mysql)
 		return NULL;
+	pthread_mutex_lock(&mutex);
 	if (mysql_query(mysql, query) < 0)
 	{
 		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
-		//pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
 	if ((resultado = mysql_store_result(mysql)))
@@ -92,18 +95,20 @@ SQLRes Query(const char *query)
 		if (!mysql_num_rows(resultado))
 		{
 			mysql_free_result(resultado);
-			//pthread_mutex_unlock(&mutex);
+			pthread_mutex_unlock(&mutex);
 			return NULL;
 		}
-		//pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex);
 		return (SQLRes)resultado;
 	}
-	//pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutex);
 	return NULL;
 }
 void FreeRes(SQLRes res)
 {
+	pthread_mutex_lock(&mutex);
 	mysql_free_result((MYSQL_RES *)res);
+	pthread_mutex_unlock(&mutex);
 }
 int NumRows(SQLRes res)
 {
@@ -115,8 +120,10 @@ SQLRow FetchRow(SQLRes res)
 }
 void Descarga()
 {
+	pthread_mutex_lock(&mutex);
 	mysql_close(mysql);
 	mysql = NULL;
+	pthread_mutex_unlock(&mutex);
 }
 void CargaTablas()
 {
@@ -125,10 +132,10 @@ void CargaTablas()
 	MYSQL_FIELD *field;
 	int i = 0, j;
 	char *tabla;
-	//pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutex);
 	if ((res = mysql_list_tables(mysql, NULL)))
 	{
-		//pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex);
 		while ((row = mysql_fetch_row(res)))
 		{
 			tabla = row[0];
@@ -150,33 +157,15 @@ void CargaTablas()
 		sql->tablas[i][0] = NULL;
 		mysql_free_result(res);
 	}
-	//else
-		//pthread_mutex_unlock(&mutex);
+	else
+		pthread_mutex_unlock(&mutex);
 }
 char *Escapa(const char *item)
 {
 	char *tmp;
 	tmp = (char *)Malloc(sizeof(char) * (strlen(item) * 2 + 1));
-	//pthread_mutex_lock(&mutex);
+	pthread_mutex_lock(&mutex);
 	mysql_real_escape_string(mysql, tmp, item, strlen(item));
-	//pthread_mutex_unlock(&mutex);
+	pthread_mutex_unlock(&mutex);
 	return tmp;
-}
-char *SQLFetchArray(MYSQL_RES *res, const char *campo, MYSQL_ROW row)
-{
-	MYSQL_FIELD *field;
-	int i;
-	if (!res || !row || !campo)
-		return NULL;
-	//pthread_mutex_lock(&mutex);
-	mysql_field_seek(res, 0);
-	for (i = 0; (field = mysql_fetch_field(res)); i++)
-	{
-		if (!strcasecmp(field->name, campo))
-			break;
-	}
-	//pthread_mutex_unlock(&mutex);
-	if (!field)
-		return NULL;
-	return row[i]; 
 }

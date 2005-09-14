@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.15 2005-07-13 14:06:22 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.16 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -11,23 +11,45 @@ extern SOCKFUNC(ProcesaSmtp);
 #define IRCFUNC(x) int (x)(Sock *sck, Cliente *cl, char *parv[], int parc)
 #define MAXMODULOS 256
 #define MAX_FUN 32
-#define ES_CLIENTE 1
-#define ES_SERVER 2
-#define ES_BOT 3
+#define TCLIENTE 1
+#define TSERVIDOR 2
+#define TBOT 3
 
 typedef struct _cliente Cliente;
-typedef struct _canal Canal;
-typedef struct _linkcliente LinkCliente;
 typedef struct _linkcanal LinkCanal;
+typedef struct _linkcliente LinkCliente;
+typedef struct _canal Canal;
 typedef struct _ban Ban;
-struct _cliente
+/*!
+ * @desc: Recurso de cliente. Estos clientes pueden ser usuarios o servidores.
+ * @params: $nombre Nickname.
+ 	    $ident Username.
+ 	    $host Host real de conexión. Puede ser un host o una ip.
+ 	    $rvhost Host real resuelto del cliente. Siempre es un host.
+ 	    $ip Ip. Siempre es una ip.
+ 	    $server Servidor al que está conectado.
+ 	    $vhost Host virtual. Si no tiene, apunta NULL.
+ 	    $mask Máscara. Formato: nickname!username@hostname
+ 	    $vmask Máscara virtual. Formato: nickname!username@vhostname
+ 	    $modos Modos de usuario que utiliza. Están en forma de bits.
+ 	    $sck Recurso de conexión.
+ 	    $tipo Tipo de cliente.
+ 	    $canal Malla de canales.
+ 	    $canales Cantidad de canales en los que está.
+ 	    $numeric Numérico del cliente.
+ 	    $protocol Protocolo que usa.
+ 	    $trio Representación alfanumérica del cliente.
+ 	    $info Realname.
+ * @cat: IRCd
+ * @ver: EsCliente EsServidor EsBot TipoMascara MascaraIrcd
+ !*/
+typedef struct _cliente
 {
-	struct _cliente *sig, *prev, *hsig;
+	Cliente *sig, *prev, *hsig;
 	char *nombre;
 	char *ident;
 	char *host; /* siempre apunta al host del cliente que conecta (puede ser ip o host) */
-	char *rvhost; /* *SIEMPRE* apunta al host resuelto: a host si ya es host o a un strdup del host resuelto 
-			   si no resuelve, apunta a su ip */
+	char *rvhost; /* *SIEMPRE* apunta al host resuelto: a host si ya es host o a un strdup del host resuelto si no resuelve, apunta a su ip */
 	char *ip; /* *SIEMPRE* apunta a la ip */
 	Cliente *server;
 	char *vhost;
@@ -43,26 +65,55 @@ struct _cliente
 	char *trio; /* representación alfanumérica del numeric del cliente (en b64 o lo que sea) */
 	char *info;
 	u_int nivel;
-	/* stop, estas medidas de prevencion no sirven si el usuario reconecta, porque se borran.
-	   aun asi, si un usuario quiere registarr 3 nicks en 5 minutos, tampoco se lo prohibiremos.
-	   para restricciones ya esta el limite de nicks por cabeza. */
-	//char *fundador[MAX_FUN];
-	//u_int fundadores;
-};
-struct _linkcliente
+}Cliente;
+/*!
+ * @desc: Malla de clientes para canales.
+ * @params: $user Cliente
+ 	    $sig Siguiente nodo de la malla.
+ * @cat: IRCd
+ !*/
+typedef struct _linkcliente
 {
 	LinkCliente *sig;
 	Cliente *user;
-};
-struct _ban
+}LinkCliente;
+/*!
+ * @desc: Malla de máscaras para canales.
+ * @params: $sig Siguiente nodo de la malla.
+ 	    $quien Cliente que ha puesto la máscara.
+ 	    $ban Máscara.
+ * @cat: IRCd
+ !*/
+typedef struct _ban
 {
-	struct _ban *sig;
+	Ban *sig;
 	Cliente *quien;
 	char *ban;
-};
-struct _canal
+}Ban;
+/*!
+ * @desc: Recurso de canal.
+ * @params: $nombre Nombre.
+ 	    $modos Modos de canal que utiliza. Están en forma de bits.
+ 	    $topic Topic.
+ 	    $ntopic Cliente que ha puesto el topic.
+ 	    $clave Clave del canal (modo +k).
+ 	    $limite Límite de usuarios del canal (modo +l).
+ 	    $flood Antiflood (modo +f).
+ 	    $link Canal de linkaje (modo +L).
+ 	    $ban Malla de bans (modo +b).
+ 	    $exc Malla de excepciones (modo +e).
+ 	    $owner Malla de owners (modo +q).
+ 	    $admin Malla de admins (modo +a).
+ 	    $op Malla de operadores (modo +o).
+ 	    $half Malla de semioperadores (modo +h).
+ 	    $voz Malla de voces (modo +v).
+ 	    $miembro Malla de usuarios en el canal.
+ 	    $miembros Cantidad de usuarios en el canal.
+ * @cat: IRCd
+ !*/
+typedef struct _canal
 {
-	struct _canal *sig, *hsig, *prev;
+	Canal *sig, *hsig, *prev;
 	char *nombre;
 	u_long modos;
 	char *topic;
@@ -80,15 +131,19 @@ struct _canal
 	LinkCliente *voz;
 	LinkCliente *miembro;
 	u_int miembros;
-};
-struct _linkcanal
+}Canal;
+/*!
+ * @desc: Malla de canales para usuarios.
+ * @params: $sig Siguiente nodo de la malla.
+ 	    $chan Canal.
+ * @cat: IRCd
+ !*/
+typedef struct _linkcanal
 {
 	LinkCanal *sig;
 	Canal *chan;
-};
-typedef struct _comando Comando;
-extern Comando *comandos;
-struct _comando
+}LinkCanal;
+typedef struct _comando
 {
 	struct _comando *sig;
 	char *cmd;
@@ -97,7 +152,8 @@ struct _comando
 	int funciones;
 	int cuando;
 	u_char params;
-};
+}Comando;
+extern Comando *comandos;
 #define MAXPARA 15
 #define HOSTLEN 63
 extern void InsertaComando(char *, char *, IRCFUNC(*), int, u_char);
@@ -116,10 +172,8 @@ extern int BorraCanalDeCliente(Cliente *, Canal *);
 extern int BorraClienteDeCanal(Canal *, Cliente *);
 #define INI 1
 #define FIN 2
-extern void InsertaBan(Cliente *, Canal *, char *);
-extern int BorraBanDeCanal(Canal *, char *);
-extern void inserta_exc_en_canal(Cliente *, Canal *, char *);
-extern int borra_exc_de_canal(Canal *, char *);
+extern void InsertaBan(Cliente *, Ban **, char *);
+extern int BorraBanDeCanal(Ban **, char *);
 extern void InsertaModoCliente(LinkCliente **, Cliente *);
 extern int BorraModoCliente(LinkCliente **, Cliente *);
 extern void GeneraMascara(Cliente *);
@@ -127,12 +181,61 @@ extern void DistribuyeMe(Cliente *, Sock **);
 extern void CargaModulos(void);
 extern MODVAR Cliente me;
 extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[], int, int);
+/*!
+ * @desc: Consulta si un usuario está registrado.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsReg(char *nick)
+ * @ret: Devuelve 1 si está registrado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsReg(x) (x && SQLCogeRegistro(NS_SQL, x, NULL))
+/*!
+ * @desc: Consulta si un usuario está identificado
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsId(char *nick)
+ * @ret: Devuelve 1 si está identificado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsId(x) (x && (x->nivel & USER))
+/*!
+ * @desc: Consulta si un usuario tiene el estado de root.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsRoot(char *nick)
+ * @ret: Devuelve 1 tiene ese estado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsRoot(x) (x && (x->nivel & ROOT) && IsId(x))
+/*!
+ * @desc: Consulta si un usuario tiene el estado de admin.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsAdmin(char *nick)
+ * @ret: Devuelve 1 tiene ese estado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsAdmin(x) (x && ((x->nivel & ADMIN) || IsRoot(x)))
+/*!
+ * @desc: Consulta si un usuario tiene el estado de ircop.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsIrcop(char *nick)
+ * @ret: Devuelve 1 tiene ese estado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsIrcop(x) (x && ((x->nivel & IRCOP) || IsAdmin(x)))
+/*!
+ * @desc: Consulta si un usuario tiene el estado de oper.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsOper(char *nick)
+ * @ret: Devuelve 1 tiene ese estado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsOper(x) (x && ((x->nivel & OPER) || IsIrcop(x)))
+/*!
+ * @desc: Consulta si un usuario tiene el estado de preoper.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsPreo(char *nick)
+ * @ret: Devuelve 1 tiene ese estado; 0, si no.
+ * @cat: IRCd
+ !*/
 #define IsPreo(x) (x && ((x->nivel & PREO) || IsOper(x)))
 extern void ProcesaModosCliente(Cliente *, char *);
 extern char *MascaraIrcd(char *);
@@ -151,9 +254,30 @@ extern char *TipoMascara(char *, int);
 #define SIGN_POST_NICK 10
 #define SIGN_AWAY 11
 #define SIGN_PART 12
-#define EsCliente(x) (x->tipo == ES_CLIENTE)
-#define EsServer(x) (x->tipo == ES_SERVER)
-#define EsBot(x) (x->tipo == ES_BOT)
+/*!
+ * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.
+ * @params: $sck [in] Recurso de conexión.
+ * @sntx: int EsCliente(Sock *sck)
+ * @ret: Devuelve 1 si el recurso es un cliente; 0, si no.
+ * @cat: IRCd
+ !*/
+#define EsCliente(x) (x->tipo == TCLIENTE)
+/*!
+ * @desc: Devuelve 1 si el recurso es un servidor; 0, si no.
+ * @params: $sck [in] Recurso de conexión.
+ * @sntx: int EsServidor(Sock *sck)
+ * @ret: Devuelve 1 si el recurso es un servidor; 0, si no.
+ * @cat: IRCd
+ !*/
+#define EsServidor(x) (x->tipo == TSERVIDOR)
+/*!
+ * @desc: Devuelve 1 si el recurso es un bot; 0, si no.
+ * @params: $sck [in] Recurso de conexión.
+ * @sntx: int EsBot(Sock *sck)
+ * @ret: Devuelve 1 si el recurso es un bot; 0, si no.
+ * @cat: IRCd
+ !*/
+#define EsBot(x) (x->tipo == TBOT)
 extern int EsLink(LinkCliente *, Cliente *);
 extern int EsLinkCanal(LinkCanal *, Canal *);
 #ifdef UDB
@@ -164,7 +288,7 @@ extern MODVAR int intentos;
 extern void LiberaMemoriaCliente(Cliente *);
 extern void LiberaMemoriaCanal(Canal *);
 extern char backupbuf[BUFSIZE];
-extern Cliente *CreaBot(char *, char *, char *, char *, char *, char *);
+extern Cliente *CreaBot(char *, char *, char *, char *, char *);
 extern MODVAR Cliente *clientes;
 extern Sock *SockIrcd, *IrcdEscucha;
 extern SOCKFUNC(EscuchaAbre);
@@ -181,12 +305,11 @@ extern void carga_comandos();
 extern char *Token(char *);
 extern char *Cmd(char *);
 extern MODVAR char parabuf[BUFSIZE], modebuf[BUFSIZE];
-typedef struct _modes mTab;
-struct _modes
+typedef struct _modes
 {
 	u_long mode;
 	char flag;
-};
+}mTab;
 
 extern u_long FlagAModo(char , mTab []);
 extern char ModoAFlag(u_long , mTab []);

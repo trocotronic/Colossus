@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.24 2005-07-16 15:25:30 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.25 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -50,7 +50,7 @@ int CSSigEOS	();
 int CSSigSynch	();
 int CSSigPreNick (Cliente *, char *);
 
-int CSDropachans(Proc *);
+ProcFunc(CSDropachans);
 int CSDropanick(char *);
 int CSBaja(char *, char);
 
@@ -395,7 +395,7 @@ void CSPropagaCanal(char *canal)
 	SQLRes res;
 	SQLRow row;
 	char *modos, *c;
-	res = SQLQuery("SELECT founder,modos,topic from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(canal));
+	res = SQLQuery("SELECT founder,modos,topic,pass from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(canal));
 	if (!res)
 		return;
 	row = SQLFetchRow(res);
@@ -407,6 +407,8 @@ void CSPropagaCanal(char *canal)
 	PropagaRegistro("C::%s::F %s", canal, row[0]);
 	PropagaRegistro("C::%s::M %s", canal, modos);
 	PropagaRegistro("C::%s::T %s", canal, row[2]);
+	PropagaRegistro("C::%s::P %s", canal, row[3]);
+	PropagaRegistro("C::%s::D md5", canal);
 	SQLFreeRes(res);
 }
 #endif
@@ -1555,6 +1557,7 @@ BOTFUNC(CSOpts)
 	}
 	else if (!strcasecmp(param[2], "PASS"))
 	{
+		char *mdpass = MDString(param[3]);
 		if (!CSEsFundador(cl, param[1]) && !IsOper(cl))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
@@ -1565,8 +1568,12 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SET #canal PASS contraseña");
 			return 1;
 		}
-		SQLInserta(CS_SQL, param[1], "pass", MDString(param[3]));
+		SQLInserta(CS_SQL, param[1], "pass", mdpass);
 		Responde(cl, CLI(chanserv), "Contraseña cambiada.");
+#ifdef UDB
+		if (IsChanUDB(param[1]))
+			PropagaRegistro("C::%s::P %s", param[1], mdpass);
+#endif
 	}
 	else if (!strcasecmp(param[2], "FUNDADOR"))
 	{
@@ -2515,7 +2522,7 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
 			modebuf[0] = parabuf[0] = '\0';
 		}
-		if (opts & CS_OPT_SOP)
+		if (opts & CS_OPT_SOP && !EsServidor(cl))
 		{
 			int pars = 1;
 			char *modos, f = ADD;
@@ -3095,7 +3102,7 @@ u_long CSTieneNivel(char *nick, char *canal, u_long flag)
 		return (CS_LEV_ALL & ~CS_LEV_MOD);
 	return 0L;
 }
-int CSDropachans(Proc *proc)
+ProcFunc(CSDropachans)
 {
 	SQLRes res;
 	SQLRow row;

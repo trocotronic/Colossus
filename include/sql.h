@@ -1,11 +1,10 @@
 /*
- * $Id: sql.h,v 1.1 2005-07-13 14:06:23 Trocotronic Exp $ 
+ * $Id: sql.h,v 1.2 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 typedef char ** SQLRow;
 typedef void * SQLRes;
 #define MAX_TAB 128
-#define SQL_DIR "sql/"
 typedef struct _sql {
 	void *recurso;
 #ifdef _WIN32
@@ -18,7 +17,6 @@ typedef struct _sql {
 	void (*FreeRes)(SQLRes);
 	int (*NumRows)(SQLRes);
 	char *(*Escapa)(const char *);
-	int tipo; /* tipo sistema SQL (mysql 1, postgres 2, etc) */
 	int (*Carga)();
 	void (*Descarga)();
 	void (*CargaTablas)();
@@ -29,7 +27,7 @@ typedef struct _sql {
 
 extern MODVAR SQL sql;
 
-extern int CargaSQL();
+extern int CargaSQL(char *);
 extern void LiberaSQL();
 
 extern SQLRes SQLQuery(const char *, ...);

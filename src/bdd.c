@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.29 2005-07-13 14:06:25 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.30 2005-09-14 14:45:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -29,9 +29,9 @@ u_int BDD_SET;
 Udb ***hash;
 Udb *ultimo = NULL;
 #define DaUdb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
-#define atoul(x) strtoul(x, NULL, 10)
-char bloques[128];
-time_t gmts[128];
+char bloques[DBMAX];
+time_t gmts[DBMAX];
+int regs[DBMAX];
 u_int BDD_TOTAL = 0;
 int dataver = 0;
 void SetDataVer(int);
@@ -240,6 +240,7 @@ void BddInit()
 	mkdir(DB_DIR, 0744);
 #endif
 	bzero(bloques, sizeof(bloques));
+	bzero(regs, sizeof(regs));
 	if (!sets)
 		AltaBloque('S', DB_DIR "set.udb", &sets, &BDD_SET);
 	if (!nicks)
@@ -258,7 +259,6 @@ void BddInit()
 	}
 	CargaBloques();
 	//printea(ips, 0);
-	
 }
 void CifraCadenaAHex(char *origen, char *destino, int len)
 {
@@ -328,11 +328,11 @@ int GetDataVer()
 	if (!dataver)
 	{
 		FILE *fp;
-		char ver[2];
+		char ver[3];
 		if (!(fp = fopen(DB_DIR "crcs", "r")))
 			return 0;
 		fseek(fp, 72, SEEK_SET);
-		bzero(ver, 2);
+		bzero(ver, 3);
 		fread(ver, 1, 2, fp);
 		fclose(fp);
 		if (!sscanf(ver, "%X", &dataver))
@@ -343,9 +343,9 @@ int GetDataVer()
 }
 void SetDataVer(int v)
 {
-	char ver[2];
+	char ver[3];
 	FILE *fh;
-	bzero(ver, 2);
+	bzero(ver, 3);
 	if (!(fh = fopen(DB_DIR "crcs", "r+")))
 		return;
 	fseek(fh, 72, SEEK_SET);
@@ -591,6 +591,8 @@ void BorraRegistro(int tipo, Udb *reg, int archivo)
 	}
 	reg->mid = NULL;
 	reg->down = down;
+	if (!reg->up->up)
+		regs[tipo]--;
 	LiberaMemoriaUdb(tipo, reg);
 	if (!up->down)
 		BorraRegistro(tipo, up, archivo);
@@ -605,6 +607,8 @@ Udb *InsertaRegistro(int tipo, Udb *bloque, char *item, char *data_char, u_long 
 	if (!(reg = BuscaBloque(item, bloque)))
 	{
 		reg = CreaRegistro(bloque);
+		if (!bloque->up)
+			regs[tipo]++;
 		if (*(item+1) == '\0')
 		{
 			reg->id = *item;

@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.12 2005-06-29 21:13:55 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.13 2005-09-14 14:45:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -85,11 +85,53 @@ void BorraSock(Sock *sck)
 		ListaSocks.tope--;
 	ListaSocks.abiertos--;
 }
-/*
- * sockopen
- * Abre una conexión
- * Devuelve el puntero al socket abierto
- */
+/*!
+ * @desc: Abre una conexión.
+ Las funciones SOCKFUNC reciben dos parámetros:
+ 	- Sock *sck: Conexión a la que pertenece.
+ 	- char *data: Datos. En algunos casos puede ser NULL.
+ * @params: $host [in] Host o ip a conectar.
+ 	    $puerto [in] Puerto remoto. Si es negativo, indica que se usa bajo SSL.
+ 	    $openfunc [in] Función a ejecutar cuando se complete la conexión. Si no se precisa, usar NULL.
+ 	    El parámetro <i>data</i> apunta a NULL.
+ 	    $readfunc [in] Función a ejecutar cuando se reciban datos a través de la conexión. Si no se precisa, usar NULL.
+ 	    El parámetro <i>data</i> apunta a la cadena de datos. Esta función se ejecuta cada vez que se recibe una cadena que termina con \n.
+ 	    $writefunc [in] Función a ejecutar cuando se escriben datos.
+ 	    El parámetro <i>data</i> apunta a los datos que se escriben.
+ 	    $closefunc [in] Función a ejecutar cuando se cierra la conexión.
+ 	    El parámetro <i>data</i> sólo vale NULL si la desconexión es remota.
+ 	    $add [in] Si vale 1 se añade a la lista de proceso interna de sockets. Se recomienda extremadamente usar 1.
+ * @ret: Devuelve la estructura de conexión en caso que haya podido establecerse con éxito. Devuelve NULL si no ha podido conectar.
+ * @ex:
+ Sock *sck;
+ SOCKFUNC(Abrir)
+ {
+ 	printf("Se ha abierto una conexión con %s.", sck->host);
+ 	return 0;
+}
+ SOCKFUNC(Cerrar)
+ {
+ 	if (data)
+ 		printf("Han desconectado!");
+ 	else
+ 		printf("Has desconectado voluntariamente");
+ 	return 0;
+}
+ SOCKFUNC(Leer)
+ {
+ 	printf("He recibido estos datos: %s", data);
+ 	return 0;
+}
+if (!(sck = SockOpen("1.2.3.4", 123, Abrir, Leer, NULL, Cerrar)))
+{
+	printf("Ha sido imposible conectar");
+	return;
+}
+...
+ * @ver: SockClose SockListen
+ * @cat: Conexiones
+ !*/
+ 
 Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), int add)
 {
 	Sock *sck;
@@ -136,6 +178,34 @@ Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 		InsertaSock(sck);
 	return sck;
 }
+
+/*!
+ * @desc: Pone en escucha un puerto para aceptar conexiones.
+ * @params: $puerto [in] Puerto a escuchar.
+ 	    $openfunc [in] Función a ejecutar cuando se acepte la conexión.
+ 	    $readfunc [in] Función a ejecutar cuando se reciban datos a través de la nueva conexión aceptada.
+ 	    $writefunc [in] Función a ejecutar cuando se escriban datos en ella.
+ 	    $closefunc [in] Función a ejecutar cuando se cierre la nueva conexión aceptada.
+ * @ret: Devuelve el recurso de conexión en escucha. Este recurso NO es el mismo que se le pasa cuando se acepta una nueva conexión.
+ Sólo tiene función puramente de escucha. No puede escribirse o recibir datos a través de ella.
+ En caso de error, devuelve NULL. Posiblemente si ocurre un error se deba a que el puerto ya esté en escucha por otra aplicación.
+ * @ex:
+ Sock *escucha;
+ SOCKFUNC(Abre)
+ {
+ 	printf("Se ha conectado un nuevo cliente con dirección %s:%i", sck->host, sck->puerto);
+ 	return 0;
+}
+if (!(escucha = SockListen(123, Abre, NULL, NULL, NULL)))
+{
+	printf("No se puede escuchar este puerto. Posiblemente esté siendo escuchado por otra aplicacion.");
+	return 0;
+}
+...
+ * @ver: SockOpen SockClose
+ * @cat: Conexiones
+ !*/
+ 
 Sock *SockListen(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
 {
 	Sock *sck;
@@ -235,6 +305,20 @@ Sock *SockAccept(Sock *list, int pres)
 	CompletaConexion(sck);
 	return sck;
 }
+
+/*!
+ * @desc: Escribe datos en una conexión a partir de una lista de argumentos.
+ * @params: $sck [in] Conexión a la que se desean enviar datos.
+ 	    $opts [in] Opciones:
+ 	    	- OPT_CR: Se añade un \r al final de los datos.
+ 	    	- OPT_LF: Se añade un \n al final de los datos.
+ 	    	- OPT_CRLF: Se añade un \r\n al final de los datos.
+ 	    $formato [in] Cadena con formato que se desea enviar.
+ 	    $vl [in] Lista de argumentos.
+ * @ver: SockWrite
+ * @cat: Conexiones
+ !*/
+ 
 void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 {
 	char buf[BUFSIZE], *msg;
@@ -243,7 +327,7 @@ void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 		return;
 	msg = buf;
 	ircvsprintf(buf, formato, vl);
-#ifndef DEBUG
+#ifdef DEBUG
 	Debug("[Enviando: %s]", buf);
 #endif
 	if (sck->writefunc && buf[0])
@@ -260,6 +344,20 @@ void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 #endif
 	Encola(sck->sendQ, msg, len); /* de momento siempre son cadenas */
 }
+
+/*!
+ * @desc: Escribe datos en una conexión a partir de una cadena y argumentos variables.
+ * @params: $sck [in] Conexión a la que se desean enviar datos.
+ 	    $opts [in] Opciones:
+ 	    	- OPT_CR: Se añade un \r al final de los datos.
+ 	    	- OPT_LF: Se añade un \n al final de los datos.
+ 	    	- OPT_CRLF: Se añade un \r\n al final de los datos.
+ 	    $formato [in] Cadena con formato que se desea enviar.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @ver: SockWriteVL
+ * @cat: Conexiones
+ !*/
+ 
 void SockWrite(Sock *sck, int opts, char *formato, ...)
 {
 	va_list vl;
@@ -267,6 +365,17 @@ void SockWrite(Sock *sck, int opts, char *formato, ...)
 	SockWriteVL(sck, opts, formato, vl);
 	va_end(vl);
 }
+
+/*!
+ * @desc: Cierra una conexión.
+ * @params: $sck [in] Conexión a cerrar.
+ 	    $closef [in] Forma de cierre:
+ 	    	- LOCAL: Desconexión local. Recomendado.
+ 	    	- REMOTO: Desconexión remota.
+ * @ver: SockOpen SockListen
+ * @cat: Conexiones
+ !*/
+ 
 void SockClose(Sock *sck, char closef)
 {
 	if (!sck)
@@ -582,7 +691,7 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 					continue;
 				*b = '\0';
 				sck->pos = 0;
-#ifndef DEBUG
+#ifdef DEBUG
 				Debug("[Parseando: %s]", sck->buffer);
 #endif
 				if (sck->readfunc && sck->buffer)

@@ -1,12 +1,8 @@
-; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ
 EXPORTS
-	untea
+	AbreSockIrcd
 
 	AcercaDLG
-
-	ActualizaGMT
-
-	ActualizaHash
 
 	Aleatorio
 
@@ -14,23 +10,7 @@ EXPORTS
 
 	Alerta
 
-	AltaBloque
-
-	AltaHash
-
 	ApagaCrono
-
-	BDD_CHANS
-
-	BDD_IPS
-
-	BDD_NICKS
-
-	BDD_SET
-
-	BDD_TOTAL
-
-	BddInit
 
 	BorraBanDeCanal
 
@@ -48,10 +28,6 @@ EXPORTS
 
 	BorraModoCliente
 
-	BorraRegistro
-
-	BorraRegistroDeHash
-
 	BorraSenyal
 
 	BorraSock
@@ -59,8 +35,6 @@ EXPORTS
 	BorraTKL
 
 	BorraTemporales
-
-	BuscaBloque
 
 	BuscaCanal
 
@@ -78,10 +52,6 @@ EXPORTS
 
 	BuscaModulo
 
-	BuscaRegistro
-
-	BuscaUdbEnHash
-
 	CTXInitCliente
 
 	CTXInitServer
@@ -90,10 +60,6 @@ EXPORTS
 
 	CampoDLG
 
-	CargaBloque
-
-	CargaBloques
-
 	CargaCache
 
 	CargaModulos
@@ -101,8 +67,6 @@ EXPORTS
 	CargaProtocolo
 
 	CargaSQL
-
-	CharAId
 
 	ChkBtCon
 
@@ -115,10 +79,6 @@ EXPORTS
 	CierraSocks
 
 	CierraTodo
-
-	CifraCadenaAHex
-
-	CifraIpTEA
 
 	CifraNick
 
@@ -146,13 +106,7 @@ EXPORTS
 
 	CreaModulo
 
-	CreaRegistro
-
-	DaFormato
-
 	Debug
-
-	DescargaBloque
 
 	DescargaConfiguracion
 
@@ -224,17 +178,9 @@ EXPORTS
 
 	GeneraMascara
 
-	GuardaEnArchivo
-
-	GuardaEnArchivoInv
-
 	HashCanal
 
 	HashCliente
-
-	IdAChar
-
-	IdAUdb
 
 	Info
 
@@ -266,10 +212,6 @@ EXPORTS
 
 	InsertaModoCliente
 
-	InsertaRegistro
-
-	InsertaRegistroEnHash
-
 	InsertaSenyal
 
 	InsertaSock
@@ -277,10 +219,6 @@ EXPORTS
 	InsertaTKL
 
 	IrcdEscucha
-
-	LeeGMT
-
-	LeeHash
 
 	LeeMensaje
 
@@ -308,8 +246,6 @@ EXPORTS
 
 	LiberaMemoriaSmtp
 
-	LiberaMemoriaUdb
-
 	LiberaSQL
 
 	ListaSocks
@@ -336,19 +272,11 @@ EXPORTS
 
 	NTL_toupper_tab
 
-	NivelOperBdd
-
 	NuevoCliente
-
-	ObtieneHash
-
-	Optimiza
 
 	ParseSmtp
 
 	ParseaConfiguracion
-
-	ParseaLinea
 
 	PreguntaCampo
 
@@ -361,8 +289,6 @@ EXPORTS
 	ProcesaSmtp
 
 	ProcesosAuxiliares
-
-	PropagaRegistro
 
 	ReconectaBot
 
@@ -446,6 +372,8 @@ EXPORTS
 
 	SockWriteVL
 
+	StrCount
+
 	SysTray
 
 	TaskBarCreated
@@ -454,11 +382,7 @@ EXPORTS
 
 	Token
 
-	TruncaBloque
-
 	Unifica
-
-	VaciaHash
 
 	VerInfo
 
@@ -490,10 +414,6 @@ EXPORTS
 
 	base64toint
 
-	bloques
-
-	borra_exc_de_canal
-
 	buf
 
 	cTab
@@ -501,8 +421,6 @@ EXPORTS
 	canal_debug
 
 	canales
-
-	chans
 
 	chrcat
 
@@ -538,13 +456,9 @@ EXPORTS
 
 	gettok
 
-	gmts
-
 	hInst
 
 	hThreadPrincipal
-
-	hash
 
 	hwConfError
 
@@ -556,13 +470,9 @@ EXPORTS
 
 	inicio
 
-	inserta_exc_en_canal
-
 	intentos
 
 	inttobase64
-
-	ips
 
 	ircsprintf
 
@@ -590,15 +500,11 @@ EXPORTS
 
 	my_itoa
 
-	nicks
-
 	parabuf
 
 	preg
 
 	print_r
-
-	printea
 
 	procs
 
@@ -611,8 +517,6 @@ EXPORTS
 	senyals
 
 	setfilemodtime
-
-	sets
 
 	spath
 
@@ -640,7 +544,5 @@ EXPORTS
 
 	uTab
 
-	ultimo
-
-	AbreSockIrcd
+	untea
 
