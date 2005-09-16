@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.42 2005-09-16 14:00:34 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.43 2005-09-16 14:01:53 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -136,7 +136,7 @@ typedef struct _dbufdata
  * @ver: SockOpen SockClose SockListen
  * @cat: Conexiones
  !*/
-typedef struct _sock
+struct _sock
 {
 	char *host;
 	int puerto;

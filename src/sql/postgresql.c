@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.5 2005-09-14 14:45:07 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.6 2005-09-16 14:04:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -129,6 +129,12 @@ SQLRes Query(const char *query)
 			break;
 		case PGRES_FATAL_ERROR:
 			Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%s]\n", query, PQerrorMessage(postgres));
+			break;
+		case PGRES_EMPTY_QUERY:
+		case PGRES_COMMAND_OK:
+		case PGRES_COPY_OUT:
+		case PGRES_COPY_IN:
+		case PGRES_NONFATAL_ERROR:
 			break;
 	}
 	PQclear(resultado);

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.17 2005-09-16 14:00:34 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.18 2005-09-16 14:01:53 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -43,7 +43,7 @@ typedef struct _ban Ban;
  * @cat: IRCd
  * @ver: EsCliente EsServidor EsBot TipoMascara MascaraIrcd
  !*/
-typedef struct _cliente
+struct _cliente
 {
 	Cliente *sig, *prev, *hsig;
 	char *nombre;
@@ -72,7 +72,7 @@ typedef struct _cliente
  	    $sig Siguiente nodo de la malla.
  * @cat: IRCd
  !*/
-typedef struct _linkcliente
+struct _linkcliente
 {
 	LinkCliente *sig;
 	Cliente *user;
@@ -84,7 +84,7 @@ typedef struct _linkcliente
  	    $ban Máscara.
  * @cat: IRCd
  !*/
-typedef struct _ban
+struct _ban
 {
 	Ban *sig;
 	Cliente *quien;
@@ -111,7 +111,7 @@ typedef struct _ban
  	    $miembros Cantidad de usuarios en el canal.
  * @cat: IRCd
  !*/
-typedef struct _canal
+struct _canal
 {
 	Canal *sig, *hsig, *prev;
 	char *nombre;
@@ -138,7 +138,7 @@ typedef struct _canal
  	    $chan Canal.
  * @cat: IRCd
  !*/
-typedef struct _linkcanal
+struct _linkcanal
 {
 	LinkCanal *sig;
 	Canal *chan;
