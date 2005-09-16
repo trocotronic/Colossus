@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.4 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.5 2005-09-16 13:48:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -61,6 +61,18 @@ int CargaSQL(char *archivo)
 	}
 	amod++;
 	ircsprintf(tmppdb, "./tmp/%s", amod);
+#endif
+	if (!copyfile(archivo, tmppath))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", archivo);
+		return 2;
+	}
+#ifdef _WIN32
+	if (!copyfile(pdb, tmppdb))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar pdb)", pdb);
+		return 2;
+	}
 #endif
 	if (sql)
 		LiberaSQL();
