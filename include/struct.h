@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.41 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.42 2005-09-16 14:00:34 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -159,7 +159,7 @@ typedef struct _sock
 #ifdef USA_SSL
 	SSL *ssl;
 #endif
-}Sock;
+};
 struct Sockets
 {
 	Sock *socket[MAXSOCKS];

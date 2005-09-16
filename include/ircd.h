@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.16 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.17 2005-09-16 14:00:34 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -65,7 +65,7 @@ typedef struct _cliente
 	char *trio; /* representación alfanumérica del numeric del cliente (en b64 o lo que sea) */
 	char *info;
 	u_int nivel;
-}Cliente;
+};
 /*!
  * @desc: Malla de clientes para canales.
  * @params: $user Cliente
@@ -76,7 +76,7 @@ typedef struct _linkcliente
 {
 	LinkCliente *sig;
 	Cliente *user;
-}LinkCliente;
+};
 /*!
  * @desc: Malla de máscaras para canales.
  * @params: $sig Siguiente nodo de la malla.
@@ -89,7 +89,7 @@ typedef struct _ban
 	Ban *sig;
 	Cliente *quien;
 	char *ban;
-}Ban;
+};
 /*!
  * @desc: Recurso de canal.
  * @params: $nombre Nombre.
@@ -131,7 +131,7 @@ typedef struct _canal
 	LinkCliente *voz;
 	LinkCliente *miembro;
 	u_int miembros;
-}Canal;
+};
 /*!
  * @desc: Malla de canales para usuarios.
  * @params: $sig Siguiente nodo de la malla.
@@ -142,7 +142,7 @@ typedef struct _linkcanal
 {
 	LinkCanal *sig;
 	Canal *chan;
-}LinkCanal;
+};
 typedef struct _comando
 {
 	struct _comando *sig;
