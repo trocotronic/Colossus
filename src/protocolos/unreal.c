@@ -2277,7 +2277,7 @@ int UdbCompruebaOpts(Proc *proc)
 		for (i = 0; i < BDD_TOTAL; i++)
 		{
 			aux = IdAUdb(i);
-			if (gmts[i] + 86400 < hora)
+			if (gmts[i] && gmts[i] + 86400 < hora)
 			{
 				EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, IdAChar(i), hora);
 				Optimiza(aux);
