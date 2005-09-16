@@ -1671,9 +1671,12 @@ IRCFUNC(m_db)
 						EnviaAServidor(":%s DB * DEL %lu %c::%s", me.nombre, bytes, *parv[3], linea);
 					bytes = ftell(fp);
 				}
+				fclose(fp);
 				EnviaAServidor(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
 			}
 		}
+		else if (!bytes && !bloq->data_long)
+			EnviaAServidor(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
 		if (++bloqs == BDD_TOTAL)
 				EnviaAServidor(":%s %s", me.nombre, TOK_EOS);
 	}
