@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.32 2005-09-16 23:28:16 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.33 2005-09-16 23:47:20 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -700,6 +700,8 @@ DLLFUNC int ParseaLinea(int tipo, char *cur, int archivo)
 	if ((ds = strchr(cur, ' ')))
 	{
 		*ds++ = '\0';
+		if (BadPtr(ds))
+			goto borra;
 		if (*ds == CHAR_NUM) /* son todo dígitos */
 		{
 			if (InsertaRegistro(tipo, bloq, cur, NULL, atoul(++ds), archivo))
@@ -713,6 +715,7 @@ DLLFUNC int ParseaLinea(int tipo, char *cur, int archivo)
 	}
 	else
 	{
+		borra:
 		if ((bloq = BuscaBloque(cur, bloq)))
 		{
 			BorraRegistro(tipo, bloq, archivo);
