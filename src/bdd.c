@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.30 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.31 2005-09-16 20:47:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -315,9 +315,8 @@ time_t LeeGMT(int id)
 {
 	FILE *fp;
 	char lee[11];
-	if (!(fp = fopen(DB_DIR "crcs", "r")))
+	if (!(fp = fopen(DB_DIR "crcs", "r")) || fseek(fp, BDD_TOTAL * 8 + 10 * id, SEEK_SET))
 		return 0L;
-	fseek(fp, BDD_TOTAL * 8 + 10 * id, SEEK_SET);
 	bzero(lee, 11);
 	fread(lee, 1, 10, fp);
 	fclose(fp);
