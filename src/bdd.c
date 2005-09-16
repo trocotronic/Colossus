@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.31 2005-09-16 20:47:22 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.32 2005-09-16 23:28:16 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -301,9 +301,8 @@ u_long LeeHash(int id)
 	FILE *fp;
 	u_int hash = 0;
 	char lee[9];
-	if (!(fp = fopen(DB_DIR "crcs", "r")))
+	if (!(fp = fopen(DB_DIR "crcs", "r")) || fseek(fp, 8 * id, SEEK_SET))
 		return 0L;
-	fseek(fp, 8 * id, SEEK_SET);
 	bzero(lee, 9);
 	fread(lee, 1, 8, fp);
 	fclose(fp);
@@ -328,9 +327,8 @@ int GetDataVer()
 	{
 		FILE *fp;
 		char ver[3];
-		if (!(fp = fopen(DB_DIR "crcs", "r")))
+		if (!(fp = fopen(DB_DIR "crcs", "r")) || fseek(fp, 72, SEEK_SET))
 			return 0;
-		fseek(fp, 72, SEEK_SET);
 		bzero(ver, 3);
 		fread(ver, 1, 2, fp);
 		fclose(fp);
@@ -345,9 +343,8 @@ void SetDataVer(int v)
 	char ver[3];
 	FILE *fh;
 	bzero(ver, 3);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, 72, SEEK_SET))
 		return;
-	fseek(fh, 72, SEEK_SET);
 	ircsprintf(ver, "%X", v);
 	fwrite(ver, 1, 2, fh);
 	fclose(fh);
@@ -358,9 +355,8 @@ DLLFUNC int ActualizaGMT(Udb *bloque, time_t gm)
 	FILE *fh;
 	time_t hora = gm ? gm : time(0);
 	bzero(lee, 11);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, BDD_TOTAL * 8 + 10 * ID(bloque), SEEK_SET))
 		return -1;
-	fseek(fh, BDD_TOTAL * 8 + 10 * ID(bloque), SEEK_SET);
 	ircsprintf(lee, "%ul", hora);
 	fwrite(lee, 1, 10, fh);
 	fclose(fh);
@@ -373,10 +369,9 @@ DLLFUNC int ActualizaHash(Udb *bloque)
 	FILE *fh;
 	u_long lo;
 	bzero(lee, 9);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, 8 * ID(bloque), SEEK_SET))
 		return -1;
 	lo = ObtieneHash(bloque);
-	fseek(fh, 8 * ID(bloque), SEEK_SET);
 	ircsprintf(lee, "%X", lo);
 	fwrite(lee, 1, 8, fh);
 	fclose(fh);

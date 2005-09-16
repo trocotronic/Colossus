@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.27 2005-09-14 14:45:03 Trocotronic Exp $
+ * $Id: cambios,v 1.28 2005-09-16 23:28:16 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -307,4 +307,5 @@
 270805263 - Las fechas para la TV empiezan a partir de las 6.00h.
 080905264 - Adaptado el TvServ al nuevo formato (hacía 3 años que no lo cambiaban... y tenían que hacerlo ahora).
 140905265 - Se cambia la carga del motor SQL.
-150905266 - *** Octava release pública: 1.2 ***
+170905266 - Arreglado un fallo de propagación.
+170905267 - Arreglado un fallo de fseek.
