@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.52 2005-09-17 13:16:30 Trocotronic Exp $ 
+ * $Id: main.c,v 1.53 2005-09-17 13:25:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -359,13 +359,13 @@ int main(int argc, char *argv[])
 	(void)sigaddset(&act.sa_mask, SIGTERM);
 	(void)sigaction(SIGTERM, &act, NULL);
 	act.sa_handler = AbreSockIrcd;
-	(void)sigaddset(&act.sa_mask, SIGWINCH);
+	(void)sigaddset(&act.sa_mask, SIGPIPE);
 	(void)sigaction(SIGWINCH, &act, NULL);
   #elif BSD_RELIABLE_SIGNALS
 	signal(SIGHUP, Refresca);
 	signal(SIGTERM, CierraColossus);
 	signal(SIGINT, Reinicia);
-	signal(SIGWINCH, AbreSockIrcd);
+	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
 #ifndef _WIN32
