@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.27 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.28 2005-09-17 11:51:04 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -906,9 +906,9 @@ BOTFUNC(NSInfo)
 	{
 		CsRegistros *regs;
 		int i;
+		Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
 		if ((regs = busca_cregistro(param[1])))
 		{
-			Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
 			for (i = 0; i < regs->subs; i++)
 				Responde(cl, CLI(nickserv), "Canal: \00312%s \003flags: \00312+%s\003 (\00312%lu\003)", regs->sub[i].canal, 
 					ModosAFlags(regs->sub[i].flags, cFlags, NULL),
