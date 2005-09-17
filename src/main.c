@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.51 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: main.c,v 1.52 2005-09-17 13:16:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -347,7 +347,8 @@ int main(int argc, char *argv[])
 #else
   #ifdef POSIX_SIGNALS
   	struct sigaction act;
-	act.sa_handler = Refresca;
+	act.sa_handler = SIG_IGN;
+	act.sa_flags = 0;
 	(void)sigemptyset(&act.sa_mask);
 	(void)sigaddset(&act.sa_mask, SIGHUP);
 	(void)sigaction(SIGHUP, &act, NULL);
@@ -357,10 +358,14 @@ int main(int argc, char *argv[])
 	act.sa_handler = CierraColossus;
 	(void)sigaddset(&act.sa_mask, SIGTERM);
 	(void)sigaction(SIGTERM, &act, NULL);
+	act.sa_handler = AbreSockIrcd;
+	(void)sigaddset(&act.sa_mask, SIGWINCH);
+	(void)sigaction(SIGWINCH, &act, NULL);
   #elif BSD_RELIABLE_SIGNALS
 	signal(SIGHUP, Refresca);
 	signal(SIGTERM, CierraColossus);
 	signal(SIGINT, Reinicia);
+	signal(SIGWINCH, AbreSockIrcd);
   #endif
 #endif
 #ifndef _WIN32
