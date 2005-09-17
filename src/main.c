@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.55 2005-09-17 14:31:36 Trocotronic Exp $ 
+ * $Id: main.c,v 1.56 2005-09-17 14:41:05 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -249,6 +249,7 @@ int main(int argc, char *argv[])
 #ifdef FORCE_CORE
 	struct rlimit corelim;
 #endif
+	char nofork = 0;
 	iniciado = time(0);
 	ListaSocks.abiertos = ListaSocks.tope = 0;
 	for (i = 0; i < MAXSOCKS; i++)
@@ -283,7 +284,7 @@ int main(int argc, char *argv[])
 		switch (flag) 
 		{
 		  case 'F':
-			  bootopt |= BOOT_NOFORK;
+			  nofork = 1;
 			  break;
 		  case 's':
 			  (void)printf("sizeof(Cliente) == %li\n", (long)sizeof(Cliente));
@@ -407,7 +408,7 @@ int main(int argc, char *argv[])
   #endif
 #endif
 #ifndef _WIN32
-	if (fork())
+	if (!nofork && fork())
 		exit(0);
 	EscribePid();
 	AbreSockIrcd();

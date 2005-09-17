@@ -324,4 +324,4 @@ IRCDLIBS="$IRCDLIBS -lresolv "
 esac
 AC_SUBST(IRCDLIBS)
 AC_OUTPUT(Makefile src/modulos/Makefile colossus src/protocolos/Makefile src/sql/Makefile)
-chmod 0700 Colossus
+chmod 0700 colossus
