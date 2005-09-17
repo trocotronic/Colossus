@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.7 2005-07-13 15:23:05 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.8 2005-09-17 14:31:36 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -55,7 +55,7 @@ cleandir: clean
 
 install: all
 	$(INSTALL) -m 0700 -d ~/Colossus
-	$(INSTALL) -m 0700 src/colossus ~/Colossus/colossus
+	$(INSTALL) -m 0700 src/colossus ~/Colossus/servicios
 	$(TOUCH) ~/Colossus/colossus.conf
 	chmod 0600 ~/Colossus/colossus.conf
 	$(INSTALL) -m 0700 -d ~/Colossus/modulos

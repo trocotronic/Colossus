@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.54 2005-09-17 13:29:25 Trocotronic Exp $ 
+ * $Id: main.c,v 1.55 2005-09-17 14:31:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -246,22 +246,8 @@ int main(int argc, char *argv[])
 {
 	Conf config;
 	int i;
-#ifndef _WIN32
-  #ifdef FORCE_CORE
+#ifdef FORCE_CORE
 	struct rlimit corelim;
-  #endif
-  	for (i = 0; logo[i] != 0; i++)
-		fprintf(stderr, "%c", logo[i]);
-	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
-  #ifdef UDB
-	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
-  #endif
-  #ifdef USA_ZLIB
-	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
-  #endif
-  #ifdef USA_SSL
-	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
-  #endif
 #endif
 	iniciado = time(0);
 	ListaSocks.abiertos = ListaSocks.tope = 0;
@@ -275,13 +261,65 @@ int main(int argc, char *argv[])
 	mkdir("tmp", 0744);
 	getcwd(spath, sizeof(spath));
 #endif	
-#if !defined(_WIN32) && defined(FORCE_CORE)
+#ifdef FORCE_CORE
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
 	if (setrlimit(RLIMIT_CORE, &corelim))
 		printf("unlimit core size failed; errno = %d\n", errno);
 #endif
+	/* rutina del unreal */
+	while (--argc > 0 && (*++argv)[0] == '-') 
+	{
+		char *p = argv[0] + 1;
+		int  flag = *p++;
+		if (flag == '\0' || *p == '\0') {
+			if (argc > 1 && argv[1][0] != '-') 
+			{
+				p = *++argv;
+				argc--;
+			} 
+			else
+				p = "";
+		}
+		switch (flag) 
+		{
+		  case 'F':
+			  bootopt |= BOOT_NOFORK;
+			  break;
+		  case 's':
+			  (void)printf("sizeof(Cliente) == %li\n", (long)sizeof(Cliente));
+			  (void)printf("sizeof(Canal) == %li\n", (long)sizeof(Cliente));
+			  (void)printf("sizeof(Sock) == %li\n", (long)sizeof(Sock));
+			  (void)printf("sizeof(Modulo) == %li\n", (long)sizeof(Modulo));
+			  (void)printf("sizeof(SQL) == %li\n", (long)sizeof(SQL));
+			  (void)printf("sizeof(Protocolo) == %li\n", (long)sizeof(Protocolo));
+			  exit(0);
+			  break;
+#ifndef _WIN32
+		  case 'v':
+			  (void)printf(COLOSSUS_VERNUM);
+#else
+		  case 'v':
+			  MessageBox(NULL, version, "Versión Colossus/Win32", MB_OK);
+#endif
+			  exit(0);
+		}
+	}
 #if !defined(_WIN32) && defined(DEFAULT_PERMISSIONS)
 	chmod(CPATH, DEFAULT_PERMISSIONS);
+#endif
+#ifndef _WIN32
+  	for (i = 0; logo[i] != 0; i++)
+		fprintf(stderr, "%c", logo[i]);
+	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
+  #ifdef UDB
+	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
+  #endif
+  #ifdef USA_ZLIB
+	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
+  #endif
+  #ifdef USA_SSL
+	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
+  #endif
 #endif
 	/* las primeras señales deben ser del núcleo */
 	InsertaSenyal(SIGN_SYNCH, EntraBots);
