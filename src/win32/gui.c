@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.10 2005-07-16 15:25:36 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.11 2005-09-17 13:16:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -193,6 +193,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					SetMenuItemInfo(hTray, IDM_CONFIG, MF_BYCOMMAND, &mitem);
 					hHelp = CreatePopupMenu();
 					AppendMenu(hHelp, MF_STRING, IDM_AYUDA, "&Ayuda");
+					AppendMenu(hHelp, MF_STRING, IDM_LOG, "Ver &log");
 					AppendMenu(hHelp, MF_SEPARATOR, 0, NULL);
 					AppendMenu(hHelp, MF_STRING, IDM_ACERCA, "Acerca &de Colossus...");
 					mitem.hSubMenu = hHelp;
@@ -210,7 +211,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 			{
 				unsigned char path[MAX_PATH];
 				GetMenuString(hConfig, LOWORD(wParam), path, MAX_PATH, MF_BYCOMMAND);
-				ShellExecute(NULL, "open", path, NULL, NULL, SW_MAXIMIZE);
+				ShellExecute(NULL, "open", "notepad", path, NULL, SW_MAXIMIZE);
 				break;
 			}
 			switch(LOWORD(wParam))
@@ -253,6 +254,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					DestroyMenu(hHelp);
 					hHelp = CreatePopupMenu();
 					AppendMenu(hHelp, MF_STRING, IDM_AYUDA, "&Ayuda");
+					AppendMenu(hHelp, MF_STRING, IDM_LOG, "Ver &log");
 					AppendMenu(hHelp, MF_SEPARATOR, 0, NULL);
 					AppendMenu(hHelp, MF_STRING, IDM_ACERCA, "Acerca &de Colossus...");
 					TrackPopupMenu(hHelp, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
@@ -261,6 +263,9 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				case IDM_AYUDA:
 					ShellExecute(NULL, "open", "colossusdoc.html", NULL, NULL, SW_MAXIMIZE);
+					break;
+				case IDM_LOG:
+					ShellExecute(NULL, "open", "notepad", "colossus.log", NULL, SW_MAXIMIZE);
 					break;
 				case IDM_ACERCA:
 					DialogBox(hInst, "Acerca", hDlg, (DLGPROC)AcercaDLG);

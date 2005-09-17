@@ -1,5 +1,5 @@
 /*
- * $Id: resource.h,v 1.4 2005-07-13 14:06:36 Trocotronic Exp $ 
+ * $Id: resource.h,v 1.5 2005-09-17 13:16:14 Trocotronic Exp $ 
  */
 
 //{{NO_DEPENDENCIES}}
@@ -34,6 +34,7 @@
 #define IDM_CONFIG                      40033
 #define IDM_AYUDA                       40034
 #define IDM_ACERCA			40035
+#define IDM_LOG				40036
 #define IDC_STATIC                      -1
 
 // Next default values for new objects
@@ -42,7 +43,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        134
-#define _APS_NEXT_COMMAND_VALUE         40036
+#define _APS_NEXT_COMMAND_VALUE         40037
 #define _APS_NEXT_CONTROL_VALUE         1118
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
