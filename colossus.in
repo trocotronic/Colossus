@@ -31,6 +31,8 @@ elif [ "$1" = "restart" ] ; then
 elif [ "$1" = "conectar" ] ; then
 	echo "Conectando con el servidor"
 	kill -13 `cat $PID_FILE`
+elif [ "$1" = "version" ] ; then
+	$BINDIR -v
 elif [ "$1" = "backtrace" ] ; then
 
 	if [ -d "modulos" ]; then
