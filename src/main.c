@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.57 2005-09-17 14:47:41 Trocotronic Exp $ 
+ * $Id: main.c,v 1.58 2005-09-22 17:50:35 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 			  (void)printf("%s\n", COLOSSUS_VERNUM);
 #else
 		  case 'v':
-			  MessageBox(NULL, version, "Versión Colossus/Win32", MB_OK);
+			  MessageBox(NULL, COLOSSUS_VERSION, "Versión Colossus/Win32", MB_OK);
 #endif
 			  exit(0);
 		}
