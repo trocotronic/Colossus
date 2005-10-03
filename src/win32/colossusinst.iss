@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.8 2005-09-14 14:45:07 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.9 2005-10-03 17:03:30 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -37,8 +37,16 @@ Source: "..\..\cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignor
 Source: "..\..\proximamente"; DestDir: "{app}"; DestName: "proximamente.txt"; Flags: ignoreversion
 Source: "..\..\pthreadVC2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\..\modulos\*.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
-Source: "..\..\modulos\*.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\chanserv.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\nickserv.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\operserv.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\memoserv.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\ipserv.dll"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\chanserv.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\nickserv.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\operserv.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\memoserv.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
+Source: "..\..\modulos\ipserv.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.dll"; DestDir: "{app}\protocolos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.pdb"; DestDir: "{app}\protocolos"; Flags: ignoreversion
 Source: "..\..\sql\*.dll"; DestDir: "{app}\sql"; Flags: ignoreversion
