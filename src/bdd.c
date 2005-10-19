@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.33 2005-09-16 23:47:20 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.34 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -36,18 +36,23 @@ u_int BDD_TOTAL = 0;
 int dataver = 0;
 void SetDataVer(int);
 int GetDataVer();
-void AltaBloque(char letra, char *ruta, Udb **reg, u_int *id)
+Udb *AltaBloque(char letra, char *ruta, u_int *id)
 {
-	static u_int ids = 0;
-	DaUdb(*reg);
-	(*reg)->id |= (u_int)letra;
-	(*reg)->id |= (ids << 8);
-	(*reg)->item = ruta;
-	(*reg)->mid = ultimo;
+	int ids = 0;
+	Udb *reg;
+	if (ultimo)
+		ids = ultimo->id + 1;
+	reg = (Udb *)Malloc(sizeof(Udb));
+	reg->data_char = (char *)NULL;
+	reg->data_long = 0L;
+	reg->id = ids;
+	reg->item = ruta;
+	reg->mid = ultimo;
+	reg->hsig = reg->up = reg->down = (Udb *)NULL;
 	*id = ids;
-	ultimo = *reg;
+	ultimo = reg;
 	bloques[BDD_TOTAL++] = letra;
-	ids++;
+	return reg;
 }
 void VaciaHash(int id)
 {
@@ -62,7 +67,7 @@ void AltaHash()
 	hash = (Udb ***)Malloc(sizeof(Udb **) * BDD_TOTAL);
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		id = ID(reg);
+		id = reg->id;
 		hash[id] = (Udb **)Malloc(sizeof(Udb *) * 2048);
 		VaciaHash(id);
 		gmts[id] = 0L;
@@ -242,13 +247,13 @@ void BddInit()
 	bzero(bloques, sizeof(bloques));
 	bzero(regs, sizeof(regs));
 	if (!sets)
-		AltaBloque('S', DB_DIR "set.udb", &sets, &BDD_SET);
+		sets = AltaBloque('S', DB_DIR "set.udb", &BDD_SET);
 	if (!nicks)
-		AltaBloque('N', DB_DIR "nicks.udb", &nicks, &BDD_NICKS);
+		nicks = AltaBloque('N', DB_DIR "nicks.udb", &BDD_NICKS);
 	if (!chans)
-		AltaBloque('C', DB_DIR "canales.udb", &chans, &BDD_CHANS);
+		chans = AltaBloque('C', DB_DIR "canales.udb", &BDD_CHANS);
 	if (!ips)
-		AltaBloque('I', DB_DIR "ips.udb", &ips, &BDD_IPS);
+		ips = AltaBloque('I', DB_DIR "ips.udb", &BDD_IPS);
 	AltaHash();
 	if ((fh = fopen(DB_DIR "crcs", "a")))
 		fclose(fh);
@@ -355,12 +360,12 @@ DLLFUNC int ActualizaGMT(Udb *bloque, time_t gm)
 	FILE *fh;
 	time_t hora = gm ? gm : time(0);
 	bzero(lee, 11);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, BDD_TOTAL * 8 + 10 * ID(bloque), SEEK_SET))
+	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, BDD_TOTAL * 8 + 10 * bloque->id, SEEK_SET))
 		return -1;
 	ircsprintf(lee, "%ul", hora);
 	fwrite(lee, 1, 10, fh);
 	fclose(fh);
-	gmts[ID(bloque)] = hora;
+	gmts[bloque->id] = hora;
 	return 0;
 }
 DLLFUNC int ActualizaHash(Udb *bloque)
@@ -369,7 +374,7 @@ DLLFUNC int ActualizaHash(Udb *bloque)
 	FILE *fh;
 	u_long lo;
 	bzero(lee, 9);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, 8 * ID(bloque), SEEK_SET))
+	if (!(fh = fopen(DB_DIR "crcs", "r+")) || fseek(fh, 8 * bloque->id, SEEK_SET))
 		return -1;
 	lo = ObtieneHash(bloque);
 	ircsprintf(lee, "%X", lo);
@@ -383,31 +388,10 @@ DLLFUNC Udb *IdAUdb(int id)
 	Udb *reg;
 	for (reg = ultimo; reg; reg = reg->mid)
 	{
-		if ((LETRA(reg) == id) || (ID(reg) == id))
+		if (bloques[reg->id] == id || reg->id == id)
 			return reg;
 	}
 	return NULL;
-}
-/* devuelve su id a partir de una letra */
-DLLFUNC u_int CharAId(char tipo)
-{
-	Udb *reg;
-	for (reg = ultimo; reg; reg = reg->mid)
-	{
-		if (LETRA(reg) == tipo)
-			return ID(reg);
-	}
-	return tipo;
-}
-u_char IdAChar(int tipo)
-{
-	Udb *reg;
-	for (reg = ultimo; reg; reg = reg->mid)
-	{
-		if (ID(reg) == tipo)
-			return LETRA(reg);
-	}
-	return tipo;
 }
 void InsertaRegistroEnHash(Udb *registro, int donde, char *clave)
 {
@@ -451,7 +435,6 @@ DLLFUNC Udb *BuscaRegistro(int tipo, char *clave)
 {
 	if (!clave)
 		return NULL;
-	tipo = CharAId(tipo);
 	return BuscaUdbEnHash(clave, tipo, NULL);
 }
 DLLFUNC Udb *BuscaBloque(char *clave, Udb *bloque)
@@ -559,7 +542,6 @@ void BorraRegistro(int tipo, Udb *reg, int archivo)
 	Udb *aux, *down, *prev = NULL, *up;
 	if (!(up = reg->up)) /* estamos arriba de todo */
 		return;
-	tipo = CharAId(tipo);
 	aux = IdAUdb(tipo);
 	BorraRegistroDeHash(reg, tipo, reg->item);
 	if (reg->data_char)
@@ -596,7 +578,6 @@ Udb *InsertaRegistro(int tipo, Udb *bloque, char *item, char *data_char, u_long 
 	Udb *reg, *root;
 	if (!bloque || !item)
 		return NULL;
-	tipo = CharAId(tipo);
 	root = IdAUdb(tipo);
 	if (!(reg = BuscaBloque(item, bloque)))
 	{
@@ -729,20 +710,19 @@ DLLFUNC void CargaBloque(int tipo)
 {
 	Udb *root;
 	u_long lee, obtiene, trunca = 0L, bytes = 0L;
-	char bloque, linea[BUFSIZE], *c;
+	char linea[BUFSIZE], *c;
 	FILE *fp;
-	bloque = IdAChar(tipo);
 	root = IdAUdb(tipo);
 	if ((lee = LeeHash(tipo)) != (obtiene = ObtieneHash(root)))
 	{
-		Info("El bloque %c está corrupto (%lu != %lu)", bloque, lee, obtiene);
+		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
 		if ((fp = fopen(root->item, "wb")))
 		{
 			fclose(fp);
 			ActualizaHash(root);
 		}
 		if (linkado)
-			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloque);
+			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloques[root->id]);
 		return;
 	}
 	gmts[tipo] = LeeGMT(tipo);
@@ -848,8 +828,6 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 		fclose(fp);
 		if ((fp = fopen(bloq->item, "wb")))
 		{
-			int id;
-			id = CharAId(bdd);
 			if (fwrite(contenido, 1, bytes, fp) != bytes)
 			{
 				fclose(fp);
@@ -858,8 +836,8 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 			}
 			fclose(fp);
 			ActualizaHash(bloq);
-			DescargaBloque(id);
-			CargaBloque(id);
+			DescargaBloque(bloq->id);
+			CargaBloque(bloq->id);
 		}
 		else
 		{
@@ -879,12 +857,11 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 DLLFUNC int Optimiza(Udb *bloq)
 {
 	FILE *fp;
-	int id = ID(bloq);
 	if ((fp = fopen(bloq->item, "wb")))
 		fclose(fp);
-	GuardaEnArchivoInv(bloq->down, id);
-	DescargaBloque(id);
-	CargaBloque(id);
+	GuardaEnArchivoInv(bloq->down, bloq->id);
+	DescargaBloque(bloq->id);
+	CargaBloque(bloq->id);
 	return 0;
 }
 #endif

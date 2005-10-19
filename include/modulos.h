@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.11 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.12 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 /* Los rangos se definen por bits. A cada bit le corresponde un estado.
@@ -34,6 +34,24 @@
 #define ROOTS (BOT | ROOT)
 #define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params)
 typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int);
+
+/*!
+ * @desc: Recurso de comandos para módulos.
+ * @params: $com Nombre del comando.
+ 	    $func Función a ejecutar con el comando asociado.
+ 	    $nivel Nivel del cliente obligatorio para poder ejecutar esta función. Valores posibles:
+ 	    	- TODOS: todos los usuarios pueden ejecutarlo.
+ 	    	- USER: sólo usuarios registrados (+r).
+ 	    	- PREO: sólo preopers.
+ 	    	- OPER: sólo operadores (+h).
+ 	    	- DEVEL: sólo devels.
+ 	    	- IRCOP: sólo ircops (+o).
+ 	    	- ADMIN: sólo admins (+a).
+ 	    	- ROOT: sólo roots.
+ * @cat: Modulos
+ * @ver: ProcesaComsMod
+ !*/
+ 
 typedef struct _bcom
 {
 	char *com;
@@ -47,6 +65,24 @@ typedef struct _info
 	char *autor;
 	char *email;
 }ModInfo, ProtInfo;
+/*!
+ * @desc: Recurso de módulo. Se utiliza durante la carga del mismo.
+ * @params: $hmod Puntero a la librería física cargada por el sistema operativo.
+ 	    $archivo Ruta de la librería original.
+ 	    $tmparchivo Ruta del archivo temporal en uso.
+ 	    $nick Apodo asociado.
+ 	    $ident Ident asociada.
+ 	    $realname Nombre asociado.
+ 	    $host Host asociado.
+ 	    $residente Lista de canales en lo que está residente.
+ 	    $modos Modos de usuario que utiliza.
+ 	    $mascara Máscara completa.
+ 	    $id Id o número de identificación.
+ 	    $config Ruta a su archivo de configuración.
+ 	    $cl Recurso de cliente asociado.
+ 	    <b>Todos los demás miembros no deben usarse.</b>
+ * @cat: Modulos
+ !*/
 typedef struct _mod
 {
 	struct _mod *sig;
@@ -65,15 +101,15 @@ typedef struct _mod
 	char *modos;
 	char *mascara;
 	int id;
+	char *config;
+	Cliente *cl;
 	char cargado;
 	ModInfo *info;
 	bCom *comando[MAX_COMS];
 	int comandos;
 	int (*carga)(struct _mod *);
 	int (*descarga)(struct _mod *);
-	char *config;
 	void *conf; /* es un puntero a su estructura, según lo defina. habrá que hacer cast *CADA VEZ* */
-	Cliente *cl;
 }Modulo;
 
 extern MODVAR Modulo *modulos;
@@ -133,3 +169,5 @@ extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
  #define MOD_CARGA(name) name##_Carga
  #define MOD_DESCARGA(name) name##_Descarga
 #endif
+
+extern void ProcesaComsMod(Conf *, Modulo *, bCom *);

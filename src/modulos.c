@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.12 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.13 2005-10-19 16:30:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -209,4 +209,34 @@ Mod_Func BuscaFuncion(Modulo *mod, char *nombre, int *nivel)
 	if (nivel)
 		*nivel = 0;
 	return NULL;
+}
+
+/*!
+ * @desc: Parsea un bloque de configuración correspondiente a funciones cargadas del módulo.
+ * @params: $config [in] Rama o bloque de funciones del archivo de configuración. Llamado por ParseaConfiguracion.
+ 	    $mod [in] Recurso del módulo a cargar estos comandos.
+ 	    $coms [in] Lista completa de los comandos soportados por el módulo.
+ * @cat: Modulos
+ * @ver: ParseaConfiguracion
+ !*/
+ 
+void ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
+{
+	int p;
+	bCom *cm;
+	for (p = 0; p < config->secciones; p++)
+	{
+		cm = &coms[0];
+		while (cm->com != 0x0)
+		{
+			if (!strcasecmp(cm->com, config->seccion[p]->item))
+			{
+				mod->comando[mod->comandos++] = cm;
+				break;
+			}
+			cm++;
+		}
+		if (cm->com == 0x0)
+			Error("[%s:%i] No se ha encontrado la funcion %s", config->archivo, config->seccion[p]->linea, config->seccion[p]->item);
+	}
 }

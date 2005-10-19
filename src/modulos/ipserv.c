@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.19 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.20 2005-10-19 16:30:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -118,29 +118,11 @@ int ISTest(Conf *config, int *errores)
 }
 void ISSet(Conf *config, Modulo *mod)
 {
-	int i, p;
-	bCom *is;
+	int i;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				is = &ipserv_coms[0];
-				while (is->com != 0x0)
-				{
-					if (!strcasecmp(is->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = is;
-						break;
-					}
-					is++;
-				}
-				if (is->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-		}
-		mod->comando[mod->comandos] = NULL;
+			ProcesaComsMod(config->seccion[i], mod, ipserv_coms);
 #ifndef UDB
 		if (!strcmp(config->seccion[i]->item, "clones"))
 			ipserv.clones = atoi(config->seccion[i]->data);
@@ -385,7 +367,7 @@ BOTFUNC(ISOpts)
 	}
 	else if (!strcasecmp(param[1], "QUIT_CLONES"))
 	{
-		PropagaRegistro("S::L %s", Unifica(param, params, 2, -1));
+		PropagaRegistro("S::Q %s", Unifica(param, params, 2, -1));
 		Responde(cl, CLI(ipserv), "Se ha cambiado el mensaje de desconexión al rebasar el número de clones permitidos en la red.");
 	}
 	else if (!strcasecmp(param[1], "CLONES"))
@@ -396,7 +378,7 @@ BOTFUNC(ISOpts)
 			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "El número de clones debe estar entre 1 y 1024.");
 			return 1;
 		}
-		PropagaRegistro("S::C %c%s", CHAR_NUM, param[2]);
+		PropagaRegistro("S::S %c%s", CHAR_NUM, param[2]);
 		Responde(cl, CLI(ipserv), "El número de clones permitidos en la red se ha cambiado a \00312%s", param[2]);
 	}
 	else
@@ -480,7 +462,7 @@ BOTFUNC(ISClones)
 		}
 		param[1]++;
 #ifdef UDB
-		PropagaRegistro("I::%s::C %c%s", param[1], CHAR_NUM, param[2]);
+		PropagaRegistro("I::%s::S %c%s", param[1], CHAR_NUM, param[2]);
 #else
 		SQLInserta(IS_CLONS, param[1], "clones", param[2]);
 #endif
@@ -490,7 +472,7 @@ BOTFUNC(ISClones)
 	{
 		param[1]++;
 #ifdef UDB
-		PropagaRegistro("I::%s::C", param[1]);
+		PropagaRegistro("I::%s::S", param[1]);
 #else
 		SQLBorra(IS_CLONS, param[1]);
 #endif
@@ -687,7 +669,7 @@ int ISProcIps(Proc *proc)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item from %s%s where (caduca != '0' AND caduca < %i) OFFSET %i LIMIT 30", PREFIJO, IS_SQL, time(0), proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item from %s%s where (caduca != '0' AND caduca < %i) LIMIT 30 OFFSET %i", PREFIJO, IS_SQL, time(0), proc->proc)) || !SQLNumRows(res))
 		{
 			if (proc->time) /* no es la primera llamada de ese proc */
 				ISCompruebaCifrado();

@@ -8684,7 +8684,7 @@ IRCDLIBS="$IRCDLIBS -lresolv "
 ;;
 esac
 
-                                                  ac_config_files="$ac_config_files Makefile src/modulos/Makefile Colossus src/protocolos/Makefile src/sql/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile src/modulos/Makefile colossus src/protocolos/Makefile src/sql/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -9211,7 +9211,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "src/modulos/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/modulos/Makefile" ;;
-  "Colossus" ) CONFIG_FILES="$CONFIG_FILES Colossus" ;;
+  "colossus" ) CONFIG_FILES="$CONFIG_FILES colossus" ;;
   "src/protocolos/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/protocolos/Makefile" ;;
   "src/sql/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/sql/Makefile" ;;
   "include/setup.h" ) CONFIG_HEADERS="$CONFIG_HEADERS include/setup.h" ;;
@@ -9809,4 +9809,4 @@ if test "$no_create" != yes; then
   $ac_cs_success || { (exit 1); exit 1; }
 fi
 
-chmod 0700 Colossus
+chmod 0700 colossus

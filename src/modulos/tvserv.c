@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.5 2005-09-14 14:45:07 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.6 2005-10-19 16:30:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -147,29 +147,11 @@ int TSTest(Conf *config, int *errores)
 }
 void TSSet(Conf *config, Modulo *mod)
 {
-	int i, p;
-	bCom *ts;
+	int i;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				ts = &tvserv_coms[0];
-				while (ts->com != 0x0)
-				{
-					if (!strcasecmp(ts->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = ts;
-						break;
-					}
-					ts++;
-				}
-				if (ts->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-		}
-		mod->comando[mod->comandos] = NULL;
+			ProcesaComsMod(config->seccion[i], mod, tvserv_coms);
 	}
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
 	BotSet(tvserv);

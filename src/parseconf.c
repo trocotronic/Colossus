@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.17 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.18 2005-10-19 16:30:29 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -55,7 +55,7 @@ static cComConf cComs[] = {
 #ifdef _WIN32
 	{ "smtp" , TestSmtp, ConfSmtp , OPC , 5 } , /* es opcional a partir de la version 5 */
 #else
-	{ "smtp" , TestSmtp, ConfSmtp , OBL , 1 } ,
+	{ "smtp" , TestSmtp, ConfSmtp , OPC , 1 } ,
 #endif
 	{ "set" , TestSet, ConfSet , OBL , 1 } ,
 	{ "modulo" , TestModulos, ConfModulos , OPC , 1 } ,
@@ -774,27 +774,6 @@ int TestDb(Conf *config, int *errores)
 			if (puerto < 1 || puerto > 65535)
 			{
 				Error("[%s:%s::%s::%i] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item, eval->linea);
-				error_parcial++;
-			}
-		}
-	}
-	if (!(eval = BuscaEntrada(config, "tipo")))
-	{
-		Error("[%s:%s] No se encuentra la directriz tipo.", config->archivo, config->item);
-		error_parcial++;
-	}
-	else
-	{
-		if (!eval->data)
-		{
-			Error("[%s:%s::%s::%i] La directriz tipo esta vacia.", config->archivo, config->item, eval->item, eval->linea);
-			error_parcial++;
-		}
-		else
-		{
-			if (strcasecmp(eval->data, "MySQL") && strcasecmp(eval->data, "PostGreSQL"))
-			{
-				Error("[%s:%s::%s::%i] Tipo de base de datos incorrecto.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
 		}

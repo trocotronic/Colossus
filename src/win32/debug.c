@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.4 2005-07-13 14:06:35 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.5 2005-10-19 16:30:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -145,5 +145,5 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e)
 }
 void InitDebug(void) 
 {
-	SetUnhandledExceptionFilter(&ExceptionFilter);
+	//SetUnhandledExceptionFilter(&ExceptionFilter);
 }

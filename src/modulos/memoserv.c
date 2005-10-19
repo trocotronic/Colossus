@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.18 2005-07-16 15:33:00 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.19 2005-10-19 16:30:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -109,8 +109,7 @@ int MSTest(Conf *config, int *errores)
 }
 void MSSet(Conf *config, Modulo *mod)
 {
-	int i, p;
-	bCom *ms;
+	int i;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "defecto"))
@@ -118,24 +117,7 @@ void MSSet(Conf *config, Modulo *mod)
 		if (!strcmp(config->seccion[i]->item, "cada"))
 			memoserv.cada = atoi(config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				ms = &memoserv_coms[0];
-				while (ms->com != 0x0)
-				{
-					if (!strcasecmp(ms->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = ms;
-						break;
-					}
-					ms++;
-				}
-				if (ms->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-			mod->comando[mod->comandos] = NULL;
-		}
+			ProcesaComsMod(config->seccion[i], mod, memoserv_coms);
 	}
 	InsertaSenyal(SIGN_AWAY, MSCmdAway);
 	InsertaSenyal(SIGN_JOIN, MSCmdJoin);

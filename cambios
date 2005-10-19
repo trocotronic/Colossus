@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.31 2005-09-22 17:50:50 Trocotronic Exp $
+ * $Id: cambios,v 1.32 2005-10-19 16:30:27 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -313,3 +313,15 @@
 170905269 - Se añade un control en linux para poder conectar los bots (./Colossus conectar).
 170905270 - Se añade un paso de parámetros en linux.
 230905271 - *** Octava release pública: 1.2 ***
+240905272 - Se añade una rutina para coger el servidor MX en linux.
+250905273 - Se quita un mensaje de error cuando falta la directriz tipo.
+250905274 - Se cambia la carga del motor de BDD.
+250905275 - Arreglado un fallo en los procesos bajo MySQL.
+270905276 - Arreglado un fallo al propagar registros de IpServ, aviso de Arthas~ (#0000118).
+300905377 - Se deja de propagar la directriz N::D y C::D para pasarla al modo global S::D.
+031005378 - Arreglado un cuelge al vaciar tablas, aviso de Arthas~ (#0000124).
+031005379 - Quitada una vieja advertencia, aviso de Arthas~ (#0000123).
+151005380 - Añadida variante PMODE.
+151005381 - Añadida variante SD.
+151005382 - UDB 3.2.1
+191005383 - Arreglado un fallo con el comando JOIN de ChanServ, aviso de thunderz (#0000131).

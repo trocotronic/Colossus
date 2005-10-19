@@ -1,4 +1,4 @@
-## $Id: make,v 1.25 2005-09-14 14:45:03 Trocotronic Exp $
+## $Id: make,v 1.26 2005-10-19 16:30:28 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -13,7 +13,7 @@ ZLIB_LIB_DIR="c:\dev\zlib\dll32"
 ###### FIN ZLIB ######
 
 #### SOPORTE UDB ####
-#UDB=1
+UDB=1
 #
 ###### FIN UDB ######
 
@@ -215,8 +215,10 @@ src/sql.obj: src/sql.c $(INCLUDES)
 	
 # Modulos
 	
-CUSTOMMODULE: src/modulos/$(MODULEFILE).c
-	$(CC) $(MODCFLAGS) src/modulos/$(MODULEFILE).c $(MODLFLAGS) $(PARAMS) /OUT:src/modulos/$(MODULEFILE).dll
+MODULO: src/modulos/$(FUENTE).c
+	$(CC) $(MODCFLAGS) src/modulos/$(FUENTE).c $(MODLFLAGS) $(PARAMS) /OUT:src/modulos/$(FUENTE).dll
+	-@copy src\modulos\$(FUENTE).dll modulos\$(FUENTE).dll >NUL
+	-@copy src\modulos\$(FUENTE).pdb modulos\$(FUENTE).pdb >NUL
 	
 DEF: 
 	$(CC) src/win32/def-clean.c

@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.12 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.13 2005-10-19 16:30:29 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -205,23 +205,137 @@ int ParseSmtp(char *data, int numeric)
 		return 1;
 	return 0;
 }
+#ifndef _WIN32
+struct mx 
+{
+    int pref;
+    char host[1024];
+};
+
+#ifndef HFIXEDSZ
+# define HFIXEDSZ 12
+#endif
+#ifndef INT16SZ
+# define INT16SZ sizeof(cit_int16_t)
+#endif
+#ifndef INT32SZ
+# define INT32SZ sizeof(cit_int32_t)
+#endif
+int mxcomp(int p1, int p2)
+{
+	if (p1 > p2) 
+    		return(1);
+	else if (p1 < p2) 
+		return(0);
+	else 
+		return(rand() % 2);
+}
+void sort_mxrecs (struct mx *mxrecs, int nmx)
+{
+	int a, b;
+	struct mx t1, t2;
+	if (nmx < 2) 
+		return;
+	for (a = nmx - 2; a >= 0; --a)
+	{
+		for (b = 0; b <= a; ++b)
+		{
+			if (mxcomp(mxrecs[b].pref,mxrecs[b+1].pref))
+			{
+				memcpy(&t1, &mxrecs[b], sizeof(struct mx));
+				memcpy(&t2, &mxrecs[b+1], sizeof(struct mx));
+				memcpy(&mxrecs[b], &t2, sizeof(struct mx));
+				memcpy(&mxrecs[b+1], &t1, sizeof(struct mx));
+			}
+		}
+	}
+}
+char *getmx(char *dest)
+{
+	union
+	{
+		u_char bytes[1024];
+		HEADER header;
+    	}ans;
+	int ret;
+	static char ret[BUFSIZE];
+	unsigned char *startptr, *endptr, *ptr;
+	char expanded_buf[1024];
+	unsigned short pref, type;
+	int n = 0;
+	int qdcount;
+	struct mx *mxrecs = NULL;
+	int nmx = 0;
+	ret = res_query(dest, C_IN, T_MX, (unsigned char *)ans.bytes, sizeof(ans));
+	if (ret < 0) 
+	{
+		mxrecs = malloc(sizeof(struct mx));
+		mxrecs[0].pref = 0;
+		strcpy(mxrecs[0].host, dest);
+		nmx = 0;
+	}
+	else 
+	{
+		if (ret > sizeof(ans))
+			ret = sizeof(ans);
+		startptr = &ans.bytes[0];
+		endptr = &ans.bytes[ret];
+		ptr = startptr + HFIXEDSZ;	/* skip header */
+		for (qdcount = ntohs(ans.header.qdcount); qdcount--; ptr += ret + QFIXEDSZ)
+		{
+			if ((ret = dn_skipname(ptr, endptr)) < 0) 
+				return NULL;
+		}
+		while(1)
+		{
+			memset (expanded_buf, 0, sizeof(expanded_buf));
+			ret = dn_expand (startptr, endptr, ptr, expanded_buf, sizeof(expanded_buf));
+			if (ret < 0) 
+				break;
+			ptr += ret;
+			GETSHORT (type, ptr);
+			ptr += INT16SZ + INT32SZ;
+			GETSHORT (n, ptr);
+			if (type != T_MX) 
+				ptr += n;
+			else
+			{
+				GETSHORT(pref, ptr);
+				ret = dn_expand(startptr, endptr, ptr, expanded_buf, sizeof(expanded_buf));
+				ptr += ret;
+				++nmx;
+				if (mxrecs == NULL)
+					mxrecs = malloc(sizeof(struct mx));
+				else
+					mxrecs = realloc (mxrecs, (sizeof(struct mx) * nmx));
+				mxrecs[nmx - 1].pref = pref;
+				strcpy(mxrecs[nmx - 1].host, expanded_buf);
+			}
+		}
+	}
+	sort_mxrecs(mxrecs, nmx);
+	strncpy(ret, mxrecs[0].host, sizeof(ret));
+	return ret;
+}
+#endif
+#define SDK
 char *Mx(char *dominio)
 {
-#define SDK
-#ifdef _WIN32
- #ifdef SDK
+#if defined(_WIN32) && defined(SDK)
 	HMODULE api;
-	char *cache;
+#endif
+	char *cache, *host;
 	if (!dominio)
 		return NULL;
 	if ((cache = CogeCache(CACHE_MX, dominio, 0)))
 		return cache;
+#ifdef _WIN32
+ #ifdef SDK
 	if (VerInfo.dwMajorVersion == 5)
 	{
 		if ((api = LoadLibrary("modulos/mx.dll")))
 		{
 			char *(*mx)(char *);
-			char *host;
 			if ((mx = (char * (*)(char *))GetProcAddress(api, "MX")))
 			{
 				host = (mx)(dominio);
@@ -272,6 +386,10 @@ char *Mx(char *dominio)
 		_pclose(pp);*/
 	}
  #endif
+#else
+	host = getmx(dominio);
+	InsertaCache(CACHE_MX, dominio, 86400, 0, host);
+	return host;
 #endif
 	return (conf_smtp ? conf_smtp->host : NULL);
 }

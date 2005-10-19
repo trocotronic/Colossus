@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.8 2005-09-17 14:31:36 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.9 2005-10-19 16:30:28 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -23,8 +23,9 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'CRYPTOLIB=${CRYPTOLIB}' \
 		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
 
-custommodule:
-	cd src; ${MAKE} ${MAKEARGS} MODULEFILE=${MODULEFILE} 'EXLIBS=${EXLIBS}' custommodule
+modulo:
+	cd src/modulos; ${MAKE} ${MAKEARGS} FUENTE=${FUENTE} 'EXLIBS=${EXLIBS}' modulo
+	$(CP) src/modulos/${FUENTE}.so modulos/${FUENTE}.so
 
 server:
 build:

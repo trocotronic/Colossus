@@ -5,7 +5,7 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.14 2005-09-16 13:48:25 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.15 2005-10-19 16:30:27 Trocotronic Exp $ -->
 
 <body>
 
@@ -198,7 +198,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b>pass</b><br>Es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
   <p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP. 
   Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra es m&aacute;s inestable que el pasar por un SMTP, ya que de esta forma conecta a distintos sitios; mientras que usando un SMTP, s&oacute;lo conecta a uno.</p>
-  <p><b>Nota</b>: bajo sistemas Windows 9x/ME o Linux este bloque es <b>obligatorio</b>.</p>
+  <p><b>Nota</b>: bajo sistemas Windows 9x/ME este bloque es <b>obligatorio</b>.</p>
   <p>Ejemplo:</p>
   <pre>smtp {
 	host smtp.telefonica.net;
@@ -687,16 +687,15 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. </p>
 <p>Ejemplo:</p>
 <pre>IpServ {
-	nick IpServ;
-	ident colossus;
-	host Servicios.Colossus;
-	realname &quot;Servicio de gesti&oacute;n de ips&quot;;
-	modos owhraAOkNCqBvd;
 	sufijo virtual;
 	cambio 24; // en horas
-	residente &quot;#rallados&quot;;
+	clones 3;
 	funciones {
-		...
+		help;
+		setipv;
+		setipv2;
+		temphost;
+		clones;
 	};
 };</pre>
 <p>&nbsp;</p>

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.11 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.12 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -10,6 +10,19 @@
 #define REJOIN 0x10
 #define NO_OVERRIDE 0x20
 
+/*!
+ * @desc: Estructura recursiva que conforma un archivo de configuración tras su parseo.
+ * @params: $item Nombre de la directriz o bloque.
+ 	    $data Valor de la directriz o bloque.
+ 	    $seccion Subbloques de este bloque (bloques hijos).
+ 	    $root Bloque padre.
+ 	    $secciones Número de subbloques que tiene.
+ 	    $archivo Ruta al archivo de configuración.
+ 	    $linea Línea de la directriz o bloque.
+ * @cat: Configuracion
+ * @ver: ParseaConfiguracion
+ !*/
+ 
 typedef struct _conf
 {
 	char *item;

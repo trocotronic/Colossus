@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.28 2005-09-17 11:51:04 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.29 2005-10-19 16:30:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -144,7 +144,6 @@ int NSTest(Conf *config, int *errores)
 void NSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	bCom *ns;
 	nickserv.opts = NS_PROT_KILL;
 	ircstrdup(nickserv.recovernick, "inv-%s-????");
 	ircstrdup(nickserv.securepass,"******");
@@ -192,24 +191,7 @@ void NSSet(Conf *config, Modulo *mod)
 				ircstrdup(nickserv.forbmail[nickserv.forbmails], config->seccion[i]->seccion[p]->item);
 		}
 		else if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				ns = &nickserv_coms[0];
-				while (ns->com != 0x0)
-				{
-					if (!strcasecmp(ns->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = ns;
-						break;
-					}
-					ns++;
-				}
-				if (ns->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-			mod->comando[mod->comandos] = NULL;
-		}
+			ProcesaComsMod(config->seccion[i], mod, nickserv_coms);
 	}
 	InsertaSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	InsertaSenyal(SIGN_POST_NICK, NSCmdPostNick);
@@ -234,7 +216,7 @@ char *NSRegeneraClave(char *nick)
 	if (IsNickUDB(nick))
 	{
 		PropagaRegistro("N::%s::P %s", nick, passmd5);
-		PropagaRegistro("N::%s::D md5", nick);
+		//PropagaRegistro("N::%s::D md5", nick);
 	}
 #endif
 	return pass;
@@ -602,7 +584,7 @@ BOTFUNC(NSRegister)
 		if (pass)
 		{
 			PropagaRegistro("N::%s::P %s", cl->nombre, MDString(pass));
-			PropagaRegistro("N::%s::D md5", cl->nombre);
+			//PropagaRegistro("N::%s::D md5", cl->nombre);
 		}
 		NSCambiaInv(cl);
 	}
@@ -1193,7 +1175,7 @@ BOTFUNC(NSMigrar)
 		return 1;
 	}
 	PropagaRegistro("N::%s::P %s", parv[0], MDString(param[1]));
-	PropagaRegistro("N::%s::D md5", parv[0]);
+	//PropagaRegistro("N::%s::D md5", parv[0]);
 	Responde(cl, CLI(nickserv), "Migración realizada.");
 	opts |= NS_OPT_UDB;
 	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
@@ -1383,7 +1365,7 @@ int NSDropanicks(Proc *proc)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item,reg,id from %s%s OFFSET %i LIMIT 30", PREFIJO, NS_SQL, proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item,reg,id from %s%s LIMIT 30 OFFSET %i ", PREFIJO, NS_SQL, proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);

@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.25 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.26 2005-10-19 16:30:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -196,11 +196,10 @@ int CSTest(Conf *config, int *errores)
 void CSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	bCom *cs;
 	chanserv.autodrop = 15;
 	chanserv.maxlist = 30;
 	chanserv.bantype = 3;
-	chanserv.tokform = strdup("##########");
+	ircstrdup(chanserv.tokform, "##########");
 	chanserv.vigencia = 24;
 	chanserv.necesarios = 10;
 	for (i = 0; i < config->secciones; i++)
@@ -218,30 +217,13 @@ void CSSet(Conf *config, Modulo *mod)
 		if (!strcmp(config->seccion[i]->item, "bantype"))
 			chanserv.bantype = atoi(config->seccion[i]->data);
 		if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				cs = &chanserv_coms[0];
-				while (cs->com != 0x0)
-				{
-					if (!strcasecmp(cs->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = cs;
-						break;
-					}
-					cs++;
-				}
-				if (cs->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-			mod->comando[mod->comandos] = NULL;
-		}
+			ProcesaComsMod(config->seccion[i], mod, chanserv_coms);
 		if (!strcmp(config->seccion[i]->item, "tokens"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "formato"))
-					chanserv.tokform = strdup(config->seccion[i]->seccion[p]->data);
+					ircstrdup(chanserv.tokform, config->seccion[i]->seccion[p]->data);
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "vigencia"))
 					chanserv.vigencia = atoi(config->seccion[i]->seccion[p]->data);
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "necesarios"))
@@ -408,7 +390,7 @@ void CSPropagaCanal(char *canal)
 	PropagaRegistro("C::%s::M %s", canal, modos);
 	PropagaRegistro("C::%s::T %s", canal, row[2]);
 	PropagaRegistro("C::%s::P %s", canal, row[3]);
-	PropagaRegistro("C::%s::D md5", canal);
+	//PropagaRegistro("C::%s::D md5", canal);
 	SQLFreeRes(res);
 }
 #endif
@@ -1191,7 +1173,7 @@ BOTFUNC(CSModos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->admin, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->admin, al) || (EsBot(al) && !IsOper(cl)))
 				continue;
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_ADM, TRIO(al));
 		}
@@ -1211,7 +1193,7 @@ BOTFUNC(CSModos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->op, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->op, al) || (EsBot(al) && !IsOper(cl)))
 				continue;
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-o %s", TRIO(al));
 		}
@@ -1231,7 +1213,7 @@ BOTFUNC(CSModos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->half, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->half, al) || (EsBot(al) && !IsOper(cl)))
 				continue;
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%c %s", MODEF_HALF, TRIO(al));
 		}
@@ -1251,7 +1233,7 @@ BOTFUNC(CSModos)
 	{
 		for (i = 2; i < params; i++)
 		{
-			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->voz, al))
+			if (!(al = BuscaCliente(param[i], NULL)) || !EsLink(cn->voz, al) || (EsBot(al) && !IsOper(cl)))
 				continue;
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-v %s", TRIO(al));
 		}
@@ -3108,7 +3090,7 @@ ProcFunc(CSDropachans)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' OFFSET %i LIMIT 30", PREFIJO, CS_SQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' LIMIT 30 OFFSET %i ", PREFIJO, CS_SQL, time(0) - 86400 * chanserv.autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);

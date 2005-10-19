@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.13 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.14 2005-10-19 16:30:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -122,6 +122,7 @@ void BorraSock(Sock *sck)
  	printf("He recibido estos datos: %s", data);
  	return 0;
 }
+...
 if (!(sck = SockOpen("1.2.3.4", 123, Abrir, Leer, NULL, Cerrar)))
 {
 	printf("Ha sido imposible conectar");

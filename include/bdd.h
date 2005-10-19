@@ -1,9 +1,9 @@
 /*
- * $Id: bdd.h,v 1.15 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.16 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 #ifdef UDB
-#define UDB_VER "3.2"
+#define UDB_VER "3.2.1"
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #else
@@ -37,9 +37,6 @@ MODFUNC extern MODVAR char bloques[];
 MODFUNC extern MODVAR u_int BDD_TOTAL;
 MODFUNC extern MODVAR Udb *ultimo;
 
-#define ID(x) (x->id >> 8)
-#define LETRA(x) (x->id & 0xFF)
-
 #define BDD_PREO 0x1
 #define BDD_OPER 0x2
 #define BDD_DEVEL 0x4
@@ -47,8 +44,6 @@ MODFUNC extern MODVAR Udb *ultimo;
 #define BDD_ROOT 0x10
 #define CHAR_NUM '*'
 DLLFUNC extern Udb *IdAUdb(int);
-DLLFUNC extern u_int CharAId(char);
-DLLFUNC extern u_char IdAChar(int);
 DLLFUNC extern void CargaBloque(int);
 DLLFUNC extern void DescargaBloque(int);
 DLLFUNC extern int ParseaLinea(int, char *, int);

@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.22 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.23 2005-10-19 16:30:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -148,30 +148,12 @@ int OSTest(Conf *config, int *errores)
 }
 void OSSet(Conf *config, Modulo *mod)
 {
-	int i, p;
-	bCom *os;
+	int i;
 	operserv.maxlist = 30;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				os = &operserv_coms[0];
-				while (os->com != 0x0)
-				{
-					if (!strcasecmp(os->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = os;
-						break;
-					}
-					os++;
-				}
-				if (os->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-			mod->comando[mod->comandos] = NULL;
-		}
+			ProcesaComsMod(config->seccion[i], mod, operserv_coms);
 		if (!strcmp(config->seccion[i]->item, "autoop"))
 			operserv.opts |= OS_OPTS_AOP;
 		if (!strcmp(config->seccion[i]->item, "maxlist"))
@@ -1138,7 +1120,7 @@ BOTFUNC(OSOpt)
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
 		aux = IdAUdb(i);
-		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, IdAChar(i), hora);
+		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, bloques[i], hora);
 		Optimiza(aux);
 		ActualizaGMT(aux, hora);
 	}
@@ -1153,7 +1135,7 @@ BOTFUNC(OSBck)
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
 		aux = IdAUdb(i);
-		EnviaAServidor(":%s DB * BCK %c %lu", me.nombre, IdAChar(i), hora);
+		EnviaAServidor(":%s DB * BCK %c %lu", me.nombre, bloques[i], hora);
 		//Optimiza(aux);
 		//ActualizaGMT(aux, hora);
 	}
@@ -1182,8 +1164,8 @@ BOTFUNC(OSVaciar)
 			return 1;
 		}
 		confirm = NULL;
-		while (sql->tablas[i])
-			SQLQuery("TRUNCATE %s", sql->tablas[i++]);
+		while (sql->tablas[i][0])
+			SQLQuery("TRUNCATE %s", sql->tablas[i++][0]);
 		Responde(cl, CLI(operserv), "Se ha vaciado toda la base de datos. Se procederá a reiniciar el programa en 5 segundos...");
 		IniciaCrono("reinicia", NULL, 1, 5, OSReinicia, NULL, 0);
 	}

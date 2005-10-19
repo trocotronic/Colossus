@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.43 2005-09-16 14:01:53 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.44 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -411,8 +411,7 @@ extern MODVAR time_t iniciado;
 		"aportando su semilla, a que este programa vea la luz.");									\
 	Responde(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
 	Responde(cl, bl, " "); 															\
-	Responde(cl, bl, "Puedes descargar este programa de forma gratuíta en %c\00312http://www.rallados.net", 31); 				\
-	Responde(cl, bl, "Sé feliz. Paz.")
+	Responde(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.rallados.net", 31)
 extern void ResuelveHost(char **, char *);
 extern void cloak_crc(char *);
 

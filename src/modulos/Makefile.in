@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.7 2005-07-16 15:28:18 Trocotronic Exp $
+## $Id: Makefile.in,v 1.8 2005-10-19 16:30:30 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -9,8 +9,8 @@ MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@
 all: build
 build: $(MODULES)
-custommodule: $(MODULEFILE).c
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(MODULEFILE).so $(MODULEFILE).c 
+modulo: $(FUENTE).c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(FUENTE).so $(FUENTE).c 
 chanserv.so: chanserv.c $(INCLUDES) chanserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o chanserv.so chanserv.c
 chanserv.o: chanserv.c $(INCLUDES)

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.28 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.29 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -395,7 +395,7 @@ int BorraCanalDeCliente(Cliente *cl, Canal *cn)
 int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 {
 	LinkCliente *aux, *prev = NULL;
-	if (!cl)
+	if (!cl || !cn)
 		return 0;
 	for (aux = cn->miembro; aux; aux = aux->sig)
 	{
@@ -572,8 +572,8 @@ void EntraBot(Cliente *bl, char *canal)
 {
 	Canal *cn;
 	cn = InfoCanal(canal, !0);
-	//InsertaCanalEnCliente(bl, cn);
-	//InsertaClienteEnCanal(cn, bl);
+	InsertaCanalEnCliente(bl, cn);
+	InsertaClienteEnCanal(cn, bl);
 	ProtFunc(P_JOIN_USUARIO_LOCAL)(bl, cn);
 	if (conf_set->opts & AUTOBOP)
 		ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
@@ -591,8 +591,8 @@ void SacaBot(Cliente *bl, char *canal, char *motivo)
 {
 	Canal *cn;
 	cn = InfoCanal(canal, 0);
-	//BorraCanalDeCliente(bl, cn);
-	//BorraClienteDeCanal(cn, bl);
+	BorraCanalDeCliente(bl, cn);
+	BorraClienteDeCanal(cn, bl);
 	ProtFunc(P_PART_USUARIO_LOCAL)(bl, cn, motivo);
 }
 
@@ -690,7 +690,7 @@ void PropagaRegistro(char *item, ...)
 	r = buf[0];
 	bloq = IdAUdb(r);
 	pos = bloq->data_long;
-	ins = ParseaLinea(r, &buf[3], 1);
+	ins = ParseaLinea(bloq->id, &buf[3], 1);
 	if (strchr(buf, ' '))
 	{
 		if (ins == 1)
@@ -838,22 +838,24 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 void DesconectaBot(char *nick, char *motivo)
 {
 	Cliente *bl;
+	Modulo *ex;
 	if ((bl = BuscaCliente(nick, NULL)) && EsBot(bl))
 		ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, motivo);
+	if ((ex = BuscaModulo(nick, modulos)))
+		ex->cl = NULL;
 }
 void ReconectaBot(char *nick)
 {
 	Modulo *ex;
-	Cliente *bl;
 	char *canal;
-	if (!(ex = BuscaModulo(nick, modulos)) || ex->cargado == 0)
+	if (!(ex = BuscaModulo(nick, modulos)))
 		return;
-	bl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
+	ex->cl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
 	{
 		strcpy(tokbuf, ex->residente);
 		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-			EntraBot(bl, canal);
+			EntraBot(ex->cl, canal);
 	}
 }
 u_long FlagAModo(char flag, mTab tabla[])
@@ -992,23 +994,23 @@ int EntraResidentes()
 	Modulo *aux;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
-		if (aux->cargado == 2 && aux->residente)
+		if (aux->residente)
 		{
 			strcpy(tokbuf, aux->residente);
 			for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 				EntraBot(aux->cl, canal);
 		}
 	}
+#ifdef UDB
+	PropagaRegistro("S::D md5");
+#endif
 	return 0;
 }
 int EntraBots()
 {
 	Modulo *aux;
 	for (aux = modulos; aux; aux = aux->sig)
-	{
-		if (aux->cargado == 2)
-			aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
-	}
+		aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
 	return 0;
 }
 char *MascaraTKL(char *user, char *host)

@@ -965,7 +965,7 @@ void PROT_INICIA(Unreal)()
 	servidores = NULL;
 	EnviaAServidor("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64 TKLEXT");
 #ifdef UDB
-	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s", me.nombre);
+	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s,SD,PMODE", me.nombre);
 #endif
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
@@ -1625,7 +1625,7 @@ IRCFUNC(m_db)
 		gm = atoul(parv[5]);
 		if (strcmp(parv[4], bloq->data_char))
 		{
-			if (gm > gmts[ID(bloq)])
+			if (gm > gmts[bloq->id])
 			{
 				TruncaBloque(cl, bloq, 0);
 				EnviaAServidor(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
@@ -1633,7 +1633,7 @@ IRCFUNC(m_db)
 				if (++bloqs == BDD_TOTAL)
 					EnviaAServidor(":%s %s", me.nombre, TOK_EOS);
 			}
-			else if (gm == gmts[ID(bloq)])
+			else if (gm == gmts[bloq->id])
 				EnviaAServidor(":%s DB %s RES %c %lu", me.nombre, parv[0], *parv[3], bloq->data_long);
 			/* si es menor, el otro nodo vaciará su db y nos mandará un RES, será cuando empecemos el resumen. abremos terminado nuestro burst */
 		}
@@ -1836,7 +1836,7 @@ IRCFUNC(m_dbq)
 	}
 	else
 	{
-		int id = ID(bloq);
+		int id = bloq->id;
 		EnviaAServidor(":%s 339 %s :%i %i %lu %s %lu %X", me.nombre, cl->nombre, id, regs[id], bloq->data_long, bloq->data_char, LeeGMT(id), LeeHash(id));
 	} 
 	Free(pos);
@@ -1914,7 +1914,7 @@ IRCFUNC(sincroniza)
 	tburst = microtime();
 #ifdef UDB
 	for (aux = ultimo; aux; aux = aux->mid)
-		EnviaAServidor(":%s DB %s INF %c %s %lu", me.nombre, cl->nombre, LETRA(aux), aux->data_char, gmts[ID(aux)]);
+		EnviaAServidor(":%s DB %s INF %c %s %lu", me.nombre, cl->nombre, bloques[aux->id], aux->data_char, gmts[aux->id]);
 #endif	
 	Senyal(SIGN_SYNCH);
 	return 0;
@@ -2282,7 +2282,7 @@ int UdbCompruebaOpts(Proc *proc)
 			aux = IdAUdb(i);
 			if (gmts[i] && gmts[i] + 86400 < hora)
 			{
-				EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, IdAChar(i), hora);
+				EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, bloques[i], hora);
 				Optimiza(aux);
 				ActualizaGMT(aux, hora);
 			}

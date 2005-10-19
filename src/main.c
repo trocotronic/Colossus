@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.58 2005-09-22 17:50:35 Trocotronic Exp $ 
+ * $Id: main.c,v 1.59 2005-10-19 16:30:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -484,8 +484,8 @@ void Dominio(Host *aux)
 
 /*!
  * @desc: Resuelve una ip asíncronamente
- * @params: destino [out] Dirección del puntero que apunta a la zona de memoria donde se guardará el resultado
- 	    ip [in] Dirección IP en notación de puntos a resolver
+ * @params: $destino [out] Dirección del puntero que apunta a la zona de memoria donde se guardará el resultado
+ 	    $ip [in] Dirección IP en notación de puntos a resolver
  * @cat: Internet
  !*/
 
