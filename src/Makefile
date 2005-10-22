@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.20 2005-10-19 16:30:29 Trocotronic Exp $
+## $Id: Makefile,v 1.21 2005-10-22 19:16:42 Trocotronic Exp $
 
 OBJS=bdd.o hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
 	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
@@ -13,7 +13,7 @@ INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/ircsprintf.h ../include/struct.h
 all: build
 modulo:
-	cd modulos; ${MAKE} ${MAKEARGS} FUENTE=${FUENTE} 'EXLIBS=${EXLIBS}' modulo
+	cd modulos; ${MAKE} FUENTE=$(FUENTE) 'EXLIBS=${EXLIBS}' modulo
 build: ircd mods prots sqldb
 ircd: $(OBJS)
 	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
