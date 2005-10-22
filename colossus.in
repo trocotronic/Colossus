@@ -109,5 +109,5 @@ __EOF__
 	echo ""
 	echo "Gracias!"
 else
-	echo "Uso: ./Colossus start|stop|conectar|rehash|restart|version|backtrace"
+	echo "Uso: ./colossus start|stop|conectar|rehash|restart|version|backtrace"
 fi

@@ -1,8 +1,11 @@
 /*
- * $Id: smtp.c,v 1.13 2005-10-19 16:30:29 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.14 2005-10-22 18:50:20 Trocotronic Exp $ 
  */
 
 #include <time.h>
+#ifndef _WIN32
+#include <resolv.h>
+#endif
 #include "struct.h"
 #define MAXSMTP 128
 #define INTSMTP 5
@@ -258,7 +261,7 @@ char *getmx(char *dest)
 		HEADER header;
     	}ans;
 	int ret;
-	static char ret[BUFSIZE];
+	static char retb[BUFSIZE];
 	unsigned char *startptr, *endptr, *ptr;
 	char expanded_buf[1024];
 	unsigned short pref, type;
@@ -314,8 +317,8 @@ char *getmx(char *dest)
 		}
 	}
 	sort_mxrecs(mxrecs, nmx);
-	strncpy(ret, mxrecs[0].host, sizeof(ret));
-	return ret;
+	strncpy(retb, mxrecs[0].host, sizeof(ret));
+	return retb;
 }
 #endif
 #define SDK
