@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.11 2005-10-22 19:18:59 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.12 2005-10-22 19:36:56 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -24,7 +24,7 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
 
 modulo:
-	cd src/modulos; ${MAKE} ${MAKEARGS} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
+	cd src; ${MAKE} ${MAKEARGS} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
 	$(CP) src/modulos/$(FUENTE).so modulos/$(FUENTE).so
 
 server:
