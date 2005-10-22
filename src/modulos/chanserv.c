@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.26 2005-10-19 16:30:29 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.27 2005-10-22 18:23:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -269,6 +269,8 @@ char *CSEsFundador_cache(Cliente *al, char *canal)
 int CSEsResidente(Modulo *mod, char *canal)
 {
 	char *aux;
+	if (!mod->residente)
+		return 0;
 	strcpy(tokbuf, mod->residente);
 	for (aux = strtok(tokbuf, ","); aux; aux = strtok(NULL, ","))
 	{
@@ -1329,11 +1331,13 @@ BOTFUNC(CSClear)
 			Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 			return 1;
 		}
-		regs = SQLCogeRegistro(CS_SQL, param[1], "regs");
-		for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
+		if ((regs = SQLCogeRegistro(CS_SQL, param[1], "regs")))
 		{
-			CSBorraRegistro(tok, param[1]);
-			strtok(NULL, " ");
+			for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
+			{
+				CSBorraRegistro(tok, param[1]);
+				strtok(NULL, " ");
+			}
 		}
 		SQLInserta(CS_SQL, param[1], "regs", NULL);
 		Responde(cl, CLI(chanserv), "Lista de accesos eliminada.");
@@ -1520,20 +1524,25 @@ BOTFUNC(CSOpts)
 #ifdef UDB
 		if (IsChanUDB(param[1]))
 		{
-			char *c, *str;
-			strcpy(tokbuf, modos);
-			str = strtok(tokbuf, " ");
-			if ((c = strchr(str, '-')))
-				*c = '\0';
-			if (*str == '+')
-				str++;
-			strcpy(buf, str);
-			if ((str = strtok(NULL, " ")))
+			if (modos)
 			{
-				strcat(buf, " ");
-				strcat(buf, str);
+				char *c, *str;
+				strcpy(tokbuf, modos);
+				str = strtok(tokbuf, " ");
+				if ((c = strchr(str, '-')))
+					*c = '\0';
+				if (*str == '+')
+					str++;
+				strcpy(buf, str);
+				if ((str = strtok(NULL, " ")))
+				{
+					strcat(buf, " ");
+					strcat(buf, str);
+				}
+				PropagaRegistro("C::%s::M %s", param[1], buf);
 			}
-			PropagaRegistro("C::%s::M %s", param[1], buf);
+			else
+				PropagaRegistro("C::%s::M", param[1]);
 		}
 #endif
 	}
@@ -1787,8 +1796,7 @@ BOTFUNC(CSAccess)
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		registros = SQLCogeRegistro(CS_SQL, param[1], "regs");
-		if (!registros)
+		if (!(registros = SQLCogeRegistro(CS_SQL, param[1], "regs")))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún acceso.");
 			return 1;
@@ -1855,7 +1863,7 @@ BOTFUNC(CSAccess)
 					return 1;
 				}
 				registros = SQLCogeRegistro(CS_SQL, param[1], "regs");
-				ircsprintf(buf, "%s:%lu", param[2], prev);
+				sprintf(buf, "%s:%lu", param[2], prev);
 				SQLInserta(CS_SQL, param[1], "regs", "%s%s", registros ? registros : "", buf);
 				CSInsertaRegistro(param[2], param[1], prev);
 				Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
@@ -3028,9 +3036,12 @@ void CSCargaRegistros()
 		return;
 	while ((row = SQLFetchRow(res)))
 	{
-		char *tok;
-		for (tok = strtok(row[1], ":"); tok; tok = strtok(NULL, ":"))
-			CSInsertaRegistro(tok, row[0], atol(strtok(NULL, " ")));
+		if (!BadPtr(row[1]))
+		{
+			char *tok;
+			for (tok = strtok(row[1], ":"); tok; tok = strtok(NULL, ":"))
+				CSInsertaRegistro(tok, row[0], atol(strtok(NULL, " ")));
+		}
 	}
 	SQLFreeRes(res);
 }
@@ -3043,12 +3054,15 @@ void CSCargaAkicks()
 		return;
 	while ((row = SQLFetchRow(res)))
 	{
-		char *tok, *mo, *au;
-		for (tok = strtok(row[1], "\1"); tok; tok = strtok(NULL, "\1"))
+		if (!BadPtr(row[1]))
 		{
-			mo = strtok(NULL, "\1");
-			au = strtok(NULL, "\t");
-			CSInsertaAkick(tok, row[0], au, mo);
+			char *tok, *mo, *au;
+			for (tok = strtok(row[1], "\1"); tok; tok = strtok(NULL, "\1"))
+			{
+				mo = strtok(NULL, "\1");
+				au = strtok(NULL, "\t");
+				CSInsertaAkick(tok, row[0], au, mo);
+			}
 		}
 	}
 	SQLFreeRes(res);

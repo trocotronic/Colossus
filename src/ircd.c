@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.29 2005-10-19 16:30:28 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.30 2005-10-22 18:23:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -176,10 +176,11 @@ SOCKFUNC(CierraIrcd)
 {
 	Cliente *al, *aux;
 	Canal *cn, *caux;
+	Modulo *mod;
 	for (al = clientes; al; al = aux)
 	{
 		aux = al->sig;
-		if (!aux) /* ultimo slot */
+		if (!aux) /* ultimo slot, cliente servicios. es una variable, no un puntero: no hay que liberarlo */
 			break;
 		LiberaMemoriaCliente(al);
 	}
@@ -190,6 +191,8 @@ SOCKFUNC(CierraIrcd)
 	}
 	canales = NULL;
 	linkado = NULL;
+	for (mod = modulos; mod; mod = mod->sig)
+		mod->cl = NULL;
 	if (reset)
 	{
 		(void)execv(margv[0], margv);
@@ -200,19 +203,16 @@ SOCKFUNC(CierraIrcd)
 #ifdef _WIN32		
 		ChkBtCon(0, 1);
 #endif		
-		intentos++;
-		if (intentos > conf_set->reconectar.intentos)
+		if (++intentos > conf_set->reconectar.intentos)
 		{
 			Info("Se han realizado %i intentos y ha sido imposible conectar", intentos - 1);
 #ifdef _WIN32			
 			ChkBtCon(0, 0);
 #endif
 			intentos = 0;
-			EscuchaIrcd();
-			return 1;
 		}
-		//Alerta(FOK, "Intento %i. Reconectando en %i segundos...", intentos, conf_set->reconectar->intervalo);
-		IniciaCrono("rircd", NULL, 1, conf_set->reconectar.intervalo, AbreSockIrcd, NULL, 0);
+		else
+			IniciaCrono("rircd", NULL, 1, conf_set->reconectar.intervalo, AbreSockIrcd, NULL, 0);
 	}
 #ifdef _WIN32
 	else /* es local */

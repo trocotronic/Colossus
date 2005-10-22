@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.32 2005-10-19 16:30:27 Trocotronic Exp $
+ * $Id: cambios,v 1.33 2005-10-22 18:23:23 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -269,11 +269,11 @@
 070405225 - Añadido un mensaje en el info de ChanServ.
 070405226 - Mejorado el sistema de refresco de módulos y protocolos notablemente.
 070405227 - Rehecho de nuevo todo el sistema de noticias de OperServ.
-070405228 - Arreglado un fallo estético en ChanServ, aviso de ArthaS~ (#0000023).
-080405229 - Arreglado un fallo al poner un topic vía ChanServ, aviso de ArthaS~ (#0000026).
+070405228 - Arreglado un fallo estético en ChanServ, aviso de ArthaS- (#0000023).
+080405229 - Arreglado un fallo al poner un topic vía ChanServ, aviso de ArthaS- (#0000026).
 090405230 - Uso static para los registros de MySQL.
 170405231 - Un pequeño arreglo al liberar la conf de red.
-260405232 - Arreglado un fallo estético en la eliminación de un registro, aviso de ArthaS~ (#0000033).
+260405232 - Arreglado un fallo estético en la eliminación de un registro, aviso de ArthaS- (#0000033).
 090505233 - Arreglado un fallo al quitar una gline.
 160505234 - Las glines en operserv son enviadas de forma que el autor es el operador que la ejecuta.
 180505235 - Cambio algunas macros.
@@ -317,11 +317,13 @@
 250905273 - Se quita un mensaje de error cuando falta la directriz tipo.
 250905274 - Se cambia la carga del motor de BDD.
 250905275 - Arreglado un fallo en los procesos bajo MySQL.
-270905276 - Arreglado un fallo al propagar registros de IpServ, aviso de Arthas~ (#0000118).
+270905276 - Arreglado un fallo al propagar registros de IpServ, aviso de ArthaS- (#0000118).
 300905377 - Se deja de propagar la directriz N::D y C::D para pasarla al modo global S::D.
-031005378 - Arreglado un cuelge al vaciar tablas, aviso de Arthas~ (#0000124).
-031005379 - Quitada una vieja advertencia, aviso de Arthas~ (#0000123).
+031005378 - Arreglado un cuelge al vaciar tablas, aviso de ArthaS- (#0000124).
+031005379 - Quitada una vieja advertencia, aviso de ArthaS- (#0000123).
 151005380 - Añadida variante PMODE.
 151005381 - Añadida variante SD.
 151005382 - UDB 3.2.1
 191005383 - Arreglado un fallo con el comando JOIN de ChanServ, aviso de thunderz (#0000131).
+201005384 - Arreglado un posible cuelge con los servicios no conectados y las listas internas de procesos, aviso de ArthaS- (#0000126).
+221005385 - *** Novena release pública: 1.2a ***
