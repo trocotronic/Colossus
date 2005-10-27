@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.14 2005-10-22 18:50:20 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.15 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -21,7 +21,7 @@ static const char Base64[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 static const char Pad64 = '=';
 
-int b64_encode(unsigned char const *src, size_t srclength, char *target, size_t targsize)
+int b64_encode(char const *src, size_t srclength, char *target, size_t targsize)
 {
 	size_t datalength = 0;
 	u_char input[3];
@@ -73,7 +73,7 @@ int b64_encode(unsigned char const *src, size_t srclength, char *target, size_t 
 	target[datalength] = '\0';	/* Returned value doesn't count \0. */
 	return (datalength);
 }
-int b64_decode(char const *src, unsigned char *target, size_t targsize)
+int b64_decode(char const *src, char *target, size_t targsize)
 {
 	int tarindex, state, ch;
 	char *pos;

@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.14 2005-10-19 16:30:29 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.15 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -255,7 +255,7 @@ Sock *SockAccept(Sock *list, int pres)
 {
 	Sock *sck;
 	struct sockaddr_in addr;
-	int len = sizeof(struct sockaddr);
+	socklen_t len = sizeof(struct sockaddr);
 	if (getpeername(pres, (struct sockaddr *)&addr, &len) == -1)
 	{
 		CLOSE_SOCK(pres);

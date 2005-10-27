@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.5 2005-09-16 13:48:06 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.6 2005-10-27 19:16:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -254,7 +254,7 @@ char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
 	if (!campo)
 	{
 		SQLFreeRes(res);
-		return (u_char *)!NULL;
+		return (char *)!NULL;
 	}
 	if (BadPtr(row[0]))
 	{

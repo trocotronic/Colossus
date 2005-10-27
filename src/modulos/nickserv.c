@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.29 2005-10-19 16:30:30 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.30 2005-10-27 19:16:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1048,7 +1048,7 @@ BOTFUNC(NSSwhois)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (params == 3)
+	if (params >= 3)
 	{
 		char *swhois;
 		Cliente *al;

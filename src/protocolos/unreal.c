@@ -1700,7 +1700,7 @@ IRCFUNC(m_db)
 		}
 		r += 3;
 		ircsprintf(buf, "%s %s", r, Unifica(parv, parc, 5, -1));
-		ParseaLinea(tipo, buf, 1);
+		ParseaLinea(bloq->id, buf, 1);
 	}
 	else if (!strcasecmp(parv[2], "DEL"))
 	{
@@ -1721,7 +1721,7 @@ IRCFUNC(m_db)
 			return 1;
 		}
 		r += 3;
-		ParseaLinea(tipo, r, 1);
+		ParseaLinea(bloq->id, r, 1);
 	}
 	else if (!strcasecmp(parv[2], "DRP"))
 	{

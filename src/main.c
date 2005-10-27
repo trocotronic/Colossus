@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.60 2005-10-27 19:16:14 Trocotronic Exp $ 
+ * $Id: main.c,v 1.61 2005-10-27 19:20:57 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
 	act.sa_handler = CierraColossus;
 	(void)sigaddset(&act.sa_mask, SIGTERM);
 	(void)sigaction(SIGTERM, &act, NULL);
-	act.sa_handler = (VOIDSIG)AbreSockIrcd;
+	act.sa_handler = AbreSockIrcd;
 	(void)sigaddset(&act.sa_mask, SIGPIPE);
 	(void)sigaction(SIGPIPE, &act, NULL);
   #elif BSD_RELIABLE_SIGNALS

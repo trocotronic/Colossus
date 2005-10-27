@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.6 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.7 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "md5.h"
@@ -323,7 +323,8 @@ unsigned int len;
 char *MDString(char *string)
 {
   MD5_CTX context;
-  unsigned char digest[16], tmp[2];
+  unsigned char digest[16];
+  char tmp[2];
   unsigned int len = strlen (string);
   static char ptr[33];
   int i;

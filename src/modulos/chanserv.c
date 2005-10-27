@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.27 2005-10-22 18:23:24 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.28 2005-10-27 19:16:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -872,7 +872,7 @@ BOTFUNC(CSHelp)
 		Responde(cl, CLI(chanserv), "\00312BLOCK");
 		Responde(cl, CLI(chanserv), " ");
 		Responde(cl, CLI(chanserv), "Inhabilita temporalmente un canal.");
-		Responde(cl, CLI(chanserv), "Se quitan todos los privilegios de un canal (+qaohv) y se ponen los modos +imMRlN 1");
+		Responde(cl, CLI(chanserv), "Se quitan todos los privilegios de un canal (+qaohv) y se ponen los modos +iml 1");
 		Responde(cl, CLI(chanserv), "Su durada es temporal y puede se quitado mediante el comando CLEAR.");
 		Responde(cl, CLI(chanserv), " ");
 		Responde(cl, CLI(chanserv), "Sintaxis: \00312BLOCK #canal");
@@ -1166,7 +1166,7 @@ BOTFUNC(CSModos)
 		{
 			if (!(al = BuscaCliente(param[i], NULL)) || EsLink(cn->admin, al))
 				continue;
-			if (!CSTieneNivel(param[i], param[1], CS_LEV_AHA) && (opts & CS_OPT_SOP))
+			if (!CSTieneNivel(param[i], param[1], CS_LEV_AAD) && (opts & CS_OPT_SOP))
 				continue;
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c %s", MODEF_ADM, TRIO(al));
 		}
@@ -1989,6 +1989,11 @@ BOTFUNC(CSJb)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_JOB))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
+		return 1;
+	}
 	cn = BuscaCanal(param[1], NULL);
 	if (cn)
 	{
@@ -1996,7 +2001,7 @@ BOTFUNC(CSJb)
 		for (ex = modulos; ex; ex = ex->sig)
 		{
 			bl = BuscaCliente(ex->nick, NULL);
-			if (EsLink(cn->miembro, bl) && !CSEsResidente(ex, param[1] + 1))
+			if (EsLink(cn->miembro, bl) && !CSEsResidente(ex, param[1]))
 				SacaBot(bl, cn->nombre, "Cambiando bots");
 		}
 	}
@@ -2308,8 +2313,10 @@ BOTFUNC(CSRegister)
 				ProtFunc(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
 			}
 			Senyal1(CS_SIGN_REG, param[1]);
+			Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
 		}
-		Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
+		else
+			Responde(cl, CLI(chanserv), "Solicitud aceptada. El canal \00312%s\003 está pendiente de aprobación.", param[1]);
 	}
 	else
 	{

@@ -1,5 +1,5 @@
 /*
- * $Id: match.c,v 1.3 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: match.c,v 1.4 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 
 /*
@@ -66,8 +66,8 @@ static int match2(char *mask, char *name)
 		n++;
 	}
 	cm = lc(*m);
-	wsm = (char *)NULL;
-	wsn = (char *)NULL;
+	wsm = (u_char *)NULL;
+	wsn = (u_char *)NULL;
 	while (1)
 	{
 		if (cm == '*')	/* found the * wildcard */

@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.6 2005-10-19 16:30:30 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.7 2005-10-27 19:16:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -385,13 +385,25 @@ SOCKFUNC(TSAbreHoroscopo)
 }
 SOCKFUNC(TSLeeHoroscopo)
 {
-	static char txt[BUFSIZE];
+	static char txt[BUFSIZE], tmp[BUFSIZE];
 	char *c;
-	static int salud = 0, dinero = 0, amor = 0;
+	static int salud = 0, dinero = 0, amor = 0, cat = 0;
 	if ((c = strstr(data, "d><f")))
 	{
-		TSQuitaTags(strchr(c+10, '>')+1, txt);
-		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+		txt[0] = '\0';
+		cat = 1;
+		TSQuitaTags(strchr(c+10, '>')+1, tmp);
+		strcat(txt, tmp);
+	}
+	else if (cat)
+	{
+		TSQuitaTags(data, tmp);
+		strcat(txt, tmp);
+		if (strstr(data, "</center>"))
+		{
+			cat = 0;
+			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+		}
 	}
 	else if (strstr(data, "dinero.gif"))
 		dinero = StrCount(data, "dinero.gif");
@@ -399,7 +411,7 @@ SOCKFUNC(TSLeeHoroscopo)
 		salud = StrCount(data, "salud.gif");
 	else if (strstr(data, "amor.gif"))
 		amor = StrCount(data, "amor.gif");
-	if (!strcmp(data, "</td></tr>"))
+	if (!strcmp(data, "</td></tr><tr><td>"))
 	{
 		ircsprintf(txt, "Salud: \00312%s\003 - Dinero: \00312", Repite('*', salud));
 		strcat(txt, Repite('*', dinero));
