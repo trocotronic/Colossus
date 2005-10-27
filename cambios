@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.33 2005-10-22 18:23:23 Trocotronic Exp $
+ * $Id: cambios,v 1.34 2005-10-27 19:16:13 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -327,3 +327,9 @@
 191005383 - Arreglado un fallo con el comando JOIN de ChanServ, aviso de thunderz (#0000131).
 201005384 - Arreglado un posible cuelge con los servicios no conectados y las listas internas de procesos, aviso de ArthaS- (#0000126).
 221005385 - *** Novena release pública: 1.2a ***
+231005386 - Arreglado un cuelgue al resumir bloques UDB, aviso de ArthaS- (#0000132).
+241005387 - Arreglado un fallo con el JOIN de ChanServ, aviso de thunderz (#0000133).
+241005388 - Arreglado un fallo al darse ADMIN.
+251005389 - Arreglado un fallo con el mensaje al solicitar un registro de canal, aviso de Traxis (#0000135).
+251005390 - Arreglado un fallo con el swhois de NickServ, aviso de thunderz (#0000136).
+271005391 - Arreglado un fallo con el strtok de datos null de sql (al parecer por viejos controladores obcd, aviso de thunderz (#0000128).

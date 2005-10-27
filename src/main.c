@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.59 2005-10-19 16:30:28 Trocotronic Exp $ 
+ * $Id: main.c,v 1.60 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -213,7 +213,6 @@ VOIDSIG Refresca()
   #endif
 #endif
 	refrescando = 0;
-	return;
 }
 VOIDSIG Reinicia()
 {
@@ -397,7 +396,7 @@ int main(int argc, char *argv[])
 	act.sa_handler = CierraColossus;
 	(void)sigaddset(&act.sa_mask, SIGTERM);
 	(void)sigaction(SIGTERM, &act, NULL);
-	act.sa_handler = AbreSockIrcd;
+	act.sa_handler = (VOIDSIG)AbreSockIrcd;
 	(void)sigaddset(&act.sa_mask, SIGPIPE);
 	(void)sigaction(SIGPIPE, &act, NULL);
   #elif BSD_RELIABLE_SIGNALS
@@ -1432,7 +1431,7 @@ static u_long crc32_tab[] = {
       0x5d681b02L, 0x2a6f2b94L, 0xb40bbe37L, 0xc30c8ea1L, 0x5a05df1bL,
       0x2d02ef8dL
    };
-u_long Crc32(const u_char *s, u_int len)
+u_long Crc32(const char *s, u_int len)
 {
 	u_int i;
 	u_long crc32val = 0L;

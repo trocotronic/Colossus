@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.8 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.9 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -84,6 +84,7 @@
 #define P_ECONNRESET	WSAECONNRESET
 #define P_ENOTCONN WSAENOTCONN
 #define P_EMSGSIZE WSAEMSGSIZE
+#define socklen_t int
 #endif
 
 #ifndef NULL

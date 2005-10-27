@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.45 2005-10-22 18:42:46 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.46 2005-10-27 19:16:14 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -400,8 +400,8 @@ extern int copyfile(char *, char *);
 #define SSLFLAG_DONOTACCEPTSELFSIGNED 0x4
 #endif
 extern char *my_itoa(int);
-extern int b64_decode(char const *src, u_char *, size_t);
-extern int b64_encode(u_char const *, size_t, char *, size_t);
+extern int b64_decode(char const *src, char *, size_t);
+extern int b64_encode(char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
 #define Creditos() 																\
 	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);								\
@@ -419,7 +419,7 @@ extern u_int base64toint(const char *);
 extern const char *inttobase64(char *, u_int, u_int);
 extern void tea(u_int *, u_int *, u_int *);
 extern char *CifraNick(char *, char *);
-extern u_long Crc32(const u_char *, u_int);
+extern u_long Crc32(const char *, u_int);
 extern char *chrcat(char *, char);
 #ifdef NEED_STRNCASECMP
 extern int strncasecmp(const char *, const char *, int);
