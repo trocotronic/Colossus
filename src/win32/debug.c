@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.6 2005-11-01 14:12:14 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.7 2005-11-01 15:51:01 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,6 +7,11 @@
 #include <dbghelp.h>
 #define BUFFERSIZE   0x200
 
+BOOL CALLBACK SymEnumerateModulesProc64(PCSTR ModuleName, DWORD64 BaseOfDll, PVOID UserContext)
+{
+    SymUnloadModule((HANDLE)UserContext, BaseOfDll);
+    return TRUE;
+}
 __inline char *StackTrace(EXCEPTION_POINTERS *e) 
 {
 	static char buffer[5000];
@@ -17,7 +22,6 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e)
 	IMAGEHLP_LINE pLine;
 	IMAGEHLP_MODULE pMod;
 	STACKFRAME Stack;
-	DWORD dwBase;
 	Stack.AddrPC.Offset = e->ContextRecord->Eip;
 	Stack.AddrPC.Mode = AddrModeFlat;
 	Stack.AddrFrame.Offset = e->ContextRecord->Ebp;
@@ -40,7 +44,6 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e)
 		sprintf(buf, "\tFalla SymGetModuleInfo (%i)\n", GetLastError());
 		strcat(buffer, buf);
 	}
-	dwBase = pMod.BaseOfImage;
 	strcpy(curmodule, pMod.ModuleName);
 	sprintf(buffer, "\tMódulo: %s (%s)\n", pMod.ModuleName, pMod.LoadedImageName);
 	for (frame = 0; ; frame++) 
@@ -59,8 +62,6 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e)
 			strcpy(curmodule, pMod.ModuleName);
 			sprintf(buf, "\tMódulo: %s (%s)\n", pMod.ModuleName, pMod.LoadedImageName);
 			strcat(buffer, buf);
-			SymUnloadModule(hProcess, dwBase);
-			dwBase = pMod.BaseOfImage;
 		}
 		if (!SymGetLineFromAddr(hProcess, Stack.AddrPC.Offset, &dwDisp, &pLine))
 		{
@@ -77,8 +78,8 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e)
 		pLine.FileName = NULL;
 		pLine.LineNumber = 0;
 	}
+	SymEnumerateModules64(hProcess, SymEnumerateModulesProc64, hProcess);
 	return buffer;
-
 }
 __inline char *GetRegisters(CONTEXT *context) 
 {
@@ -197,7 +198,7 @@ __inline char *MyStackWalk(PCONTEXT pContext)
             		break;
     	} while ( 1 );
     	return buffer;
-}      
+}   
 LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e) 
 {
 	MEMORYSTATUS memStats;
