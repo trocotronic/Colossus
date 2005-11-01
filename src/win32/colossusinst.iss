@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.10 2005-10-22 18:42:47 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.11 2005-11-01 14:12:14 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.2a
+AppVerName=Colossus 1.2b
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.rallados.net
 AppSupportURL=http://www.rallados.net
@@ -68,14 +68,14 @@ Source: isxdl.dll; DestDir: {tmp}; Flags: dontcopy
 Name: "{app}\tmp"
 
 [UninstallDelete]
-Type: files; Name: "{app}\DbgHelp.Dll"
+Type: files; Name: "{app}\dbghelp.dll"
 
 [Code]
 function isxdl_Download(hWnd: Integer; URL, Filename: PChar): Integer;
 external 'isxdl_Download@files:isxdl.dll stdcall';
 function isxdl_SetOption(Option, Value: PChar): Integer;
 external 'isxdl_SetOption@files:isxdl.dll stdcall';
-const dbgurl = 'http://www.rallados.net/descargas/DbgHelp.Dll';
+const dbgurl = 'http://www.rallados.net/descargas/dbghelp.dll';
 const crturl = 'http://www.rallados.net/descargas/msvcr70.dll';
 const msvurl = 'http://www.rallados.net/descargas/MSVCRTD.DLL';
 var didDbgDl,didCrtDl,didMsCrtDl: Boolean;
@@ -90,8 +90,8 @@ hWnd,answer: Integer;
 begin
 
     if ((CurPage = wpReady)) then begin
-      dbghelp := ExpandConstant('{sys}\DbgHelp.Dll');
-      output := ExpandConstant('{app}\DbgHelp.Dll');
+      dbghelp := ExpandConstant('{sys}\dbghelp.dll');
+      output := ExpandConstant('{app}\dbghelp.dll');
       msvcrt := ExpandConstant('{sys}\msvcr70.Dll');
       msvcrtd := ExpandConstant('{sys}\MSVCRTD.dll');
       GetVersionNumbersString(dbghelp,m);
@@ -108,34 +108,22 @@ begin
       end else
         MsgBox('Debe instalar a mano msvcr70.dll. Puede descargar el archivo de http://www.rallados.net/descargas/msvcr70.dll', mbInformation, MB_OK);
     end;
-    if (NOT FileExists(msvcrtd)) then begin
-      answer := MsgBox('Colossus necesita la librería MS C Runtime Debug. ¿Quiere instalarla?', mbConfirmation, MB_YESNO);
-      if answer = IDYES then begin
-        tmp := ExpandConstant('{tmp}\msvcrtd.dll');
-        isxdl_SetOption('title', 'Descargando msvcrtd.dll');
-        hWnd := StrToInt(ExpandConstant('{wizardhwnd}'));
-        if isxdl_Download(hWnd, crturl, tmp) = 0 then begin
-          MsgBox('La descarga e instalación  de msvcrtd.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.rallados.net/descargas/MSVCRTD.dll', mbInformation, MB_OK);
-        end else
-          didMsCrtDl := true;
-      end else
-        MsgBox('Debe instalar a mano msvcrtd.dll. Puede descargar el archivo de http://www.rallados.net/descargas/MSVCRTD.dll', mbInformation, MB_OK);
-    end;
+
     if (NOT FileExists(output)) then begin
           if (NOT FileExists(dbghelp)) then
         m := StringOfChar('0',1);
       if (StrToInt(m[1]) < 5) then begin
-        answer := MsgBox('Se requiere DbgHelp.dll versión 5.0 o mayor. ¿Quiere descargarla?', mbConfirmation, MB_YESNO);
+        answer := MsgBox('Se requiere dbghelp.dll versión 5.1. ¿Quiere descargarla?', mbConfirmation, MB_YESNO);
         if answer = IDYES then begin
           tmp := ExpandConstant('{tmp}\dbghelp.dll');
-          isxdl_SetOption('title', 'Descargando DbgHelp.dll');
+          isxdl_SetOption('title', 'Descargando dbghelp.dll');
           hWnd := StrToInt(ExpandConstant('{wizardhwnd}'));
           if isxdl_Download(hWnd, dbgurl, tmp) = 0 then begin
-            MsgBox('La descarga e instalación  de dbghelp.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.rallados.net/descargas/DbgHelp.Dll', mbInformation, MB_OK);
+            MsgBox('La descarga e instalación  de dbghelp.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.rallados.net/descargas/dbghelp.dll', mbInformation, MB_OK);
           end else
             didDbgDl := true;
         end else
-        MsgBox('Debe instalar a mano dbghelp.dll. Puede descargar el archivo de http://www.rallados.net/descargas/DbgHelp.Dll', mbInformation, MB_OK);
+        MsgBox('Debe instalar a mano dbghelp.dll. Puede descargar el archivo de http://www.rallados.net/descargas/dbghelp.dll', mbInformation, MB_OK);
       end;
     end;
   end;

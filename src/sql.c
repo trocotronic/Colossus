@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.6 2005-10-27 19:16:15 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.7 2005-11-01 14:12:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -167,6 +167,9 @@ SQLRes SQLQuery(const char *query, ...)
 	va_start(vl, query);
 	ircvsprintf(buf, query, vl);
 	va_end(vl);
+#ifdef DEBUG
+	Debug("SQL Query: %s", buf);
+#endif
 	return sql->Query(buf);
 }
 

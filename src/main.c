@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.61 2005-10-27 19:20:57 Trocotronic Exp $ 
+ * $Id: main.c,v 1.62 2005-11-01 14:12:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -219,8 +219,10 @@ VOIDSIG Reinicia()
 	CierraTodo();
 #ifdef _WIN32
 	CleanUp();
-#endif
+	execv(margv[0], margv);
+#else
 	execv(SPATH, margv);
+#endif
 	exit(-1);
 }
 /*!
@@ -321,12 +323,23 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
   #endif
 #endif
+	for (i = 0; i < UMAX; i++)
+	{
+		uTab[i].item = NULL;
+		uTab[i].items = 0;
+	}
+	for (i = 0; i < CHMAX; i++)
+	{
+		cTab[i].item = NULL;
+		cTab[i].items = 0;
+	}
 	/* las primeras señales deben ser del núcleo */
 	InsertaSenyal(SIGN_SYNCH, EntraBots);
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);
+	DistribuyeMe(&me, &SockIrcd);
 	CargaModulos();
 	Senyal(SIGN_SQL);
 #ifndef _WIN32
@@ -369,17 +382,6 @@ int main(int argc, char *argv[])
 	BddInit();
 #endif
 	pthread_mutex_init(&mutex, NULL);
-	for (i = 0; i < UMAX; i++)
-	{
-		uTab[i].item = NULL;
-		uTab[i].items = 0;
-	}
-	for (i = 0; i < CHMAX; i++)
-	{
-		cTab[i].item = NULL;
-		cTab[i].items = 0;
-	}
-	DistribuyeMe(&me, &SockIrcd);
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
 #else
@@ -1138,8 +1140,10 @@ char *CogeCache(char *tipo, char *item, int id)
 	Free(tipo_c);
 	if (res)
 	{
+		time_t hora;;
 		row = SQLFetchRow(res);
-		if ((time_t)atoul(row[1]) < time(0))
+		hora = (time_t)atoul(row[1]);
+		if (hora && hora < time(0))
 		{
 			SQLFreeRes(res);
 			BorraCache(tipo, item, id);
@@ -1152,7 +1156,7 @@ char *CogeCache(char *tipo, char *item, int id)
 				SQLFreeRes(res);
 				return NULL;
 			}
-			strncpy(row0, row[0], sizeof(row));
+			strncpy(row0, row[0], sizeof(row0));
 			SQLFreeRes(res);
 			return row0;
 		}
@@ -1199,7 +1203,7 @@ int ProcCache(Proc *proc)
 	u_long ts = time(0);
 	if ((u_long)proc->time + 1800 < ts) /* lo hacemos cada 30 mins */
 	{
-		SQLQuery("DELETE from %s%s where hora < %lu AND hora !='0'", PREFIJO, SQL_CACHE, ts);
+		SQLQuery("DELETE from %s%s where hora < %lu AND hora !=0", PREFIJO, SQL_CACHE, ts);
 		proc->proc = 0;
 		proc->time = ts;
 		return 1;

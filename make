@@ -1,4 +1,4 @@
-## $Id: make,v 1.26 2005-10-19 16:30:28 Trocotronic Exp $
+## $Id: make,v 1.27 2005-11-01 14:12:13 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -71,7 +71,7 @@ OPENSSL_LIB=/LIBPATH:$(OPENSSL_LIB_DIR)
 INC_FILES = /I ./INCLUDE /J $(ZLIB_INC) $(OPENSSL_INC) /I $(PTHREAD_INC) /nologo /D _WIN32
 CFLAGS=$(DBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(UDBFLAGS) $(SSLCFLAGS) /Fosrc/ /c 
 LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib $(ZLIBLIB) \
-	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib Dbghelp.lib \
+	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt
 EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
@@ -110,7 +110,6 @@ CLEAN:
 	-@erase .\*.core >NUL
 	-@erase .\*.exp >NUL
 	-@erase .\*.dll >NUL
-	-@erase .\*.obj >NUL
 	-@erase .\*.map >NUL
 	-@erase colossus.lib >NUL
 	-@erase modulos\*.dll >NUL

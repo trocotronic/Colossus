@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.28 2005-10-27 19:16:15 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.29 2005-11-01 14:12:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -260,9 +260,12 @@ char *CSEsFundador_cache(Cliente *al, char *canal)
 	char *cache;
 	if ((cache = CogeCache(CACHE_FUNDADORES, al->nombre, chanserv.hmod->id)))
 	{
-		sprintf(buf, "%s ", canal);
-		if (strstr(cache, buf))
-			return cache;
+		char *tok;
+		for (tok = strtok(cache, " "); tok; tok = strtok(NULL, " "))
+		{
+			if (!strcasecmp(tok, canal))
+				return cache;
+		}
 	}
 	return NULL;
 }
@@ -953,7 +956,7 @@ BOTFUNC(CSDrop)
 }
 BOTFUNC(CSIdentify)
 {
-	char *cache;
+	char *cache, buf[BUFSIZE];
 	if (params < 3)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, "IDENTIFY #canal pass");
@@ -988,15 +991,19 @@ BOTFUNC(CSIdentify)
 	ircsprintf(buf, "%s ", param[1]);
 	if ((cache = CogeCache(CACHE_FUNDADORES, cl->nombre, chanserv.hmod->id)))
 	{
-		if (strstr(cache, buf))
+		char *tok;
+		for (tok = strtok(cache, " "); tok; tok = strtok(NULL, " "))
 		{
-			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ya te has identificado como fundador de este canal.");
-			return 1;
+			if (!strcasecmp(tok, param[1]))
+			{
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ya te has identificado como fundador de este canal.");
+				return 1;
+			}
 		}
 		strcat(buf, cache);
 	}
 	InsertaCache(CACHE_FUNDADORES, cl->nombre, 0, chanserv.hmod->id, buf);
-	Responde(cl, CLI(chanserv), "Ahora eres reconocido como founder de \00312%s\003.", param[1]);
+	Responde(cl, CLI(chanserv), "Ahora eres reconocido como fundador de \00312%s\003.", param[1]);
 	return 0;
 }
 BOTFUNC(CSDeauth)

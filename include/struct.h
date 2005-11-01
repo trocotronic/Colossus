@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.46 2005-10-27 19:16:14 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.47 2005-11-01 14:12:13 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -286,7 +286,7 @@ extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
-#define COLOSSUS_VERNUM "1.2a"
+#define COLOSSUS_VERNUM "1.2b"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 extern char **margv;
 #define Malloc(x) ExMalloc(x, __FILE__, __LINE__)

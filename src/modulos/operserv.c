@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.23 2005-10-19 16:30:30 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.24 2005-11-01 14:12:14 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -202,41 +202,41 @@ void OSCargaNoticia(int id)
 		aux = atoul(row[2]);
 		strftime(not->fecha, sizeof(not->fecha), "%d/%m/%Y", localtime(&aux));
 		not->id = id;
-		gnoticia[gnoticias++] = not;
 	}
 	sigue:
 	if (!(gn = OSEsBotNoticia(not->botname)))
 		not->cl = CreaBot(not->botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
 	else
 		not->cl = gn->cl;
+	gnoticia[gnoticias++] = not;
 }
 int OSDescargaNoticia(int id)
 {
 	int i;
 	Noticia *not = NULL;
+	Cliente *gl = NULL;
 	for (i = 0; i < gnoticias; i++)
 	{
 		if (gnoticia[i]->id == id)
 		{
 			not = gnoticia[i];
-			i++;
-			while (i < gnoticias)
-				gnoticia[i] = gnoticia[i+1];
+			gl = not->cl;
 			gnoticias--;
+			while (i < gnoticias)
+			{
+				gnoticia[i] = gnoticia[i+1];
+				i++;
+			}
 			break;
 		}
 	}
 	if (!not)
 		return 0;
-	if (!OSEsBotNoticia(not->botname))
-	{
-		Cliente *bl = BuscaCliente(not->botname, NULL);
-		if (bl)
-			ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, "Mensajería global %s", conf_set->red);
-	}
+	if (!OSEsBotNoticia(not->botname) && gl)
+		ProtFunc(P_QUIT_USUARIO_LOCAL)(gl, "Mensajería global %s", conf_set->red);
 	ircfree(not->botname);
 	ircfree(not->noticia);
-	Free(not);
+	ircfree(not);
 	return 1;
 }
 void OSDescargaNoticias()
@@ -281,7 +281,7 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 }
 int OSBorraNoticia(int id)
 {
-	SQLQuery("DELETE from %s%s where n='%i'", PREFIJO, OS_NOTICIAS, id);
+	SQLQuery("DELETE from %s%s where n=%i", PREFIJO, OS_NOTICIAS, id);
 	return OSDescargaNoticia(id);
 }
 void OSCargaNoticias()
