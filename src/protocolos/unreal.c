@@ -825,12 +825,48 @@ int test(Conf *config, int *errores)
 			}
 		}
 	}
+	if ((eval = BuscaEntrada(config, "parametros")))
+	{
+		if ((aux = BuscaEntrada(eval, "clientes")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz clientes está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "mascaras")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz mascaras está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "resto1")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz resto está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "resto2")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz resto está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+	}	
 	*errores += error_parcial;
 	return error_parcial;
 }
 void set(Conf *config)
 {
 	int i, p;
+	char *modcl = "qaohv", *modmk = "beI", *modpm1 = "kfL", *modpm2 = "lj";
 	if (!conf_set)
 		BMalloc(conf_set, struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
@@ -843,7 +879,7 @@ void set(Conf *config)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
 					ircstrdup(autousers, config->seccion[i]->seccion[p]->data);
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "opers"))
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "opers"))
 					ircstrdup(autousers, config->seccion[i]->seccion[p]->data);
 			}
 		}
@@ -853,11 +889,29 @@ void set(Conf *config)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
 					ircstrdup(modusers, config->seccion[i]->seccion[p]->data);
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
 					ircstrdup(modcanales, config->seccion[i]->seccion[p]->data);
 			}
 		}
+		else if (!strcmp(config->seccion[i]->item, "parametros"))
+		{
+			for (p = 0; p < config->seccion[i]->secciones; p++)
+			{
+				if (!strcmp(config->seccion[i]->seccion[p]->item, "clientes"))
+					modcl = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "mascaras"))
+					modmk = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "resto1"))
+					modpm1 = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "resto2"))
+					modpm2 = config->seccion[i]->seccion[p]->data;
+			}
+		}
 	}
+	ircstrdup(protocolo->modcl, modcl);
+	ircstrdup(protocolo->modmk, modmk);
+	ircstrdup(protocolo->modpm1, modpm1);
+	ircstrdup(protocolo->modpm2, modpm2);
 	bzero(tklines, sizeof(tklines));
 #ifdef UDB
 	IniciaProceso(UdbCompruebaOpts);
@@ -965,7 +1019,7 @@ void PROT_INICIA(Unreal)()
 	servidores = NULL;
 	EnviaAServidor("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64 TKLEXT");
 #ifdef UDB
-	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s,SD,PMODE", me.nombre);
+	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s,SD", me.nombre);
 #endif
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
@@ -1080,7 +1134,6 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 IRCFUNC(m_msg)
 {
 	char *param[256], par[BUFSIZE];
-	bCom *bcom;
 	int params, i;
 	Modulo *mod;
 	Cliente *bl;
@@ -1112,30 +1165,47 @@ IRCFUNC(m_msg)
 	}
 	if ((mod = BuscaModulo(parv[1], modulos)))
 	{
-		for (i = 0; i < mod->comandos; i++)
+		Mod_Func func;
+		char ex;
+		Alias *aux;
+		if ((aux = BuscaAlias(param, params, mod)))
 		{
-			bcom = mod->comando[i];
-			if (!strcasecmp(param[0], bcom->com))
+			int i, j, k = 0;
+			char *aparam[256];
+			for (i = 0; aux->sintaxis[i]; i++)
 			{
-				if ((bcom->nivel & USER) && !(cl->nivel & USER))
+				if (*aux->sintaxis[i] == '%')
 				{
-					Responde(cl, bl, ERR_NOID, "");
-					return 0;
-				}
-				if (bcom->nivel & cl->nivel || bcom->nivel == TODOS)
-					bcom->func(cl, parv, parc, param, params);
-				else
-				{
-					if (cl->nivel & USER)
-						Responde(cl, bl, ERR_FORB, "");
+					char tmp[4], *c;
+					int top;
+					bzero(tmp, sizeof(tmp));
+					if ((c = strchr(aux->sintaxis[i], '-')))
+						strncpy(tmp, aux->sintaxis[i]+1, c-aux->sintaxis[i]-1);
 					else
-						Responde(cl, bl, ERR_NOID, "");
+						strcpy(tmp, aux->sintaxis[i]+1);
+					j = atoi(tmp);
+					top = (c ? params : j+1);
+					while (j < top)
+						aparam[k++] = param[j++];
 				}
-				return 0;
+				else
+					aparam[k++] = aux->sintaxis[i];
 			}
+			for (i = 0; i < k; i++)
+				param[i] = aparam[i];
+			params = k;
 		}
-		if (!EsServidor(cl))
-			Responde(cl, bl, ERR_DESC, "");
+		if ((func = TieneNivel(cl, param[0], mod, &ex)))
+			func(cl, parv, parc, param, params);
+		else
+		{
+			if (!ex && !EsServidor(cl))
+				Responde(cl, bl, ERR_DESC);
+			else if (cl->nivel & N1)
+				Responde(cl, bl, ERR_FORB);
+			else
+				Responde(cl, bl, ERR_NOID);
+		}
 	}
 	return 0;
 }
@@ -1416,7 +1486,7 @@ IRCFUNC(m_sjoin)
 				arr[i++] = p;
 			arr[i] = NULL;
 			ProcesaModo(cl, cn, arr, i);
-			Senyal4(SIGN_MODE, cl, cn, arr, i);
+			Senyal4(SIGN_MODE, al, cn, arr, i);
 		}
 	}
 	if (parc > 4) /* hay modos */
@@ -1558,9 +1628,9 @@ IRCFUNC(m_error)
 IRCFUNC(m_away)
 {
 	if (parc == 2)
-		cl->nivel |= AWAY;
+		cl->away = 1;
 	else if (parc == 1)
-		cl->nivel &= ~AWAY;
+		cl->away = 0;
 	Senyal2(SIGN_AWAY, cl, parv[1]);
 	return 0;
 }
@@ -1986,7 +2056,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 			case '-':
 				modo = DEL;
 				break;
-			case 'b':
+			/*case 'b':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
@@ -2003,7 +2073,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 					BorraBanDeCanal(&cn->exc, parv[param]);
 				param++;
-				break;
+				break;*/
 			case 'k':
 				if (!parv[param])
 					break;
@@ -2064,7 +2134,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				}
 				param++;
 				break;
-			case 'q':
+			/*case 'q':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
@@ -2108,12 +2178,30 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 					BorraModoCliente(&cn->voz, BuscaCliente(parv[param], NULL));
 				param++;
-				break;
+				break;*/
 			default:
+			{
+				MallaCliente *mcl;
+				MallaMascara *mmk;
 				if (modo == ADD)
-					cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
+				{
+					if ((mcl = BuscaMallaCliente(cn, *mods)))
+						InsertaModoCliente(&mcl->malla, BuscaCliente(parv[param], NULL));
+					else if ((mmk = BuscaMallaMascara(cn, *mods)))
+						InsertaMascara(cl, &mmk->malla, parv[param]);
+					else
+						cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
+				}
 				else
-					cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(Unreal));
+				{
+					if ((mcl = BuscaMallaCliente(cn, *mods)))
+						BorraModoCliente(&mcl->malla, BuscaCliente(parv[param], NULL));
+					else if ((mmk = BuscaMallaMascara(cn, *mods)))
+						BorraMascaraDeCanal(&mmk->malla, parv[param]);
+					else
+						cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(Unreal));
+				}
+			}
 		}
 		mods++;
 	}
@@ -2259,9 +2347,9 @@ void UdbDaleCosas(Cliente *cl)
 		if ((bloq = BuscaBloque(N_OPE_TOK, reg)))
 		{
 			u_long nivel = bloq->data_long;
-			if (nivel & BDD_OPER)
+			if (nivel & BuscaOpt("OPER", NivelesBDD))
 				ProcesaModosCliente(cl, "+h");
-			if (nivel & BDD_ADMIN || nivel & BDD_ROOT)
+			if (nivel & BuscaOpt("ADMIN", NivelesBDD) || nivel & BuscaOpt("ROOT", NivelesBDD))
 				ProcesaModosCliente(cl, "+oN");
 		}
 	}

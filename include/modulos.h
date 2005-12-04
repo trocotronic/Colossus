@@ -1,37 +1,12 @@
 /*
- * $Id: modulos.h,v 1.12 2005-10-19 16:30:28 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.13 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
-
-/* Los rangos se definen por bits. A cada bit le corresponde un estado.
-   El ultimo bit se reserva al uso de tener el nick registrado.
-   Este bit es obligatorio. Si aparece como estado, debe aparecer como nivel.
-   Por ejemplo:
-   Un usuario tiene nivel 111001 (observese que esta registrado)
-   Podria utilizar un comando de nivel 111111. Pero si tuviera nivel 110100 (sin registrar)
-   no podría utilizar este comando, ya que el último bit es de aparición obligatoria.
-   */
-   
-#define NOTID 0x0
-#define USER 0x1
-#define PREO 0x2
-#define OPER 0x4
-#define DEVEL 0x8
-#define IRCOP 0x10
-#define ADMIN 0x20
-#define ROOT 0x40
-#define BOT 0x80
-#define AWAY 0x100
 
 #define MAXMODS 128
 #define MAX_RES 64
 #define MAX_COMS 256
+#define MAX_NIVS 16
 
-#define TODOS 0x0
-#define USERS (BOT | ROOT | ADMIN | OPER | DEVEL | IRCOP | PREO | USER)
-#define PREOS (BOT | ROOT | ADMIN | OPER | DEVEL | IRCOP | PREO)
-#define OPERS (BOT | ROOT | ADMIN | OPER | DEVEL | IRCOP)
-#define ADMINS (BOT | ROOT | ADMIN)
-#define ROOTS (BOT | ROOT)
 #define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params)
 typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int);
 
@@ -56,7 +31,7 @@ typedef struct _bcom
 {
 	char *com;
 	Mod_Func func;
-	int nivel;
+	u_int nivel;
 }bCom;
 typedef struct _info
 {
@@ -65,6 +40,16 @@ typedef struct _info
 	char *autor;
 	char *email;
 }ModInfo, ProtInfo;
+
+typedef struct _alias Alias;
+struct _alias
+{
+	Alias *sig;
+	char *formato[16];
+	char *sintaxis[16];
+	u_long crc;
+};
+
 /*!
  * @desc: Recurso de módulo. Se utiliza durante la carga del mismo.
  * @params: $hmod Puntero a la librería física cargada por el sistema operativo.
@@ -103,6 +88,7 @@ typedef struct _mod
 	int id;
 	char *config;
 	Cliente *cl;
+	Alias *aliases;
 	char cargado;
 	ModInfo *info;
 	bCom *comando[MAX_COMS];
@@ -148,8 +134,8 @@ extern const char *ErrorDl(void);
  * @cat: Modulos
  * @ver: BotSet
  !*/
-#define BotUnset(x) x.hmod->conf = NULL; x.hmod = NULL; 
-extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
+#define BotUnset(x) LiberaComs(x.hmod); DescargaAliases(x.hmod); x.hmod->conf = NULL; x.hmod = NULL; 
+extern Mod_Func BuscaFuncion(Modulo *, char *, u_int *);
 /*!
  * @desc: Responde a un usuario con especificación de una función si esta función existe y está cargada. Muy útil para sistemas de AYUDA.
  * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
@@ -158,7 +144,7 @@ extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
  * @cat: Modulos
  * @sntx: void FuncResp(void mod, char *nombre, char *cont)
  !*/
-#define FuncResp(x,y,z) do { if (BuscaFuncion(x.hmod,y,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
+#define FuncResp(x,y,z) do { if (TieneNivel(cl,y,x.hmod,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
 
 #ifdef ENLACE_DINAMICO
  #define MOD_INFO(name) Mod_Info
@@ -170,4 +156,43 @@ extern Mod_Func BuscaFuncion(Modulo *, char *, int *);
  #define MOD_DESCARGA(name) name##_Descarga
 #endif
 
-extern void ProcesaComsMod(Conf *, Modulo *, bCom *);
+extern int ProcesaComsMod(Conf *, Modulo *, bCom *);
+extern void LiberaComs(Modulo *);
+extern void SetComMod(Conf *, Modulo *, bCom *);
+extern int TestComMod(Conf *, bCom *, char);
+
+typedef struct _nivel
+{
+	char *nombre;
+	char *flags;
+	u_int nivel;
+}Nivel;
+#define TODOS 0x0
+extern u_int InsertaNivel(char *, char *);
+extern void DescargaNiveles();
+extern Nivel *BuscaNivel(char *);
+extern int nivs;
+extern Nivel *niveles[MAX_NIVS];
+
+#define N0 0x0
+#define N1 0x1
+#define N2 0x2
+#define N3 0x4
+#define N4 0x8
+#define N5 0x10
+#define N6 0x20
+#define N7 0x40
+#define N8 0x80
+#define N9 0x100
+#define N10 0x200
+#define N11 0x400
+#define N12 0x800
+#define N13 0x1000
+#define N14 0x2000
+#define N15 0x4000
+
+extern Mod_Func TieneNivel(Cliente *, char *, Modulo *, char *);
+
+extern Alias *CreaAlias(char *, char *, Modulo *);
+extern void DescargaAliases(Modulo *);
+extern Alias *BuscaAlias(char **, int, Modulo *);

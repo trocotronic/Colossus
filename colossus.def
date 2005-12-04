@@ -1,88 +1,52 @@
-; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ
+; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
-	AbreSockIrcd
-	AcercaDLG
 	Aleatorio
 	AleatorioEx
 	Alerta
 	ApagaCrono
-	BorraBanDeCanal
+	BorraMascaraDeCanal
 	BorraCache
 	BorraCanalDeCliente
-	BorraCanalDeHash
 	BorraClienteDeCanal
-	BorraClienteDeHash
 	BorraComando
 	BorraModoCliente
 	BorraSenyal
-	BorraSock
 	BorraTKL
-	BorraTemporales
+	BuscaAlias
 	BuscaCanal
-	BuscaCanalEnHash
 	BuscaCliente
-	BuscaClienteEnHash
+	BuscaComMod
 	BuscaComando
 	BuscaEntrada
 	BuscaFuncion
+	BuscaMallaCliente
+	BuscaMallaMascara
 	BuscaModulo
-	CTXInitCliente
-	CTXInitServer
+	BuscaNivel
+	BuscaOpt
+	BuscaOptNiv
 	CambiaNick
-	CampoDLG
-	CargaCache
-	CargaProtocolo
-	CargaSQL
 	ChkBtCon
 	CierraColossus
 	CierraIrcd
-	CierraSmtp
-	CierraSocks
-	CierraTodo
 	CifraNick
-	CleanUp
-	CleanUpSegv
-	Cmd
 	CogeCache
-	CompletaConexion
-	CompruebaCronos
-	ConfErrorDLG
-	CopiaSlot
 	Crc32
+	CreaAlias
 	CreaBot
-	CreaMensaje
-	CreaModulo
 	Debug
-	DescargaConfiguracion
-	DescargaModulo
-	DescargaModulos
+	DescargaAliases
 	DesconectaBot
-	Desencola
-	DesencolaSmtp
 	DetieneProceso
-	DistribuyeConfiguracion
-	DistribuyeMe
 	Dominio
-	EliminaSlot
 	Email
-	Encola
-	EncolaSmtp
 	EntraBot
-	EntraBots
-	EntraResidentes
 	EnviaAServidor
-	EnviaCola
-	EnviaEmail
 	Error
-	ErrorDl
-	ErrorSSL
 	EsArchivo
 	EsIp
 	EsLink
 	EsLinkCanal
-	EscribePid
-	EscuchaAbre
-	EscuchaIrcd
 	ExMalloc
 	Fecha
 	FlagAModo
@@ -93,58 +57,33 @@ EXPORTS
 	Info
 	InfoCanal
 	IniciaCrono
-	IniciaIrcd
 	IniciaProceso
-	IniciaProcesos
-	IniciaPrograma
-	InsertaBan
+	InsertaMascara
 	InsertaCache
 	InsertaCanalEnCliente
-	InsertaCanalEnHash
 	InsertaClienteEnCanal
-	InsertaClienteEnHash
 	InsertaComando
 	InsertaModoCliente
 	InsertaSenyal
-	InsertaSock
 	InsertaTKL
 	IrcdEscucha
-	LeeMensaje
-	LeeSocks
+	LiberaComs
 	LiberaMemoriaCanal
 	LiberaMemoriaCliente
 	LiberaMemoriaConfiguracion
-	LiberaMemoriaDb
-	LiberaMemoriaLog
-	LiberaMemoriaMensaje
-	LiberaMemoriaProtocolo
-	LiberaMemoriaSSL
-	LiberaMemoriaServer
-	LiberaMemoriaSet
-	LiberaMemoriaSmtp
-	LiberaSQL
-	ListaSocks
 	Loguea
-	LoopPrincipal
 	MDString
-	MainDLG
 	MascaraIrcd
 	MascaraTKL
 	ModoAFlag
 	ModosAFlags
-	Mx
 	NTL_tolower_tab
 	NTL_toupper_tab
 	NuevoCliente
-	ParseSmtp
 	ParseaConfiguracion
 	PreguntaCampo
-	ProcCache
 	ProcesaComsMod
-	ProcesaIrcd
 	ProcesaModosCliente
-	ProcesaSmtp
-	ProcesosAuxiliares
 	ReconectaBot
 	Refresca
 	Reinicia
@@ -164,56 +103,35 @@ EXPORTS
 	SQLInserta
 	SQLNumRows
 	SQLQuery
-	SSLAccept
-	SSLCifrado
-	SSLClienteConexion
-	SSLConnect
-	SSLInit
-	SSLKeyPasswd
-	SSLPassDLG
-	SSLPemPasswd
-	SSLShutDown
-	SSLSockNoBlock
-	SSLSockRead
-	SSLSockWrite
 	SacaBot
+	SetComMod
 	SockAccept
 	SockActual
 	SockClose
 	SockIrcd
 	SockListen
-	SockNoBlock
 	SockOpen
 	SockWrite
 	SockWriteVL
 	StrCount
-	SysTray
-	TaskBarCreated
+	TestComMod
+	TieneNivel
 	TipoMascara
-	Token
 	Unifica
 	VerInfo
-	WM_TASKBARCREATED
-	WinMain
-	ZLibComprime
-	ZLibDescomprime
-	ZLibInit
-	ZLibLibera
 	add_item
-	atoi_tab
+	backupbuf
 	b64_decode
 	b64_encode
-	backupbuf
 	base64_decode
 	base64_encode
 	base64toint
 	buf
-	cTab
 	canal_debug
 	canales
 	chrcat
+	chrremove
 	clientes
-	colasmtp
 	comandos
 	conf_db
 	conf_log
@@ -221,18 +139,12 @@ EXPORTS
 	conf_set
 	conf_smtp
 	conf_ssl
-	conta
 	copyfile
-	ctx_client
-	ctx_server
 	del_item
-	getfilemodtime
 	gettok
 	hInst
 	hThreadPrincipal
-	hwConfError
 	hwMain
-	id
 	iniciado
 	inicio
 	intentos
@@ -240,8 +152,6 @@ EXPORTS
 	ircsprintf
 	ircvsprintf
 	linkado
-	listenS
-	listens
 	margv
 	match
 	me
@@ -249,16 +159,12 @@ EXPORTS
 	modebuf
 	modulos
 	mutex
-	my_itoa
+	niveles
+	nivs
 	parabuf
-	preg
-	print_r
-	procs
 	protocolo
 	refrescando
-	reset
 	senyals
-	setfilemodtime
 	spath
 	sql
 	str_replace
@@ -270,6 +176,5 @@ EXPORTS
 	tea
 	timers
 	tokbuf
-	totalcola
 	uTab
 	untea

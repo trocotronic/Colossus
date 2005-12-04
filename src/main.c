@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.62 2005-11-01 14:12:13 Trocotronic Exp $ 
+ * $Id: main.c,v 1.63 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -159,6 +159,13 @@ void EscribePid()
 		Debug("No se puede abrir el archivo pid %s", PID);
 #endif
 #endif
+}
+int SigPostNick(Cliente *cl, char nuevo)
+{
+	Nivel *niv;
+	if (IsId(cl) && (niv = BuscaNivel("ROOT")) && !strcasecmp(conf_set->root, cl->nombre))
+		cl->nivel |= niv->nivel;
+	return 0;
 }
 void BorraTemporales()
 {
@@ -336,6 +343,7 @@ int main(int argc, char *argv[])
 	/* las primeras señales deben ser del núcleo */
 	InsertaSenyal(SIGN_SYNCH, EntraBots);
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
+	InsertaSenyal(SIGN_POST_NICK, SigPostNick);
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);
@@ -1564,9 +1572,9 @@ char *CifraNick(char *nickname, char *pass)
 
 /*!
  * @desc: Añade un caracter a una cadena. Análogo a strcat.
- * @params: $dest [in] Cadena de destino. El usuario es responsable de garantizar que haya espacio suficiente.
+ * @params: $dest [in/out] Cadena a concatenar. El usuario es responsable de garantizar que haya espacio suficiente.
  	    $car [in] Caracter a añadir.
- * @ret: Devuelve la nueva cadena.
+ * @ret: Devuelve la cadena <i>des</i> con el nuevo caracter añadido. NULL, en caso de error.
  * @cat: Programa
  !*/
  
@@ -1580,6 +1588,25 @@ char *chrcat(char *dest, char car)
 		return dest;
 	}
 	return NULL;
+}
+
+/*!
+ * @desc: Elimina todas las apariciones de un caracter en una cadena.
+ * @params: $dest [in/out] Cadena a procesar.
+ 	    $rem [in] Caracter a eliminar.
+ * @ret: Devuelve la cadena <i>dest</i> con el caracter eliminado.
+ * @cat: Programa
+ !*/
+ 
+char *chrremove(char *dest, char rem)
+{
+	char *c, *r = dest;
+	for (c = dest; !BadPtr(c); c++)
+	{
+		if (*c != rem)
+			*r++ = *c;
+	}
+	return dest;
 }
 void add_item(Item *item, Item **lista)
 {
@@ -1625,4 +1652,23 @@ char *Repite(char car, int veces)
 	}
 	ret[i] = 0;
 	return ret;
+}
+
+/*!
+ * @desc: Busca una opción en una lista de opciones.
+ * @params: $item [in] Opción a buscar.
+ 	    $lista [in] Lista donde buscar.
+ * @ret: Devuelve el valor de esa opción.
+ * @cat: Programa
+ !*/
+ 
+int BuscaOpt(char *item, Opts *lista)
+{
+	Opts *ofl;
+	for (ofl = lista; ofl->item; ofl++)
+	{
+		if (!strcasecmp(item, ofl->item))
+			return ofl->opt;
+	}
+	return 0;
 }

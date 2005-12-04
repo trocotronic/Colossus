@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.30 2005-10-22 18:23:24 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.31 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -312,7 +312,6 @@ Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *ser
 		cl->server = BuscaCliente(server, NULL);
 	if (vhost)
 		cl->vhost = strdup(vhost);
-	cl->nivel = NOTID;
 	if (umodos)
 		ProcesaModosCliente(cl, umodos);
 	if (info)
@@ -335,6 +334,40 @@ void CambiaNick(Cliente *cl, char *nuevonick)
 	GeneraMascara(cl);
 	InsertaClienteEnHash(cl, nuevonick, uTab);
 }
+void CreaMallaCliente(Canal **cn, char flag)
+{
+	MallaCliente *mcl;
+	BMalloc(mcl, MallaCliente);
+	mcl->flag = flag;
+	AddItem(mcl, (*cn)->mallacl);
+}
+extern MallaCliente *BuscaMallaCliente(Canal *cn, char flag)
+{
+	MallaCliente *mcl;
+	for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
+	{
+		if (mcl->flag == flag)
+			return mcl;
+	}
+	return NULL;
+}
+extern MallaMascara *BuscaMallaMascara(Canal *cn, char flag)
+{
+	MallaMascara *mmk;
+	for (mmk = cn->mallamk; mmk; mmk = mmk->sig)
+	{
+		if (mmk->flag == flag)
+			return mmk;
+	}
+	return NULL;
+}
+void CreaMallaMascara(Canal **cn, char flag)
+{
+	MallaMascara *mmk;
+	BMalloc(mmk, MallaMascara);
+	mmk->flag = flag;
+	AddItem(mmk, (*cn)->mallamk);
+}
 Canal *InfoCanal(char *canal, int crea)
 {
 	Canal *cn;
@@ -342,10 +375,15 @@ Canal *InfoCanal(char *canal, int crea)
 		return cn;
 	if (crea)
 	{
+		char *c;
 		BMalloc(cn, Canal);
 		cn->nombre = strdup(canal);
 		if (canales)
 			canales->prev = cn;
+		for (c = protocolo->modcl; !BadPtr(c); c++)
+			CreaMallaCliente(&cn, *c);
+		for (c = protocolo->modmk; !BadPtr(c); c++)
+			CreaMallaMascara(&cn, *c);
 		AddItem(cn, canales);
 		InsertaCanalEnHash(cn, canal, cTab);
 	}
@@ -395,6 +433,7 @@ int BorraCanalDeCliente(Cliente *cl, Canal *cn)
 int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 {
 	LinkCliente *aux, *prev = NULL;
+	MallaCliente *maux;
 	if (!cl || !cn)
 		return 0;
 	for (aux = cn->miembro; aux; aux = aux->sig)
@@ -411,11 +450,8 @@ int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 		}
 		prev = aux;
 	}
-	BorraModoCliente(&cn->owner, cl);
-	BorraModoCliente(&cn->admin, cl);
-	BorraModoCliente(&cn->op, cl);
-	BorraModoCliente(&cn->half, cl);
-	BorraModoCliente(&cn->voz, cl);
+	for (maux = cn->mallacl; maux; maux = maux->sig)
+		BorraModoCliente(&maux->malla, cl);
 	if (!cn->miembros 
 #ifdef UDB
 		&& !(cn->modos & MODE_RGSTR)
@@ -424,30 +460,30 @@ int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 		LiberaMemoriaCanal(cn);
 	return 0;
 }
-void InsertaBan(Cliente *cl, Ban **bn, char *ban)
+void InsertaMascara(Cliente *cl, Mascara **mk, char *mascara)
 {
-	Ban *banid;
-	if (!ban)
+	Mascara *maskid;
+	if (!mascara)
 		return;
-	banid = (Ban *)Malloc(sizeof(Ban));
-	banid->quien = cl;
-	banid->ban = strdup(ban);
-	AddItem(banid, *bn);
+	maskid = (Mascara *)Malloc(sizeof(Mascara));
+	maskid->quien = cl;
+	maskid->mascara = strdup(mascara);
+	AddItem(maskid, *mk);
 }
-int BorraBanDeCanal(Ban **bn, char *ban)
+int BorraMascaraDeCanal(Mascara **mk, char *mascara)
 {
-	Ban *aux, *prev = NULL;
-	if (!ban)
+	Mascara *aux, *prev = NULL;
+	if (!mascara)
 		return 0;
-	for (aux = *bn; aux; aux = aux->sig)
+	for (aux = *mk; aux; aux = aux->sig)
 	{
-		if (!strcmp(aux->ban, ban))
+		if (!strcmp(aux->mascara, mascara))
 		{
 			if (prev)
 				prev->sig = aux->sig;
 			else
-				*bn = aux->sig;
-			Free(aux->ban);
+				*mk = aux->sig;
+			Free(aux->mascara);
 			Free(aux);
 			return 1;
 		}
@@ -738,8 +774,10 @@ void LiberaMemoriaCliente(Cliente *cl)
 }
 void LiberaMemoriaCanal(Canal *cn)
 {
-	Ban *ban, *tmpb;
+	MallaMascara *maux, *mtmp;
+	MallaCliente *caux, *ctmp;
 	LinkCliente *aux, *tmp;
+	Mascara *kaux, *ktmp;
 	BorraCanalDeHash(cn, cn->nombre, cTab);
 	if (cn->prev)
 		cn->prev->sig = cn->sig;
@@ -751,42 +789,26 @@ void LiberaMemoriaCanal(Canal *cn)
 	ircfree(cn->clave);
 	ircfree(cn->flood);
 	ircfree(cn->link);
-	for (ban = cn->ban; ban; ban = tmpb)
+	for (maux = cn->mallamk; maux; maux = mtmp)
 	{
-		tmpb = ban->sig;
-		ircfree(ban->ban);
-		ircfree(ban);
+		mtmp = maux->sig;
+		for (kaux = maux->malla; kaux; kaux = ktmp)
+		{
+			ktmp = kaux->sig;
+			ircfree(kaux->mascara);
+			ircfree(kaux);
+		}
+		ircfree(maux);
 	}
-	for (ban = cn->exc; ban; ban = tmpb)
+	for (caux = cn->mallacl; caux; caux = ctmp)
 	{
-		tmpb = ban->sig;
-		ircfree(ban->ban);
-		ircfree(ban);
-	}
-	for (aux = cn->owner; aux; aux = tmp)
-	{
-		tmp = aux->sig;
-		Free(aux);
-	}
-	for (aux = cn->admin; aux; aux = tmp)
-	{
-		tmp = aux->sig;
-		Free(aux);
-	}
-	for (aux = cn->op; aux; aux = tmp)
-	{
-		tmp = aux->sig;
-		Free(aux);
-	}
-	for (aux = cn->half; aux; aux = tmp)
-	{
-		tmp = aux->sig;
-		Free(aux);
-	}
-	for (aux = cn->voz; aux; aux = tmp)
-	{
-		tmp = aux->sig;
-		Free(aux);
+		ctmp = caux->sig;
+		for (aux = caux->malla; aux; aux = tmp)
+		{
+			tmp = aux->sig;
+			ircfree(aux);
+		}
+		ircfree(caux);
 	}
 	for (aux = cn->miembro; aux; aux = tmp)
 	{
@@ -817,8 +839,13 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 {
 	Cliente *al;
 	static int num = 0;
+	if (!SockIrcd)
+		return NULL;
 	if ((al = BuscaCliente(nick, NULL)) && !EsBot(al))
 		ProtFunc(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
+#ifdef DEBUG
+	Debug("Creando %s", nick);
+#endif
 	al = NuevoCliente(nick, ident, host, NULL, me.nombre, host, modos, realname);
 	al->tipo = TBOT;
 	al->numeric = num;
@@ -939,30 +966,26 @@ char *ModosAFlags(u_long modes, mTab tabla[], Canal *cn)
 }
 void ProcesaModosCliente(Cliente *cl, char *modos)
 {
+	int i;
 	if (!cl)
 		return;
 	FlagsAModos(&(cl->modos), modos, protocolo->umodos);
-	if (cl->modos & UMODE_NETADMIN)
+	for (i = 0; i < nivs; i++)
 	{
-		
-		cl->nivel |= ADMIN;
-		if (!strcasecmp(cl->nombre, conf_set->root))
-			cl->nivel |= ROOT;
+		if (niveles[i]->flags)
+		{
+			char *c;
+			for (c = niveles[i]->flags; !BadPtr(c); c++)
+			{
+				if (!(cl->modos & FlagAModo(*c, protocolo->umodos)))
+					break;
+			}
+			if (BadPtr(c))
+				cl->nivel |= niveles[i]->nivel;
+			else
+				cl->nivel &= ~(niveles[i]->nivel);
+		}
 	}
-	else
-		cl->nivel &= ~(ADMIN | ROOT);
-	if (cl->modos & UMODE_OPER)
-		cl->nivel |= IRCOP;
-	else
-		cl->nivel &= ~IRCOP;
-	if (cl->modos & UMODE_HELPOP)
-		cl->nivel |= OPER;
-	else
-		cl->nivel &= ~OPER;
-	if (cl->modos & UMODE_REGNICK)
-		cl->nivel |= USER;
-	else
-		cl->nivel &= ~USER;		
 }
 
 /*!

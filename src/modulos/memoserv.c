@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.19 2005-10-19 16:30:30 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.20 2005-12-04 14:09:23 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,7 +11,7 @@
 #include "modulos/memoserv.h"
 
 MemoServ memoserv;
-#define ExFunc(x) BuscaFuncion(memoserv.hmod, x, NULL)
+#define ExFunc(x) TieneNivel(cl, x, memoserv.hmod, NULL)
 
 BOTFUNC(MSHelp);
 BOTFUNC(MSMemo);
@@ -23,14 +23,14 @@ BOTFUNC(MSInfo);
 BOTFUNC(MSCancela);
 
 static bCom memoserv_coms[] = {
-	{ "help" , MSHelp , TODOS } ,
-	{ "send" , MSMemo , USERS } ,
-	{ "read" , MSRead , USERS } ,
-	{ "del" , MSDel , USERS } ,
-	{ "list" , MSList , USERS } ,
-	{ "set" , MSOpts , USERS } ,
-	{ "info" , MSInfo , USERS } ,
-	{ "cancelar" , MSCancela , USERS } ,
+	{ "help" , MSHelp , N0 } ,
+	{ "send" , MSMemo , N1 } ,
+	{ "read" , MSRead , N1 } ,
+	{ "del" , MSDel , N1 } ,
+	{ "list" , MSList , N1 } ,
+	{ "set" , MSOpts , N1 } ,
+	{ "info" , MSInfo , N1 } ,
+	{ "cancelar" , MSCancela , N1 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 
@@ -105,7 +105,14 @@ int MOD_DESCARGA(MemoServ)()
 }
 int MSTest(Conf *config, int *errores)
 {
-	return 0;
+	int i, error_parcial = 0;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funcion"))
+			error_parcial += TestComMod(config->seccion[i], memoserv_coms, 1);
+	}
+	*errores += error_parcial;
+	return error_parcial;
 }
 void MSSet(Conf *config, Modulo *mod)
 {
@@ -114,10 +121,12 @@ void MSSet(Conf *config, Modulo *mod)
 	{
 		if (!strcmp(config->seccion[i]->item, "defecto"))
 			memoserv.def = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "cada"))
+		else if (!strcmp(config->seccion[i]->item, "cada"))
 			memoserv.cada = atoi(config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "funciones"))
+		else if (!strcmp(config->seccion[i]->item, "funciones"))
 			ProcesaComsMod(config->seccion[i], mod, memoserv_coms);
+		else if (!strcmp(config->seccion[i]->item, "funcion"))
+			SetComMod(config->seccion[i], mod, memoserv_coms);
 	}
 	InsertaSenyal(SIGN_AWAY, MSCmdAway);
 	InsertaSenyal(SIGN_JOIN, MSCmdJoin);
@@ -787,7 +796,7 @@ int MSSend(char *para, char *de, char *mensaje)
 				al = BuscaCliente(para, NULL);
 				if (al && IsId(al))
 				{
-					if (!(al->nivel & AWAY) || !(opts & MS_OPT_AWY))
+					if (!al->away || !(opts & MS_OPT_AWY))
 							MSNotifica(al);
 				}	
 			}
@@ -803,7 +812,7 @@ int MSSigIdOk(Cliente *al)
 	if ((reg = SQLCogeRegistro(MS_SET, al->nombre, "opts")))
 	{
 		opts = atoi(reg);
-		if ((opts & MS_OPT_LOG) && (!(al->nivel & AWAY) || !(opts & MS_OPT_AWY)))
+		if ((opts & MS_OPT_LOG) && (!al->away || !(opts & MS_OPT_AWY)))
 			MSNotifica(al);
 	}
 	return 0;

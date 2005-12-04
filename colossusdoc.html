@@ -5,14 +5,14 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.18 2005-11-01 14:12:13 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.19 2005-12-04 14:09:21 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.rallados.net" target="_blank"><font size="3">http://www.rallados.net</font></a><font size="3"><br>
-    <b>Versi&oacute;n actual:</b> 1.2b<br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 01/11/2005</font><br>
+    <b>Versi&oacute;n actual:</b> 1.3<br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 03/12/2005</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
    &nbsp;<br>
@@ -34,6 +34,9 @@
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.7 <a href="#ssl">Bloque ssl { }</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 8.8 <a href="#protocolo">Bloque protocolo { }</a></font><br>
   <font size="+1">9.- <a href="#bots">Configuraci&oacute;n de m&oacute;dulos</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.0.1 <a href="#funciones">Bloque funciones { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.0.2 <a href="#funcion">Bloque funcion { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.0.3 <a href="#alias">Bloque alias { }</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.1 <a href="#nickserv">NickServ</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.2 <a href="#chanserv">ChanServ</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.3 <a href="#operserv">OperServ</a></font><br>
@@ -244,6 +247,10 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		intervalo n&ordm;-intervalo;
 	};
 	debug &quot;#canal&quot;; //opcional
+	niveles {
+		nombre [flags];
+		...
+	};
 };</pre>
 <p>Este bloque configura los par&aacute;metros del programa. </p>
 <p><b>autobop</b><br>Indica que los robots obtienen el estado de @ al entrar en un canal. </p>
@@ -257,6 +264,9 @@ configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de super
 <p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b> 
 con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 <p><b>debug</b><br>Indica el canal en el que se hace debug de toda la red si est&aacute; presente. </p>
+<p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango. 
+El par&aacute;metro flags es opcional. Si est&aacute; presente, indica que para adquirir ese nivel necesita poseer este flag. Si no, adquirir&aacute; ese nivel a partir de una rutina propia de alg&uacute;n m&oacute;dulo.<br>
+Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a partir de la directriz root.</p>
 <p>Ejemplo:</p>
 <pre>set {
 	autobop;
@@ -271,6 +281,12 @@ con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 		intervalo 5;
 	};
 	debug &quot;#debug&quot;;
+	niveles {
+		USER r;
+		OPER h;
+		ADMIN N;
+		ROOT;
+	};
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="5"><a name="modulos"></a>8.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>
@@ -377,7 +393,48 @@ con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="bots"></a>9.0 Configuraci&oacute;n de m&oacute;dulos</font></b></p>
   <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal. </p>
-  <p>Algunos  requieren que est&eacute;n cargados otros m&oacute;dulos antes.</p>
+  <p>Adem&aacute;s, poseen dos bloques comunes en todos los m&oacute;dulos</p>
+  <p><b><font size="4"><a name="funciones"></a>9.0.1 Bloque funciones { }</font></b></p>
+  <pre>funciones {
+  ...
+};</pre>
+  <p>Se trata de una lista de todas las funciones que se van a cargar. Lo har&aacute;n con su nivel y comando por defecto.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="4"><a name="funcion"></a>9.0.2 Bloque funcion { }</font></b></p>
+  <pre>funcion func {
+  	nivel nivel;
+  	comando comando;
+};</pre>
+  <p>Este bloque carga y permite configurar individualmente una funci&oacute;n. Permite modificar los valores por defecto.</p>
+  <p><b>nivel</b> Declara el nivel m&iacute;nimo de un usuario para poder acceder a este comando. El valor especificado debe pertenecer al bloque <b>niveles { }</b> del bloque <a href="#set"><b>set { }</b></a>.</p>
+  <p><b>comando</b> Establece el comando que debe llamarse. Es decir, el comando que ejecutar&aacute; el usuario cuando use /msg Modulo COMANDO.<br />
+  Por ejemplo, si carga la funci&oacute;n <i>help</i>, puede establecer <i>comando</i> a "AYUDA". As&iacute;, el comando para activarlo ser&aacute; /msg Modulo AYUDA.</p>
+  <p>Una funci&oacute;n puede ser cargada varias veces, siempre que el comando sea distinto en cada vez. Por ejemplo, puede cargar dos veces la funci&oacute;n <i>help</i> con los comandos AYUDA y HELP por separado. 
+  As&iacute;, los usuarios acceder&aacute;n a la ayuda a trav&eacute;s de estos dos comandos.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="4"><a name="alias"></a>9.0.3 Bloque alias { }</font></b></p>
+  <pre>alias "formato" {
+	sintaxis "sintaxis";
+};</pre>
+  <p>Crean alias para ejecutar. Si un usuario ejecuta un comando que coincide con "formato", ese comando se reemplazar&aacute; por "sintaxis". 
+  Por tanto, en realidad estar&aacute; ejecutando el comando que haya en "sintaxis".</p>
+  <p><b>formato</b> Define el patr&oacute;n que el usuario debe ejecutar. Si utilizar % como comod&iacute;n, est&aacute; indicando que en su lugar va una palabra cualquiera.</p>
+  <p><b>sintaxis</b> Corresponde a la sintaxis que se reemplazar&aacute; y que realmente se ejecutar&aacute;. Se puede usar %N (%1, %2, etc.) para indicar los par&aacute;metros pasados. Si se usa %N- se asumir&aacute; que se pasan todos los par&aacute;metros desde N hasta el final.
+  <br>
+  Ejemplo:
+  <pre>alias op {
+	sintaxis "modo %1 o %2-";
+};</pre>
+  <p>Cuando el usuario ejecute /msg ChanServ op #canal nick1 nick2, en realidad se estar&aacute; ejecutando /msg ChanServ modo #canal o nick1 nick2.</p>
+  <pre>alias "clear % ops" {
+	sintaxis "clear %1 o";
+};</pre>
+  <p>Si el usuario ejecuta /msg ChanServ clear #canal ops, en realidad se ejecutar&aacute; /msg ChanServ clear #canal o</p>
+  <p>Este bloque se utiliza b&aacute;sicamente para acortar comandos que requieran trabajar con modos de canal propios de protocolos.</p>
+  <p>Pueden usarse tantos alias como se quiera. Pero no lo sobrecargue puesto que los privados irán lentos.</p>
+  <p>&nbsp;</p>
+  <p><b>NOTA:</b> Algunos m&oacute;dulos requieren que antes est&eacute;n cargados otros m&oacute;dulos.</p>
+  <p>&nbsp;</p>
   <p><b><font size="5"><a name="nickserv"></a>9.1 NickServ</font></b></p>
   <p>Nombre del archivo <b>nickserv.inc</b>.</p>
   <p>Requiere: <b>chanserv</b>. </p>
@@ -399,23 +456,15 @@ con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 		...
 	};  //opcional
 	funciones {
-		help;
-		register;
-		identify;
-		set;
-		drop;
-		sendpass;
-		info;
-		list;
-		ghost;
-		suspender;
-		liberar;
-		swhois;
-		rename;
-		migrar; // S&oacute;lo en soporte UDB
-		demigrar; // S&oacute;lo en soporte UDB
-		forbid;
+		...
 	};
+	funcion func { 
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
 };</pre>
 <p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
 <p><b>secure</b><br>Se utiliza para que los usuarios no falseen sus cuentas de correo. Al registrar un nick, si est&aacute; especificado <b>secure</b>, se le enviar&aacute; una contrase&ntilde;a temporal al mail especificado. </p>
@@ -430,7 +479,32 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p><b>intentos</b><br>N&uacute;mero de intentos que tiene un usuario para identificarse como propietario de su nick. Si sobrepasa este n&uacute;mero, se ejecuta la acci&oacute;n especificada en <b>prot</b>. </p>
 <p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
 <p><b>forbmails { }</b><br>No permite el registro de nicks bajo cuentas email con los dominios especificados. </p>
-<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>0 (2)</td><td>HELP</td></tr>
+<tr><td>register</td><td>0</td><td>REGISTER</td></tr>
+<tr><td>identify</td><td>1</td><td>IDENTIFY</td></tr>
+<tr><td>set</td><td>1</td><td>SET</td></tr>
+<tr><td>drop</td><td>2</td><td>DROP</td></tr>
+<tr><td>sendpass</td><td>2</td><td>SENDPASS</td></tr>
+<tr><td>info</td><td>0</td><td>INFO</td></tr>
+<tr><td>list</td><td>0</td><td>LIST</td></tr>
+<tr><td>ghost</td><td>0</td><td>GHOST</td></tr>
+<tr><td>suspender</td><td>3</td><td>SUSPENDER</td></tr>
+<tr><td>liberar</td><td>3</td><td>LIBERAR</td></tr>
+<tr><td>swhois</td><td>2</td><td>SWHOIS</td></tr>
+<tr><td>rename</td><td>3</td><td>RENAME</td></tr>
+<tr><td>migrar (3)</td><td>1</td><td>MIGRAR</td></tr>
+<tr><td>demigrar (3)</td><td>1</td><td>DEMIGRAR</td></tr>
+<tr><td>forbid</td><td>4</td><td>FORBID</td></tr>
+<tr><td>marca</td><td>3</td><td>MARCA</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
+(3): S&oacute;lo para UDB.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
 <pre>NickServ {
 	sid;
@@ -462,6 +536,13 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		swhois;
 		rename;
 	};
+	funcion help {
+		comando AYUDA;
+	};
+	funcion func { 
+		nivel nivel;
+		comando comando;
+	};  // Opcional
 };</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="chanserv"></a>9.2 ChanServ</font></b></p>
@@ -479,41 +560,15 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		antig n&ordm;;
 	};
 	funciones {
-		help;
-		deauth;
-		drop;
-		identify;
-		info;
-		invite;
-		admin;
-		deadmin;
-		op;
-		deop;
-		half;
-		dehalf;
-		voice;
-		devoice;
-		kick;
-		ban;
-		unban;
-		clear;
-		set;
-		akick;
-		access;
-		list;
-		join;
-		sendpass;
-		suspender;
-		liberar;
-		forbid;
-		unforbid;
-		block;
-		register;
-		token;
-		migrar; // S&oacute;lo en soporte UDB
-		demigrar; // S&oacute;lo en soporte UDB
-		proteger; // S&oacute;lo en soporte UDB
+		...
 	};
+	funcion func { 
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
 };</pre>
 <p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
 <p><b>autodrop</b><br>Indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un canal para que sea dropado autom&aacute;ticamente. </p>
@@ -525,7 +580,42 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p><b>tokens::vigencia</b><br>Indica cu&aacute;ntas horas tiene de vida el token solicitado. </p>
 <p><b>tokens::necesarios</b><br>N&uacute;mero que indica cu&aacute;ntos tokens son necesarios para presentar una petici&oacute;n de registro de un canal. </p>
 <p><b>tokens::antig</b><br>Indica cu&aacute;ntos d&iacute;as tiene que tener registrado el nick como m&iacute;nimo para solicitar un token. </p>
-<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>0 (2)</td><td>HELP</td></tr>
+<tr><td>deauth</td><td>1</td><td>DEAUTH</td></tr>
+<tr><td>drop</td><td>3</td><td>DROP</td></tr>
+<tr><td>register</td><td>1</td><td>REGISTER</td></tr>
+<tr><td>identify</td><td>1</td><td>IDENTIFY</td></tr>
+<tr><td>info</td><td>0</td><td>INFO</td></tr>
+<tr><td>invite</td><td>1</td><td>INVITE</td></tr>
+<tr><td>kick</td><td>1</td><td>KICK</td></tr>
+<tr><td>modo</td><td>1</td><td>MODO</td></tr>
+<tr><td>clear</td><td>1</td><td>CLEAR</td></tr>
+<tr><td>set</td><td>1</td><td>SET</td></tr>
+<tr><td>akick</td><td>1</td><td>AKICK</td></tr>
+<tr><td>access</td><td>1</td><td>ACCESS</td></tr>
+<tr><td>list</td><td>0</td><td>LIST</td></tr>
+<tr><td>join</td><td>1</td><td>JOIN</td></tr>
+<tr><td>sendpass</td><td>2</td><td>SENDPASS</td></tr>
+<tr><td>suspender</td><td>3</td><td>SUSPENDER</td></tr>
+<tr><td>liberar</td><td>3</td><td>LIBERAR</td></tr>
+<tr><td>forbid</td><td>4</td><td>FORBID</td></tr>
+<tr><td>unforbid</td><td>4</td><td>UNFORBID</td></tr>
+<tr><td>block</td><td>2</td><td>BLOCK</td></tr>
+<tr><td>token</td><td>1</td><td>TOKEN</td></tr>
+<tr><td>migrar (3)</td><td>1</td><td>MIGRAR</td></tr>
+<tr><td>demigrar (3)</td><td>1</td><td>DEMIGRAR</td></tr>
+<tr><td>proteger (3)</td><td>1</td><td>PROTEGER</td></tr>
+<tr><td>marca</td><td>3</td><td>MARCA</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
+(3): S&oacute;lo para UDB.<br />
+(4): S&oacute;lo en protocolos que lo soporten.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
 <pre>ChanServ {
 	sid;
@@ -572,6 +662,9 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		register;
 		token;
 	};
+	funcion help { 
+		comando AYUDA;
+	};
 };</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="operserv"></a>9.3 OperServ</font></b></p>
@@ -581,28 +674,44 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	autoop;
 	maxlist n&ordm;; 
 	funciones {
-		help;
-		raw;
-		restart;
-		rehash;
-		close;
-		gline;
-		opers;
-		sajoin;
-		sapart;
-		rejoin;
-		kill;
-		global;
-		noticias;
-		modos; // S&oacute;lo en soporte UDB
-		snomask; // S&oacute;lo en soporte UDB
-		optimiza; // S&oacute;lo en soporte UDB
-		vaciar;
-		akill;
+		...
 	};
+	funcion func { 
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
 };</pre>
 <p><b>autoop</b><br>Los operadores de red obtienen @ al entrar en un canal autom&aacute;ticamente no registrado (en un registrado deber&aacute; tener su correspondiente acceso). </p>
-<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. </p>
+<p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>3</td><td>HELP</td></tr>
+<tr><td>raw</td><td>3</td><td>RAW</td></tr>
+<tr><td>restart</td><td>5</td><td>RESTART</td></tr>
+<tr><td>rehash</td><td>5</td><td>REHASH</td></tr>
+<tr><td>close</td><td>5</td><td>CLOSE</td></tr>
+<tr><td>gline</td><td>3</td><td>GLINE</td></tr>
+<tr><td>opers</td><td>4</td><td>OPERS</td></tr>
+<tr><td>sajoin</td><td>2</td><td>SAJOIN</td></tr>
+<tr><td>sapart</td><td>2</td><td>SAPART</td></tr>
+<tr><td>rejoin</td><td>2</td><td>REJOIN</td></tr>
+<tr><td>kill</td><td>2</td><td>KILL</td></tr>
+<tr><td>global</td><td>2</td><td>GLOBAL</td></tr>
+<tr><td>noticias</td><td>4</td><td>NOTICIAS</td></tr>
+<tr><td>vaciar</td><td>5</td><td>VACIAR</td></tr>
+<tr><td>modos (2)</td><td>4</td><td>MODOS</td></tr>
+<tr><td>snomask (2)</td><td>4</td><td>SNOMASK</td></tr>
+<tr><td>optimiza (2)</td><td>4</td><td>OPTIMIZA</td></tr>
+<tr><td>akill</td><td>3</td><td>AKILL</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): S&oacute;lo para UDB.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
 <pre>OperServ {
 	autoop;
@@ -626,6 +735,9 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		vaciar;
 		akill;
 	};
+	funcion help { 
+		comando AYUDA;
+	};
 };</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="memoserv"></a>9.4 MemoServ</font></b></p>
@@ -635,19 +747,34 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	defecto n&ordm;;
 	cada n&ordm;;
 	funciones {
-		help;
-		send;
-		read;
-		del;
-		list;
-		set;
-		info;
-		cancelar;
+		...
 	};
+	funcion func { 
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
 };</pre>
 <p><b>defecto</b><br>N&uacute;mero del l&iacute;mite de mensajes por defecto que acepta un usuario. </p>
 <p><b>cada</b><br>Indica cu&aacute;ntos segundos deben transcurrir antes de poder enviar otro mensaje. </p>
-<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>0 (2)</td><td>HELP</td></tr>
+<tr><td>send</td><td>1</td><td>SEND</td></tr>
+<tr><td>read</td><td>1</td><td>READ</td></tr>
+<tr><td>del</td><td>1</td><td>DEL</td></tr>
+<tr><td>list</td><td>1</td><td>LIST</td></tr>
+<tr><td>set</td><td>1</td><td>SET</td></tr>
+<tr><td>info</td><td>1</td><td>INFO</td></tr>
+<tr><td>cancelar</td><td>1</td><td>CANCELAR</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
 <pre>MemoServ {
 	defecto 5;
@@ -662,6 +789,9 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		info;
 		cancelar;
 	};
+	funcion help { 
+		comando AYUDA;
+	};
 };</pre>
 <p>&nbsp;</p>
 <p><b><font size="5"><a name="ipserv"></a>9.5 IpServ</font></b></p>
@@ -671,20 +801,35 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	cambio n&ordm;;
 	clones n&ordm;;
 	funciones {
-		help;
-		setipv;
-		setipv2;
-		temphost;
-		clones;
-		set; // S&oacute;lo en soporte UDB
-		dns; // S&oacute;lo en soporte UDB
-		nolines; // S&oacute;lo en soporte UDB
+		...
 	};
+	funcion func { 
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
 };</pre>
 <p><b>sufijo</b><br>Es el sufijo que se a&ntilde;adir&aacute; a la ip virtual si se precisa. </p>
 <p><b>cambio</b><br>Son las horas en que se cambia el cifrado de ip virtuales. </p>
 <p><b>clones</b><br>N&uacute;mero m&aacute;ximo de conexiones permitidas por usuario. </p>
-<p><b>funciones { }</b><br>Es com&uacute;n a todos los m&oacute;dulos e indica qu&eacute; funciones soporta el robot. Es muy &uacute;til si quiere deshabilitarse un comando. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>2</td><td>HELP</td></tr>
+<tr><td>setipv</td><td>2</td><td>SETIPV</td></tr>
+<tr><td>setipv2</td><td>2</td><td>SETIPV2</td></tr>
+<tr><td>temphost</td><td>2</td><td>TEMPHOST</td></tr>
+<tr><td>clones</td><td>4</td><td>CLONES</td></tr>
+<tr><td>set (2)</td><td>4</td><td>SET</td></tr>
+<tr><td>dns (2)</td><td>4</td><td>DNS</td></tr>
+<tr><td>nolines (2)</td><td>3</td><td>NOLINES</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): S&oacute;lo para UDB.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
 <pre>IpServ {
 	sufijo virtual;
@@ -696,6 +841,9 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		setipv2;
 		temphost;
 		clones;
+	};
+	funcion help { 
+		comando AYUDA;
 	};
 };</pre>
 <p>&nbsp;</p>
@@ -714,10 +862,22 @@ A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opcione
 		usuarios +modos-modos; // opcional
 		canales +modos-modos; // opcional
 	}; // opcional
+	parametros {
+		clientes modos; // opcional
+		mascaras modos; // opcional
+		resto1 modos; // opcional
+		resto2 modos; // opcional
+	};
 };</pre>
 <p><b>no_server_deop</b><br>Se utiliza para evitar que al linkar dos nodos, uno quite todos los modos de .&amp;@%+ que pueda haber en un canal. </p>
 <p><b>autojoin { }</b><br>Autojoin de usuarios y operadores.</p>
 <p><b>modos { }</b><br>Modos obligatorios (+) y no permitidos (-) en los usuarios y canales.</p>
+<p><b>parametros { }</b><br>Define los modos de canal con par&aacute;metros que tiene este protocolo. Es opcional, puesto que lleva unos por defecto (los que suelen encontrarse).<br />
+<ul><li><b>clientes</b>: modos que aceptan clientes como par&aacute;metros. Por defecto "qaohv".</li>
+<li><b>mascaras</b>: modos que aceptan m&aacute;scaras como par&aacute;metros. Por defecto "beI".</li>
+<li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "kfL".</li>
+<li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "lj".</li></ul>
+Todo tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
 <p>Ejemplo:</p>
 <pre>protocolo protocolos/unreal_udb.dll {
 	no_server_deop;

@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.h,v 1.5 2005-07-13 14:06:25 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.6 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #define OS_OPTS_AOP 0x1
@@ -19,9 +19,7 @@ extern OperServ operserv;
 #define OS_ERR_EMPT "\00304ERROR: %s"
 #define OS_ERR_FORB ERR_FORB
 
-#ifndef UDB
 #define OS_SQL "opers"
-#endif
 #define OS_NOTICIAS "noticias"
 #define OS_AKILL "akill"
 typedef struct _not Noticia;
@@ -34,11 +32,3 @@ struct _not
 	Cliente *cl;
 };
 #define MAXNOT 32
-
-#ifndef UDB
-#define BDD_PREO 0x1
-#define BDD_OPER 0x2
-#define BDD_DEVEL 0x4
-#define BDD_ADMIN 0x8
-#define BDD_ROOT 0x10
-#endif

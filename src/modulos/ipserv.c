@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.20 2005-10-19 16:30:29 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.21 2005-12-04 14:09:23 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,7 +11,7 @@
 #include "modulos/nickserv.h"
 
 IpServ ipserv;
-#define ExFunc(x) BuscaFuncion(ipserv.hmod, x, NULL)
+#define ExFunc(x) TieneNivel(cl, x, ipserv.hmod, NULL)
 
 BOTFUNC(ISHelp);
 BOTFUNC(ISSetipv);
@@ -37,15 +37,15 @@ int ISProcIps	(Proc *);
 
 
 static bCom ipserv_coms[] = {
-	{ "help" , ISHelp , PREOS } ,
-	{ "setipv" , ISSetipv , PREOS } ,
-	{ "setipv2" , ISSetipv , PREOS } ,
-	{ "temphost" , ISTemphost , PREOS } ,
-	{ "clones" , ISClones , ADMINS } ,
+	{ "help" , ISHelp , N2 } ,
+	{ "setipv" , ISSetipv , N2 } ,
+	{ "setipv2" , ISSetipv , N2 } ,
+	{ "temphost" , ISTemphost , N2 } ,
+	{ "clones" , ISClones , N4 } ,
 #ifdef UDB
-	{ "set" , ISOpts , ADMINS } ,
-	{ "dns" , ISDns , ADMINS } ,
-	{ "nolines" , ISNolines , OPERS } ,
+	{ "set" , ISOpts , N4 } ,
+	{ "dns" , ISDns , N4 } ,
+	{ "nolines" , ISNolines , N3 } ,
 #endif
 	{ 0x0 , 0x0 , 0x0 }
 };
@@ -114,7 +114,14 @@ int MOD_DESCARGA(IpServ)()
 }
 int ISTest(Conf *config, int *errores)
 {
-	return 0;
+	int i, error_parcial = 0;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funcion"))
+			error_parcial += TestComMod(config->seccion[i], ipserv_coms, 1);
+	}
+	*errores += error_parcial;
+	return error_parcial;
 }
 void ISSet(Conf *config, Modulo *mod)
 {
@@ -123,13 +130,15 @@ void ISSet(Conf *config, Modulo *mod)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 			ProcesaComsMod(config->seccion[i], mod, ipserv_coms);
+		else if (!strcmp(config->seccion[i]->item, "funcion"))
+			SetComMod(config->seccion[i], mod, ipserv_coms);
 #ifndef UDB
-		if (!strcmp(config->seccion[i]->item, "clones"))
+		else if (!strcmp(config->seccion[i]->item, "clones"))
 			ipserv.clones = atoi(config->seccion[i]->data);
 #endif
-		if (!strcmp(config->seccion[i]->item, "sufijo"))
+		else if (!strcmp(config->seccion[i]->item, "sufijo"))
 			ircstrdup(ipserv.sufijo, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "cambio"))
+		else if (!strcmp(config->seccion[i]->item, "cambio"))
 			ipserv.cambio = atoi(config->seccion[i]->data) * 3600;
 	}
 #ifndef UDB
@@ -155,18 +164,12 @@ BOTFUNC(ISHelp)
 		FuncResp(ipserv, "SETIPV2", "Agrega o elimina una ip virtual de tipo 2.");
 		FuncResp(ipserv, "TEMPHOST", "Cambia el host de un usuario.");
 #ifdef UDB
-		if (IsOper(cl))
-		{
-			FuncResp(ipserv, "NOLINES", "Controla las excepciones para una ip.");
-		}
+		FuncResp(ipserv, "NOLINES", "Controla las excepciones para una ip.");
 #endif
-		if (IsAdmin(cl))
-		{
-			FuncResp(ipserv, "CLONES", "Administra la lista de ips con más clones.");
+		FuncResp(ipserv, "CLONES", "Administra la lista de ips con más clones.");
 #ifdef UDB
-			FuncResp(ipserv, "SET", "Fija algunos parámetros de la red.");
+		FuncResp(ipserv, "SET", "Fija algunos parámetros de la red.");
 #endif
-		}
 		Responde(cl, CLI(ipserv), " ");
 		Responde(cl, CLI(ipserv), "Para más información, \00312/msg %s %s comando", ipserv.hmod->nick, strtoupper(param[0]));
 	}
@@ -205,7 +208,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), " ");
 		Responde(cl, CLI(ipserv), "Sintaxis: \00312TEMPHOST nick host");
 	}
-	else if (!strcasecmp(param[1], "CLONES") && IsAdmin(cl) && ExFunc("CLONES"))
+	else if (!strcasecmp(param[1], "CLONES") && ExFunc("CLONES"))
 	{
 		Responde(cl, CLI(ipserv), "\00312CLONES");
 		Responde(cl, CLI(ipserv), " ");
@@ -220,7 +223,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), "Borra una ip|host.");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "SET") && IsAdmin(cl) && ExFunc("SET"))
+	else if (!strcasecmp(param[1], "SET") && ExFunc("SET"))
 	{
 		Responde(cl, CLI(ipserv), "\00312SET");
 		Responde(cl, CLI(ipserv), " ");
@@ -231,7 +234,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), " ");
 		Responde(cl, CLI(ipserv), "Sintaxis: \00312SET quit_ips|quit_clones|clones valor");
 	}
-	else if (!strcasecmp(param[1], "DNS") && IsAdmin(cl) && ExFunc("DNS"))
+	else if (!strcasecmp(param[1], "DNS") && ExFunc("DNS"))
 	{
 		Responde(cl, CLI(ipserv), "\00312DNS");
 		Responde(cl, CLI(ipserv), " ");
@@ -243,7 +246,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), " ");
 		Responde(cl, CLI(ipserv), "Sintaxis: \00312DNS ip [host]");
 	}
-	else if (!strcasecmp(param[1], "NOLINES") && IsOper(cl) && ExFunc("NOLINES"))
+	else if (!strcasecmp(param[1], "NOLINES") && ExFunc("NOLINES"))
 	{
 		Responde(cl, CLI(ipserv), "\00312NOLINES");
 		Responde(cl, CLI(ipserv), " ");

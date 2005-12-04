@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.24 2005-11-01 14:12:14 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.25 2005-12-04 14:09:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -15,7 +15,7 @@
 #include "modulos/memoserv.h"
 
 OperServ operserv;
-#define ExFunc(x) BuscaFuncion(operserv.hmod, x, NULL)
+#define ExFunc(x) TieneNivel(cl, x, operserv.hmod, NULL)
 Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
 char *confirm = NULL;
@@ -45,29 +45,29 @@ BOTFUNC(OSBck);
 BOTFUNC(OSAkill);
 
 static bCom operserv_coms[] = {
-	{ "help" , OSHelp , OPERS } ,
-	{ "raw" , OSRaw , OPERS } ,
-	{ "restart" , OSRestart , ROOTS } ,
-	{ "rehash" , OSRehash , ROOTS } ,
+	{ "help" , OSHelp , N3 } ,
+	{ "raw" , OSRaw , N3 } ,
+	{ "restart" , OSRestart , N5 } ,
+	{ "rehash" , OSRehash , N5 } ,
 	//{ "backup" , OSBackup , ROOTS } ,
-	{ "close" , OSClose , ROOTS } ,
+	{ "close" , OSClose , N5 } ,
 	//{ "restaura" , OSRestaura , ROOTS } ,
-	{ "gline" , OSGline , OPERS } ,
-	{ "opers" , OSOpers , ADMINS } ,
-	{ "sajoin" , OSSajoin , OPERS } ,
-	{ "sapart" , OSSapart , OPERS } ,
-	{ "rejoin" , OSRejoin , OPERS } ,
-	{ "kill" , OSKill , OPERS } ,
-	{ "global" , OSGlobal , OPERS } ,
-	{ "noticias" , OSNoticias , OPERS } ,
-	{ "vaciar" , OSVaciar , ROOTS } ,
+	{ "gline" , OSGline , N3 } ,
+	{ "opers" , OSOpers , N4 } ,
+	{ "sajoin" , OSSajoin , N2 } ,
+	{ "sapart" , OSSapart , N2 } ,
+	{ "rejoin" , OSRejoin , N2 } ,
+	{ "kill" , OSKill , N2 } ,
+	{ "global" , OSGlobal , N2 } ,
+	{ "noticias" , OSNoticias , N4 } ,
+	{ "vaciar" , OSVaciar , N5 } ,
 #ifdef UDB
-	{ "modos" , OSModos , ADMINS } ,
-	{ "snomask" , OSSnomask , ADMINS } ,
-	{ "optimiza" , OSOpt , ADMINS } ,
+	{ "modos" , OSModos , N4 } ,
+	{ "snomask" , OSSnomask , N4 } ,
+	{ "optimiza" , OSOpt , N4 } ,
 	//{ "backup" , OSBck , ADMINS } ,
 #endif
-	{ "akill" , OSAkill , OPERS } ,
+	{ "akill" , OSAkill , N3 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 
@@ -144,7 +144,14 @@ int MOD_DESCARGA(OperServ)()
 }	
 int OSTest(Conf *config, int *errores)
 {
-	return 0;
+	int i, error_parcial = 0;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funcion"))
+			error_parcial += TestComMod(config->seccion[i], operserv_coms, 1);
+	}
+	*errores += error_parcial;
+	return error_parcial;
 }
 void OSSet(Conf *config, Modulo *mod)
 {
@@ -154,10 +161,12 @@ void OSSet(Conf *config, Modulo *mod)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 			ProcesaComsMod(config->seccion[i], mod, operserv_coms);
-		if (!strcmp(config->seccion[i]->item, "autoop"))
+		else if (!strcmp(config->seccion[i]->item, "autoop"))
 			operserv.opts |= OS_OPTS_AOP;
-		if (!strcmp(config->seccion[i]->item, "maxlist"))
+		else if (!strcmp(config->seccion[i]->item, "maxlist"))
 			operserv.maxlist = atoi(config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "funcion"))
+			SetComMod(config->seccion[i], mod, operserv_coms);
 	}
 	InsertaSenyal(SIGN_JOIN, OSCmdJoin);
 	InsertaSenyal(SIGN_POST_NICK, OSCmdNick);
@@ -204,10 +213,13 @@ void OSCargaNoticia(int id)
 		not->id = id;
 	}
 	sigue:
-	if (!(gn = OSEsBotNoticia(not->botname)))
-		not->cl = CreaBot(not->botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
-	else
-		not->cl = gn->cl;
+	if (!refrescando)
+	{
+		if (!(gn = OSEsBotNoticia(not->botname)))
+			not->cl = CreaBot(not->botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
+		else
+			not->cl = gn->cl;
+	}
 	gnoticia[gnoticias++] = not;
 }
 int OSDescargaNoticia(int id)
@@ -317,23 +329,17 @@ BOTFUNC(OSHelp)
 		FuncResp(operserv, "GLOBAL", "Manda un mensaje global.");
 		FuncResp(operserv, "NOTICIAS", "Administra las noticias de la red.");
 		FuncResp(operserv, "AKILL", "Prohibe la conexión de una ip/host o usuario permanentemente.");
-		if (IsAdmin(cl))
-		{
-			FuncResp(operserv, "OPERS", "Administra los operadores de la red.");
+		FuncResp(operserv, "OPERS", "Administra los operadores de la red.");
 #ifdef UDB
-			FuncResp(operserv, "MODOS", "Fija los modos de operador que se obtiene automáticamente (BDD).");
-			FuncResp(operserv, "SNOMASK", "Fija las máscaras de operador que se obtiene automáticamente (BDD).");
+		FuncResp(operserv, "MODOS", "Fija los modos de operador que se obtiene automáticamente (BDD).");
+		FuncResp(operserv, "SNOMASK", "Fija las máscaras de operador que se obtiene automáticamente (BDD).");
 #endif
-		}
-		if (IsRoot(cl))
-		{
-			FuncResp(operserv, "RESTART", "Reinicia los servicios.");
-			FuncResp(operserv, "REHASH", "Refresca los servicios.");
-			//FuncResp(operserv, "BACKUP", "Crea una copia de seguridad de la base de datos.");
-			//FuncResp(operserv, "RESTAURA", "Restaura la base de datos.");
-			FuncResp(operserv, "CLOSE", "Cierra el programa.");
-			FuncResp(operserv, "VACIAR", "Elimina todos los registros de la base de datos.");
-		}
+		FuncResp(operserv, "RESTART", "Reinicia los servicios.");
+		FuncResp(operserv, "REHASH", "Refresca los servicios.");
+		//FuncResp(operserv, "BACKUP", "Crea una copia de seguridad de la base de datos.");
+		//FuncResp(operserv, "RESTAURA", "Restaura la base de datos.");
+		FuncResp(operserv, "CLOSE", "Cierra el programa.");
+		FuncResp(operserv, "VACIAR", "Elimina todos los registros de la base de datos.");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Para más información, \00312/msg %s %s comando", operserv.hmod->nick, strtoupper(param[0]));
 	}
@@ -446,7 +452,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "AKILL -google.com");
 		Responde(cl, CLI(operserv), "AKILL *@*.aol.com");
 	}
-	else if (!strcasecmp(param[1], "OPERS") && IsAdmin(cl) && ExFunc("OPERS"))
+	else if (!strcasecmp(param[1], "OPERS") && ExFunc("OPERS"))
 	{
 		Responde(cl, CLI(operserv), "\00312OPERS");
 		Responde(cl, CLI(operserv), " ");
@@ -463,7 +469,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "Sintaxis: \00312OPERS {+|-}usuario rango");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "MODOS") && IsAdmin(cl) && ExFunc("MODOS"))
+	else if (!strcasecmp(param[1], "MODOS") && ExFunc("MODOS"))
 	{
 		Responde(cl, CLI(operserv), "\00312MODOS");
 		Responde(cl, CLI(operserv), " ");
@@ -474,7 +480,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "Sintaxis: \00312MODOS operador [modos]");
 		Responde(cl, CLI(operserv), "Si no se especifican modos, se borrarán los que pueda haber.");
 	}
-	else if (!strcasecmp(param[1], "SNOMASK") && IsAdmin(cl) && ExFunc("SNOMASK"))
+	else if (!strcasecmp(param[1], "SNOMASK") && ExFunc("SNOMASK"))
 	{
 		Responde(cl, CLI(operserv), "\00312SNOMASK");
 		Responde(cl, CLI(operserv), " ");
@@ -485,7 +491,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "Si no se especifican máscaras, se borrarán las que pueda haber.");
 	}
 #endif
-	else if (!strcasecmp(param[1], "RESTART") && IsRoot(cl) && ExFunc("RESTART"))
+	else if (!strcasecmp(param[1], "RESTART") && ExFunc("RESTART"))
 	{
 		Responde(cl, CLI(operserv), "\00312RESTART");
 		Responde(cl, CLI(operserv), " ");
@@ -494,7 +500,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312RESTART");
 	}
-	else if (!strcasecmp(param[1], "REHASH") && IsRoot(cl) && ExFunc("REHASH"))
+	else if (!strcasecmp(param[1], "REHASH") && ExFunc("REHASH"))
 	{
 		Responde(cl, CLI(operserv), "\00312REHASH");
 		Responde(cl, CLI(operserv), " ");
@@ -520,7 +526,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR");
 	}*/
-	else if (!strcasecmp(param[1], "CLOSE") && IsRoot(cl) && ExFunc("CLOSE"))
+	else if (!strcasecmp(param[1], "CLOSE") && ExFunc("CLOSE"))
 	{
 		Responde(cl, CLI(operserv), "\00312CLOSE");
 		Responde(cl, CLI(operserv), " ");
@@ -529,7 +535,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312CLOSE");
 	}
-	else if (!strcasecmp(param[1], "VACIAR") && IsRoot(cl) && ExFunc("VACIAR"))
+	else if (!strcasecmp(param[1], "VACIAR") && ExFunc("VACIAR"))
 	{
 		Responde(cl, CLI(operserv), "\00312VACIAR");
 		Responde(cl, CLI(operserv), " ");
@@ -637,17 +643,20 @@ BOTFUNC(OSGline)
 }
 BOTFUNC(OSOpers)
 {
-	char oper[128];
+#ifdef UDB
+	int nivel = 0;
+#endif
+	Nivel *niv = NULL;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick [rango]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick [nivel]");
 		return 1;
 	}
 	if (*param[1] == '+')
 	{
 		if (params < 3)
 		{
-			Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick rango");
+			Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick nivel");
 			return 1;
 		}
 		if (!IsReg(param[1] + 1))
@@ -655,54 +664,42 @@ BOTFUNC(OSOpers)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
-		if (!strcasecmp(param[2], "OPER"))
-			ircsprintf(oper, "%i", BDD_OPER);
-		else if (!strcasecmp(param[2], "DEVEL"))
-			ircsprintf(oper, "%i", BDD_DEVEL);
-		else if (!strcasecmp(param[2], "ADMIN"))
-		{
-			if (!IsRoot(cl))
-			{
-				Responde(cl, CLI(operserv), OS_ERR_FORB, "");
-				return 1;
-			}
-			ircsprintf(oper, "%i", BDD_ADMIN);
-		}
-		else if (!strcasecmp(param[2], "ROOT"))
-		{
-			if (strcasecmp(conf_set->root, cl->nombre))
-			{
-				Responde(cl, CLI(operserv), OS_ERR_FORB, "");
-				return 1;
-			}
-			ircsprintf(oper, "%i", BDD_ROOT);
-		}
-		else if (!strcasecmp(param[2], "PREO"))
-			ircsprintf(oper, "%i", BDD_PREO);
-		else
-		{
-			Responde(cl, CLI(operserv), OS_ERR_SNTX, "OPERS +nick OPER|DEVEL|ADMIN|ROOT|PREO");
-			return 1;
-		}
 #ifdef UDB
-		PropagaRegistro("N::%s::O %c%s", param[1] + 1, CHAR_NUM, oper);
-#else
-		SQLInserta(OS_SQL, param[1] + 1, "nivel", oper);
-#endif		
+		if (!(nivel = BuscaOpt(param[2], NivelesBDD)))
+		{
+#endif
+			if (!(niv = BuscaNivel(param[2])))
+			{
+				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nivel no existe.");
+				return 1;
+			}
+#ifdef UDB
+		}
+		if (nivel)
+			PropagaRegistro("N::%s::O %c%i", param[1] + 1, CHAR_NUM, nivel);
+		else
+#endif
+			SQLInserta(OS_SQL, param[1] + 1, "nivel", "%i", niv->nivel);		
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1] + 1, param[2]);
 	}
 	else if (*param[1] == '-')
 	{
 #ifdef UDB
-		PropagaRegistro("N::%s::O", param[1] + 1);
-#else
-		if (!SQLCogeRegistro(OS_SQL, param[1] + 1, "nivel"))
+		if (!(nivel = NivelOperBdd(param[1] + 1)))
 		{
-			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
-			return 1;
-		}
-		SQLBorra(OS_SQL, param[1]);
 #endif
+			if (!SQLCogeRegistro(OS_SQL, param[1] + 1, "nivel"))
+			{
+				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
+				return 1;
+			}
+#ifdef UDB
+		}
+		if (nivel)
+			PropagaRegistro("N::%s::O", param[1] + 1);
+		else
+#endif
+			SQLBorra(OS_SQL, param[1]);
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1] + 1);
 	}
 	else
@@ -844,18 +841,12 @@ BOTFUNC(OSGlobal)
 		SQLRow row;
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{
-			int level;
 			while ((row = SQLFetchRow(res)))
-			{
-#ifdef UDB
-				level = NivelOperBdd(row[0]);
-#else
-				level = atoi(SQLCogeRegistro(OS_SQL, row[0], "nivel"));
-#endif
-				if ((opts & 0x1) && !(level & BDD_OPER))
-					continue;
-				if ((opts & 0x2) && !(level & BDD_PREO))
-					continue;
+			{		
+//				if ((opts & 0x1) && !(level & BDD_OPER))
+//					continue;
+//				if ((opts & 0x2) && !(level & BDD_PREO))
+//					continue;
 				if (opts & 0x4)
 					MSSend(row[0], param[2], Unifica(param, params, 3, -1));
 				else
@@ -1193,45 +1184,23 @@ int OSCmdJoin(Cliente *cl, Canal *cn)
 		ProtFunc(P_MODO_CANAL)(RedOverride ? &me : CLI(operserv), cn, "+o %s", TRIO(cl));
 	return 0;
 }
-
 int OSSigIdOk(Cliente *cl)
 {
 	int nivel;
-#ifdef UDB
-	if ((nivel = NivelOperBdd(cl->nombre)))
-	{	
-#else
 	char *modos;
 	if ((modos = SQLCogeRegistro(OS_SQL, cl->nombre, "nivel")))
 	{
-		char tmp[5];
 		if ((nivel = atoi(modos)))
 		{
-			if (nivel & BDD_ADMIN)
+			int i;
+			for (i = 0; i < nivs; i++)
 			{
-				ircsprintf(tmp, "+%c%c%c", (protocolo->umodos+1)->flag, (protocolo->umodos+2)->flag, (protocolo->umodos+3)->flag);
-				ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
+				if (nivel & niveles[i]->nivel)
+					ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, niveles[i]->flags, 1);
 			}
-			else
-			{
-				ircsprintf(tmp, "+%c", (protocolo->umodos+3)->flag);
-				ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, tmp, 1);
-			}
-#endif
-		if (nivel & BDD_PREO)
-			cl->nivel |= PREO;
-		if (nivel & BDD_OPER)
-			cl->nivel |= OPER;
-		if (nivel & BDD_DEVEL)
-			cl->nivel |= DEVEL;
-		if (nivel & BDD_ADMIN)
-			cl->nivel |= ADMIN;
-		if (nivel & BDD_ROOT)
-			cl->nivel |= ROOT;
 		}
-#ifndef UDB
+		cl->nivel |= nivel;
 	}
-#endif
 	return 0;
 }
 int OSSigSQL()
@@ -1246,7 +1215,6 @@ int OSSigSQL()
 			");", PREFIJO, OS_NOTICIAS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
 	}
-#ifndef UDB
 	if (!SQLEsTabla(OS_SQL))
 	{
 		if (SQLQuery("CREATE TABLE %s%s ( "
@@ -1255,7 +1223,6 @@ int OSSigSQL()
 			");", PREFIJO, OS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_SQL);
 	}
-#endif
 	if (!SQLEsTabla(OS_AKILL))
 	{
 		if (SQLQuery("CREATE TABLE %s%s ( "

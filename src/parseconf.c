@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.18 2005-10-19 16:30:29 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.19 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -156,6 +156,7 @@ void LiberaMemoriaSet()
 	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
 	bzero(conf_set, sizeof(struct Conf_set));
 	conf_set->red = strdup(tmp);
+	DescargaNiveles();
 	Free(tmp);
 }
 void LiberaMemoriaLog()
@@ -995,6 +996,11 @@ void ConfSet(Conf *config)
 			ircstrdup(conf_set->debug, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "clave_cifrado"))
 			strncpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
+		else if (!strcmp(config->seccion[i]->item, "niveles"))
+		{
+			for (p = 0; p < config->seccion[i]->secciones; p++)
+				InsertaNivel(config->seccion[i]->seccion[p]->item, config->seccion[i]->seccion[p]->data);
+		}
 	}
 }
 int TestModulos(Conf *config, int *errores)
@@ -1074,7 +1080,6 @@ int TestLog(Conf *config, int *errores)
 	short error_parcial = 0;
 	Conf *eval, *aux;
 	int i;
-	Opts *ofl = NULL;
 	if ((eval = BuscaEntrada(config, "tamaño")))
 	{
 		if (atoi(eval->data) < 0)
@@ -1103,12 +1108,7 @@ int TestLog(Conf *config, int *errores)
 		for (i = 0; i < eval->secciones; i++)
 		{
 			aux = eval->seccion[i];
-			for (ofl = Opts_Log; ofl && ofl->item; ofl++)
-			{
-				if (!strcmp(aux->item, ofl->item))
-					break;
-			}
-			if (!ofl || !ofl->item)
+			if (!BuscaOpt(aux->item, Opts_Log))
 			{
 				Error("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
 				error_parcial++;
@@ -1121,7 +1121,6 @@ int TestLog(Conf *config, int *errores)
 void ConfLog(Conf *config)
 {
 	int i, p;
-	Opts *ofl = NULL;
 	if (!conf_log)
 		BMalloc(conf_log, struct Conf_log);
 	ircstrdup(conf_log->archivo, config->data);
@@ -1132,16 +1131,7 @@ void ConfLog(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "opciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				for (ofl = Opts_Log; ofl && ofl->item; ofl++)
-				{
-					if (!strcmp(config->seccion[i]->seccion[p]->item, ofl->item))
-					{
-						conf_log->opts |= ofl->opt;
-						break;
-					}
-				}
-			}
+				conf_log->opts |= BuscaOpt(config->seccion[i]->seccion[p]->item, Opts_Log);
 		}
 	}
 }
@@ -1151,7 +1141,6 @@ int TestSSL(Conf *config, int *errores)
 	short error_parcial = 0;
 	Conf *eval, *aux;
 	int i;
-	Opts *ofl = NULL;
 	if ((eval = BuscaEntrada(config, "certificado")))
 	{
 		if (!eval->data)
@@ -1181,12 +1170,7 @@ int TestSSL(Conf *config, int *errores)
 		for (i = 0; i < eval->secciones; i++)
 		{
 			aux = eval->seccion[i];
-			for (ofl = Opts_SSL; ofl && ofl->item; ofl++)
-			{
-				if (!strcmp(aux->item, ofl->item))
-					break;
-			}
-			if (!ofl || !ofl->item)
+			if (!BuscaOpt(aux->item, Opts_SSL))
 			{
 				Error("[%s:%s::%s::%i] La opción %s es desconocida.", config->archivo, config->item, eval->item, aux->linea, aux->item);
 				error_parcial++;
@@ -1207,7 +1191,6 @@ int TestSSL(Conf *config, int *errores)
 void ConfSSL(Conf *config)
 {
 	int i, p;
-	Opts *ofl = NULL;
 	if (!conf_ssl)
 		BMalloc(conf_ssl, struct Conf_ssl);
 	for (i = 0; i < config->secciones; i++)
@@ -1227,16 +1210,7 @@ void ConfSSL(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "opciones"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				for (ofl = Opts_Log; ofl && ofl->item; ofl++)
-				{
-					if (!strcmp(config->seccion[i]->seccion[p]->item, ofl->item))
-					{
-						conf_ssl->opts |= ofl->opt;
-						break;
-					}
-				}
-			}
+				conf_ssl->opts |= BuscaOpt(config->seccion[i]->seccion[p]->item, Opts_SSL);
 		}
 		else if (!strcmp(config->seccion[i]->item, "cifrados"))
 			ircstrdup(conf_ssl->cifrados, config->seccion[i]->data);

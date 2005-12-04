@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.h,v 1.16 2005-10-19 16:30:28 Trocotronic Exp $ 
+ * $Id: bdd.h,v 1.17 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #ifdef UDB
@@ -37,12 +37,8 @@ MODFUNC extern MODVAR char bloques[];
 MODFUNC extern MODVAR u_int BDD_TOTAL;
 MODFUNC extern MODVAR Udb *ultimo;
 
-#define BDD_PREO 0x1
-#define BDD_OPER 0x2
-#define BDD_DEVEL 0x4
-#define BDD_ADMIN 0x8
-#define BDD_ROOT 0x10
 #define CHAR_NUM '*'
+MODFUNC extern MODVAR Opts NivelesBDD[];
 DLLFUNC extern Udb *IdAUdb(int);
 DLLFUNC extern void CargaBloque(int);
 DLLFUNC extern void DescargaBloque(int);

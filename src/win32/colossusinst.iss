@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.11 2005-11-01 14:12:14 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.12 2005-12-04 14:09:25 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.2b
+AppVerName=Colossus 1.3
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.rallados.net
 AppSupportURL=http://www.rallados.net

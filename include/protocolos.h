@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.5 2005-07-16 15:25:27 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.6 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 typedef struct _com
@@ -26,6 +26,10 @@ typedef struct _proto
 	Com *especiales;
 	mTab *umodos;
 	mTab *cmodos;
+	char *modcl;
+	char *modmk;
+	char *modpm1;
+	char *modpm2;
 }Protocolo;
 	
 extern MODVAR Protocolo *protocolo;
@@ -101,12 +105,6 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #endif
 
 #define MODEF_RGSTR	ProtCmodo_f(0)
-#define MODEF_RGSTRONLY ProtCmodo_f(1)
-#define MODEF_OPERONLY  ProtCmodo_f(2)
-#define MODEF_ADMONLY   ProtCmodo_f(3)
-#define MODEF_HALF	ProtCmodo_f(4)
-#define MODEF_ADM	ProtCmodo_f(5)
-#define MODEF_OWNER	ProtCmodo_f(6)
 
 #ifdef ENLACE_DINAMICO
  #define PROT_INFO(name) Prot_Info

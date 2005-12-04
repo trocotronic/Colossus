@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.17 2005-09-14 14:45:06 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.18 2005-12-04 14:09:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,7 +12,7 @@
 #include "modulos/proxyserv.h"
 
 ProxyServ proxyserv;
-#define ExFunc(x) BuscaFuncion(proxyserv.hmod, x, NULL)
+#define ExFunc(x) TieneNivel(cl, x, proxyserv.hmod, NULL)
 
 BOTFUNC(PSHelp);
 BOTFUNC(PSHost);
@@ -29,8 +29,8 @@ Proxys *proxys = NULL;
 int PSCmdNick(Cliente *, int);
 
 static bCom proxyserv_coms[] = {
-	{ "help" , PSHelp , ADMINS } ,
-	{ "host" , PSHost , ADMINS } ,
+	{ "help" , PSHelp , N4 } ,
+	{ "host" , PSHost , N4 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 
@@ -116,42 +116,28 @@ int PSTest(Conf *config, int *errores)
 			}
 		}
 	}
+	if ((eval = BuscaEntrada(config, "funcion")))
+		error_parcial += TestComMod(eval, proxyserv_coms, 1);
 	*errores += error_parcial;
 	return error_parcial;
 }
 void PSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	bCom *xs;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "tiempo"))
 			proxyserv.tiempo = atoi(config->seccion[i]->data) * 60;
-		if (!strcmp(config->seccion[i]->item, "funciones"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				xs = &proxyserv_coms[0];
-				while (xs->com != 0x0)
-				{
-					if (!strcasecmp(xs->com, config->seccion[i]->seccion[p]->item))
-					{
-						mod->comando[mod->comandos++] = xs;
-						break;
-					}
-					xs++;
-				}
-				if (xs->com == 0x0)
-					Error("[%s:%i] No se ha encontrado la funcion %s", config->seccion[i]->archivo, config->seccion[i]->seccion[p]->linea, config->seccion[i]->seccion[p]->item);
-			}
-		}
-		mod->comando[mod->comandos] = NULL;
-		if (!strcmp(config->seccion[i]->item, "puertos"))
+		else if (!strcmp(config->seccion[i]->item, "funciones"))
+			ProcesaComsMod(config->seccion[i], mod, proxyserv_coms);
+		else if (!strcmp(config->seccion[i]->item, "funcion"))
+			SetComMod(config->seccion[i], mod, proxyserv_coms);
+		else if (!strcmp(config->seccion[i]->item, "puertos"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 				proxyserv.puerto[proxyserv.puertos++] = atoi(config->seccion[i]->seccion[p]->item);
 		}
-		if (!strcmp(config->seccion[i]->item, "maxlist"))
+		else if (!strcmp(config->seccion[i]->item, "maxlist"))
 			proxyserv.maxlist = atoi(config->seccion[i]->data);
 	}
 	InsertaSenyal(SIGN_POST_NICK, PSCmdNick);

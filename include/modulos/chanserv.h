@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.7 2005-07-16 15:25:28 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.8 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -29,6 +29,7 @@ struct _csregistros
 	{
 		char *canal;
 		u_long flags;
+		char *autos;
 	}sub[CS_MAX_REGS];
 	int subs;
 };
@@ -60,22 +61,18 @@ struct _akick
 
 /* Niveles */
 
-#define CS_LEV_SET 0x0001 /* fijar opciones +s */
-#define CS_LEV_EDT 0x0002 /* editar la lista de accesos +e */
-#define CS_LEV_LIS 0x0004 /* lista la lista de accesos +l */
-#define CS_LEV_AAD 0x0008 /* auto +a */
-#define CS_LEV_AOP 0x0010 /* auto +o */
-#define CS_LEV_AHA 0x0020 /* auto +h */
-#define CS_LEV_AVO 0x0040 /* auto +v */
-#define CS_LEV_RMO 0x0080 /* comandos remotos +r */
-#define CS_LEV_RES 0x0100 /* resetear opciones +c */
-#define CS_LEV_ACK 0x0200 /* akicks +k */
-#define CS_LEV_INV 0x0400 /* invites +i */
-#define CS_LEV_JOB 0x0800 /* joins +j */
-#define CS_LEV_REV 0x1000 /* revenge +g */
-#define CS_LEV_MEM 0x2000 /* memo +m */
-#define CS_LEV_ALL (CS_LEV_SET | CS_LEV_EDT | CS_LEV_LIS | CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO | CS_LEV_RMO | CS_LEV_RES | CS_LEV_ACK | CS_LEV_INV | CS_LEV_JOB | CS_LEV_REV | CS_LEV_MEM)
-#define CS_LEV_MOD (CS_LEV_AAD | CS_LEV_AOP | CS_LEV_AHA | CS_LEV_AVO | CS_LEV_REV) /* el kick revenge también */
+#define CS_LEV_SET 0x001 /* fijar opciones +s */
+#define CS_LEV_EDT 0x002 /* editar la lista de accesos +e */
+#define CS_LEV_LIS 0x004 /* lista la lista de accesos +l */
+#define CS_LEV_RMO 0x008 /* comandos remotos +r */
+#define CS_LEV_RES 0x010 /* resetear opciones +c */
+#define CS_LEV_ACK 0x020 /* akicks +k */
+#define CS_LEV_INV 0x040 /* invites +i */
+#define CS_LEV_JOB 0x080 /* joins +j */
+#define CS_LEV_REV 0x100 /* revenge +g */
+#define CS_LEV_MEM 0x200 /* memo +m */
+#define CS_LEV_ALL (CS_LEV_SET | CS_LEV_EDT | CS_LEV_LIS | CS_LEV_RMO | CS_LEV_RES | CS_LEV_ACK | CS_LEV_INV | CS_LEV_JOB | CS_LEV_REV | CS_LEV_MEM)
+#define CS_LEV_MOD (CS_LEV_REV) /* el kick revenge también */
 
 #define CS_SIGN_IDOK 50
 #define CS_SIGN_DROP 51

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.30 2005-10-27 19:16:15 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.31 2005-12-04 14:09:23 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,7 +14,7 @@
 #include "modulos/chanserv.h"
 
 NickServ nickserv;
-#define ExFunc(x) BuscaFuncion(nickserv.hmod, x, NULL)
+#define ExFunc(x) TieneNivel(cl, x, nickserv.hmod, NULL)
 
 BOTFUNC(NSHelp);
 BOTFUNC(NSRegister);
@@ -34,6 +34,7 @@ BOTFUNC(NSMigrar);
 BOTFUNC(NSDemigrar);
 #endif
 BOTFUNC(NSForbid);
+BOTFUNC(NSMarcas);
 
 int NSSigSQL		();
 int NSCmdPreNick 	(Cliente *, char *);
@@ -56,25 +57,26 @@ int NSTest(Conf *, int *);
 extern MODVAR mTab cFlags[];
 
 static bCom nickserv_coms[] = {
-	{ "help" , NSHelp , TODOS } ,
-	{ "register" , NSRegister , TODOS } ,
-	{ "identify" , NSIdentify , TODOS } ,
-	{ "set" , NSOpts , USERS } ,
-	{ "drop" , NSDrop , PREOS } , /* de momento dejo el drop no es para usuarios.
+	{ "help" , NSHelp , N0 } ,
+	{ "register" , NSRegister , N0 } ,
+	{ "identify" , NSIdentify , N0 } ,
+	{ "set" , NSOpts , N1 } ,
+	{ "drop" , NSDrop , N2 } , /* de momento dejo el drop no es para usuarios.
 						si quieren droparlo, ya se buscaran la vida */
-	{ "sendpass" , NSSendpass , PREOS } ,
-	{ "info" , NSInfo , TODOS } ,
-	{ "list" , NSList, TODOS } ,
-	{ "ghost" , NSGhost , TODOS } ,
-	{ "suspender" , NSSuspender , OPERS } ,
-	{ "liberar" , NSLiberar , OPERS } ,
-	{ "swhois" , NSSwhois , PREOS } ,
-	{ "rename" , NSRename , OPERS } ,
+	{ "sendpass" , NSSendpass , N2 } ,
+	{ "info" , NSInfo , N0 } ,
+	{ "list" , NSList, N0 } ,
+	{ "ghost" , NSGhost , N0 } ,
+	{ "suspender" , NSSuspender , N3 } ,
+	{ "liberar" , NSLiberar , N3 } ,
+	{ "swhois" , NSSwhois , N2 } ,
+	{ "rename" , NSRename , N3 } ,
 #ifdef UDB
-	{ "migrar" , NSMigrar , USERS } ,
-	{ "demigrar" , NSDemigrar , USERS } ,
+	{ "migrar" , NSMigrar , N1 } ,
+	{ "demigrar" , NSDemigrar , N1 } ,
 #endif	
-	{ "forbid" , NSForbid , ADMINS } ,
+	{ "forbid" , NSForbid , N4 } ,
+	{ "marca" , NSMarcas , N3 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 ModInfo MOD_INFO(NickServ) = {
@@ -139,7 +141,14 @@ int MOD_DESCARGA(NickServ)()
 }
 int NSTest(Conf *config, int *errores)
 {
-	return 0;
+	int i, error_parcial = 0;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funcion"))
+			error_parcial += TestComMod(config->seccion[i], nickserv_coms, 1);
+	}
+	*errores += error_parcial;
+	return error_parcial;
 }
 void NSSet(Conf *config, Modulo *mod)
 {
@@ -175,7 +184,7 @@ void NSSet(Conf *config, Modulo *mod)
 			ircstrdup(nickserv.recovernick, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "securepass"))
 			ircstrdup(nickserv.securepass, config->seccion[i]->data);
-		if (!strcmp(config->seccion[i]->item, "min_reg"))
+		else if (!strcmp(config->seccion[i]->item, "min_reg"))
 			nickserv.min_reg = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "autodrop"))
 			nickserv.autodrop = atoi(config->seccion[i]->data);
@@ -192,6 +201,8 @@ void NSSet(Conf *config, Modulo *mod)
 		}
 		else if (!strcmp(config->seccion[i]->item, "funciones"))
 			ProcesaComsMod(config->seccion[i], mod, nickserv_coms);
+		else if (!strcmp(config->seccion[i]->item, "funcion"))
+			SetComMod(config->seccion[i], mod, nickserv_coms);
 	}
 	InsertaSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	InsertaSenyal(SIGN_POST_NICK, NSCmdPostNick);
@@ -221,6 +232,15 @@ char *NSRegeneraClave(char *nick)
 #endif
 	return pass;
 }
+void NSMarca(Cliente *cl, char *nombre, char *marca)
+{
+	time_t fecha = time(NULL);
+	char *marcas;
+	if ((marcas = SQLCogeRegistro(NS_SQL, nombre, "marcas")))
+		SQLInserta(NS_SQL, nombre, "marcas", "%s\t\00312%s\003 - \00312%s\003 - %s", marcas, Fecha(&fecha), cl->nombre, marca);
+	else
+		SQLInserta(NS_SQL, nombre, "marcas", "\00312%s\003 - \00312%s\003 - %s", Fecha(&fecha), cl->nombre, marca);
+}
 BOTFUNC(NSHelp)
 {
 	if (params < 2)
@@ -229,33 +249,24 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), "El registro de tu nick permite que otros no lo utilicen, mostrarte como propietario y aventajarte de cuantiosas oportunidades.");
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Comandos disponibles:");
-		Responde(cl, CLI(nickserv), "\00312REGISTER\003 Registra tu nick.");
-		Responde(cl, CLI(nickserv), "\00312IDENTIFY\003 Te identifica como propietario del nick.");
-		Responde(cl, CLI(nickserv), "\00312INFO\003 Muestra información de un nick.");
-		Responde(cl, CLI(nickserv), "\00312LIST\003 Lista todos los nicks que coinciden con un patrón.");
-		Responde(cl, CLI(nickserv), "\00312GHOST\003 Desconecta a un usuario que utilice su nick.");
-		if (IsId(cl))
-		{
-			FuncResp(nickserv, "SET", "Permite fijar distintas opciones para tu nick.");
+		FuncResp(nickserv, "REGISTER", "Registra tu nick.");
+		FuncResp(nickserv, "IDENTIFY", "Te identifica como propietario del nick.");
+		FuncResp(nickserv, "INFO", "Muestra información de un nick.");
+		FuncResp(nickserv, "LIST", "Lista todos los nicks que coinciden con un patrón.");
+		FuncResp(nickserv, "GHOST", "Desconecta a un usuario que utilice su nick.");
+		FuncResp(nickserv, "SET", "Permite fijar distintas opciones para tu nick.");
 #ifdef UDB
-			FuncResp(nickserv, "MIGRAR", "Migra tu nick a la BDD.");
-			FuncResp(nickserv, "DEMIGRAR", "Demigra tu nick de la BDD.");
+		FuncResp(nickserv, "MIGRAR", "Migra tu nick a la BDD.");
+		FuncResp(nickserv, "DEMIGRAR", "Demigra tu nick de la BDD.");
 #endif			
-		}
-		if (IsPreo(cl))
-		{
-			FuncResp(nickserv, "DROP", "Desregistra un usuario.");
-			FuncResp(nickserv, "SENDPASS", "Genera un password para el usuario y se lo envía a su correo.");
-			FuncResp(nickserv, "SWHOIS", "Añade o borra un whois especial al nick especificado.");
-		}
-		if (IsOper(cl))
-		{
-			FuncResp(nickserv, "SUSPENDER", "Suspende los privilegios de un nick.");
-			FuncResp(nickserv, "LIBERAR", "Libera un nick de su suspenso.");
-			FuncResp(nickserv, "RENAME" ,"Cambia el nick a un usuario.");
-		}
-		if (IsAdmin(cl))
-			FuncResp(nickserv, "FORBID", "Prohibe o permite un determinado nick.");
+		FuncResp(nickserv, "DROP", "Desregistra un usuario.");
+		FuncResp(nickserv, "SENDPASS", "Genera un password para el usuario y se lo envía a su correo.");
+		FuncResp(nickserv, "SWHOIS", "Añade o borra un whois especial al nick especificado.");
+		FuncResp(nickserv, "SUSPENDER", "Suspende los privilegios de un nick.");
+		FuncResp(nickserv, "LIBERAR", "Libera un nick de su suspenso.");
+		FuncResp(nickserv, "RENAME" ,"Cambia el nick a un usuario.");
+		FuncResp(nickserv, "FORBID", "Prohibe o permite un determinado nick.");
+		FuncResp(nickserv, "MARCA", "Lista o inserta una entrada en el historial de un nick.");
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Para más información, \00312/msg %s %s comando", nickserv.hmod->nick, strtoupper(param[0]));
 	}
@@ -312,7 +323,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312GHOST nick contraseña");
 	}
-	else if (!strcasecmp(param[1], "SET") && IsId(cl) && ExFunc("SET"))
+	else if (!strcasecmp(param[1], "SET") && ExFunc("SET"))
 	{
 		if (params < 3)
 		{
@@ -395,7 +406,7 @@ BOTFUNC(NSHelp)
 			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción desconocida.");
 	}
 #ifdef UDB
-	else if (!strcasecmp(param[1], "MIGRAR") && IsId(cl) && ExFunc("MIGRAR"))
+	else if (!strcasecmp(param[1], "MIGRAR") && ExFunc("MIGRAR"))
 	{
 		Responde(cl, CLI(nickserv), "\00312MIGRAR");
 		Responde(cl, CLI(nickserv), " ");
@@ -407,7 +418,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312MIGRAR tupass");
 	}
-	else if (!strcasecmp(param[1], "DEMIGRAR") && IsId(cl) && ExFunc("DEMIGRAR"))
+	else if (!strcasecmp(param[1], "DEMIGRAR") && ExFunc("DEMIGRAR"))
 	{
 		Responde(cl, CLI(nickserv), "\00312DEMIGRAR");
 		Responde(cl, CLI(nickserv), " ");
@@ -417,7 +428,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312DEMIGRAR tupass");
 	}
 #endif
-	else if (!strcasecmp(param[1], "DROP") && IsPreo(cl) && ExFunc("DROP"))
+	else if (!strcasecmp(param[1], "DROP") &&  ExFunc("DROP"))
 	{
 		Responde(cl, CLI(nickserv), "\00312DROP");
 		Responde(cl, CLI(nickserv), " ");
@@ -427,7 +438,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312DROP nick");
 	}
-	else if (!strcasecmp(param[1], "SENDPASS") && IsPreo(cl) && ExFunc("SENDPASS"))
+	else if (!strcasecmp(param[1], "SENDPASS") && ExFunc("SENDPASS"))
 	{
 		Responde(cl, CLI(nickserv), "\00312SENDPASS");
 		Responde(cl, CLI(nickserv), " ");
@@ -436,7 +447,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312SENDPASS nick");
 	}
-	else if (!strcasecmp(param[1], "SWHOIS") && IsPreo(cl) && ExFunc("SWHOIS"))
+	else if (!strcasecmp(param[1], "SWHOIS") && ExFunc("SWHOIS"))
 	{
 		Responde(cl, CLI(nickserv), "\00312SWHOIS");
 		Responde(cl, CLI(nickserv), " ");
@@ -447,7 +458,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312SWHOIS nick [swhois]");
 		Responde(cl, CLI(nickserv), "Si no se especifica swhois, se borrará el que pudiera haber.");
 	}
-	else if (!strcasecmp(param[1], "SUSPENDER") && IsOper(cl) && ExFunc("SUSPENDER"))
+	else if (!strcasecmp(param[1], "SUSPENDER") && ExFunc("SUSPENDER"))
 	{
 		Responde(cl, CLI(nickserv), "\00312SUSPENDER");
 		Responde(cl, CLI(nickserv), " ");
@@ -456,7 +467,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312SUSPENDER nick motivo");
 	}
-	else if (!strcasecmp(param[1], "LIBERAR") && IsOper(cl) && ExFunc("LIBERAR"))
+	else if (!strcasecmp(param[1], "LIBERAR") && ExFunc("LIBERAR"))
 	{
 		Responde(cl, CLI(nickserv), "\00312LIBERAR");
 		Responde(cl, CLI(nickserv), " ");
@@ -464,7 +475,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312LIBERAR nick");
 	}
-	else if (!strcasecmp(param[1], "RENAME") && IsOper(cl) && ExFunc("RENAME"))
+	else if (!strcasecmp(param[1], "RENAME") && ExFunc("RENAME"))
 	{
 		Responde(cl, CLI(nickserv), "\00312RENAME");
 		Responde(cl, CLI(nickserv), " ");
@@ -472,13 +483,24 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312RENAME nick nuevonick");
 	}
-	else if (!strcasecmp(param[1], "FORBID") && IsAdmin(cl) && ExFunc("FOBRID"))
+	else if (!strcasecmp(param[1], "FORBID") && ExFunc("FOBRID"))
 	{
 		Responde(cl, CLI(nickserv), "\00312FORBID");
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Prohibe o permite el uso de un nick o apodo.");
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312FORBID {+|-}nick [motivo]");
+	}
+	else if (!strcasecmp(param[1], "MARCA") && ExFunc("MARCA"))
+	{
+		Responde(cl, CLI(nickserv), "\00312MARCA");
+		Responde(cl, CLI(nickserv), " ");
+		Responde(cl, CLI(nickserv), "Inserta una marca en el historial de un nick.");
+		Responde(cl, CLI(nickserv), "Las marcas son anotaciones que no pueden eliminarse.");
+		Responde(cl, CLI(nickserv), "En ellas figura la fecha, su autor y un comentario.");
+		Responde(cl, CLI(nickserv), "Si no se especifica ninguna marca, se listarán todas las que hubiera.");
+		Responde(cl, CLI(nickserv), " ");
+		Responde(cl, CLI(nickserv), "Sintaxis: \00312MARCA [nick]");
 	}
 	else
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción desconocida.");
@@ -657,6 +679,8 @@ BOTFUNC(NSOpts)
 	if (!strcasecmp(param[1], "EMAIL"))
 	{
 		SQLInserta(NS_SQL, parv[0], "email", param[2]);
+		ircsprintf(buf, "Nuevo email: %s", param[2]);
+		NSMarca(cl, param[1], buf);
 		Responde(cl, CLI(nickserv), "Tu email se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
 	}
@@ -704,6 +728,7 @@ BOTFUNC(NSOpts)
 		if (IsNickUDB(parv[0]))
 			PropagaRegistro("N::%s::P %s", parv[0], passmd5);
 #endif
+		NSMarca(cl, param[1], "Contraseña cambiada.");
 		Responde(cl, CLI(nickserv), "Tu contraseña se ha cambiado a \00312%s\003.", param[2]);
 		return 0;
 	}
@@ -892,15 +917,22 @@ BOTFUNC(NSInfo)
 		if ((regs = busca_cregistro(param[1])))
 		{
 			for (i = 0; i < regs->subs; i++)
-				Responde(cl, CLI(nickserv), "Canal: \00312%s \003flags: \00312+%s\003 (\00312%lu\003)", regs->sub[i].canal, 
-					ModosAFlags(regs->sub[i].flags, cFlags, NULL),
-					regs->sub[i].flags);
+			{
+				tokbuf[0] = '\0';
+				if (regs->sub[i].autos)
+					ircsprintf(tokbuf, " \003[\00312%s\003]", regs->sub[i].autos);
+				Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s%s%s\003 (\00312%lu\003)", regs->sub[i].canal, 
+					(regs->sub[i].flags ? "+" : ""), ModosAFlags(regs->sub[i].flags, cFlags, NULL), tokbuf, regs->sub[i].flags);
+			}
 		}
 		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, strtolower(param[1]))))
 		{
 			while ((row = SQLFetchRow(res)))
-				Responde(cl, CLI(nickserv), "Canal: \00312%s flags: \00312+%s\003 (\00312FUNDADOR\003)", row[0], 
-					ModosAFlags(CS_LEV_ALL, cFlags, NULL));
+			{
+				ircsprintf(tokbuf, " \003[\00312%s\003]", protocolo->modcl);
+				Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s%s\003 (\00312FUNDADOR\003)", row[0], 
+					ModosAFlags(CS_LEV_ALL, cFlags, NULL), tokbuf);
+			}
 			SQLFreeRes(res);
 		}
 	}
@@ -998,6 +1030,8 @@ BOTFUNC(NSSuspender)
 	if (IsNickUDB(param[1]))
 		PropagaRegistro("N::%s::S %s", param[1], motivo);
 #endif
+	ircsprintf(buf, "Suspendido: %s", motivo);
+	NSMarca(cl, param[1], buf);
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido suspendido.", param[1]);
 	return 0;
 }
@@ -1028,6 +1062,7 @@ BOTFUNC(NSLiberar)
 	if (IsNickUDB(param[1]))
 		PropagaRegistro("N::%s::S", param[1]);
 #endif
+	NSMarca(cl, param[1], "Suspenso levantado.");
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);			
 	return 0;
 }
@@ -1129,6 +1164,8 @@ BOTFUNC(NSForbid)
 		SQLInserta(NS_FORBIDS, param[1] + 1, "motivo", motivo);
 		ProtFunc(P_FORB_NICK)(param[1] + 1, ADD,  motivo);
 #endif
+		ircsprintf(buf, "Prohibido: %s", motivo);
+		NSMarca(cl, param[1], buf);
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1] + 1);
 	}
 	else if (*param[1] == '-')
@@ -1140,6 +1177,7 @@ BOTFUNC(NSForbid)
 		if (!ProtFunc(P_FORB_NICK))
 			ProtFunc(P_FORB_NICK)(param[1] + 1, DEL, NULL);
 #endif
+		NSMarca(cl, param[1], "Prohibición levantada.");
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1] + 1);
 	}
 	else
@@ -1149,6 +1187,41 @@ BOTFUNC(NSForbid)
 	}
 	return 0;
 }
+BOTFUNC(NSMarcas)
+{
+	char *marcas;
+	if (params < 2)
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, "MARCA nick [comentario]");
+		return 1;
+	}
+	if (!IsReg(param[1]))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_NURG);
+		return 1;
+	}
+	if (params < 3)
+	{
+		if ((marcas = SQLCogeRegistro(NS_SQL, param[1], "marcas")))
+		{
+			char *tok;
+			Responde(cl, CLI(nickserv), "Historial de \00312%s", param[1]);
+			for (tok = strtok(marcas, "\t"); tok; tok = strtok(NULL, "\t"))
+				Responde(cl, CLI(nickserv), tok);
+		}
+		else
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "El historial está vacío.");
+			return 1;
+		}
+	}
+	else
+	{
+		NSMarca(cl, param[1], Unifica(param, params, 2, -1));
+		Responde(cl, CLI(nickserv), "Marca añadida al historial de \00312%s", param[1]);
+	}
+	return 0;
+}		
 #ifdef UDB
 BOTFUNC(NSMigrar)
 {
@@ -1277,12 +1350,12 @@ int NSSigSQL()
 	{
 		if (SQLQuery("CREATE TABLE %s%s ( "
   			"n SERIAL, "
-  			"item text, "
-  			"pass text, "
-  			"email text, "
-  			"url text, "
+  			"item varchar(255), "
+  			"pass varchar(255), "
+  			"email varchar(255), "
+  			"url varchar(255), "
   			"gecos text, "
-  			"host text, "
+  			"host varchar(255), "
   			"opts int2 default '0', "
   			"id int4 default '0', "
   			"reg int4 default '0', "
@@ -1290,7 +1363,8 @@ int NSSigSQL()
   			"quit text, "
   			"suspend text, "
   			"killtime int2 default '0', "
-  			"swhois text "
+  			"swhois text, "
+  			"marcas text "
 			");", PREFIJO, NS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
 	}
@@ -1305,7 +1379,13 @@ int NSSigSQL()
 			while ((row = SQLFetchRow(res)))
 				SQLQuery("UPDATE %s%s SET killtime=%s WHERE item='%s'", PREFIJO, NS_SQL, row[13], row[1]);
 		}
+		if (!SQLEsCampo(NS_SQL, "marcas"))
+			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, NS_SQL);
+		SQLQuery("ALTER TABLE `%s%s` CHANGE `item` `item` VARCHAR( 255 )", PREFIJO, NS_SQL);
 	}	
+	SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, NS_SQL);
+	SQLQuery("ALTER TABLE `%s%s` DROP INDEX `item`", PREFIJO, NS_SQL);
+	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, NS_SQL);
 #ifndef UDB
 	if (!SQLEsTabla(NS_FORBIDS))
 	{
@@ -1343,7 +1423,7 @@ int NSSigIdOk(Cliente *cl)
 #endif
 		(swhois = SQLCogeRegistro(NS_SQL, cl->nombre, "swhois")))
 			ProtFunc(P_WHOIS_ESPECIAL)(cl, swhois);
-		cl->nivel |= USER;
+		cl->nivel |= N1;
 	}
 	return 0;
 }

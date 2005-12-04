@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.34 2005-10-19 16:30:28 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.35 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -36,6 +36,12 @@ u_int BDD_TOTAL = 0;
 int dataver = 0;
 void SetDataVer(int);
 int GetDataVer();
+Opts NivelesBDD[] = {
+	{ 0x1 , "OPER" } ,
+	{ 0x2 , "ADMIN" } ,
+	{ 0x4 , "ROOT" } ,
+	{ 0x0 , 0x0 }
+};
 Udb *AltaBloque(char letra, char *ruta, u_int *id)
 {
 	int ids = 0;
@@ -236,9 +242,59 @@ int ActualizaDataVer2()
 	}
 	return 0;
 }
+int ActualizaDataVer3()
+{
+	FILE *fp, *tmp;
+	char *c, buf[8192];
+	if (!(fp = fopen(DB_DIR "nicks.udb", "rb")))
+		return 1;
+	if (!(tmp = fopen(DB_DIR "temporal", "wb")))
+		return 1;
+	while (fgets(buf, sizeof(buf), fp))
+	{
+		if ((c = strchr(buf, ' ')))
+		{
+			if (*(c-2) == ':' && *(c-1) == *(N_OPE_TOK)) /* lo tenemos! */
+			{
+				int val;
+				sscanf(c, " %*c%i\n", &val);
+				if (val & 0x1)
+					val &= ~0x1;
+				if (val & 0x2)
+				{
+					val &= ~0x2;
+					val |= 0x1;
+				}
+				if (val & 0x4)
+					val &= ~0x4;
+				if (val & 0x8)
+				{
+					val &= ~0x8;
+					val |= 0x2;
+				}
+				if (val & 0x10)
+				{
+					val &= ~0x10;
+					val |= 0x4;
+				}
+				*c = '\0';
+				ircsprintf(buf, "%s %c%i\n", buf, CHAR_NUM, val);
+			}
+			fwrite(buf, 1, strlen(buf), tmp);
+		}
+	}
+	fclose(fp);
+	fclose(tmp);
+	unlink(DB_DIR "nicks.udb");
+	rename(DB_DIR "temporal", DB_DIR "nicks.udb");
+	unlink(DB_DIR "temporal");
+	ActualizaHash(nicks);
+	return 0;
+}
 void BddInit()
 {
 	FILE *fh;
+	int ver;
 #ifdef _WIN32
 	mkdir(DB_DIR);
 #else
@@ -257,11 +313,15 @@ void BddInit()
 	AltaHash();
 	if ((fh = fopen(DB_DIR "crcs", "a")))
 		fclose(fh);
-	if (!GetDataVer())
+	switch ((ver = GetDataVer()))
 	{
-		ActualizaDataVer2();
-		SetDataVer(2);
+		case 0:
+		case 1:
+			ActualizaDataVer2();
+		case 2:
+			ActualizaDataVer3();
 	}
+	SetDataVer(3);
 	CargaBloques();
 	//printea(ips, 0);
 }

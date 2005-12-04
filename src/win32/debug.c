@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.7 2005-11-01 15:51:01 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.8 2005-12-04 14:09:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,7 +9,7 @@
 
 BOOL CALLBACK SymEnumerateModulesProc64(PCSTR ModuleName, DWORD64 BaseOfDll, PVOID UserContext)
 {
-    SymUnloadModule((HANDLE)UserContext, BaseOfDll);
+    SymUnloadModule((HANDLE)UserContext, (DWORD)BaseOfDll);
     return TRUE;
 }
 __inline char *StackTrace(EXCEPTION_POINTERS *e) 

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.47 2005-11-01 14:12:13 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.48 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -56,6 +56,12 @@ extern void carga_socks(void);
 #ifdef NEED_STRCASECMP
 extern int strcasecmp(const char *, const char *);
 #endif
+#ifdef NEED_SNPRINTF
+#define snprintf _snprintf
+#define vsnprintf _vsnprintf
+#endif
+#define IsDigit(c) (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' \
+		 || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
 /*!
  * @desc: Hace una copia y libera el anterior contenido si no estuviera liberado.
  Es decir, si no apunta a NULL:
@@ -286,7 +292,7 @@ extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
-#define COLOSSUS_VERNUM "1.2b"
+#define COLOSSUS_VERNUM "1.3"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 extern char **margv;
 #define Malloc(x) ExMalloc(x, __FILE__, __LINE__)
@@ -403,6 +409,7 @@ extern char *my_itoa(int);
 extern int b64_decode(char const *src, char *, size_t);
 extern int b64_encode(char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
+extern MODVAR int refrescando;
 #define Creditos() 																\
 	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);								\
 	Responde(cl, bl, " ");															\
@@ -448,3 +455,9 @@ Item *del_item(Item *, Item **, char);
 #define BorraItem(item, lista) del_item((Item *)item, (Item **)&lista, 0)
 #define LiberaItem(item, lista) del_item((Item *)item, (Item **)&lista, 1)
 char *Repite(char, int);
+typedef struct _opts
+{
+	int opt;
+	char *item;
+}Opts;
+extern int BuscaOpt(char *, Opts *);

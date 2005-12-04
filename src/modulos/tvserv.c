@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.7 2005-10-27 19:16:15 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.8 2005-12-04 14:09:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,7 +8,7 @@
 #include "modulos/tvserv.h"
 
 TvServ tvserv;
-#define ExFunc(x) BuscaFuncion(tvserv.hmod, x, NULL)
+#define ExFunc(x) TieneNivel(cl, x, tvserv.hmod, NULL)
 
 SOCKFUNC(TSAbreProg);
 SOCKFUNC(TSLeeProg);
@@ -25,9 +25,9 @@ int horosc = 1;
 int TSSigSQL();
 
 static bCom tvserv_coms[] = {
-	{ "help" , TSHelp , USERS } ,
-	{ "tv" , TSTv , USERS } ,
-	{ "horoscopo" , TSHoroscopo , USERS } ,
+	{ "help" , TSHelp , N1 } ,
+	{ "tv" , TSTv , N1 } ,
+	{ "horoscopo" , TSHoroscopo , N1 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 
@@ -142,7 +142,13 @@ int MOD_DESCARGA(TvServ)()
 }
 int TSTest(Conf *config, int *errores)
 {
-	short error_parcial = 0;
+	int i, error_parcial = 0;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funcion"))
+			error_parcial += TestComMod(config->seccion[i], tvserv_coms, 1);
+	}
+	*errores += error_parcial;
 	return error_parcial;
 }
 void TSSet(Conf *config, Modulo *mod)
@@ -152,6 +158,8 @@ void TSSet(Conf *config, Modulo *mod)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 			ProcesaComsMod(config->seccion[i], mod, tvserv_coms);
+		else if (!strcmp(config->seccion[i]->item, "funcion"))
+			SetComMod(config->seccion[i], mod, tvserv_coms);
 	}
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
 	BotSet(tvserv);
@@ -265,11 +273,6 @@ BOTFUNC(TSHelp)
 		Responde(cl, CLI(tvserv), "\00312%s\003 es un servicio de ocio para los usuarios que ofrece distintos servicios.", tvserv.hmod->nick);
 		Responde(cl, CLI(tvserv), "Todos los servicios se actualizan a diario.");
 		Responde(cl, CLI(tvserv), " ");
-		if (!IsId(cl))
-		{
-			Responde(cl, CLI(tvserv), "Debes estar registrado e identificado para poder usar este servicio.");
-			return 1;
-		}
 		Responde(cl, CLI(tvserv), "Servicios prestados:");
 		FuncResp(tvserv, "TV", "Programación de las televisiones de España.");
 		FuncResp(tvserv, "HOROSCOPO", "Horóscopo del día.");

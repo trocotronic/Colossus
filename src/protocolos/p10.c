@@ -550,12 +550,48 @@ int test(Conf *config, int *errores)
 			}
 		}
 	}
+	if ((eval = BuscaEntrada(config, "parametros")))
+	{
+		if ((aux = BuscaEntrada(eval, "clientes")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz clientes está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "mascaras")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz mascaras está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "resto1")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz resto está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "resto2")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz resto está vacía.", config->archivo, config->item, eval->item, aux->item, aux->linea);
+				error_parcial++;
+			}
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
 void set(Conf *config)
 {
 	int i, p;
+	char *modcl = "ov", *modmk = "b", *modpm1 = "k", *modpm2 = "l";
 	if (!conf_set)
 		BMalloc(conf_set, struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
@@ -572,7 +608,25 @@ void set(Conf *config)
 					ircstrdup(modcanales, config->seccion[i]->seccion[p]->data);
 			}
 		}
+		else if (!strcmp(config->seccion[i]->item, "parametros"))
+		{
+			for (p = 0; p < config->seccion[i]->secciones; p++)
+			{
+				if (!strcmp(config->seccion[i]->seccion[p]->item, "clientes"))
+					modcl = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "mascaras"))
+					modmk = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "resto1"))
+					modpm1 = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "resto2"))
+					modpm2 = config->seccion[i]->seccion[p]->data;
+			}
+		}
 	}
+	ircstrdup(protocolo->modcl, modcl);
+	ircstrdup(protocolo->modmk, modmk);
+	ircstrdup(protocolo->modpm1, modpm1);
+	ircstrdup(protocolo->modpm2, modpm2);
 	conf_set->opts |= NO_OVERRIDE;
 }
 int PROT_CARGA(P10)(Conf *config)
@@ -666,7 +720,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 		{
 			for (++p; *p != ' '; p++);
 			while (*p == ' ')
-			p++;
+				p++;
 		}
 		else
 		{	
@@ -829,7 +883,6 @@ IRCFUNC(m_eos)
 IRCFUNC(m_msg)
 {
 	char *param[256], par[BUFSIZE];
-	bCom *bcom;
 	int params, i;
 	Modulo *mod;
 	Cliente *bl;
@@ -858,30 +911,47 @@ IRCFUNC(m_msg)
 	}
 	if ((mod = BuscaModulo(bl->nombre, modulos)))
 	{
-		for (i = 0; i < mod->comandos; i++)
+		Mod_Func func;
+		char ex;
+		Alias *aux;
+		if ((aux = BuscaAlias(param, params, mod)))
 		{
-			bcom = mod->comando[i];
-			if (!strcasecmp(param[0], bcom->com))
+			int i, j, k = 0;
+			char *aparam[256];
+			for (i = 0; aux->sintaxis[i]; i++)
 			{
-				if ((bcom->nivel & USER) && !(cl->nivel & USER))
+				if (*aux->sintaxis[i] == '%')
 				{
-					Responde(cl, bl, ERR_NOID, "");
-					return 0;
-				}
-				if (bcom->nivel & cl->nivel || bcom->nivel == TODOS)
-					bcom->func(cl, parv, parc, param, params);
-				else
-				{
-					if (cl->nivel & USER)
-						Responde(cl, bl, ERR_FORB, "");
+					char tmp[4], *c;
+					int top;
+					bzero(tmp, sizeof(tmp));
+					if ((c = strchr(aux->sintaxis[i], '-')))
+						strncpy(tmp, aux->sintaxis[i]+1, c-aux->sintaxis[i]-1);
 					else
-						Responde(cl, bl, ERR_NOID, "");
+						strcpy(tmp, aux->sintaxis[i]+1);
+					j = atoi(tmp);
+					top = (c ? params : j+1);
+					while (j < top)
+						aparam[k++] = param[j++];
 				}
-				return 0;
+				else
+					aparam[k++] = aux->sintaxis[i];
 			}
+			for (i = 0; i < k; i++)
+				param[i] = aparam[i];
+			params = k;
 		}
-		if (!EsServidor(cl))
-			Responde(cl, bl, ERR_DESC, "");
+		if ((func = TieneNivel(cl, param[0], mod, &ex)))
+			func(cl, parv, parc, param, params);
+		else
+		{
+			if (!ex && !EsServidor(cl))
+				Responde(cl, bl, ERR_DESC);
+			else if (cl->nivel & N1)
+				Responde(cl, bl, ERR_FORB);
+			else
+				Responde(cl, bl, ERR_NOID);
+		}
 	}
 	return 0;
 }
@@ -1115,9 +1185,9 @@ IRCFUNC(m_error)
 IRCFUNC(m_away)
 {
 	if (parc == 2)
-		cl->nivel |= AWAY;
+		cl->away = 1;
 	else if (parc == 1)
-		cl->nivel &= ~AWAY;
+		cl->away = 0;
 	Senyal2(SIGN_AWAY, cl, parv[1]);
 	return 0;
 }
@@ -1153,13 +1223,16 @@ IRCFUNC(m_burst)
 		else if (*parv[i] == '%')
 		{
 			char *bans, *b, *p;
+			MallaMascara *mmk;
+			if (!(mmk = BuscaMallaMascara(cn, 'b')))
+				continue;
 			bans = strdup(parv[i]);
 			for (b = bans; !BadPtr(b); b = p)
 			{
 				p = strchr(b, ' ');
 				if (p)
 					*p++ = '\0';
-				InsertaBan(cl, &cn->ban, b);
+				InsertaMascara(cl, &mmk->malla, b);
 			}
 			Free(bans);
 		}
@@ -1230,7 +1303,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 			case '-':
 				modo = DEL;
 				break;
-			case 'b':
+		/*	case 'b':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
@@ -1238,7 +1311,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 					BorraBanDeCanal(&cn->ban, parv[param]);
 				param++;
-				break;
+				break;*/
 			case 'k':
 				if (!parv[param])
 					break;
@@ -1271,7 +1344,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					cn->modos &= ~FlagAModo('l', PROT_CMODOS(P10));
 				}
 				break;
-			case 'o':
+			/*case 'o':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
@@ -1288,12 +1361,30 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 					BorraModoCliente(&cn->voz, BuscaClienteNumerico(parv[param], NULL));
 				param++;
-				break;
+				break;*/
 			default:
+			{
+				MallaCliente *mcl;
+				MallaMascara *mmk;
 				if (modo == ADD)
-					cn->modos |= FlagAModo(*mods, PROT_CMODOS(P10));
+				{
+					if ((mcl = BuscaMallaCliente(cn, *mods)))
+						InsertaModoCliente(&mcl->malla, BuscaClienteNumerico(parv[param], NULL));
+					else if ((mmk = BuscaMallaMascara(cn, *mods)))
+						InsertaMascara(cl, &mmk->malla, parv[param]);
+					else
+						cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
+				}
 				else
-					cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(P10));
+				{
+					if ((mcl = BuscaMallaCliente(cn, *mods)))
+						BorraModoCliente(&mcl->malla, BuscaClienteNumerico(parv[param], NULL));
+					else if ((mmk = BuscaMallaMascara(cn, *mods)))
+						BorraMascaraDeCanal(&mmk->malla, parv[param]);
+					else
+						cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(Unreal));
+				}
+			}
 		}
 		mods++;
 	}

@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.3 2005-07-16 15:25:29 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.4 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -160,3 +160,4 @@ int CargaProtocolo(Conf *config)
 	}
 	return 0;
 }
+

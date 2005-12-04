@@ -12,6 +12,7 @@
 #define NEED_ABS
 #define NEED_BZERO
 #undef NEED_INET_NTOA
+#define NEED_SNPRINTF
 #define NEED_STRCASECMP
 #undef NEED_STRERROR
 #define NEED_STRNCASECMP

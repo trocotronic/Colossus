@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.18 2005-09-16 14:01:53 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.19 2005-12-04 14:09:22 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -19,7 +19,9 @@ typedef struct _cliente Cliente;
 typedef struct _linkcanal LinkCanal;
 typedef struct _linkcliente LinkCliente;
 typedef struct _canal Canal;
-typedef struct _ban Ban;
+typedef struct _mascara Mascara;
+typedef struct _mallacliente MallaCliente;
+typedef struct _mallamascara MallaMascara;
 /*!
  * @desc: Recurso de cliente. Estos clientes pueden ser usuarios o servidores.
  * @params: $nombre Nickname.
@@ -65,6 +67,7 @@ struct _cliente
 	char *trio; /* representación alfanumérica del numeric del cliente (en b64 o lo que sea) */
 	char *info;
 	u_int nivel;
+	unsigned away:1;
 };
 /*!
  * @desc: Malla de clientes para canales.
@@ -81,14 +84,44 @@ struct _linkcliente
  * @desc: Malla de máscaras para canales.
  * @params: $sig Siguiente nodo de la malla.
  	    $quien Cliente que ha puesto la máscara.
- 	    $ban Máscara.
+ 	    $mascara Máscara.
  * @cat: IRCd
  !*/
-struct _ban
+struct _mascara
 {
-	Ban *sig;
+	Mascara *sig;
 	Cliente *quien;
-	char *ban;
+	char *mascara;
+};
+/*!
+ * @desc: Malla de clientes por modo para canales.
+ * @params: $sig Siguiente nodo de la malla.
+ 	    $flag Modo asociado a la malla.
+ 	    $malla Siguiente malla de modo.
+ 	    $clientes Cantidad de clientes en esta malla de modo.
+ * @cat: IRCd
+ !*/
+struct _mallacliente
+{
+	MallaCliente *sig;
+	char flag;
+	LinkCliente *malla;
+	u_int clientes;
+};
+/*!
+ * @desc: Malla de máscaras por modo para canales.
+ * @params: $sig Siguiente nodo de la malla.
+ 	    $flag Modo asociado a la malla.
+ 	    $malla Siguiente malla de modo.
+	    $mascaras Cantidad de máscaras en esta malla.
+ * @cat: IRCd
+ !*/
+struct _mallamascara
+{
+	MallaMascara *sig;
+	char flag;
+	Mascara *malla;
+	u_int mascaras;
 };
 /*!
  * @desc: Recurso de canal.
@@ -100,13 +133,8 @@ struct _ban
  	    $limite Límite de usuarios del canal (modo +l).
  	    $flood Antiflood (modo +f).
  	    $link Canal de linkaje (modo +L).
- 	    $ban Malla de bans (modo +b).
- 	    $exc Malla de excepciones (modo +e).
- 	    $owner Malla de owners (modo +q).
- 	    $admin Malla de admins (modo +a).
- 	    $op Malla de operadores (modo +o).
- 	    $half Malla de semioperadores (modo +h).
- 	    $voz Malla de voces (modo +v).
+ 	    $mallacl Malla de clientes.
+ 	    $mallamk Malla de máscaras.
  	    $miembro Malla de usuarios en el canal.
  	    $miembros Cantidad de usuarios en el canal.
  * @cat: IRCd
@@ -122,13 +150,8 @@ struct _canal
 	u_int limite;
 	char *flood;
 	char *link;
-	Ban *ban;
-	Ban *exc;
-	LinkCliente *owner;
-	LinkCliente *admin;
-	LinkCliente *op;
-	LinkCliente *half;
-	LinkCliente *voz;
+	MallaCliente *mallacl;
+	MallaMascara *mallamk;
 	LinkCliente *miembro;
 	u_int miembros;
 };
@@ -172,10 +195,12 @@ extern int BorraCanalDeCliente(Cliente *, Canal *);
 extern int BorraClienteDeCanal(Canal *, Cliente *);
 #define INI 1
 #define FIN 2
-extern void InsertaBan(Cliente *, Ban **, char *);
-extern int BorraBanDeCanal(Ban **, char *);
+extern void InsertaMascara(Cliente *, Mascara **, char *);
+extern int BorraMascaraDeCanal(Mascara **, char *);
 extern void InsertaModoCliente(LinkCliente **, Cliente *);
 extern int BorraModoCliente(LinkCliente **, Cliente *);
+extern MallaCliente *BuscaMallaCliente(Canal *cn, char flag);
+extern MallaMascara *BuscaMallaMascara(Canal *cn, char flag);
 extern void GeneraMascara(Cliente *);
 extern void DistribuyeMe(Cliente *, Sock **);
 extern void CargaModulos(void);
@@ -196,7 +221,7 @@ extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[]
  * @ret: Devuelve 1 si está identificado; 0, si no.
  * @cat: IRCd
  !*/
-#define IsId(x) (x && (x->nivel & USER))
+#define IsId(x) (x && (x->nivel & N1))
 /*!
  * @desc: Consulta si un usuario tiene el estado de root.
  * @params: $nick [in] Nick del usuario.
@@ -204,7 +229,7 @@ extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[]
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
-#define IsRoot(x) (x && (x->nivel & ROOT) && IsId(x))
+#define IsRoot(x) (x && (x->nivel & N5) && IsId(x))
 /*!
  * @desc: Consulta si un usuario tiene el estado de admin.
  * @params: $nick [in] Nick del usuario.
@@ -212,15 +237,7 @@ extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[]
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
-#define IsAdmin(x) (x && ((x->nivel & ADMIN) || IsRoot(x)))
-/*!
- * @desc: Consulta si un usuario tiene el estado de ircop.
- * @params: $nick [in] Nick del usuario.
- * @sntx: int IsIrcop(char *nick)
- * @ret: Devuelve 1 tiene ese estado; 0, si no.
- * @cat: IRCd
- !*/
-#define IsIrcop(x) (x && ((x->nivel & IRCOP) || IsAdmin(x)))
+#define IsAdmin(x) (x && ((x->nivel & N4) || IsRoot(x)))
 /*!
  * @desc: Consulta si un usuario tiene el estado de oper.
  * @params: $nick [in] Nick del usuario.
@@ -228,7 +245,7 @@ extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[]
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
-#define IsOper(x) (x && ((x->nivel & OPER) || IsIrcop(x)))
+#define IsOper(x) (x && ((x->nivel & N3) || IsAdmin(x)))
 /*!
  * @desc: Consulta si un usuario tiene el estado de preoper.
  * @params: $nick [in] Nick del usuario.
@@ -236,7 +253,7 @@ extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[]
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
-#define IsPreo(x) (x && ((x->nivel & PREO) || IsOper(x)))
+#define IsPreo(x) (x && ((x->nivel & N2) || IsOper(x)))
 extern void ProcesaModosCliente(Cliente *, char *);
 extern char *MascaraIrcd(char *);
 extern void EntraBot(Cliente *, char *);

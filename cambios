@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.35 2005-11-01 14:12:13 Trocotronic Exp $
+ * $Id: cambios,v 1.36 2005-12-04 14:09:21 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -332,7 +332,7 @@
 241005388 - Arreglado un fallo al darse ADMIN.
 251005389 - Arreglado un fallo con el mensaje al solicitar un registro de canal, aviso de Traxis (#0000135).
 251005390 - Arreglado un fallo con el swhois de NickServ, aviso de thunderz (#0000136).
-271005391 - Arreglado un fallo con el strtok de datos null de sql (al parecer por viejos controladores obcd, aviso de thunderz (#0000128).
+271005391 - Arreglado un fallo con el strtok de datos null de sql (al parecer por viejos controladores obcd), aviso de thunderz (#0000128).
 281005392 - Arreglado un fallo al cargar y distribuir la configuración.
 281005393 - Arreglado un fallo al insertar una noticia, aviso de thunderz (#0000139).
 281005394 - Arreglado un cuelgue al borrar una noticia, aviso de thunderz (#0000139).
@@ -340,3 +340,18 @@
 301005396 - Arreglado un fallo de MySQL con el identify de ChanServ, aviso de thunderz (#0000142).
 301005397 - Arreglado un fallo con el restart, aviso de thunderz (#0000141).
 011105398 - *** Décima release pública: 1.2b ***
+021105399 - Arreglado un fallo al refrescar OperServ y colisión en nicks de noticias, aviso de thunderz (#0000159).
+031105400 - Se crea la directriz funcion { } dentro de la configuración de los módulos.
+041105401 - Sólo se puede cargar una vez un comando (una función puede repetirse para distintos comandos).
+041105402 - Se agiliza la carga de módulos.
+091105403 - Se arregla un fallo al registrar nicks con caracteres especiales.
+121105404 - Arreglado un fallo al parsear las opciones SSL.
+131105405 - Se crea la directriz niveles { } del bloque set { }.
+161105406 - Se crea un sistema de marcas/historial para nicks y canales.
+181105407 - Se termina de confeccionar el sistema de niveles personalizados y adaptar los módulos a ello.
+231105408 - Se optimizan las tablas de nicks y canales.
+261105409 - Se simplifica el debug de ChanServ.
+261105410 - Se arregla un fallo al linkar y detectar usuarios con modos no permitivos y tener activado el secureops.
+261105411 - Se cambia el modo de acceso a los canales. Se distuingen los privilegios y los automodos (que se reciben al entrar).
+261105412 - Se crea todo un sistema de mallas para flexibilizar los protocolos.
+261105413 - Se añade el bloque parametros { } dentro de la configuración de cada protocolo para establecer los modos con parámetros.
