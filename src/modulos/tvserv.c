@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.8 2005-12-04 14:09:24 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.9 2005-12-25 21:15:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -100,12 +100,7 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(TvServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -132,6 +127,8 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		TSSet(NULL, mod);
 	return errores;
 }
 int MOD_DESCARGA(TvServ)()
@@ -153,14 +150,27 @@ int TSTest(Conf *config, int *errores)
 }
 void TSSet(Conf *config, Modulo *mod)
 {
-	int i;
-	for (i = 0; i < config->secciones; i++)
+	int i, p;
+	if (config)
 	{
-		if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, tvserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, tvserv_coms);
+		for (i = 0; i < config->secciones; i++)
+		{
+			if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, tvserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, tvserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
+			}
+		}
 	}
+	else
+		ProcesaComsMod(NULL, mod, tvserv_coms);
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
 	BotSet(tvserv);
 }

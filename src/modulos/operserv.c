@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.25 2005-12-04 14:09:24 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.26 2005-12-25 21:14:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -95,12 +95,7 @@ int MOD_CARGA(OperServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(OperServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -127,6 +122,8 @@ int MOD_CARGA(OperServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		OSSet(NULL, mod);
 	return errores;
 }
 int MOD_DESCARGA(OperServ)()
@@ -155,19 +152,32 @@ int OSTest(Conf *config, int *errores)
 }
 void OSSet(Conf *config, Modulo *mod)
 {
-	int i;
+	int i, p;
 	operserv.maxlist = 30;
-	for (i = 0; i < config->secciones; i++)
+	if (config)
 	{
-		if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, operserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "autoop"))
-			operserv.opts |= OS_OPTS_AOP;
-		else if (!strcmp(config->seccion[i]->item, "maxlist"))
-			operserv.maxlist = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, operserv_coms);
+		for (i = 0; i < config->secciones; i++)
+		{
+			if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, operserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "autoop"))
+				operserv.opts |= OS_OPTS_AOP;
+			else if (!strcmp(config->seccion[i]->item, "maxlist"))
+				operserv.maxlist = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, operserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
+			}
+		}
 	}
+	else
+		ProcesaComsMod(NULL, mod, operserv_coms);
 	InsertaSenyal(SIGN_JOIN, OSCmdJoin);
 	InsertaSenyal(SIGN_POST_NICK, OSCmdNick);
 #ifndef UDB
@@ -363,7 +373,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Administra los bloqueos de la red.");
 		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {+|-}{nick|user@host} [tiempo motivo]");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|user@host} [tiempo motivo]");
 		Responde(cl, CLI(operserv), "Para añadir una gline se antepone '+' antes de la gline. Para quitarla, '-'.");
 		Responde(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
 	}
@@ -444,13 +454,17 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "Si no se especifica ninguna acción (+ o -) se listarán los host que coincidan con el patrón.");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis:");
-		Responde(cl, CLI(operserv), "AKILL {+|-}[user@]{host|ip} [motivo]");
+		Responde(cl, CLI(operserv), "AKILL [[user@]{host|ip} [motivo]]");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Ejemplos:");
+		Responde(cl, CLI(operserv), "Añadir akills.");
 		Responde(cl, CLI(operserv), "AKILL +pepito@palotes.com largo");
 		Responde(cl, CLI(operserv), "AKILL +127.0.0.1 largo");
+		Responde(cl, CLI(operserv), "Eliminar akills");
 		Responde(cl, CLI(operserv), "AKILL -google.com");
-		Responde(cl, CLI(operserv), "AKILL *@*.aol.com");
+		Responde(cl, CLI(operserv), "AKILL -*@*.aol.com");
+		Responde(cl, CLI(operserv), "Listar akills");
+		Responde(cl, CLI(operserv), "AKILL *@.com");
 	}
 	else if (!strcasecmp(param[1], "OPERS") && ExFunc("OPERS"))
 	{
@@ -466,7 +480,7 @@ BOTFUNC(OSHelp)
 		Responde(cl, CLI(operserv), "\00312ADMIN (+N)");
 		Responde(cl, CLI(operserv), "\00312ROOT");
 		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312OPERS {+|-}usuario rango");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312OPERS usuario [rango]");
 	}
 #ifdef UDB
 	else if (!strcasecmp(param[1], "MODOS") && ExFunc("MODOS"))
@@ -595,21 +609,11 @@ BOTFUNC(OSGline)
 	char *user, *host;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "GLINE {+|-}{nick|user@host} [tiempo motivo]");
-		return 1;
-	}
-	if (*param[1] == '+' && params < 4)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "GLINE +{nick|user@host} [tiempo motivo]");
-		return 1;
-	}
-	else if (*param[1] != '+' && *param[1] != '-')
-	{
-		Responde(cl, CLI(operserv), OS_ERR_SNTX, "GLINE {+|-}{nick|user@host} [tiempo motivo]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, "GLINE {nick|user@host} [tiempo motivo]");
 		return 1;
 	}
 	user = host = NULL;
-	if (!strchr(param[1] + 1, '@'))
+	if (!strchr(param[1], '@'))
 	{
 		Cliente *al;
 		if ((al = BuscaCliente(param[1] + 1, NULL)))
@@ -619,7 +623,7 @@ BOTFUNC(OSGline)
 		}
 		else
 		{
-			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado. Especifique una máscara.");
 			return 1;
 		}
 	}
@@ -629,15 +633,20 @@ BOTFUNC(OSGline)
 		user = strtok(tokbuf, "@");
 		host = strtok(NULL, "@");
 	}
-	if (*param[1] == '+')
-	{
-		ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
-		Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
-	}
-	else if (*param[1] == '-')
+	if (params < 3)
 	{
 		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);
 		Responde(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
+	}
+	else if (params < 4)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "GLINE {nick|user@host} tiempo motivo");
+		return 1;
+	}
+	else
+	{
+		ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
+		Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
 	}
 	return 0;
 }
@@ -649,17 +658,12 @@ BOTFUNC(OSOpers)
 	Nivel *niv = NULL;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick [nivel]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS nick [nivel]");
 		return 1;
 	}
-	if (*param[1] == '+')
+	if (params >= 3)
 	{
-		if (params < 3)
-		{
-			Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS {+|-}nick nivel");
-			return 1;
-		}
-		if (!IsReg(param[1] + 1))
+		if (!IsReg(param[1]))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
@@ -676,19 +680,19 @@ BOTFUNC(OSOpers)
 #ifdef UDB
 		}
 		if (nivel)
-			PropagaRegistro("N::%s::O %c%i", param[1] + 1, CHAR_NUM, nivel);
+			PropagaRegistro("N::%s::O %c%i", param[1], CHAR_NUM, nivel);
 		else
 #endif
-			SQLInserta(OS_SQL, param[1] + 1, "nivel", "%i", niv->nivel);		
-		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1] + 1, param[2]);
+			SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);		
+		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1], param[2]);
 	}
-	else if (*param[1] == '-')
+	else
 	{
 #ifdef UDB
-		if (!(nivel = NivelOperBdd(param[1] + 1)))
+		if (!(nivel = NivelOperBdd(param[1])))
 		{
 #endif
-			if (!SQLCogeRegistro(OS_SQL, param[1] + 1, "nivel"))
+			if (!SQLCogeRegistro(OS_SQL, param[1], "nivel"))
 			{
 				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
 				return 1;
@@ -696,16 +700,11 @@ BOTFUNC(OSOpers)
 #ifdef UDB
 		}
 		if (nivel)
-			PropagaRegistro("N::%s::O", param[1] + 1);
+			PropagaRegistro("N::%s::O", param[1]);
 		else
 #endif
 			SQLBorra(OS_SQL, param[1]);
-		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1] + 1);
-	}
-	else
-	{
-		Responde(cl, CLI(operserv), OS_ERR_SNTX, "OPERS {+|-}nick [rango]");
-		return 1;
+		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1]);
 	}
 	return 0;
 }
@@ -1015,14 +1014,14 @@ BOTFUNC(OSAkill)
 		u_int i;
 		char *rep;
 		rep = str_replace(param[1], '*', '%');
-		if (!(res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s'", PREFIJO, OS_AKILL, strtolower(rep))))
+		if (!(res = SQLQuery("SELECT item,motivo from %s%s where LOWER(item) LIKE '%s'", PREFIJO, OS_AKILL, strtolower(rep))))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;
 		}
 		Responde(cl, CLI(operserv), "*** AKILLS que coinciden con \00312%s\003 ***", param[1]);
 		for (i = 0; i < operserv.maxlist && (row = SQLFetchRow(res)); i++)
-			Responde(cl, CLI(operserv), "\00312%s", row[0]);
+			Responde(cl, CLI(operserv), "\00312%s\003: %s", row[0], row[1]);
 		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 		SQLFreeRes(res);
 	}

@@ -5,14 +5,14 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.19 2005-12-04 14:09:21 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.20 2005-12-25 21:12:25 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.rallados.net" target="_blank"><font size="3">http://www.rallados.net</font></a><font size="3"><br>
     <b>Versi&oacute;n actual:</b> 1.3<br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 03/12/2005</font><br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 10/12/2005</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
    &nbsp;<br>
@@ -392,7 +392,9 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
   <p>Tiene m&aacute;s informaci&oacute;n sobre los protocolos soportados actualmente en <a href="#protos">Configuraci&oacute;n de protocolos</a>.</p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="bots"></a>9.0 Configuraci&oacute;n de m&oacute;dulos</font></b></p>
-  <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal. </p>
+  <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.</p>
+  <p>Esta configuraci&ooacute; puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>. Si no se especifica ésta, se tomará la configuración por defecto.</p>
+  <p>&nbsp;</p>
   <p>Adem&aacute;s, poseen dos bloques comunes en todos los m&oacute;dulos</p>
   <p><b><font size="4"><a name="funciones"></a>9.0.1 Bloque funciones { }</font></b></p>
   <pre>funciones {
@@ -867,7 +869,7 @@ A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opcione
 		mascaras modos; // opcional
 		resto1 modos; // opcional
 		resto2 modos; // opcional
-	};
+	}; // opcional
 };</pre>
 <p><b>no_server_deop</b><br>Se utiliza para evitar que al linkar dos nodos, uno quite todos los modos de .&amp;@%+ que pueda haber en un canal. </p>
 <p><b>autojoin { }</b><br>Autojoin de usuarios y operadores.</p>
@@ -877,7 +879,7 @@ A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opcione
 <li><b>mascaras</b>: modos que aceptan m&aacute;scaras como par&aacute;metros. Por defecto "beI".</li>
 <li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "kfL".</li>
 <li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "lj".</li></ul>
-Todo tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
+Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
 <p>Ejemplo:</p>
 <pre>protocolo protocolos/unreal_udb.dll {
 	no_server_deop;
@@ -899,10 +901,22 @@ Este protocolo corresponde al P10 nativo. IRCu de <a href="http://www.undernet.o
 	modos {
 		canales +modos-modos;
 	}; // opcional
+	parametros {
+		clientes modos; // opcional
+		mascaras modos; // opcional
+		resto1 modos; // opcional
+		resto2 modos; // opcional
+	}; // opcional
 };</pre>
 <p><b>red</b><br>Nombre de la red.</p>
 <p><b>nicklen</b><br>Longitud m&aacute;xima permitida en los nicks.</p>
 <p><b>modos { }</b><br>Modos obligatorios (+) y no permitidos (-) en canales.</p>
+<p><b>parametros { }</b><br>Define los modos de canal con par&aacute;metros que tiene este protocolo. Es opcional, puesto que lleva unos por defecto (los que suelen encontrarse).<br />
+<ul><li><b>clientes</b>: modos que aceptan clientes como par&aacute;metros. Por defecto "ov".</li>
+<li><b>mascaras</b>: modos que aceptan m&aacute;scaras como par&aacute;metros. Por defecto "b".</li>
+<li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "k".</li>
+<li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "l".</li></ul>
+Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
 <p>Ejemplo:</p>
 <pre>protocolo protocolos/p10.dll {
 	red Rallados;

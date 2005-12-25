@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.9 2005-10-27 19:16:14 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.10 2005-12-25 21:12:26 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -149,4 +149,32 @@
 #endif
 #ifndef MAXCONNECTIONS
 #define MAXCONNECTIONS	4096
+#endif
+
+#ifdef _WIN32
+#define strtolower _strlwr
+#define strtoupper _strupr
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#else
+/*!
+ * @desc: Convierte una cadena a mayúsculas.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve la cadena convertida a mayúsculas.
+ * @cat: Programa
+ * @ver: strtolower
+ * @sntx: char *strtolower(char *str)
+ !*/
+extern char *strtolower(char *);
+/*!
+ * @desc: Convierte una cadena a mayúsculas.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve la cadena convertida a mayúsculas.
+ * @cat: Programa
+ * @ver: strtolower
+ * @sntx: char * strtoupper(char *str)
+ !*/
+extern char *strtoupper(char *);
+#define strcasecmp stricmp
+#define strncasecmp strnicmp
 #endif

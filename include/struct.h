@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.48 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.49 2005-12-25 21:13:01 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -79,7 +79,7 @@ extern void strcopia(char **, const char *);
  * @sntx: void Free(void *x)
  !*/
 #ifdef DEBUG
-#define Free(x) free(x); Debug("Liberando %X", x)
+#define Free(x) do { free(x); Debug("Liberando %X", x) }while(0)
 #else
 #define Free free
 #endif
@@ -259,8 +259,6 @@ extern int ApagaCrono(char *, Sock *);
 extern void CompruebaCronos(void);
 extern double microtime(void);
 extern char *str_replace(char *, char, char);
-extern char *strtolower(char *);
-extern char *strtoupper(char *);
 extern char *Unifica(char *[], int, int, int);
 extern char *gettok(char *, int, char);
 extern int StrCount(char *, char *);
@@ -294,6 +292,7 @@ extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
 #define COLOSSUS_VERNUM "1.3"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
+#define COLOSSUS_VERINT 10300
 extern char **margv;
 #define Malloc(x) ExMalloc(x, __FILE__, __LINE__)
 /*!
@@ -461,3 +460,12 @@ typedef struct _opts
 	char *item;
 }Opts;
 extern int BuscaOpt(char *, Opts *);
+
+extern int b64_encode(char const *, size_t, char *, size_t);
+extern int b64_decode(char const *, char *, size_t);
+extern char *base64_encode(char *, int);
+extern char *base64_decode(char *);
+
+extern char *Encripta(char *, char *);
+extern char *Desencripta(char *, char *);
+extern char *Long2Char(u_long);

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.18 2005-12-04 14:09:24 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.19 2005-12-25 21:15:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -25,6 +25,7 @@ HANDLE proxythread;
 SOCKFUNC(PSFin);
 #endif
 Proxys *proxys = NULL;
+char *lista = NULL;
 
 int PSCmdNick(Cliente *, int);
 
@@ -48,12 +49,7 @@ int MOD_CARGA(ProxyServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(ProxyServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -80,6 +76,8 @@ int MOD_CARGA(ProxyServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		PSSet(NULL, mod);
 	return errores;
 }
 int MOD_DESCARGA(ProxyServ)()
@@ -118,28 +116,55 @@ int PSTest(Conf *config, int *errores)
 	}
 	if ((eval = BuscaEntrada(config, "funcion")))
 		error_parcial += TestComMod(eval, proxyserv_coms, 1);
+	if ((eval = BuscaEntrada(config, "lista")))
+	{
+		if (!fopen(eval->data, "r"))
+		{
+			Error("[%s:%s] No se puede abrir el archivo %s]\n", config->archivo, config->item, eval->data);
+			error_parcial++;
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
 void PSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	for (i = 0; i < config->secciones; i++)
+	proxyserv.puertos = 0;
+	proxyserv.maxlist = 30;
+	proxyserv.tiempo = 3600;
+	ircfree(lista);
+	if (config)
 	{
-		if (!strcmp(config->seccion[i]->item, "tiempo"))
-			proxyserv.tiempo = atoi(config->seccion[i]->data) * 60;
-		else if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, proxyserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, proxyserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "puertos"))
+		for (i = 0; i < config->secciones; i++)
 		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-				proxyserv.puerto[proxyserv.puertos++] = atoi(config->seccion[i]->seccion[p]->item);
+			if (!strcmp(config->seccion[i]->item, "tiempo"))
+				proxyserv.tiempo = atoi(config->seccion[i]->data) * 60;
+			else if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, proxyserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, proxyserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "puertos"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+					proxyserv.puerto[proxyserv.puertos++] = atoi(config->seccion[i]->seccion[p]->item);
+			}
+			else if (!strcmp(config->seccion[i]->item, "maxlist"))
+				proxyserv.maxlist = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
+			}
+			else if (!strcmp(config->seccion[i]->item, "lista"))
+				ircstrdup(lista, config->seccion[i]->data);
 		}
-		else if (!strcmp(config->seccion[i]->item, "maxlist"))
-			proxyserv.maxlist = atoi(config->seccion[i]->data);
 	}
+	else
+		ProcesaComsMod(NULL, mod, proxyserv_coms);
 	InsertaSenyal(SIGN_POST_NICK, PSCmdNick);
 	InsertaSenyal(SIGN_SQL, PSSigSQL);
 	BotSet(proxyserv);

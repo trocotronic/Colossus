@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.21 2005-12-04 14:09:23 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.22 2005-12-25 21:14:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -64,12 +64,7 @@ int MOD_CARGA(IpServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(IpServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -96,6 +91,8 @@ int MOD_CARGA(IpServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		ISSet(NULL, mod);
 	return errores;
 }	
 int MOD_DESCARGA(IpServ)()
@@ -125,22 +122,40 @@ int ISTest(Conf *config, int *errores)
 }
 void ISSet(Conf *config, Modulo *mod)
 {
-	int i;
-	for (i = 0; i < config->secciones; i++)
-	{
-		if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, ipserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, ipserv_coms);
+	int i, p;
 #ifndef UDB
-		else if (!strcmp(config->seccion[i]->item, "clones"))
-			ipserv.clones = atoi(config->seccion[i]->data);
+	ipserv.clones = 3;
 #endif
-		else if (!strcmp(config->seccion[i]->item, "sufijo"))
-			ircstrdup(ipserv.sufijo, config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "cambio"))
-			ipserv.cambio = atoi(config->seccion[i]->data) * 3600;
+	ircstrdup(ipserv.sufijo, "virtual");
+	ipserv.cambio = 86400;
+	if (config)
+	{
+		for (i = 0; i < config->secciones; i++)
+		{
+			if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, ipserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, ipserv_coms);
+#ifndef UDB
+			else if (!strcmp(config->seccion[i]->item, "clones"))
+				ipserv.clones = atoi(config->seccion[i]->data);
+#endif
+			else if (!strcmp(config->seccion[i]->item, "sufijo"))
+				ircstrdup(ipserv.sufijo, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "cambio"))
+				ipserv.cambio = atoi(config->seccion[i]->data) * 3600;
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
+			}
+		}
 	}
+	else
+		ProcesaComsMod(NULL, mod, ipserv_coms);
 #ifndef UDB
 	InsertaSenyal(SIGN_UMODE, ISSigUmode);
 	InsertaSenyal(NS_SIGN_IDOK, ISSigIdOk);
@@ -185,7 +200,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), "La ip virtual puede ser una palabra, números, etc. pero siempre caracteres alfanuméricos.");
 		Responde(cl, CLI(ipserv), "Para que se visualice, es necesario que el nick lleve el modo +x.");
 		Responde(cl, CLI(ipserv), " ");
-		Responde(cl, CLI(ipserv), "Sintaxis: \00312SETIPV {+|-}nick [ipv [caducidad]]");
+		Responde(cl, CLI(ipserv), "Sintaxis: \00312SETIPV nick [ipv [caducidad]]");
 	}
 	else if (!strcasecmp(param[1], "SETIPV2") && ExFunc("SETIPV2"))
 	{
@@ -196,7 +211,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), "Este tipo consiste en añadir el sufijo de la red al final de la ip virtual.");
 		Responde(cl, CLI(ipserv), "Así, la ip que especifiques será adjuntada del sufijo \00312%s\003 de forma automática.", ipserv.sufijo);
 		Responde(cl, CLI(ipserv), " ");
-		Responde(cl, CLI(ipserv), "Sintaxis: \00312SETIPV2 {+|-}nick [ipv [caducidad]]");
+		Responde(cl, CLI(ipserv), "Sintaxis: \00312SETIPV2 nick [ipv [caducidad]]");
 	}
 	else if (!strcasecmp(param[1], "TEMPHOST") && ExFunc("TEMPHOST"))
 	{
@@ -217,10 +232,7 @@ BOTFUNC(ISHelp)
 		Responde(cl, CLI(ipserv), "Si se sobrepasa el límite, los usuarios son desconectados.");
 		Responde(cl, CLI(ipserv), "Es importante distinguir entre ip y host. Si el usuario resuelve a host, deberá introducirse el host.");
 		Responde(cl, CLI(ipserv), " ");
-		Responde(cl, CLI(ipserv), "Sintaxis: \00312CLONES +{ip|host} número");
-		Responde(cl, CLI(ipserv), "Añade una ip|host con un número propio de clones.");
-		Responde(cl, CLI(ipserv), "Sintaxis: \00312CLONES -{ip|host}");
-		Responde(cl, CLI(ipserv), "Borra una ip|host.");
+		Responde(cl, CLI(ipserv), "Sintaxis: \00312CLONES {ip|host} [número]");
 	}
 #ifdef UDB
 	else if (!strcasecmp(param[1], "SET") && ExFunc("SET"))
@@ -276,7 +288,7 @@ BOTFUNC(ISSetipv)
 	char *ipv;
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "SETIPV +-nick [ipv [caducidad]]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, "SETIPV nick [ipv [caducidad]]");
 		return 1;
 	}
 	if (!IsReg(param[1] + 1))
@@ -291,14 +303,8 @@ BOTFUNC(ISSetipv)
 		return 1;
 	}
 #endif
-	if (*param[1] == '+')
+	if (params >= 3)
 	{
-		if (params < 3)
-		{
-			Responde(cl, CLI(ipserv), IS_ERR_PARA, "SETIPV +nick ipv [caducidad]");
-			return 1;
-		}
-		param[1]++;
 		if (mod)
 		{
 			buf[0] = '\0';
@@ -317,19 +323,13 @@ BOTFUNC(ISSetipv)
 		if (params == 4)
 			Responde(cl, CLI(ipserv), "Esta ip caducará dentro de \00312%i\003 días.", atoi(param[3]));
 	}
-	else if (*param[1] == '-')
+	else
 	{
-		param[1]++;
 		SQLBorra(IS_SQL, param[1]);
 #ifdef UDB
 		PropagaRegistro("N::%s::V", param[1]);
 #endif
 		Responde(cl, CLI(ipserv), "La ip virtual de \00312%s\003 ha sido eliminada.", param[1]);
-	}
-	else
-	{
-		Responde(cl, CLI(ipserv), IS_ERR_SNTX, "SETIPV {+|-}nick [ipv [caducidad]]");
-		return 1;
 	}
 	return 0;
 }
@@ -448,22 +448,16 @@ BOTFUNC(ISClones)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "CLONES {+|-}{ip|host} [nº]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, "CLONES {ip|host} [nº]");
 		return 1;
 	}
-	if (*param[1] == '+')
+	if (params >= 3)
 	{
-		if (params < 3)
-		{
-			Responde(cl, CLI(ipserv), IS_ERR_PARA, "CLONES +{ip|host} nº");
-			return 1;
-		}
 		if (atoi(param[2]) < 1)
 		{
-			Responde(cl, CLI(ipserv), IS_ERR_SNTX, "CLONES +{ip|host} número");
+			Responde(cl, CLI(ipserv), IS_ERR_SNTX, "CLONES {ip|host} número");
 			return 1;
 		}
-		param[1]++;
 #ifdef UDB
 		PropagaRegistro("I::%s::S %c%s", param[1], CHAR_NUM, param[2]);
 #else
@@ -471,20 +465,14 @@ BOTFUNC(ISClones)
 #endif
 		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 se ha añadido con \00312%s\003 clones.", param[1], param[2]);
 	}
-	else if (*param[1] == '-')
+	else
 	{
-		param[1]++;
 #ifdef UDB
 		PropagaRegistro("I::%s::S", param[1]);
 #else
 		SQLBorra(IS_CLONS, param[1]);
 #endif
 		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
-	}
-	else
-	{
-		Responde(cl, CLI(ipserv), IS_ERR_SNTX, "CLONES {+|-}{ip|host} [nº]");
-		return 1;
 	}
 	return 0;
 }	

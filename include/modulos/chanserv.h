@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.8 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.9 2005-12-25 21:13:01 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -94,7 +94,6 @@ extern ChanServ chanserv;
 #define CS_ERR_SUSP "\00304ERROR: No puedes aplicar este comando sobre un canal suspendido."
 #define CS_ERR_FORB ERR_FORB
 
-#define IsChanDebug(x) (x && (atoi(SQLCogeRegistro(CS_SQL, x, "opts")) & CS_OPT_DEBUG))
 DLLFUNC extern u_long CSTieneNivel(char *, char *, u_long);
 DLLFUNC extern CsRegistros *busca_cregistro(char *);
 #ifdef UDB

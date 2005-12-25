@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.6 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.7 2005-12-25 21:14:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -282,7 +282,7 @@ char *str_replace(char *str, char orig, char rep)
  * @cat: Programa
  * @ver: strtoupper
  !*/
- 
+#ifndef _WIN32
 char *strtolower(char *str)
 {
 	static char tol[BUFSIZE];
@@ -296,15 +296,6 @@ char *strtolower(char *str)
 	}
 	return tol;
 }
-
-/*!
- * @desc: Convierte una cadena a mayúsculas.
- * @params: $str [in] Cadena a convertir.
- * @ret: Devuelve la cadena convertida a mayúsculas.
- * @cat: Programa
- * @ver: strtolower
- !*/
- 
 char *strtoupper(char *str)
 {
 	static char tou[BUFSIZE];
@@ -318,7 +309,7 @@ char *strtoupper(char *str)
 	}
 	return tou;
 }
-
+#endif
 /*!
  * @desc: Cuenta el número de apariciones de una cadena dentro de otra.
  * @params: $pajar [in] Cadena donde buscar.

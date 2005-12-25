@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.14 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.15 2005-12-25 21:14:26 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -248,8 +248,8 @@ Mod_Func BuscaFuncion(Modulo *mod, char *nombre, u_int *nivel)
 bCom *BuscaComMod(bCom *coms, char *func)
 {
 	bCom *cm;
-	cm = &coms[0];
-	while (cm->com != 0x0)
+	cm = coms;
+	while (cm && cm->com != 0x0)
 	{
 		if (!strcasecmp(cm->com, func))
 			return cm;
@@ -282,41 +282,12 @@ Mod_Func TieneNivel(Cliente *cl, char *func, Modulo *mod, char *ex)
 	}
 	return NULL;
 }
-
 int BuscaOptNiv(char *nombre)
 {
 	Nivel *niv;
 	if ((niv = BuscaNivel(nombre)))
 		return niv->nivel;
 	return 0;
-}
-/*!
- * @desc: Parsea un bloque de configuración correspondiente a funciones cargadas del módulo.
- * @params: $config [in] Rama o bloque de funciones del archivo de configuración. Llamado por ParseaConfiguracion.
- 	    $mod [in] Recurso del módulo a cargar estos comandos.
- 	    $coms [in] Lista completa de los comandos soportados por el módulo.
- * @cat: Modulos
- * @ver: ParseaConfiguracion TieneNivel CargadoComMod BuscaFuncion BuscaComMod
- !*/
- 
-int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
-{
-	int p, errores = 0;
-	bCom *cm = NULL;
-	for (p = 0; p < config->secciones; p++)
-	{
-		if ((cm = BuscaComMod(coms, config->seccion[p]->item)))
-		{
-			if (!CargadoComMod(cm->com, mod))
-				mod->comando[mod->comandos++] = cm;
-		}
-		else
-		{
-			Error("[%s:%i] No se ha encontrado la funcion %s", config->archivo, config->seccion[p]->linea, config->seccion[p]->item);
-			errores++;
-		}
-	}
-	return errores;
 }
 bCom *CreaCom(bCom *padre)
 {
@@ -330,6 +301,46 @@ bCom *CreaCom(bCom *padre)
 	}
 	return cm;
 }
+/*!
+ * @desc: Parsea un bloque de configuración correspondiente a funciones cargadas del módulo.
+ * @params: $config [in] Rama o bloque de funciones del archivo de configuración. Llamado por ParseaConfiguracion.
+		Si es NULL, cargará todos los comandos que se pasen por el tercer parámetro.
+ 	    $mod [in] Recurso del módulo a cargar estos comandos.
+ 	    $coms [in] Lista completa de los comandos soportados por el módulo.
+ * @cat: Modulos
+ * @ver: ParseaConfiguracion TieneNivel CargadoComMod BuscaFuncion BuscaComMod
+ !*/
+ 
+int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
+{
+	int p, errores = 0;
+	bCom *cm = NULL;
+	if (!mod)
+		return 1;
+	if (config)
+	{
+		for (p = 0; p < config->secciones; p++)
+		{
+			if ((cm = BuscaComMod(coms, config->seccion[p]->item)))
+			{
+				if (!CargadoComMod(cm->com, mod))
+					mod->comando[mod->comandos++] = CreaCom(cm);
+			}
+			else
+			{
+				Error("[%s:%i] No se ha encontrado la funcion %s", config->archivo, config->seccion[p]->linea, config->seccion[p]->item);
+				errores++;
+			}
+		}
+	}
+	else
+	{
+		for (cm = coms; cm && cm->com; cm++)
+			mod->comando[mod->comandos++] = CreaCom(cm);
+	}
+	return errores;
+}
+
 /*!
  * @desc: Testea un bloque de configuración correspondiente a una funcion { }
  * @params: $config [in] Bloque de configuración.

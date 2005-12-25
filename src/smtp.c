@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.15 2005-10-27 19:16:14 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.16 2005-12-25 21:14:36 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -533,20 +533,16 @@ SOCKFUNC(CierraSmtp)
 {
 	if (!colasmtp[0]->enviado && colasmtp)
 	{
-		if (totalcola == MAXSMTP)
-			Alerta(FADV, "Es imposible reenviar el email %s.");
-		else
+		if (totalcola != MAXSMTP)
 		{
-			if (++(colasmtp[0]->intentos) == INTSMTP)
-				Alerta(FADV, "Ha sido imposible enviar el email %s.");
-			else
+			if (++(colasmtp[0]->intentos) != INTSMTP)
 			{
 				int i;
 				colasmtp[totalcola++] = colasmtp[0];
 				for (i = 0; i < totalcola; i++)
 					colasmtp[i] = colasmtp[i+1];
 				totalcola--;
-				Alerta(FADV, "No se puede enviar el email %s. Poniendolo al final de la cola", colasmtp[0]->para);
+				//Alerta(FADV, "No se puede enviar el email %s. Poniendolo al final de la cola", colasmtp[0]->para);
 			}
 		}
 	}

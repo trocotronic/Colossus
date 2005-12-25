@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.31 2005-12-04 14:09:23 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.32 2005-12-25 21:14:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -90,12 +90,7 @@ int MOD_CARGA(NickServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(NickServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -122,6 +117,8 @@ int MOD_CARGA(NickServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		NSSet(NULL, mod);
 	return errores;
 }	
 int MOD_DESCARGA(NickServ)()
@@ -155,54 +152,72 @@ void NSSet(Conf *config, Modulo *mod)
 	int i, p;
 	nickserv.opts = NS_PROT_KILL;
 	ircstrdup(nickserv.recovernick, "inv-%s-????");
-	ircstrdup(nickserv.securepass,"******");
+	ircstrdup(nickserv.securepass, "******");
 	nickserv.min_reg = 24;
 	nickserv.autodrop = 15;
 	nickserv.nicks = 3;
 	nickserv.intentos = 3;
 	nickserv.maxlist = 30;
 	nickserv.forbmails = 0;
-	for (i = 0; i < config->secciones; i++)
+	if (config)
 	{
-		if (!strcmp(config->seccion[i]->item, "sid"))
-			nickserv.opts |= NS_SID;
-		else if (!strcmp(config->seccion[i]->item, "secure"))
-			nickserv.opts |= NS_SMAIL;
-		else if (!strcmp(config->seccion[i]->item, "prot"))
+		for (i = 0; i < config->secciones; i++)
 		{
-			nickserv.opts &= ~(NS_PROT_KILL | NS_PROT_CHG);
-			if (!strcasecmp(config->seccion[i]->data, "KILL"))
-				nickserv.opts |= NS_PROT_KILL;
-			else
-				nickserv.opts |= NS_PROT_CHG;
-		}
+			if (!strcmp(config->seccion[i]->item, "sid"))
+				nickserv.opts |= NS_SID;
+			else if (!strcmp(config->seccion[i]->item, "secure"))
+				nickserv.opts |= NS_SMAIL;
+			else if (!strcmp(config->seccion[i]->item, "prot"))
+			{
+				nickserv.opts &= ~(NS_PROT_KILL | NS_PROT_CHG);
+				if (!strcasecmp(config->seccion[i]->data, "KILL"))
+					nickserv.opts |= NS_PROT_KILL;
+				else
+					nickserv.opts |= NS_PROT_CHG;
+			}
 #ifdef UDB
-		else if (!strcmp(config->seccion[i]->item, "automigrar"))
-			nickserv.opts |= NS_AUTOMIGRAR;
+			else if (!strcmp(config->seccion[i]->item, "automigrar"))
+				nickserv.opts |= NS_AUTOMIGRAR;
 #endif
-		else if (!strcmp(config->seccion[i]->item, "recovernick"))
-			ircstrdup(nickserv.recovernick, config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "securepass"))
-			ircstrdup(nickserv.securepass, config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "min_reg"))
-			nickserv.min_reg = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "autodrop"))
-			nickserv.autodrop = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "nicks"))
-			nickserv.nicks = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "intentos"))
-			nickserv.intentos = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "maxlist"))
-			nickserv.maxlist = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "forbmails"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++, nickserv.forbmails++)
-				ircstrdup(nickserv.forbmail[nickserv.forbmails], config->seccion[i]->seccion[p]->item);
+			else if (!strcmp(config->seccion[i]->item, "recovernick"))
+				ircstrdup(nickserv.recovernick, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "securepass"))
+				ircstrdup(nickserv.securepass, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "min_reg"))
+				nickserv.min_reg = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "autodrop"))
+				nickserv.autodrop = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "nicks"))
+				nickserv.nicks = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "intentos"))
+				nickserv.intentos = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "maxlist"))
+				nickserv.maxlist = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "forbmails"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++, nickserv.forbmails++)
+					ircstrdup(nickserv.forbmail[nickserv.forbmails], config->seccion[i]->seccion[p]->item);
+			}
+			else if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, nickserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, nickserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
+			}
 		}
-		else if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, nickserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, nickserv_coms);
+	}
+	else
+	{
+		nickserv.opts |= NS_SID;
+		nickserv.opts |= NS_SMAIL;
+		nickserv.opts |= NS_PROT_KILL;
+		ProcesaComsMod(NULL, mod, nickserv_coms);
 	}
 	InsertaSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	InsertaSenyal(SIGN_POST_NICK, NSCmdPostNick);
@@ -489,7 +504,7 @@ BOTFUNC(NSHelp)
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Prohibe o permite el uso de un nick o apodo.");
 		Responde(cl, CLI(nickserv), " ");
-		Responde(cl, CLI(nickserv), "Sintaxis: \00312FORBID {+|-}nick [motivo]");
+		Responde(cl, CLI(nickserv), "Sintaxis: \00312FORBID nick [motivo]");
 	}
 	else if (!strcasecmp(param[1], "MARCA") && ExFunc("MARCA"))
 	{
@@ -598,7 +613,8 @@ BOTFUNC(NSRegister)
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(parv[0]), nickserv.hmod->nick, conf_set->red);
 	else if (UMODE_REGNICK)
 		ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", UMODEF_REGNICK);
-	InsertaCache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, nickserv.hmod->id, "%lu", time(0));
+	if (!IsOper(cl))
+		InsertaCache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv.min_reg, nickserv.hmod->id, "%lu", time(0));
 	Responde(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
 #ifdef UDB
 	if (nickserv.opts & NS_AUTOMIGRAR)
@@ -1141,49 +1157,39 @@ BOTFUNC(NSForbid)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "FORBID {+|-}nick [motivo]");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, "FORBID nick [motivo]");
 		return 1;
 	}
-	if (*param[1] == '+')
+	if (params >= 3)
 	{
 		char *motivo;
-		if (params < 3)
-		{
-			Responde(cl, CLI(nickserv), NS_ERR_PARA, "FORBID +nick motivo");
-			return 1;
-		}
 		motivo = Unifica(param, params, 1, -1);
 #ifdef UDB
-		PropagaRegistro("N::%s::B %s", param[1] + 1, motivo);
+		PropagaRegistro("N::%s::B %s", param[1], motivo);
 #else
 		if (!ProtFunc(P_FORB_NICK))
 		{
 			Responde(cl, CLI(nickserv), ERR_NSUP);
 			return 1;
 		}
-		SQLInserta(NS_FORBIDS, param[1] + 1, "motivo", motivo);
-		ProtFunc(P_FORB_NICK)(param[1] + 1, ADD,  motivo);
+		SQLInserta(NS_FORBIDS, param[1], "motivo", motivo);
+		ProtFunc(P_FORB_NICK)(param[1], ADD,  motivo);
 #endif
 		ircsprintf(buf, "Prohibido: %s", motivo);
 		NSMarca(cl, param[1], buf);
-		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1] + 1);
-	}
-	else if (*param[1] == '-')
-	{
-#ifdef UDB
-		PropagaRegistro("N::%s::B", param[1] + 1);
-#else
-		SQLBorra(NS_FORBIDS, param[1] + 1);
-		if (!ProtFunc(P_FORB_NICK))
-			ProtFunc(P_FORB_NICK)(param[1] + 1, DEL, NULL);
-#endif
-		NSMarca(cl, param[1], "Prohibición levantada.");
-		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1] + 1);
+		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1]);
 	}
 	else
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_SNTX, "FORBID {+|-}nick [motivo]");
-		return 1;
+#ifdef UDB
+		PropagaRegistro("N::%s::B", param[1]);
+#else
+		SQLBorra(NS_FORBIDS, param[1]);
+		if (!ProtFunc(P_FORB_NICK))
+			ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
+#endif
+		NSMarca(cl, param[1], "Prohibición levantada.");
+		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
 	}
 	return 0;
 }

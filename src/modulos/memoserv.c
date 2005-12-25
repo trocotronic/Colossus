@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.20 2005-12-04 14:09:23 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.21 2005-12-25 21:14:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -56,12 +56,7 @@ int MOD_CARGA(MemoServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(MemoServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -88,6 +83,8 @@ int MOD_CARGA(MemoServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		MSSet(NULL, mod);
 	return errores;
 }	
 int MOD_DESCARGA(MemoServ)()
@@ -116,18 +113,33 @@ int MSTest(Conf *config, int *errores)
 }
 void MSSet(Conf *config, Modulo *mod)
 {
-	int i;
-	for (i = 0; i < config->secciones; i++)
+	int i, p;
+	memoserv.def = 5;
+	memoserv.cada = 30;
+	if (config)
 	{
-		if (!strcmp(config->seccion[i]->item, "defecto"))
-			memoserv.def = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "cada"))
-			memoserv.cada = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, memoserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, memoserv_coms);
+		for (i = 0; i < config->secciones; i++)
+		{
+			if (!strcmp(config->seccion[i]->item, "defecto"))
+				memoserv.def = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "cada"))
+				memoserv.cada = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, memoserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, memoserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
+			}
+		}
 	}
+	else
+		ProcesaComsMod(NULL, mod, memoserv_coms);
 	InsertaSenyal(SIGN_AWAY, MSCmdAway);
 	InsertaSenyal(SIGN_JOIN, MSCmdJoin);
 	InsertaSenyal(NS_SIGN_IDOK, MSSigIdOk);

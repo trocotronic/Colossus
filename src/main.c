@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.63 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: main.c,v 1.64 2005-12-25 21:13:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -67,6 +67,8 @@ void parsea_comando(char *);
 void LoopPrincipal(void *);
 #endif
 #define DescargaProtocolo() do { if (protocolo) { LiberaMemoriaProtocolo(protocolo); protocolo = NULL;	} }while(0)
+SOCKFUNC(MotdAbre);
+SOCKFUNC(MotdLee);
 
 #ifndef _WIN32
 const char logo[] = {
@@ -190,6 +192,7 @@ VOIDSIG Refresca()
 #ifdef	POSIX_SIGNALS
 	struct sigaction act;
 #endif
+	Info("Refrescando servicios...");
 	refrescando = 1;
 	DescargaModulos();
 	DescargaProtocolo();
@@ -270,6 +273,14 @@ int main(int argc, char *argv[])
 	mkdir("tmp", 0744);
 	getcwd(spath, sizeof(spath));
 #endif	
+	/*{
+		char volname[MAX_PATH+1], filename[MAX_PATH+1];
+		DWORD serial, maxcom, sysflags;
+		GetVolumeInformation(NULL, volname, MAX_PATH+1, &serial, &maxcom, &sysflags, filename, MAX_PATH+1);
+		Debug("%i %i %s %s", serial, maxcom, volname, filename);
+		QueryDosDevice(NULL, volname, MAX_PATH+1);
+		Debug("%s", volname);
+	}*/
 #ifdef FORCE_CORE
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
 	if (setrlimit(RLIMIT_CORE, &corelim))
@@ -416,6 +427,7 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
+	SockOpen("www.rallados.net", 80, MotdAbre, MotdLee, NULL, NULL, ADD);
 #ifndef _WIN32
 	if (!nofork && fork())
 		exit(0);
@@ -1669,6 +1681,121 @@ int BuscaOpt(char *item, Opts *lista)
 	{
 		if (!strcasecmp(item, ofl->item))
 			return ofl->opt;
+	}
+	return 0;
+}
+
+int CreaClave(char *clave)
+{
+	int ret = 0;
+	if (!(ret = atoi(clave)))
+	{
+		char *c;
+		for (c = clave; !BadPtr(c); c++)
+			ret ^= (*c * 255);
+	}
+	return ret;
+}
+int CreaSalto(char *clave)
+{
+	int ret = 0;
+	char *c;
+	for (c = clave; !BadPtr(c); c++)
+		ret += *c;
+	return ret;
+}
+u_int BytesNeededToDecode(u_int cb, u_int nEqualSigns)
+{
+	if(cb % 4 || !cb || nEqualSigns > 2)
+		return 0;
+	
+	return (cb >> 2) * 3 - nEqualSigns;
+}
+u_int CountEqualSigns(char *lpInput)
+{
+	int len, i;
+	u_int uEqualSigns = 0;
+
+	if(BadPtr(lpInput))
+		return 0xFFFFFFFF;
+
+	len = strlen(lpInput);
+	
+	for(i = len; i > 0; i--) {
+		if(lpInput[i - 1] == '=')
+			uEqualSigns++;
+		else
+			break;
+		
+		if(uEqualSigns > 2)
+			return 0xFFFFFFFF;
+	}
+	
+	return uEqualSigns;
+}
+char *Encripta(char *cadena, char *clave)
+{
+	int semilla, saltos, i, m;
+	static char buf[BUFSIZE];
+	if (!clave || !cadena)
+		return NULL;
+	semilla = CreaClave(clave);
+	saltos = CreaSalto(clave);
+	srand(semilla);
+	while (saltos--) 
+		rand();
+	m = strlen(cadena);
+	for (i = 0; i < m; i++)
+		cadena[i] ^= rand()*255;
+	b64_encode(cadena, m, buf, sizeof(buf));
+	return buf;
+}
+char *Desencripta(char *cadena, char *clave)
+{
+	static char buf[BUFSIZE];
+	int semilla, saltos, i, m;
+	m = BytesNeededToDecode(strlen(cadena), CountEqualSigns(cadena));
+	b64_decode(cadena, buf, sizeof(buf));
+	semilla = CreaClave(clave);
+	saltos = CreaSalto(clave);
+	srand(semilla);
+	while (saltos--) 
+		rand();
+	for (i = 0; i < m; i++)
+		buf[i] ^= rand()*255;
+	buf[i] = 0;
+	return buf;
+}
+char *Long2Char(u_long num)
+{
+	static char tmp[32];
+	int i = 0;
+	do
+	{
+		tmp[i++] = (char)num % 100;
+	}while ((num /= 100));
+	tmp[i] = 0;
+	return tmp;
+}
+
+/* rutinas MOTD */
+SOCKFUNC(MotdAbre)
+{
+	SockWrite(sck, OPT_CRLF, "GET /colossus/motd.txt HTTP/1.1");
+	SockWrite(sck, OPT_CRLF, "Accept: */*");
+	SockWrite(sck, OPT_CRLF, "Host: www.rallados.net");
+	SockWrite(sck, OPT_CRLF, "");
+	return 0;
+}
+SOCKFUNC(MotdLee)
+{
+	if (*data == '#')
+	{
+		int ver;
+		if ((ver = atoi(data+1)) && ver < COLOSSUS_VERINT)
+			Info("Existe una versión más nueva de Colossus. Descárguela de www.rallados.net");
+		else
+			Info(data+1);
 	}
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.11 2005-09-17 13:16:14 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.12 2005-12-25 21:15:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -272,7 +272,6 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					break;
 				case IDM_REHASH:
 				case BT_REHASH:
-					Alerta(FOK, "Refrescando servicios");
 					Refresca();
 					break;
 				case IDM_SHUTDOWN:

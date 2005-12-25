@@ -2191,6 +2191,16 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 						InsertaMascara(cl, &mmk->malla, parv[param]);
 					else
 						cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
+#ifdef DEBUG
+					for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
+					{
+						LinkCliente *lk;
+						Debug("!%c", mcl->flag);
+						for (lk = mcl->malla; lk; lk = lk->sig)
+							Debug("---%s", lk->user->nombre);
+						Debug("*");
+					}
+#endif
 				}
 				else
 				{
@@ -2230,14 +2240,19 @@ void EntraCliente(Cliente *cl, char *canal)
 {
 	Canal *cn = NULL;
 	cn = InfoCanal(canal, !0);
-	if (conf_set->debug && !cn->miembros && !strcmp(canal, conf_set->debug))
+	if (!cn->miembros)
 	{
-		if (!IsAdmin(cl))
+		if (conf_set->debug && !strcmp(canal, conf_set->debug))
 		{
-			EnviaAServidor(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
-			return;
+			if (!IsAdmin(cl))
+			{
+				EnviaAServidor(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
+				return;
+			}
+			p_mode(&me, cn, "+sAm");
 		}
-		p_mode(&me, cn, "+sAm");
+		else
+			p_mode(&me, cn, modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);

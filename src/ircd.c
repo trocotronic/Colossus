@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.31 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.32 2005-12-25 21:13:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -334,12 +334,12 @@ void CambiaNick(Cliente *cl, char *nuevonick)
 	GeneraMascara(cl);
 	InsertaClienteEnHash(cl, nuevonick, uTab);
 }
-void CreaMallaCliente(Canal **cn, char flag)
+MallaCliente *CreaMallaCliente(char flag)
 {
 	MallaCliente *mcl;
 	BMalloc(mcl, MallaCliente);
 	mcl->flag = flag;
-	AddItem(mcl, (*cn)->mallacl);
+	return mcl;
 }
 extern MallaCliente *BuscaMallaCliente(Canal *cn, char flag)
 {
@@ -361,12 +361,12 @@ extern MallaMascara *BuscaMallaMascara(Canal *cn, char flag)
 	}
 	return NULL;
 }
-void CreaMallaMascara(Canal **cn, char flag)
+MallaMascara *CreaMallaMascara(char flag)
 {
 	MallaMascara *mmk;
 	BMalloc(mmk, MallaMascara);
 	mmk->flag = flag;
-	AddItem(mmk, (*cn)->mallamk);
+	return mmk;
 }
 Canal *InfoCanal(char *canal, int crea)
 {
@@ -381,9 +381,9 @@ Canal *InfoCanal(char *canal, int crea)
 		if (canales)
 			canales->prev = cn;
 		for (c = protocolo->modcl; !BadPtr(c); c++)
-			CreaMallaCliente(&cn, *c);
+			AddItem(CreaMallaCliente(*c), cn->mallacl);
 		for (c = protocolo->modmk; !BadPtr(c); c++)
-			CreaMallaMascara(&cn, *c);
+			AddItem(CreaMallaMascara(*c), cn->mallamk);
 		AddItem(cn, canales);
 		InsertaCanalEnHash(cn, canal, cTab);
 	}
@@ -751,18 +751,18 @@ void LiberaMemoriaCliente(Cliente *cl)
 		clientes = cl->sig;
 	if (cl->sig)
 		cl->sig->prev = cl->prev;
-	ircfree(cl->nombre);
-	ircfree(cl->ident);
-	if (cl->host != cl->rvhost) /* hay que liberarlo */
-		ircfree(cl->rvhost);
-	if (cl->host != cl->ip)
-		ircfree(cl->ip);
-	ircfree(cl->host);
-	ircfree(cl->vhost);
-	ircfree(cl->mask);
-	ircfree(cl->vmask);
-	ircfree(cl->trio);
-	ircfree(cl->info);
+	Free(cl->nombre);
+	Free(cl->ident);
+	if (cl->rvhost != cl->host) /* hay que liberarlo */
+		Free(cl->rvhost);
+	if (cl->ip != cl->host)
+		Free(cl->ip);
+	Free(cl->host);
+	Free(cl->vhost);
+	Free(cl->mask);
+	Free(cl->vmask);
+	Free(cl->trio);
+	Free(cl->info);
 	//for (i = 0; i < cl->fundadores; i++)
 	//	ircfree(cl->fundador[i]);
 	for (aux = cl->canal; aux; aux = tmp)
@@ -795,10 +795,10 @@ void LiberaMemoriaCanal(Canal *cn)
 		for (kaux = maux->malla; kaux; kaux = ktmp)
 		{
 			ktmp = kaux->sig;
-			ircfree(kaux->mascara);
-			ircfree(kaux);
+			Free(kaux->mascara);
+			Free(kaux);
 		}
-		ircfree(maux);
+		Free(maux);
 	}
 	for (caux = cn->mallacl; caux; caux = ctmp)
 	{
@@ -806,9 +806,9 @@ void LiberaMemoriaCanal(Canal *cn)
 		for (aux = caux->malla; aux; aux = tmp)
 		{
 			tmp = aux->sig;
-			ircfree(aux);
+			Free(aux);
 		}
-		ircfree(caux);
+		Free(caux);
 	}
 	for (aux = cn->miembro; aux; aux = tmp)
 	{

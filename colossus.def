@@ -37,9 +37,11 @@ EXPORTS
 	Debug
 	DescargaAliases
 	DesconectaBot
+	Desencripta
 	DetieneProceso
 	Dominio
 	Email
+	Encripta
 	EntraBot
 	EnviaAServidor
 	Error
@@ -72,6 +74,7 @@ EXPORTS
 	LiberaMemoriaCliente
 	LiberaMemoriaConfiguracion
 	Loguea
+	Long2Char
 	MDString
 	MascaraIrcd
 	MascaraTKL
@@ -168,11 +171,7 @@ EXPORTS
 	spath
 	sql
 	str_replace
-	strcasecmp
 	strcopia
-	strncasecmp
-	strtolower
-	strtoupper
 	tea
 	timers
 	tokbuf

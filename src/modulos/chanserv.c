@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.30 2005-12-04 14:09:23 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.31 2005-12-25 21:14:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -139,12 +139,7 @@ int MOD_CARGA(ChanServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (!mod->config)
-	{
-		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(ChanServ).nombre);
-		errores++;
-	}
-	else
+	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
 		{
@@ -171,6 +166,8 @@ int MOD_CARGA(ChanServ)(Modulo *mod)
 		}
 		LiberaMemoriaConfiguracion(&modulo);
 	}
+	else
+		CSSet(NULL, mod);
 	return errores;
 }
 int MOD_DESCARGA(ChanServ)()
@@ -209,44 +206,52 @@ void CSSet(Conf *config, Modulo *mod)
 	ircstrdup(chanserv.tokform, "##########");
 	chanserv.vigencia = 24;
 	chanserv.necesarios = 10;
-	for (i = 0; i < config->secciones; i++)
+	if (config)
 	{
-		if (!strcmp(config->seccion[i]->item, "sid"))
-			chanserv.opts |= CS_SID;
+		for (i = 0; i < config->secciones; i++)
+		{
+			if (!strcmp(config->seccion[i]->item, "sid"))
+				chanserv.opts |= CS_SID;
 #ifdef UDB
-		else if (!strcmp(config->seccion[i]->item, "automigrar"))
-			chanserv.opts |= CS_AUTOMIGRAR;
+			else if (!strcmp(config->seccion[i]->item, "automigrar"))
+				chanserv.opts |= CS_AUTOMIGRAR;
 #endif			
-		else if (!strcmp(config->seccion[i]->item, "autodrop"))
-			chanserv.autodrop = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "maxlist"))
-			chanserv.maxlist = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "bantype"))
-			chanserv.bantype = atoi(config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "funciones"))
-			ProcesaComsMod(config->seccion[i], mod, chanserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "funcion"))
-			SetComMod(config->seccion[i], mod, chanserv_coms);
-		else if (!strcmp(config->seccion[i]->item, "tokens"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
+			else if (!strcmp(config->seccion[i]->item, "autodrop"))
+				chanserv.autodrop = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "maxlist"))
+				chanserv.maxlist = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "bantype"))
+				chanserv.bantype = atoi(config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "funciones"))
+				ProcesaComsMod(config->seccion[i], mod, chanserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "funcion"))
+				SetComMod(config->seccion[i], mod, chanserv_coms);
+			else if (!strcmp(config->seccion[i]->item, "tokens"))
 			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "formato"))
-					ircstrdup(chanserv.tokform, config->seccion[i]->seccion[p]->data);
-				else if (!strcmp(config->seccion[i]->seccion[p]->item, "vigencia"))
-					chanserv.vigencia = atoi(config->seccion[i]->seccion[p]->data);
-				else if (!strcmp(config->seccion[i]->seccion[p]->item, "necesarios"))
-					chanserv.necesarios = atoi(config->seccion[i]->seccion[p]->data);
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "formato"))
+						ircstrdup(chanserv.tokform, config->seccion[i]->seccion[p]->data);
+					else if (!strcmp(config->seccion[i]->seccion[p]->item, "vigencia"))
+						chanserv.vigencia = atoi(config->seccion[i]->seccion[p]->data);
+					else if (!strcmp(config->seccion[i]->seccion[p]->item, "necesarios"))
+						chanserv.necesarios = atoi(config->seccion[i]->seccion[p]->data);
+				}
+			}
+			else if (!strcmp(config->seccion[i]->item, "alias"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+				{
+					if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
+						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
+				}
 			}
 		}
-		else if (!strcmp(config->seccion[i]->item, "alias"))
-		{
-			for (p = 0; p < config->seccion[i]->secciones; p++)
-			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "sintaxis"))
-					CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
-			}
-		}
+	}
+	else
+	{
+		chanserv.opts |= CS_SID;
+		ProcesaComsMod(NULL, mod, chanserv_coms);
 	}
 	InsertaSenyal(SIGN_MODE, CSCmdMode);
 	InsertaSenyal(SIGN_TOPIC, CSCmdTopic);
@@ -313,7 +318,12 @@ void CSRegsAAccesos()
 }	
 void CSDebug(char *canal, char *formato, ...)
 {
-	if (IsChanDebug(canal))
+	char *opts;
+	if (!canal)
+		return;
+	if (!(opts = SQLCogeRegistro(CS_SQL, canal, "opts")))
+		return;
+	if (atoi(opts) & CS_OPT_DEBUG)
 	{
 		Canal *cn;
 		va_list vl;
@@ -2695,7 +2705,7 @@ BOTFUNC(CSProteger)
 #endif
 int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 {
-	modebuf[0] = parabuf[0] = '\0';
+	modebuf[0] = modebuf[1] = parabuf[0] = '\0';
 	if (IsChanReg(cn->nombre))
 	{
 		int opts;
@@ -2751,7 +2761,7 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 			}
 		}
 	}
-	if (modebuf[1] != '\0')
+	if (modebuf[0] && modebuf[1])
 		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "%s %s", modebuf, parabuf);
 	return 0;
 }

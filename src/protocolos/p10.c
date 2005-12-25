@@ -1413,14 +1413,19 @@ void EntraCliente(Cliente *cl, char *canal)
 {
 	Canal *cn = NULL;
 	cn = InfoCanal(canal, !0);
-	if (conf_set->debug && cn->miembros == 0 && !strcmp(canal, conf_set->debug))
+	if (!cn->miembros)
 	{
-		if (!IsAdmin(cl))
+		if (conf_set->debug && !strcmp(canal, conf_set->debug))
 		{
-			EnviaAServidor("%s %s %s %s :No puedes estar aqui", me.trio, TOK_KICK, cl->trio, canal);
-			return;
+			if (!IsAdmin(cl))
+			{
+				EnviaAServidor("%s %s %s %s :No puedes estar aqui", me.trio, TOK_KICK, cl->trio, canal);
+				return;
+			}
+			p_mode(&me, cn, "+sim");
 		}
-		p_mode(&me, cn, "+sim");
+		else
+			p_mode(&me, cn, modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);
