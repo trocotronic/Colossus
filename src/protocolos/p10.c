@@ -1373,7 +1373,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						InsertaMascara(cl, &mmk->malla, parv[param]);
 					else
-						cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
+						cn->modos |= FlagAModo(*mods, PROT_CMODOS(P10));
 				}
 				else
 				{
@@ -1382,7 +1382,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						BorraMascaraDeCanal(&mmk->malla, parv[param]);
 					else
-						cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(Unreal));
+						cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(P10));
 				}
 			}
 		}

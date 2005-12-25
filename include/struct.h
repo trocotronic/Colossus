@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.51 2005-12-25 22:14:48 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.52 2005-12-25 22:18:54 Trocotronic Exp $ 
  */
 
 #include "setup.h"
