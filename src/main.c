@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.64 2005-12-25 21:13:55 Trocotronic Exp $ 
+ * $Id: main.c,v 1.65 2005-12-25 21:48:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1792,8 +1792,11 @@ SOCKFUNC(MotdLee)
 	if (*data == '#')
 	{
 		int ver;
-		if ((ver = atoi(data+1)) && ver < COLOSSUS_VERINT)
-			Info("Existe una versión más nueva de Colossus. Descárguela de www.rallados.net");
+		if ((ver = atoi(data+1)))
+		{
+			if (ver < COLOSSUS_VERINT)
+				Info("Existe una versión más nueva de Colossus. Descárguela de www.rallados.net");
+		}
 		else
 			Info(data+1);
 	}
