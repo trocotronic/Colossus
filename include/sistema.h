@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.10 2005-12-25 21:12:26 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.11 2005-12-25 22:14:48 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -175,6 +175,4 @@ extern char *strtolower(char *);
  * @sntx: char * strtoupper(char *str)
  !*/
 extern char *strtoupper(char *);
-#define strcasecmp stricmp
-#define strncasecmp strnicmp
 #endif
