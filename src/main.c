@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.65 2005-12-25 21:48:07 Trocotronic Exp $ 
+ * $Id: main.c,v 1.66 2005-12-27 15:03:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #ifdef _WIN32
 #include <io.h>
+#include <iphlpapi.h>
 #else
 #include <sys/io.h>
 #include <errno.h>
@@ -40,6 +41,8 @@ char spath[MAX_PATH];
 #else
 char spath[PATH_MAX];
 #endif
+char cpuid[64];
+
 /*!
  * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
  * @cat: Programa
@@ -169,6 +172,174 @@ int SigPostNick(Cliente *cl, char nuevo)
 		cl->nivel |= niv->nivel;
 	return 0;
 }
+#ifdef _WIN32
+typedef enum _STORAGE_QUERY_TYPE {
+    	PropertyStandardQuery = 0, 
+    	PropertyExistsQuery, 
+   	PropertyMaskQuery, 
+    	PropertyQueryMaxDefined 
+} STORAGE_QUERY_TYPE;
+typedef enum _STORAGE_PROPERTY_ID {
+    	StorageDeviceProperty = 0,
+    	StorageAdapterProperty
+} STORAGE_PROPERTY_ID;
+typedef struct _STORAGE_PROPERTY_QUERY 
+{
+    	STORAGE_PROPERTY_ID PropertyId;
+    	STORAGE_QUERY_TYPE QueryType;
+    	UCHAR AdditionalParameters[1];
+} STORAGE_PROPERTY_QUERY;
+typedef struct _STORAGE_DEVICE_DESCRIPTOR 
+{
+   	ULONG Version;
+   	ULONG Size;
+   	UCHAR DeviceType;
+   	UCHAR DeviceTypeModifier;
+	BOOLEAN RemovableMedia;
+	BOOLEAN CommandQueueing;
+    	ULONG VendorIdOffset;
+    	ULONG ProductIdOffset;
+	ULONG ProductRevisionOffset;
+    	ULONG SerialNumberOffset;
+    	STORAGE_BUS_TYPE BusType;
+    	ULONG RawPropertiesLength;
+    	UCHAR RawDeviceProperties[1];
+
+} STORAGE_DEVICE_DESCRIPTOR;
+#define IOCTL_STORAGE_QUERY_PROPERTY   CTL_CODE(IOCTL_STORAGE_BASE, 0x0500, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#endif
+char *flipAndCodeBytes (char *str)
+{
+	static char flipped[1000];
+	int i = 0;
+	int j = 0;
+	int k = 0;
+	int num = strlen (str);
+	strcpy(flipped, "");
+	for (i = 0; i < num; i += 4)
+	{
+		for (j = 1; j >= 0; j--)
+		{
+			int sum = 0;
+			for (k = 0; k < 2; k++)
+			{
+				sum *= 16;
+				switch (str[i + j * 2 + k])
+				{
+					case '0': 
+						sum += 0; 
+						break;
+					case '1': 
+						sum += 1; 
+						break;
+					case '2': 
+						sum += 2; 
+						break;
+					case '3': 
+						sum += 3; 
+						break;
+					case '4': 
+						sum += 4; 
+						break;
+					case '5': 
+						sum += 5; 
+						break;
+					case '6': 
+						sum += 6; 
+						break;
+					case '7': 
+						sum += 7; 
+						break;
+					case '8': 
+						sum += 8; 
+						break;
+					case '9': 
+						sum += 9; 
+						break;
+					case 'A': 
+					case 'a': 
+						sum += 10; 
+						break;
+					case 'B':
+					case 'b': 
+						sum += 11; 
+						break;
+					case 'C':
+					case 'c': 
+						sum += 12; 
+						break;
+					case 'D':
+					case 'd': 
+						sum += 13; 
+						break;
+					case 'E':
+					case 'e': 
+						sum += 14; 
+						break;
+					case 'F':
+					case 'f': 
+						sum += 15; 
+						break;
+				}
+			}
+			if (isalnum((char)sum)) 
+			{
+				char sub[2];
+				sub[0] = (char) sum;
+				sub[1] = 0;
+				strcat(flipped, sub);
+			}
+		}
+	}
+	return flipped;
+}
+void CpuId()
+{
+#ifdef _WIN32
+	/* todas estas rutinas y estructuras se han sacado de http://www.winsim.com/diskid32/diskid32.cpp */
+	HANDLE hPhysicalDriveIOCTL = 0;
+	bzero(cpuid, sizeof(cpuid));
+	hPhysicalDriveIOCTL = CreateFile("\\\\.\\PhysicalDrive0", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
+	if (hPhysicalDriveIOCTL != INVALID_HANDLE_VALUE)
+      	{
+		STORAGE_PROPERTY_QUERY query;
+         	DWORD cbBytesReturned = 0;
+		char buffer[10000];
+	        memset ((void *)&query, 0, sizeof (query));
+		query.PropertyId = StorageDeviceProperty;
+		query.QueryType = PropertyStandardQuery;
+	 	memset(buffer, 0, sizeof(buffer));
+	        if (DeviceIoControl(hPhysicalDriveIOCTL, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &buffer, sizeof(buffer), &cbBytesReturned, NULL))
+         	{         
+         		STORAGE_DEVICE_DESCRIPTOR *descrip = (STORAGE_DEVICE_DESCRIPTOR *)&buffer;
+			char serialNumber[1000], modelNumber[1000];
+			strcpy(serialNumber, flipAndCodeBytes(&buffer[descrip->SerialNumberOffset]));
+			strcpy(modelNumber, &buffer[descrip->ProductIdOffset]);
+			if (isalnum(serialNumber[0]) || isalnum(serialNumber[19]))
+				strncpy(cpuid, serialNumber, sizeof(cpuid)-1);
+         	}
+        }
+#else
+	int r, s;
+	struct ifreq ifr;
+	char *hwaddr, mac[13];
+	strcpy(ifr.ifr_name, "eth0");
+	bzero(cpuid, sizeof(cpuid));
+ 	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) > 0)
+	{
+	    	if ((r = ioctl( s, SIOCGIFHWADDR, &ifr )) > 0)
+	    	{
+			hwaddr = ifr.ifr_hwaddr.sa_data;
+    			snprintf(mac, 13, "%02X%02X%02X%02X%02X%02X", 
+				hwaddr[0] & 0xFF, hwaddr[1] & 0xFF,
+				hwaddr[2] & 0xFF, hwaddr[3] & 0xFF,
+				hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
+			strncpy(cpuid, flipAndCodeBytes(mac), sizeof(cpuid)-1);
+		}
+    		close(s);
+    	}
+#endif
+}
 void BorraTemporales()
 {
 	Modulo *mod;
@@ -273,14 +444,6 @@ int main(int argc, char *argv[])
 	mkdir("tmp", 0744);
 	getcwd(spath, sizeof(spath));
 #endif	
-	/*{
-		char volname[MAX_PATH+1], filename[MAX_PATH+1];
-		DWORD serial, maxcom, sysflags;
-		GetVolumeInformation(NULL, volname, MAX_PATH+1, &serial, &maxcom, &sysflags, filename, MAX_PATH+1);
-		Debug("%i %i %s %s", serial, maxcom, volname, filename);
-		QueryDosDevice(NULL, volname, MAX_PATH+1);
-		Debug("%s", volname);
-	}*/
 #ifdef FORCE_CORE
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
 	if (setrlimit(RLIMIT_CORE, &corelim))
@@ -427,6 +590,7 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
+	CpuId();
 	SockOpen("www.rallados.net", 80, MotdAbre, MotdLee, NULL, NULL, ADD);
 #ifndef _WIN32
 	if (!nofork && fork())
@@ -1801,4 +1965,21 @@ SOCKFUNC(MotdLee)
 			Info(data+1);
 	}
 	return 0;
+}
+SOCKFUNC(ClaveAbre)
+{
+	SockWrite(sck, OPT_CRLF, "POST /colossus/validar.php HTTP/1.1");
+	SockWrite(sck, OPT_CRLF, "Accept: */*");
+	SockWrite(sck, OPT_CRLF, "Host: www.rallados.net");
+	SockWrite(sck, OPT_CRLF, "");
+	SockWrite(sck, OPT_CRLF, "serial=");
+	return 0;
+}
+int ValidaClave(char *clave)
+{
+	char sername[18];
+	Sock *sck;
+	//if (!(sck = SockOpen("www.rallados.net", 80, ClaveAbre, ClaveLee, NULL, ClaveCierra, ADD)))
+	//	return -1;
+  	return 0;
 }
