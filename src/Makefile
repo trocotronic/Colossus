@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.24 2006-02-17 19:44:16 Trocotronic Exp $
+## $Id: Makefile,v 1.25 2006-02-17 20:29:37 Trocotronic Exp $
 
 OBJS=hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
 	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
@@ -17,6 +17,7 @@ modulo:
 build: ircd mods prots sqldb exts
 ircd: $(OBJS)
 	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
+	ar -r colossus.a $(OBJS)
 mods:
 	@if [ ! -r include ] ; then \
 		ln -s ../include include; \
