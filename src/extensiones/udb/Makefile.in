@@ -1,9 +1,10 @@
-## $Id: Makefile.in,v 1.7 2006-02-17 20:29:37 Trocotronic Exp $
+## $Id: Makefile.in,v 1.8 2006-02-17 23:05:57 Trocotronic Exp $
 
 INCLUDES = ../../include/ircd.h ../../include/md5.h \
 	../../include/modulos.h ../../include/protocolos.h ../../include/parseconf.h \
 	../../include/ircsprintf.h ../../include/struct.h
 OBJS=bdd.o chanserv.o ipserv.o nickserv.o operserv.o udb.o
+MODULEFLAGS=@MODULEFLAGS@
 build: $(OBJS)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o udb.so $(OBJS) ../../colossus.a ../../modulos/chanserv.o \
 	../../modulos/nickserv.o ../../modulos/ipserv.o ../../protocolos/unreal.o $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)

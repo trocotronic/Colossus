@@ -293,7 +293,6 @@ configuration files])], AC_DEFINE_UNQUOTED(DEFAULT_PERMISSIONS,$withval), AC_DEF
 AC_ARG_WITH(fd-setsize, [AC_HELP_STRING([--with-fd-setsize=size],[Specify the max file descriptors to use])],
 ac_fd=$withval, ac_fd=1024)
 AC_DEFINE_UNQUOTED(MAXCONNECTIONS, $ac_fd)
-AC_ARG_ENABLE(udb, [AC_HELP_STRING([--enable-udb],[Activa el soporte UDB])], AC_DEFINE(UDB))
 CHECK_SSL
 CHECK_ZLIB
 CHECK_MYSQL

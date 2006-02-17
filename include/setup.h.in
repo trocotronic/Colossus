@@ -21,7 +21,6 @@
 #undef STDLIBH
 #undef STRINGH
 #undef SYSV_UNRELIABLE_SIGNALS
-#undef UDB
 #undef UNDERSCORE
 #undef UNISTDH
 #undef USA_SSL

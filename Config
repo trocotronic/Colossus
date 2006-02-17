@@ -22,9 +22,6 @@ fi
 if [ "$INET6" = "1" ] ; then
 	ARG="$ARG--enable-inet6 "
 fi
-if [ "$UDB" = "1" ]; then
-	ARG="$ARG--enable-udb "
-fi
 ARG="$ARG--with-listen=$LISTEN_SIZE "
 ARG="$ARG--with-permissions=$DEFPERM "
 ARG="$ARG--with-fd-setsize=$MAXCONNECTIONS "
@@ -54,7 +51,6 @@ ZLIB=""
 ZLIBDIR=""
 LISTEN_SIZE="5"
 MAXCONNECTIONS="1024"
-UDB="1"
 INET6=""
 EXTRAPARA=""
 if [ "`eval echo -n 'a'`" = "-n a" ] ; then
@@ -253,37 +249,6 @@ fi
 
 TEST=""
 while [ -z "$TEST" ] ; do
-    if [ "$UDB" = "1" ] ; then
-	TEST="Si"
-    else
-	TEST="No"
-    fi
-    echo ""
-    echo "Quiere activar el soporte UDB?"
-    echo "Con esta característica dispondra de bases de datos distribuidas en toda la red."
-    echo "Recuerde que el servidor al que linkara tambien debe soportar UDB"
-    echo $n "[$TEST] -> $c"
-	read cc
-    if [ -z "$cc" ] ; then
-	cc=$TEST
-    fi
-    case "$cc" in
-	[Ss]*)
-	    UDB="1"
-	    ;;
-	[Nn]*)
-	    UDB=""
-	    ;;
-	*)
-	    echo ""
-	    echo "Use Si o No"
-	    TEST=""
-	    ;;
-    esac
-done
-
-TEST=""
-while [ -z "$TEST" ] ; do
     TEST="$LISTEN_SIZE"
     echo ""
     echo "Que tamaño de listen() quiere usar? Algunos servidores antiguos pueden tener problemas si es mas de 5."
@@ -339,7 +304,6 @@ rm -f config.settings
 cat > config.settings << __EOF__
 #
 INET6="$INET6"
-UDB="$UDB"
 LISTEN_SIZE="$LISTEN_SIZE"
 MAXCONNECTIONS="$MAXCONNECTIONS"
 DEFPERM="$DEFPERM"

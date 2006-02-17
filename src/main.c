@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.70 2006-02-17 19:54:42 Trocotronic Exp $ 
+ * $Id: main.c,v 1.71 2006-02-17 23:05:57 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -521,9 +521,9 @@ int main(int argc, char *argv[])
 	DistribuyeConfiguracion(&config);
 	DistribuyeMe(&me, &SockIrcd);	
 #ifndef _WIN32
-	if (sql->clientinfo)
+	if (sql && sql->clientinfo)
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
-	if (sql->servinfo)
+	if (sql && sql->servinfo)
 		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
 	fprintf(stderr, "\t\t(c)2004-2006\n");

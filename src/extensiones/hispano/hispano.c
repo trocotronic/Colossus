@@ -8,7 +8,7 @@ IRCFUNC(m_nick);
 extern int b642int(char *);
 extern void InsertaClienteEnNumerico(Cliente *, char *, Hash *);
 
-ModInfo MOD_INFO(UDB) = {
+ModInfo MOD_INFO(Hispano) = {
 	"Hispano" ,
 	0.1,
 	"Trocotronic" ,
