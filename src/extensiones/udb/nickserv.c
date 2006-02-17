@@ -24,7 +24,7 @@ EXTFUNC(NSSendpass);
 
 int NSSigEOS		();
 int NSSigDrop	(char *);
-extern NSCambiaInv(Cliente *);
+extern void NSCambiaInv(Cliente *);
 #define NS_OPT_UDB 0x80
 #define IsNickUDB(x) (IsReg(x) && atoi(SQLCogeRegistro(NS_SQL, x, "opts")) & NS_OPT_UDB)
 
