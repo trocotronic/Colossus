@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.7 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.8 2006-02-17 19:54:42 Trocotronic Exp $ 
  */
 typedef struct _extension Extension;
 typedef struct _proto Protocolo;
