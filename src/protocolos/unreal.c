@@ -18,10 +18,10 @@
 #define PROTOCOL 2305
 
 double tburst;
-static char *modcanales = NULL;
-static char *modusers = NULL;
-static char *autousers = NULL;
-static char *autoopers = NULL;
+char *modcanales = NULL;
+char *modusers = NULL;
+char *autousers = NULL;
+char *autoopers = NULL;
 #define NOSERVDEOP 0x40
 LinkCliente *servidores = NULL;
 long base64dec(char *);
@@ -1778,7 +1778,7 @@ void EntraCliente(Cliente *cl, char *canal)
 			}
 			p_mode(&me, cn, "+sAm");
 		}
-		else
+		else if (modcanales)
 			p_mode(&me, cn, modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);
