@@ -101,11 +101,6 @@ void printea(Udb *bloq, int escapes)
 	if (bloq->mid)
 		printea(bloq->mid, escapes);
 }
-#ifndef _WIN32
-#define PMAX PATH_MAX 
-#else
-#define PMAX MAX_PATH
-#endif
 int ActualizaDataVer2()
 {
 	char *archivos[] = {

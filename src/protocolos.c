@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.5 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.6 2006-02-17 19:47:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -34,7 +34,7 @@ void DescargaProtocolo()
 int CargaProtocolo(Conf *config)
 {
 	Recurso prot;
-	char archivo[128], tmppath[MAX_PATH];
+	char archivo[128], tmppath[PMAX];
 	int (*mod_carga)(), (*mod_descarga)();
 	void (*ini)();
 	SOCKFUNC(*parsea);
@@ -117,7 +117,7 @@ int DescargaExtension(Extension *ext, Protocolo *mod)
 Extension *CreaExtension(Conf *config, Protocolo *mod)
 {
 	Recurso hmod;
-	char archivo[128], tmppath[MAX_PATH];
+	char archivo[128], tmppath[PMAX];
 	int (*mod_carga)(Extension *, Protocolo *), (*mod_descarga)(Extension *, Protocolo *);
 	ModInfo *inf;
 	if ((hmod = CopiaDll(config->data, archivo, tmppath)))

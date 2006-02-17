@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.68 2006-02-17 19:45:15 Trocotronic Exp $ 
+ * $Id: main.c,v 1.69 2006-02-17 19:47:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -36,11 +36,7 @@ char tokbuf[BUFSIZE];
 char conbuf[128];
 HANDLE hStdin;
 #endif
-#ifdef _WIN32
-char spath[MAX_PATH];
-#else
-char spath[PATH_MAX];
-#endif
+char spath[PMAX];
 struct Signatura
 {
 	char cpuid[64];

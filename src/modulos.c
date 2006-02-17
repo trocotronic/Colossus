@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.16 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.17 2006-02-17 19:47:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -21,7 +21,7 @@ Modulo *modulos = NULL;
 Modulo *CreaModulo(char *modulo)
 {
 	Recurso hmod;
-	char archivo[128], tmppath[MAX_PATH];
+	char archivo[128], tmppath[PMAX];
 	int (*mod_carga)(Modulo *), (*mod_descarga)(Modulo *);
 	ModInfo *inf;
 	if ((hmod = CopiaDll(modulo, archivo, tmppath)))
@@ -326,7 +326,7 @@ int TestComMod(Conf *config, bCom *coms, char avisa)
 bCom *BuscaComModRemoto(char *remoto, Recurso *hmod)
 {
 	Recurso mod;
-	char archivo[128], tmppath[MAX_PATH];
+	char archivo[128], tmppath[PMAX];
 	bCom *cm;
 	if ((mod = CopiaDll(remoto, archivo, tmppath)))
 	{

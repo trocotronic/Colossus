@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.8 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.9 2006-02-17 19:47:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -31,7 +31,7 @@ void LiberaSQL()
 }
 int CargaSQL(char *sqlf)
 {
-	char archivo[128], tmppath[MAX_PATH];
+	char archivo[128], tmppath[PMAX];
 	int (*Carga)();
 	if (sql)
 		LiberaSQL();
