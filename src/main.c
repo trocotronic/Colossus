@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.69 2006-02-17 19:47:34 Trocotronic Exp $ 
+ * $Id: main.c,v 1.70 2006-02-17 19:54:42 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -75,6 +75,7 @@ void LoopPrincipal(void *);
 #endif
 SOCKFUNC(MotdAbre);
 SOCKFUNC(MotdLee);
+int SigPostNick(Cliente *, char);
 
 #ifndef _WIN32
 const char logo[] = {
@@ -210,7 +211,6 @@ typedef struct _STORAGE_DEVICE_DESCRIPTOR
 
 } STORAGE_DEVICE_DESCRIPTOR;
 #define IOCTL_STORAGE_QUERY_PROPERTY   CTL_CODE(IOCTL_STORAGE_BASE, 0x0500, METHOD_BUFFERED, FILE_ANY_ACCESS)
-#endif
 char *flipAndCodeBytes (char *str)
 {
 	static char flipped[1000];
@@ -296,6 +296,7 @@ char *flipAndCodeBytes (char *str)
 	}
 	return flipped;
 }
+#endif
 void CpuId()
 {
 #ifdef _WIN32

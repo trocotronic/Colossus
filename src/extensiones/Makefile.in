@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.2 2006-02-17 19:54:42 Trocotronic Exp $
+## $Id: Makefile.in,v 1.3 2006-02-17 19:58:10 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -11,6 +11,9 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 MAKE = make $(MAKEARGS)
 all: build
 build: 
+	@if [ ! -r include ] ; then \
+		ln -s ../../include include; \
+	fi
 	@for i in $(SUBDIRS); do \
 		( cd $$i; ${MAKE} ${MAKEARGS} build; ) \
 	done

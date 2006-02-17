@@ -1196,8 +1196,8 @@ IRCFUNC(m_mode)
 }
 IRCFUNC(m_sjoin)
 {
-	Cliente *al;
-	Canal *cn;
+	Cliente *al = NULL;
+	Canal *cn = NULL;
 	char *q, *p, tmp[BUFSIZE], mod[6];
 	cn = InfoCanal(parv[2], !0);
 	strcpy(tmp, parv[parc-1]);
