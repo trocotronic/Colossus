@@ -7,7 +7,11 @@
 #include "modulos/nickserv.h"
 #include "bdd.h"
 
+#ifdef _WIN32
 IpServ *ipserv = NULL;
+#else
+extern IpServ *ipserv;
+#endif
 
 BOTFUNC(ISOpts);
 BOTFUNCHELP(ISHSet);
@@ -15,12 +19,12 @@ BOTFUNC(ISDns);
 BOTFUNCHELP(ISHDns);
 BOTFUNC(ISNolines);
 BOTFUNCHELP(ISHNolines);
-EXTFUNC(ISSetipv);
-EXTFUNC(ISClones);
+EXTFUNC(ISSetipv_U);
+EXTFUNC(ISClones_U);
 
 int ISSigEOS	();
 int ISSigVDrop	(char *);
-int ISCompruebaCifrado();
+int ISCompruebaCifrado_U();
 extern int ISSigDrop	(char *);
 extern int ISSigUmode		(Cliente *, char *);
 extern int ISSigNick		(Cliente *, int);
@@ -61,8 +65,8 @@ void CargaIpServ(Extension *ext)
 	BorraSenyal(NS_SIGN_IDOK, ISSigIdOk);
 	InsertaSenyal(SIGN_EOS, ISSigEOS);
 	InsertaSenyal(IS_SIGN_DROP, ISSigVDrop);
-	InsertaSenyalExt(1, ISSetipv, ext);
-	InsertaSenyalExt(3, ISClones, ext);
+	InsertaSenyalExt(1, ISSetipv_U, ext);
+	InsertaSenyalExt(3, ISClones_U, ext);
 	/*InsertaSenyalExt(16, CSLiberar, ext);
 	InsertaSenyalExt(17, CSForbid, ext);
 	InsertaSenyalExt(18, CSUnforbid, ext);
@@ -75,8 +79,8 @@ void DescargaIpServ(Extension *ext)
 	InsertaSenyal(NS_SIGN_IDOK, ISSigIdOk);
 	BorraSenyal(SIGN_EOS, ISSigEOS);
 	BorraSenyal(IS_SIGN_DROP, ISSigVDrop);
-	BorraSenyalExt(1, ISSetipv, ext);
-	BorraSenyalExt(3, ISClones, ext);
+	BorraSenyalExt(1, ISSetipv_U, ext);
+	BorraSenyalExt(3, ISClones_U, ext);
 }
 BOTFUNCHELP(ISHSet)
 {
@@ -203,7 +207,7 @@ BOTFUNC(ISNolines)
 	}
 	return 0;
 }
-EXTFUNC(ISSetipv)
+EXTFUNC(ISSetipv_U)
 {
 	if (mod != ipserv->hmod || !IsNickUDB(param[1]))
 		return 1;
@@ -224,7 +228,7 @@ EXTFUNC(ISSetipv)
 		PropagaRegistro("N::%s::V", param[1]);
 	return 0;
 }
-EXTFUNC(ISClones)
+EXTFUNC(ISClones_U)
 {
 	if (mod != ipserv->hmod)
 		return 1;
@@ -238,10 +242,10 @@ int ISSigEOS()
 {
 	PropagaRegistro("S::I %s", ipserv->hmod->mascara);
 	PropagaRegistro("S::J %s", ipserv->sufijo);
-	ISCompruebaCifrado();
+	ISCompruebaCifrado_U();
 	return 0;
 }
-int ISCompruebaCifrado()
+int ISCompruebaCifrado_U()
 {
 	char clave[128];
 	ircsprintf(clave, "a%lu", Crc32(conf_set->clave_cifrado, strlen(conf_set->clave_cifrado)) + (time(0) / ipserv->cambio));

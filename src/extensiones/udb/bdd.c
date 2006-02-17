@@ -670,7 +670,7 @@ int NivelOperBdd(char *oper)
 	}
 	return 0;
 }
-char *CifraIpTEA(char *ipreal)
+char *CifraIpTEA_U(char *ipreal)
 {
 	static char cifrada[512], clave[13];
 	char *p, *clavec;

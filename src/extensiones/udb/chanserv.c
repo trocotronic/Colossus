@@ -6,18 +6,22 @@
 #include "modulos/chanserv.h"
 #include "bdd.h"
 
+#ifdef _WIN32
 ChanServ *chanserv = NULL;
+#else
+extern ChanServ *chanserv;
+#endif
 #define CS_OPT_UDB 0x80
 #define CS_AUTOMIGRAR 0x1000
 int CSSigDrop(char *);
-int CSSigEOS();
+int CSSigEOS_U();
 
-EXTFUNC(CSOpts);
-EXTFUNC(CSSuspender);
-EXTFUNC(CSLiberar);
-EXTFUNC(CSForbid); 
-EXTFUNC(CSUnforbid); 
-EXTFUNC(CSRegister);
+EXTFUNC(CSOpts_U);
+EXTFUNC(CSSuspender_U);
+EXTFUNC(CSLiberar_U);
+EXTFUNC(CSForbid_U); 
+EXTFUNC(CSUnforbid_U); 
+EXTFUNC(CSRegister_U);
 BOTFUNC(CSMigrar);
 BOTFUNCHELP(CSHMigrar);
 BOTFUNC(CSDemigrar);
@@ -55,25 +59,25 @@ void CargaChanServ(Extension *ext)
 	}
 	else
 		ProcesaComsMod(NULL, chanserv->hmod, chanserv_coms);
-	InsertaSenyal(SIGN_EOS, CSSigEOS);
+	InsertaSenyal(SIGN_EOS, CSSigEOS_U);
 	InsertaSenyal(CS_SIGN_DROP, CSSigDrop);
-	InsertaSenyalExt(9, CSOpts, ext);
-	InsertaSenyalExt(15, CSSuspender, ext);
-	InsertaSenyalExt(16, CSLiberar, ext);
-	InsertaSenyalExt(17, CSForbid, ext);
-	InsertaSenyalExt(18, CSUnforbid, ext);
-	InsertaSenyalExt(20, CSRegister, ext);
+	InsertaSenyalExt(9, CSOpts_U, ext);
+	InsertaSenyalExt(15, CSSuspender_U, ext);
+	InsertaSenyalExt(16, CSLiberar_U, ext);
+	InsertaSenyalExt(17, CSForbid_U, ext);
+	InsertaSenyalExt(18, CSUnforbid_U, ext);
+	InsertaSenyalExt(20, CSRegister_U, ext);
 }
 void DescargaChanServ(Extension *ext)
 {
-	BorraSenyal(SIGN_EOS, CSSigEOS);
+	BorraSenyal(SIGN_EOS, CSSigEOS_U);
 	BorraSenyal(CS_SIGN_DROP, CSSigDrop);
-	BorraSenyalExt(9, CSOpts, ext);
-	BorraSenyalExt(15, CSSuspender, ext);
-	BorraSenyalExt(16, CSLiberar, ext);
-	BorraSenyalExt(17, CSForbid, ext);
-	BorraSenyalExt(18, CSUnforbid, ext);
-	BorraSenyalExt(20, CSRegister, ext);
+	BorraSenyalExt(9, CSOpts_U, ext);
+	BorraSenyalExt(15, CSSuspender_U, ext);
+	BorraSenyalExt(16, CSLiberar_U, ext);
+	BorraSenyalExt(17, CSForbid_U, ext);
+	BorraSenyalExt(18, CSUnforbid_U, ext);
+	BorraSenyalExt(20, CSRegister_U, ext);
 }
 int IsChanUDB(char *canal)
 {
@@ -88,7 +92,7 @@ int CSSigDrop(char *canal)
 		PropagaRegistro("C::%s", canal);
 	return 0;
 }
-int CSSigEOS()
+int CSSigEOS_U()
 {
 	if (chanserv)
 	{
@@ -130,7 +134,7 @@ void CSPropagaCanal(char *canal)
 	PropagaRegistro("C::%s::P %s", canal, row[3]);
 	SQLFreeRes(res);
 }
-EXTFUNC(CSOpts)
+EXTFUNC(CSOpts_U)
 {
 	if (mod != chanserv->hmod || !IsChanUDB(param[1]))
 		return 1;
@@ -170,31 +174,31 @@ EXTFUNC(CSOpts)
 		PropagaRegistro("C::%s::F %s", param[1], param[3]);
 	return 0;
 }
-EXTFUNC(CSSuspender)
+EXTFUNC(CSSuspender_U)
 {
 	if (mod == chanserv->hmod && IsChanUDB(param[1]))
 		PropagaRegistro("C::%s::S %s", param[1], Unifica(param, params, 2, -1));
 	return 0;
 }
-EXTFUNC(CSLiberar)
+EXTFUNC(CSLiberar_U)
 {
 	if (mod == chanserv->hmod && IsChanUDB(param[1]))
 		PropagaRegistro("C::%s::S", param[1]);
 	return 0;
 }
-EXTFUNC(CSForbid)
+EXTFUNC(CSForbid_U)
 {
 	if (mod == chanserv->hmod)
 		PropagaRegistro("C::%s::B %s", param[1], Unifica(param, params, 2, -1));
 	return 0;
 }
-EXTFUNC(CSUnforbid)
+EXTFUNC(CSUnforbid_U)
 {
 	if (mod == chanserv->hmod)
 		PropagaRegistro("C::%s::B", param[1]);
 	return 0;
 }
-EXTFUNC(CSRegister)
+EXTFUNC(CSRegister_U)
 {
 	if (mod == chanserv->hmod && (chanserv->opts & CS_AUTOMIGRAR))
 	{
