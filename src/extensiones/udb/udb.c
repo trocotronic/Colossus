@@ -30,7 +30,7 @@ extern void DescargaIpServ(Extension *);
 
 IRCFUNC(m_db);
 IRCFUNC(m_dbq);
-IRCFUNC(m_eos);
+IRCFUNC(m_eos_U);
 #define MSG_DB "DB"
 #define TOK_DB "DB"
 #define MSG_DBQ "DBQ"
@@ -42,7 +42,7 @@ IRCFUNC(m_eos);
 void UdbDaleCosas(Cliente *);
 int UdbCompruebaOpts(Proc *);
 int SigPreNick(Cliente *, char *);
-int SigPostNick(Cliente *, int);
+int SigPostNick_U(Cliente *, int);
 int SigSynch();
 int SigSockOpen();
 u_long UMODE_SUSPEND;
@@ -52,7 +52,7 @@ extern u_long UMODE_SERVICES;
 extern void ProcesaModo(Cliente *, Canal *, char **, int);
 extern void EntraCliente(Cliente *, char *);
 IRCFUNC(*sjoin);
-IRCFUNC(m_sjoin);
+IRCFUNC(m_sjoin_U);
 int opts = 0;
 #define UDB_AUTOOPT 0x1
 
@@ -62,7 +62,7 @@ ModInfo MOD_INFO(UDB) = {
 	"Trocotronic" ,
 	"trocotronic@telefonica.net"
 };
-int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
+int p_svsmode_U(Cliente *cl, Cliente *bl, char *modos, ...)
 {
 	char buf[BUFSIZE];
 	va_list vl;
@@ -103,20 +103,20 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 	BddInit();
 	if (opts & UDB_AUTOOPT)
 		IniciaProceso(UdbCompruebaOpts);
-	protocolo->comandos[P_MODO_USUARIO_REMOTO] = p_svsmode;
+	protocolo->comandos[P_MODO_USUARIO_REMOTO] = p_svsmode_U;
 	InsertaComando(MSG_DB, TOK_DB, m_db, INI, 5);
 	InsertaComando(MSG_DBQ, TOK_DBQ, m_dbq, INI, 2);
-	InsertaComando(MSG_EOS, TOK_EOS, m_eos, INI, MAXPARA);
+	InsertaComando(MSG_EOS, TOK_EOS, m_eos_U, INI, MAXPARA);
 	if ((com = BuscaComando("SJOIN")))
 	{
 		sjoin = com->funcion[0];
 		BorraComando("SJOIN", sjoin);
 	}
-	InsertaComando("SJOIN", "~", m_sjoin, INI, MAXPARA);
+	InsertaComando("SJOIN", "~", m_sjoin_U, INI, MAXPARA);
 	InsertaSenyal(SIGN_SQL, (int(*)())CargaBloques);
 	InsertaSenyal(SIGN_EOS, SigEOS);
 	InsertaSenyal(SIGN_PRE_NICK, SigPreNick);
-	InsertaSenyal(SIGN_POST_NICK, SigPostNick);
+	InsertaSenyal(SIGN_POST_NICK, SigPostNick_U);
 	InsertaSenyal(SIGN_SYNCH, SigSynch);
 	InsertaSenyal(SIGN_SOCKOPEN, SigSockOpen);
 	InsertaModoProtocolo('S', &UMODE_SUSPEND, protocolo->umodos);
@@ -151,11 +151,11 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 		DetieneProceso(UdbCompruebaOpts);
 	BorraComando(MSG_DB, m_db);
 	BorraComando(MSG_DBQ, m_dbq);
-	BorraComando(MSG_EOS, m_eos);
-	BorraComando("SJOIN", m_sjoin);
+	BorraComando(MSG_EOS, m_eos_U);
+	BorraComando("SJOIN", m_sjoin_U);
 	InsertaComando("SJOIN", "~", sjoin, INI, MAXPARA);
 	BorraSenyal(SIGN_PRE_NICK, SigPreNick);
-	BorraSenyal(SIGN_POST_NICK, SigPostNick);
+	BorraSenyal(SIGN_POST_NICK, SigPostNick_U);
 	BorraSenyal(SIGN_SYNCH, SigSynch);
 	BorraSenyal(SIGN_SOCKOPEN, SigSockOpen);
 	opts = 0;
@@ -181,7 +181,7 @@ int SigPreNick(Cliente *cl, char *nuevo)
 	}
 	return 0;
 }
-int SigPostNick(Cliente *cl, int nuevo)
+int SigPostNick_U(Cliente *cl, int nuevo)
 {
 	if (nuevo == 1)
 		UdbDaleCosas(cl);
@@ -427,13 +427,13 @@ IRCFUNC(m_dbq)
 	Free(pos);
 	return 0;
 }
-IRCFUNC(m_eos)
+IRCFUNC(m_eos_U)
 {
 	if (cl == linkado)
 		UdbCompruebaOpts(NULL);
 	return 0;
 }
-IRCFUNC(m_sjoin)
+IRCFUNC(m_sjoin_U)
 {
 	Cliente *al = NULL;
 	Canal *cn = NULL;

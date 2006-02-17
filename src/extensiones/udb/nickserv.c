@@ -7,20 +7,24 @@
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 
+#ifdef _WIN32
 NickServ *nickserv = NULL;
+#else
+extern NickServ *nickserv;
+#endif
 
 BOTFUNC(NSMigrar);
 BOTFUNCHELP(NSHMigrar);
 BOTFUNC(NSDemigrar);
 BOTFUNCHELP(NSHDemigrar);
-EXTFUNC(NSRegister);
-EXTFUNC(NSOpts);
-EXTFUNC(NSInfo);
+EXTFUNC(NSRegister_U);
+EXTFUNC(NSOpts_U);
+EXTFUNC(NSInfo_U);
 EXTFUNC(NSSuspend);
-EXTFUNC(NSLiberar);
-EXTFUNC(NSSwhois);
-EXTFUNC(NSForbid);
-EXTFUNC(NSSendpass);
+EXTFUNC(NSLiberar_U);
+EXTFUNC(NSSwhois_U);
+EXTFUNC(NSForbid_U);
+EXTFUNC(NSSendpass_U);
 
 int NSSigEOS		();
 int NSSigDrop	(char *);
@@ -59,27 +63,27 @@ void CargaNickServ(Extension *ext)
 		ProcesaComsMod(NULL, nickserv->hmod, nickserv_coms);
 	InsertaSenyal(SIGN_EOS, NSSigEOS);
 	InsertaSenyal(NS_SIGN_DROP, NSSigDrop);
-	InsertaSenyalExt(1, NSRegister, ext);
-	InsertaSenyalExt(3, NSOpts, ext);
-	InsertaSenyalExt(5, NSSendpass, ext);
-	InsertaSenyalExt(6, NSInfo, ext);
+	InsertaSenyalExt(1, NSRegister_U, ext);
+	InsertaSenyalExt(3, NSOpts_U, ext);
+	InsertaSenyalExt(5, NSSendpass_U, ext);
+	InsertaSenyalExt(6, NSInfo_U, ext);
 	InsertaSenyalExt(9, NSSuspend, ext);
-	InsertaSenyalExt(10, NSLiberar, ext);
-	InsertaSenyalExt(11, NSSwhois, ext);
-	InsertaSenyalExt(13, NSForbid, ext);
+	InsertaSenyalExt(10, NSLiberar_U, ext);
+	InsertaSenyalExt(11, NSSwhois_U, ext);
+	InsertaSenyalExt(13, NSForbid_U, ext);
 }
 void DescargaNickServ(Extension *ext)
 {
 	BorraSenyal(SIGN_EOS, NSSigEOS);
 	BorraSenyal(NS_SIGN_DROP, NSSigDrop);
-	BorraSenyalExt(1, NSRegister, ext);
-	BorraSenyalExt(3, NSOpts, ext);
-	BorraSenyalExt(5, NSSendpass, ext);
-	BorraSenyalExt(6, NSInfo, ext);
+	BorraSenyalExt(1, NSRegister_U, ext);
+	BorraSenyalExt(3, NSOpts_U, ext);
+	BorraSenyalExt(5, NSSendpass_U, ext);
+	BorraSenyalExt(6, NSInfo_U, ext);
 	BorraSenyalExt(9, NSSuspend, ext);
-	BorraSenyalExt(10, NSLiberar, ext);
-	BorraSenyalExt(11, NSSwhois, ext);
-	BorraSenyalExt(13, NSForbid, ext);
+	BorraSenyalExt(10, NSLiberar_U, ext);
+	BorraSenyalExt(11, NSSwhois_U, ext);
+	BorraSenyalExt(13, NSForbid_U, ext);
 }
 BOTFUNCHELP(NSHMigrar)
 {
@@ -161,7 +165,7 @@ BOTFUNC(NSDemigrar)
 	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
 	return 0;
 }
-EXTFUNC(NSRegister)
+EXTFUNC(NSRegister_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
@@ -176,7 +180,7 @@ EXTFUNC(NSRegister)
 	}
 	return 0;
 }
-EXTFUNC(NSOpts)
+EXTFUNC(NSOpts_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
@@ -188,7 +192,7 @@ EXTFUNC(NSOpts)
 	}
 	return 0;
 }
-EXTFUNC(NSInfo)
+EXTFUNC(NSInfo_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
@@ -210,7 +214,7 @@ EXTFUNC(NSSuspend)
 		PropagaRegistro("N::%s::S %s", param[1], SQLCogeRegistro(NS_SQL, param[1], "suspend"));
 	return 0;
 }
-EXTFUNC(NSLiberar)
+EXTFUNC(NSLiberar_U)
 {
 	Cliente *al;
 	if (mod != nickserv->hmod)
@@ -221,7 +225,7 @@ EXTFUNC(NSLiberar)
 		PropagaRegistro("N::%s::S", param[1]);
 	return 0;
 }
-EXTFUNC(NSSwhois)
+EXTFUNC(NSSwhois_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
@@ -233,7 +237,7 @@ EXTFUNC(NSSwhois)
 		PropagaRegistro("N::%s::W", param[1]);
 	return 0;
 }
-EXTFUNC(NSForbid)
+EXTFUNC(NSForbid_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
@@ -243,7 +247,7 @@ EXTFUNC(NSForbid)
 		PropagaRegistro("N::%s::B", param[1]);
 	return 0;
 }
-EXTFUNC(NSSendpass)
+EXTFUNC(NSSendpass_U)
 {
 	char *pass;
 	if (mod != nickserv->hmod)
