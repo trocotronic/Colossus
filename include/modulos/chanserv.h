@@ -1,9 +1,8 @@
 /*
- * $Id: chanserv.h,v 1.9 2005-12-25 21:13:01 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.10 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
-#define CS_AUTOMIGRAR 0x2
 #define CS_MAX_REGS 256
 #define CS_MAX_AKICK 32
 
@@ -55,9 +54,7 @@ struct _akick
 #define CS_OPT_HIDE 0x20 /* canal oculto +h */
 #define CS_OPT_DEBUG 0x40 /* canal en debug +d */
 #define CS_OPT_NODROP 0x80 /* canal no dropable +n */
-#ifdef UDB
-#define CS_OPT_UDB 0x100
-#endif
+
 
 /* Niveles */
 
@@ -78,13 +75,9 @@ struct _akick
 #define CS_SIGN_DROP 51
 #define CS_SIGN_REG 52
 
-extern ChanServ chanserv;
-
 #define CS_SQL "canales"
 #define CS_TOK "ctokens"
-#ifndef UDB
 #define CS_FORBIDS "cforbids"
-#endif
 #define CACHE_FUNDADORES "fundadores"
 
 #define CS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
@@ -96,12 +89,9 @@ extern ChanServ chanserv;
 
 DLLFUNC extern u_long CSTieneNivel(char *, char *, u_long);
 DLLFUNC extern CsRegistros *busca_cregistro(char *);
-#ifdef UDB
-#define IsChanUDB(x) (atoi(SQLCogeRegistro(CS_SQL, x, "opts")) & CS_OPT_UDB)
-#endif
 DLLFUNC extern int ChanReg(char *);
-extern char *IsChanSuspend(char *);
-extern char *IsChanForbid(char *);
+DLLFUNC extern char *IsChanSuspend(char *);
+DLLFUNC extern char *IsChanForbid(char *);
 #define IsChanReg(x) (ChanReg(x) == 1)
 #define IsChanPReg(x) (ChanReg(x) == 2)
-DLLFUNC extern int es_fundador(Cliente *, char *);
+DLLFUNC extern int CSEsFundador(Cliente *, char *);

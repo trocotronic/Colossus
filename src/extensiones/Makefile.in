@@ -1,0 +1,21 @@
+## $Id: Makefile.in,v 1.1 2006-02-17 19:19:04 Trocotronic Exp $
+
+INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
+	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
+	../include/struct.h
+SUBDIRS=udb hispano
+MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
+		'LDFLAGS=${LDFLAGS}' 'INSTALL=${INSTALL}' \
+		'INCLUDEDIR=${INCLUDEDIR}' 'CRYPTOLIB=${CRYPTOLIB}' \
+		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
+MAKE = make $(MAKEARGS)
+all: build
+build: 
+	@for i in $(SUBDIRS); do \
+		( cd $$i; ${MAKE} ${MAKEARGS} build; ) \
+	done
+	
+clean: 
+	@for i in $(SUBDIRS); do \
+		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
+	done

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.66 2005-12-27 15:03:52 Trocotronic Exp $ 
+ * $Id: main.c,v 1.67 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,9 +7,6 @@
 #include "modulos.h"
 #include "protocolos.h"
 #include "md5.h"
-#ifdef UDB
-#include "bdd.h"
-#endif
 #ifdef USA_ZLIB
 #include "zip.h"
 #endif
@@ -23,6 +20,8 @@
 #include <errno.h>
 #include <utime.h>
 #include <sys/resource.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
 #endif
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -41,7 +40,13 @@ char spath[MAX_PATH];
 #else
 char spath[PATH_MAX];
 #endif
-char cpuid[64];
+struct Signatura
+{
+	char cpuid[64];
+	Modulo *verif;
+	char sgn[256];
+	unsigned res:1;
+}sgn;
 
 /*!
  * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
@@ -61,6 +66,8 @@ int CargaCache();
 int ProcCache();
 extern void LeeSocks();
 extern void CierraSocks();
+int ActivaModulos();
+void CargaSignatura();
 
 #ifdef USA_CONSOLA
 void *consola_loop_principal(void *);
@@ -69,7 +76,6 @@ void parsea_comando(char *);
 #ifdef _WIN32
 void LoopPrincipal(void *);
 #endif
-#define DescargaProtocolo() do { if (protocolo) { LiberaMemoriaProtocolo(protocolo); protocolo = NULL;	} }while(0)
 SOCKFUNC(MotdAbre);
 SOCKFUNC(MotdLee);
 
@@ -298,7 +304,7 @@ void CpuId()
 #ifdef _WIN32
 	/* todas estas rutinas y estructuras se han sacado de http://www.winsim.com/diskid32/diskid32.cpp */
 	HANDLE hPhysicalDriveIOCTL = 0;
-	bzero(cpuid, sizeof(cpuid));
+	bzero(sgn.cpuid, sizeof(sgn.cpuid));
 	hPhysicalDriveIOCTL = CreateFile("\\\\.\\PhysicalDrive0", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (hPhysicalDriveIOCTL != INVALID_HANDLE_VALUE)
       	{
@@ -316,25 +322,24 @@ void CpuId()
 			strcpy(serialNumber, flipAndCodeBytes(&buffer[descrip->SerialNumberOffset]));
 			strcpy(modelNumber, &buffer[descrip->ProductIdOffset]);
 			if (isalnum(serialNumber[0]) || isalnum(serialNumber[19]))
-				strncpy(cpuid, serialNumber, sizeof(cpuid)-1);
+				strncpy(sgn.cpuid, serialNumber, sizeof(sgn.cpuid)-1);
          	}
         }
 #else
 	int r, s;
 	struct ifreq ifr;
-	char *hwaddr, mac[13];
+	char *hwaddr;
 	strcpy(ifr.ifr_name, "eth0");
-	bzero(cpuid, sizeof(cpuid));
+	bzero(sgn.cpuid, sizeof(sgn.cpuid));
  	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) > 0)
 	{
-	    	if ((r = ioctl( s, SIOCGIFHWADDR, &ifr )) > 0)
+	    	if ((r = ioctl( s, SIOCGIFHWADDR, &ifr )) >= 0)
 	    	{
 			hwaddr = ifr.ifr_hwaddr.sa_data;
-    			snprintf(mac, 13, "%02X%02X%02X%02X%02X%02X", 
-				hwaddr[0] & 0xFF, hwaddr[1] & 0xFF,
-				hwaddr[2] & 0xFF, hwaddr[3] & 0xFF,
-				hwaddr[4] & 0xFF, hwaddr[5] & 0xFF);
-			strncpy(cpuid, flipAndCodeBytes(mac), sizeof(cpuid)-1);
+    			snprintf(sgn.cpuid, 13, "%02X%02X%02X%02X%02X%02X", 
+				hwaddr[5] & 0xFF, hwaddr[3] & 0xFF,
+				hwaddr[1] & 0xFF, hwaddr[4] & 0xFF,
+				hwaddr[6] & 0xFF, hwaddr[2] & 0xFF);
 		}
     		close(s);
     	}
@@ -370,19 +375,10 @@ VOIDSIG Refresca()
 	DescargaConfiguracion();
 	ParseaConfiguracion(CPATH, &config, 1);
 	DistribuyeConfiguracion(&config);
-	CargaModulos();
 	Senyal(SIGN_SQL);
-#ifdef UDB
-	CargaBloques();
-#endif
-	if (SockIrcd)
-	{
-		Senyal(SIGN_SYNCH);
-		Senyal(SIGN_EOS);
-	}
-	else
-		DistribuyeMe(&me, &SockIrcd);
-#ifdef	POSIX_SIGNALS
+	if (ActivaModulos())
+		CierraColossus(-1);
+#ifdef POSIX_SIGNALS
 	act.sa_handler = Refresca;
 	act.sa_flags = 0;
 	(void)sigemptyset(&act.sa_mask);
@@ -393,6 +389,13 @@ VOIDSIG Refresca()
 	(void)signal(SIGHUP, s_rehash);
   #endif
 #endif
+	if (SockIrcd)
+	{
+		Senyal(SIGN_SYNCH);
+		Senyal(SIGN_EOS);
+	}
+	else
+		DistribuyeMe(&me, &SockIrcd);
 	refrescando = 0;
 }
 VOIDSIG Reinicia()
@@ -494,9 +497,6 @@ int main(int argc, char *argv[])
   	for (i = 0; logo[i] != 0; i++)
 		fprintf(stderr, "%c", logo[i]);
 	fprintf(stderr, "\n\t\t" COLOSSUS_VERSION "\n");
-  #ifdef UDB
-	fprintf(stderr, "\t\t+UDB " UDB_VER "\n");
-  #endif
   #ifdef USA_ZLIB
 	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
   #endif
@@ -521,16 +521,14 @@ int main(int argc, char *argv[])
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);
-	DistribuyeMe(&me, &SockIrcd);
-	CargaModulos();
-	Senyal(SIGN_SQL);
+	DistribuyeMe(&me, &SockIrcd);	
 #ifndef _WIN32
 	if (sql->clientinfo)
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
 	if (sql->servinfo)
 		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
-	fprintf(stderr, "\t\t(c)2004-2005\n");
+	fprintf(stderr, "\t\t(c)2004-2006\n");
 	fprintf(stderr, "\n");
 #endif
 /*	if (EsArchivo("backup.sql"))
@@ -560,9 +558,8 @@ int main(int argc, char *argv[])
 	*/
 	margv = argv;
 	CargaCache();
-#ifdef UDB
-	BddInit();
-#endif
+	Senyal(SIGN_STARTUP);
+	Senyal(SIGN_SQL);
 	pthread_mutex_init(&mutex, NULL);
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);
@@ -590,8 +587,11 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
+	CargaSignatura();
 	CpuId();
 	SockOpen("www.rallados.net", 80, MotdAbre, MotdLee, NULL, NULL, ADD);
+	if (ActivaModulos())
+		CierraColossus(-1);
 #ifndef _WIN32
 	if (!nofork && fork())
 		exit(0);
@@ -810,7 +810,7 @@ char *AleatorioEx(char *patron)
  * @cat: Señales
  !*/
 
-void InsertaSenyal(short senyal, int (*func)())
+void InsertaSenyal(int senyal, int (*func)())
 {
 	Senyal *sign, *aux;
 	for (aux = senyals[senyal]; aux; aux = aux->sig)
@@ -845,7 +845,7 @@ void InsertaSenyal(short senyal, int (*func)())
  * @cat: Señales
  !*/
 
-int BorraSenyal(short senyal, int (*func)())
+int BorraSenyal(int senyal, int (*func)())
 {
 	Senyal *aux, *prev = NULL;
 	for (aux = senyals[senyal]; aux; aux = aux->sig)
@@ -1465,9 +1465,9 @@ void parsea_comando(char *comando)
 	else if (!strcasecmp(comando, "VERSION"))
 	{
 #ifdef UDB
-		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2005\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
 #else
-		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2005\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
 #endif
 	}
 	else if (!strcasecmp(comando, "QUIT"))
@@ -1966,20 +1966,164 @@ SOCKFUNC(MotdLee)
 	}
 	return 0;
 }
-SOCKFUNC(ClaveAbre)
+SOCKFUNC(ActivoAbre);
+SOCKFUNC(ActivoLee);
+SOCKFUNC(ActivoCierra);
+void MiraActivos()
 {
-	SockWrite(sck, OPT_CRLF, "POST /colossus/validar.php HTTP/1.1");
-	SockWrite(sck, OPT_CRLF, "Accept: */*");
+	while (sgn.verif)
+	{
+		if (sgn.verif->activo)
+		{
+			if (!sgn.verif->serial)
+			{
+				Modulo *tmp;
+				tmp = sgn.verif->sig;
+				Info("Introduzca la clave de acceso para el módulo %s", sgn.verif->info->nombre);
+				DescargaModulo(sgn.verif);
+				sgn.verif = tmp;
+			}
+			else
+				break;
+		}
+		else
+			sgn.verif = sgn.verif->sig;
+	}
+	if (sgn.verif)
+	{
+		sgn.res = 1;
+		SockOpen("www.rallados.net", 80, ActivoAbre, ActivoLee, NULL, ActivoCierra, ADD);
+	}
+}
+SOCKFUNC(ActivoAbre)
+{
+	ircsprintf(buf, "serial=%s&cpuid=%s&modulo=%s", sgn.verif->serial, sgn.cpuid, sgn.verif->info->nombre);
+	if (!BadPtr(sgn.sgn))
+	{
+		strcat(buf, "&sgn=");
+		strcat(buf, sgn.sgn);
+	}
+	SockWrite(sck, OPT_CRLF, "POST /colossus/validar.php HTTP/1.0");
+	SockWrite(sck, OPT_CRLF, "Content-Type: application/x-www-form-urlencoded");
+	SockWrite(sck, OPT_CRLF, "Content-length: %u", strlen(buf));
 	SockWrite(sck, OPT_CRLF, "Host: www.rallados.net");
 	SockWrite(sck, OPT_CRLF, "");
-	SockWrite(sck, OPT_CRLF, "serial=");
+	SockWrite(sck, OPT_CRLF, buf);
 	return 0;
 }
-int ValidaClave(char *clave)
+SOCKFUNC(ActivoLee)
 {
-	char sername[18];
-	Sock *sck;
-	//if (!(sck = SockOpen("www.rallados.net", 80, ClaveAbre, ClaveLee, NULL, ClaveCierra, ADD)))
-	//	return -1;
+	if (*data == '$')
+	{
+		FILE *fp;
+		if ((fp = fopen("colossus.sgn", "w")))
+		{
+			fwrite(data+1, 1, strlen(data)-1, fp);
+			fclose(fp);
+			strncpy(sgn.sgn, data+1, sizeof(sgn.sgn));
+		}
+	}
+	else if (*data == '#')
+	{
+		switch(*(data+1))
+		{
+			case '0':
+				sgn.res = 0;
+				sgn.verif->activo = 0;
+				break;
+			case '1':
+				unlink("colossus.sgn");
+				bzero(sgn.sgn, sizeof(sgn.sgn));
+			case '2':
+				Info("El módulo %s no tiene permiso para usarse en su servidor (err:%c)", sgn.verif->info->nombre, *(data+1));
+				break;
+			case '3':
+				Info("Clave para el módulo %s desconocida", sgn.verif->info->nombre);
+				break;
+			case '4':
+				Info("Clave para el módulo %s incorrecta", sgn.verif->info->nombre);
+				break;
+			default:
+				Info("Error desconocido para el módulo %s", sgn.verif->info->nombre);
+		}
+	}
+	return 0;
+}
+SOCKFUNC(ActivoCierra)
+{
+	Modulo *sig = sgn.verif->sig;
+	if (sgn.res)
+		DescargaModulo(sgn.verif);
+	sgn.verif = sig;
+	MiraActivos();
+	return 0;
+}
+int ActivaModulos()
+{
+	sgn.verif = modulos;
+	MiraActivos();
   	return 0;
+}
+void CargaSignatura()
+{
+	FILE *fp;
+	bzero(sgn.sgn, sizeof(sgn.sgn));
+	if ((fp = fopen("colossus.sgn", "r")))
+	{
+		fgets(sgn.sgn, sizeof(sgn.sgn), fp);
+		fclose(fp);
+	}
+}
+Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
+{
+	Recurso hmod;
+	char *c;
+#ifdef _WIN32
+	char tmppdb[128], pdb[128];
+#endif
+	if (!(c = strrchr(dll, '/')))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", dll);
+		return NULL;
+	}
+	strcpy(archivo, ++c);
+	ircsprintf(tmppath, "./tmp/%s", archivo);
+#ifdef _WIN32
+	strcpy(pdb, dll);
+	if (!(c = strrchr(pdb, '.')))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla pdb)", dll);
+		return NULL;
+	}
+	strcpy(c, ".pdb");
+	if (!(c = strrchr(pdb, '/')))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta pdb)", pdb);
+		return NULL;
+	}
+	c++;
+	ircsprintf(tmppdb, "./tmp/%s", c);
+#endif
+	if (!copyfile(dll, tmppath))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", dll);
+		return NULL;
+	}
+#ifdef _WIN32
+	if (!copyfile(pdb, tmppdb))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar pdb)", pdb);
+		return NULL;
+	}
+#endif
+	if ((hmod = irc_dlopen(tmppath, RTLD_LAZY)))
+		return hmod;
+	Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", dll, irc_dlerror());
+	return NULL;
+}
+time_t GMTime()
+{
+	time_t t;
+	t = time(0);
+	return mktime(gmtime(&t));
 }

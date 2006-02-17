@@ -1,5 +1,5 @@
 /*
- * $Id: resource.h,v 1.5 2005-09-17 13:16:14 Trocotronic Exp $ 
+ * $Id: resource.h,v 1.6 2006-02-17 19:19:04 Trocotronic Exp $ 
  */
 
 //{{NO_DEPENDENCIES}}
@@ -22,11 +22,10 @@
 #define IDC_VER				1110
 #define IDC_ZLIBV			1111
 #define IDC_OPENV			1112
-#define IDC_UDBV			1113
-#define IDC_WEB				1114
-#define IDC_SQLSV			1115
-#define IDC_SQLCV			1116
-#define IDC_PTHV			1117
+#define IDC_WEB			1113
+#define IDC_SQLSV			1114
+#define IDC_SQLCV			1115
+#define IDC_PTHV			1116
 #define IDM_REHASH                      40029
 #define IDM_CONF                        60000
 #define IDM_AYUDA_MENU			40031
@@ -44,7 +43,7 @@
 #define _APS_NO_MFC                     1
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         40037
-#define _APS_NEXT_CONTROL_VALUE         1118
+#define _APS_NEXT_CONTROL_VALUE         1117
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

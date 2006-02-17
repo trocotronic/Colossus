@@ -2,9 +2,6 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
-#ifdef UDB
-#include "bdd.h"
-#endif
 
 double tburst;
 static char *modcanales;
@@ -110,66 +107,24 @@ ProtInfo PROT_INFO(P10) = {
 #define MSG_CREATE "CREATE"
 #define TOK_CREATE "C"
 
-#define U_REG 0x1
-#define U_OPER 0x2
-#define U_LOCOPER 0x4
-#define U_HIDE 0x8
-#define U_INV 0x10
-#define U_WALLOP 0x20
-#define U_SERVNOTICE 0x40
-#define U_DEAF 0x80
-#define U_CHSERV 0x100
-#define U_DEBUG 0x200
+u_long UMODE_OPER;
+u_long UMODE_LOCOP;
+u_long UMODE_INVISIBLE;
+u_long UMODE_WALLOP;
+u_long UMODE_SERVNOTICE;
+u_long UMODE_DEAF;
+u_long UMODE_SERVICES;
+u_long UMODE_DEBUG;
 
-#define C_OP 0x1
-#define C_VOICE 0x2
-#define C_PRIVATE 0x4
-#define C_SECRET 0x8
-#define C_MODERATED 0x10
-#define C_TOPIC 0x20
-#define C_INVITE 0x40
-#define C_NOPRIV 0x80
-#define C_KEY 0x100
-#define C_BAN 0x200
-#define C_LIMIT 0x400
-#define C_REG 0x800
-
-
-mTab PROT_UMODOS(P10)[] = {
-	{ U_REG , 'r' } , /* reg */
-	{ U_OPER , 'o' } , /* netadmin */
-	{ U_OPER , 'o' } , /* oper */
-	{ U_LOCOPER , 'O' } , /* helpop */
-	{ U_HIDE , 'x' } , /* hide */
-	{ U_INV, 'i' },
-  	{ U_WALLOP, 'w' },
-  	{ U_SERVNOTICE, 's' },
-  	{ U_DEAF, 'd' },
-  	{ U_CHSERV, 'k' },
-  	{ U_DEBUG, 'g' },
-	{0x0, '0'}
-};
-mTab PROT_CMODOS(P10)[] = {
-	{ 0x0 , 0x0 } ,
-	{ C_REG , 'r' } , /* rgstronly */
-	{ 0x0 , 0x0 } , /* operonly */
-	{ 0x0 , 0x0 } , /* admonly */
-	{ 0x0 , 0x0 } , /* half */
-	{ 0x0 , 0x0 } , /* adm */
-	{ 0x0 , 0x0 } , /* owner */
-	{ C_OP , 'o' } ,
-	{ C_VOICE , 'v' } ,
-	{ C_PRIVATE , 'p' } ,
-	{ C_SECRET , 's' } ,
-	{ C_MODERATED , 'm' } ,
-	{ C_TOPIC , 't' } ,
-	{ C_INVITE , 'i' } ,
-	{ C_NOPRIV , 'n' } ,
-	{ C_KEY , 'k' } ,
-	{ C_BAN , 'b' } ,
-	{ C_LIMIT , 'l' } ,
-	{0x0, '0'}
-};
+u_long CHMODE_RGSTRONLY;
+u_long CHMODE_PRIVATE;
+u_long CHMODE_SECRET;
+u_long CHMODE_MODERATED;
+u_long CHMODE_TOPICLIMIT;
+u_long CHMODE_INVITEONLY;
+u_long CHMODE_NOPRIVMSGS;
+u_long CHMODE_KEY;
+u_long CHMODE_LIMIT;
 
 void EntraCliente(Cliente *, char *);
 void ProcesaModos(Canal *, char *);
@@ -183,7 +138,7 @@ typedef struct _trio
 	Cliente *cl;
 	struct _trio *hsig;
 }Trio;
-void int2b64(char *destino, int num, size_t tam)
+DLLFUNC void int2b64(char *destino, int num, size_t tam)
 {
 	char *fin = destino + tam - 1;
 	memset(destino, 'A', tam);
@@ -194,7 +149,7 @@ void int2b64(char *destino, int num, size_t tam)
 		num /= 64;
 	}while (num);
 }
-int b642int(char *num)
+DLLFUNC int b642int(char *num)
 {
 	int numero = 0, factor = 1;
 	char *fin = strchr(num, '\0');
@@ -205,7 +160,7 @@ int b642int(char *num)
 	}
 	return numero;
 }
-Cliente *BuscaClienteNumerico(char *clave, Cliente *lugar)
+DLLFUNC Cliente *BuscaClienteNumerico(char *clave, Cliente *lugar)
 {
 	Trio *aux;
 	u_int hash;
@@ -219,7 +174,7 @@ Cliente *BuscaClienteNumerico(char *clave, Cliente *lugar)
 	}
 	return lugar;
 }
-void InsertaClienteEnNumerico(Cliente *us, char *clave, Hash *tabla)
+DLLFUNC void InsertaClienteEnNumerico(Cliente *us, char *clave, Hash *tabla)
 {
 	Trio *aux;
 	u_int hash = 0;
@@ -230,7 +185,7 @@ void InsertaClienteEnNumerico(Cliente *us, char *clave, Hash *tabla)
 	tabla[hash].item = aux;
 	tabla[hash].items++;
 }
-int BorraClienteDeNumerico(Cliente *us, char *clave, Hash *tabla)
+DLLFUNC int BorraClienteDeNumerico(Cliente *us, char *clave, Hash *tabla)
 {
 	u_int hash = 0;
 	Trio *aux, *prev = NULL;
@@ -385,7 +340,7 @@ int p_nuevonick(Cliente *al)
 	int2b64(al->trio + 2, al->numeric, sizeof(char) * 4);
 	al->numeric = b642int(al->trio);
 	InsertaClienteEnNumerico(al, al->trio, uTab);
-	modos = ModosAFlags(al->modos, PROT_UMODOS(P10), NULL);
+	modos = ModosAFlags(al->modos, protocolo->umodos, NULL);
 	if (strchr(modos, 'r')) /* hay account */
 		EnviaAServidor("%s %s %s 1 %lu %s %s +%s %s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, al->nombre, ipb64, al->trio, al->info);
 	else
@@ -484,34 +439,6 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_NOTICE, cl->trio, buf);
 	return 0;
 }
-Com PROT_COMANDOS(P10)[] = {
-	{ MSG_NULL , TOK_NULL , (void *)p_trio } ,
-	{ MSG_MODE , TOK_MODE , (void *)p_umode } ,
-	{ MSG_ACCOUNT , TOK_ACCOUNT , (void *)p_svsmode } ,
-	{ MSG_MODE , TOK_MODE , (void *)p_mode } ,
-	{ MSG_NICK , TOK_NICK , (void *)p_nick } ,
-	COM_NULL , /* no se puede cambiar un nick remotamente */
-	{ MSG_JOIN , TOK_JOIN , (void *)p_join } ,
-	COM_NULL , /* no se puede forzar a un usuario a entrar */
-	{ MSG_PART , TOK_PART , (void *)p_part } ,
-	{ MSG_KICK , TOK_KICK , (void *)p_svspart } , 
-	{ MSG_QUIT , TOK_QUIT , (void *)p_quit } ,
-	{ MSG_KILL , TOK_KILL , (void *)p_kill } ,
-	{ MSG_NICK , TOK_NICK , (void *)p_nuevonick } ,
-	{ MSG_PRIVATE , TOK_PRIVATE , (void *)p_priv } ,
-	COM_NULL , /* no hay sethost */
-	COM_NULL , /* no hay chghost */
-	COM_NULL , /* no hay sqline */
-	COM_NULL , /* no hay lag */
-	COM_NULL , /* no hay swhois */
-	{ MSG_GLINE , TOK_GLINE , (void *)p_gline } ,
-	{ MSG_KICK , TOK_KICK , (void *)p_kick } ,
-	{ MSG_TOPIC , TOK_TOPIC , (void *)p_topic } ,
-	{ MSG_NOTICE , TOK_NOTICE , (void *)p_notice } ,
-	{ MSG_INVITE , TOK_INVITE , (void *)p_invite } ,
-	{ MSG_NULL , TOK_NULL , (void *)p_msg_vl } ,
-	COM_NULL 
-};
 int test(Conf *config, int *errores)
 {
 	Conf *eval, *aux;
@@ -622,6 +549,11 @@ void set(Conf *config)
 					modpm2 = config->seccion[i]->seccion[p]->data;
 			}
 		}
+		else if (!strcmp(config->seccion[i]->item, "extension"))
+		{
+			if (!CreaExtension(config->seccion[i], protocolo))
+				Error("[%s:%s::%i] No se ha podido crear la extensión %s", config->seccion[i]->archivo, config->seccion[i]->item, config->seccion[i]->linea, config->seccion[i]->data);
+		}
 	}
 	ircstrdup(protocolo->modcl, modcl);
 	ircstrdup(protocolo->modmk, modmk);
@@ -632,10 +564,6 @@ void set(Conf *config)
 int PROT_CARGA(P10)(Conf *config)
 {
 	int errores = 0;
-#ifdef UDB
-	Error("Este protocolo está compilado bajo UDB y no debería estarlo.");
-	return ++errores;
-#endif
 	if (!test(config, &errores))
 		set(config);
 	else
@@ -643,6 +571,24 @@ int PROT_CARGA(P10)(Conf *config)
 		Error("[%s] La configuracion de %s es errónea", config->archivo, PROT_INFO(P10).nombre);
 		return ++errores;
 	}
+	protocolo->comandos[P_TRIO] = (int(*)())p_trio;
+	protocolo->comandos[P_MODO_USUARIO_LOCAL] = p_umode;
+	protocolo->comandos[P_MODO_USUARIO_REMOTO] = p_svsmode;
+	protocolo->comandos[P_MODO_CANAL] = p_mode;
+	protocolo->comandos[P_CAMBIO_USUARIO_LOCAL] = p_nick;
+	protocolo->comandos[P_JOIN_USUARIO_LOCAL] = p_join;
+	protocolo->comandos[P_PART_USUARIO_LOCAL] = p_part;
+	protocolo->comandos[P_PART_USUARIO_REMOTO] = p_svspart;
+	protocolo->comandos[P_QUIT_USUARIO_LOCAL] = p_quit;
+	protocolo->comandos[P_QUIT_USUARIO_REMOTO] = p_kill;
+	protocolo->comandos[P_NUEVO_USUARIO] = p_nuevonick;
+	protocolo->comandos[P_PRIVADO] = p_priv;
+	protocolo->comandos[P_GLINE] = p_gline;
+	protocolo->comandos[P_KICK] = p_kick;
+	protocolo->comandos[P_TOPIC] = p_topic;
+	protocolo->comandos[P_NOTICE] = p_notice;
+	protocolo->comandos[P_INVITE] = p_invite;
+	protocolo->comandos[P_MSG_VL] = p_msg_vl;
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
 	InsertaComando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
 	InsertaComando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);
@@ -666,6 +612,25 @@ int PROT_CARGA(P10)(Conf *config)
 	InsertaComando(MSG_EOB, TOK_EOB, m_eos, INI, MAXPARA);
 	InsertaComando(MSG_BURST , TOK_BURST , m_burst , INI , MAXPARA);
 	InsertaComando(MSG_CREATE , TOK_CREATE , m_create , INI ,MAXPARA);
+	InsertaModoProtocolo('r', &UMODE_REGNICK, protocolo->umodos);
+	InsertaModoProtocolo('o', &UMODE_OPER, protocolo->umodos);
+	InsertaModoProtocolo('O', &UMODE_LOCOP, protocolo->umodos);
+	InsertaModoProtocolo('x', &UMODE_HIDE, protocolo->umodos);
+	InsertaModoProtocolo('i', &UMODE_INVISIBLE, protocolo->umodos);
+	InsertaModoProtocolo('w', &UMODE_WALLOP, protocolo->umodos);
+	InsertaModoProtocolo('s', &UMODE_SERVNOTICE, protocolo->umodos);
+	InsertaModoProtocolo('d', &UMODE_DEAF, protocolo->umodos);
+	InsertaModoProtocolo('k', &UMODE_SERVICES, protocolo->umodos);
+	InsertaModoProtocolo('g', &UMODE_DEBUG, protocolo->umodos);
+	InsertaModoProtocolo('r', &CHMODE_RGSTRONLY, protocolo->cmodos);
+	InsertaModoProtocolo('p', &CHMODE_PRIVATE, protocolo->cmodos);
+	InsertaModoProtocolo('s', &CHMODE_SECRET, protocolo->cmodos);
+	InsertaModoProtocolo('m', &CHMODE_MODERATED, protocolo->cmodos);
+	InsertaModoProtocolo('t', &CHMODE_TOPICLIMIT, protocolo->cmodos);
+	InsertaModoProtocolo('i', &CHMODE_INVITEONLY, protocolo->cmodos);
+	InsertaModoProtocolo('n', &CHMODE_NOPRIVMSGS, protocolo->cmodos);
+	InsertaModoProtocolo('k', &CHMODE_KEY, protocolo->cmodos);
+	InsertaModoProtocolo('l', &CHMODE_LIMIT, protocolo->cmodos);
 	return 0;
 }
 int PROT_DESCARGA(P10)()
@@ -779,6 +744,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 			if (*p == '\0') /* mensaje vacío? */
 				return 0;
 		}
+	}
 		s = strchr(p, ' ');
 		if (s)
 			*s++ = '\0';
@@ -806,8 +772,8 @@ SOCKFUNC(PROT_PARSEA(P10))
 			}
 		}
 		para[++i] = NULL;
-		//for (params = 0; params < i; params++)
-		//	Debug("parv[%i] = %s", params, para[params]);
+		for (params = 0; params < i; params++)
+			Debug("parv[%i] = %s", params, para[params]);
 		if (comd)
 		{
 			if (comd->cuando == INI)
@@ -829,7 +795,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 				}
 			}
 		}
-	}
+
 	return 0;
 }
 char *militime_float(char* start)
@@ -886,6 +852,9 @@ IRCFUNC(m_msg)
 	int params, i;
 	Modulo *mod;
 	Cliente *bl;
+	strtok(parv[1], "@");
+	parv[parc] = strtok(NULL, "@");
+	parv[parc+1] = NULL;
 	while (*parv[2] == ':')
 		parv[2]++;
 	strcpy(par, parv[2]);
@@ -911,7 +880,7 @@ IRCFUNC(m_msg)
 	}
 	if ((mod = BuscaModulo(bl->nombre, modulos)))
 	{
-		Mod_Func func;
+		Funcion *func;
 		char ex;
 		Alias *aux;
 		if ((aux = BuscaAlias(param, params, mod)))
@@ -942,7 +911,7 @@ IRCFUNC(m_msg)
 			params = k;
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
-			func(cl, parv, parc, param, params);
+			func->func(cl, parv, parc, param, params);
 		else
 		{
 			if (!ex && !EsServidor(cl))
@@ -1060,6 +1029,8 @@ IRCFUNC(m_ping)
 		int diff = atoi(militime_float(parv[3]));
 		EnviaAServidor("%s %s %s %s %i %s", me.trio, TOK_PONG, me.trio, parv[3], diff, militime_float(NULL));
 	}
+	else
+		EnviaAServidor("%s %s %s %s", me.trio, TOK_PONG, parv[0], parv[1]);
 	return 0;
 }
 IRCFUNC(m_pass)
@@ -1146,15 +1117,17 @@ IRCFUNC(m_server)
 {
 	Cliente *al;
 	char numeric[3];
+	int i = 0;
 	if (!cl && atoi(parv[5] + 1) < 10)
 	{
 		Alerta(FERR, "Version IRCU incorrecta. Sólo funciona con versiones de P10");
 		SockClose(sck, LOCAL);
 		return 1;
 	}
-	numeric[0] = *parv[6];
-	numeric[1] = *(parv[6] + 1);
-	numeric[2] = '\0';
+	numeric[i++] = *parv[6];
+	if (*(parv[6] + 3) != '\0')
+		numeric[i++] = *(parv[6] + 1);
+	numeric[i++] = '\0';
 	al = NuevoCliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);
 	al->protocol = atoi(parv[5] + 1);
 	al->numeric = b642int(numeric);
@@ -1311,7 +1284,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 					BorraBanDeCanal(&cn->ban, parv[param]);
 				param++;
-				break;*/
+				break;
 			case 'k':
 				if (!parv[param])
 					break;
@@ -1344,7 +1317,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 					cn->modos &= ~FlagAModo('l', PROT_CMODOS(P10));
 				}
 				break;
-			/*case 'o':
+			case 'o':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
@@ -1366,14 +1339,17 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 			{
 				MallaCliente *mcl;
 				MallaMascara *mmk;
+				MallaParam *mpm;
 				if (modo == ADD)
 				{
 					if ((mcl = BuscaMallaCliente(cn, *mods)))
 						InsertaModoCliente(&mcl->malla, BuscaClienteNumerico(parv[param], NULL));
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						InsertaMascara(cl, &mmk->malla, parv[param]);
+					else if ((mpm = BuscaMallaParam(cn, *mods)))
+						ircstrdup(mpm->param, parv[param]);
 					else
-						cn->modos |= FlagAModo(*mods, PROT_CMODOS(P10));
+						cn->modos |= FlagAModo(*mods, protocolo->cmodos);
 				}
 				else
 				{
@@ -1381,8 +1357,10 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 						BorraModoCliente(&mcl->malla, BuscaClienteNumerico(parv[param], NULL));
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						BorraMascaraDeCanal(&mmk->malla, parv[param]);
+					else if ((mpm = BuscaMallaParam(cn, *mods)))
+						ircfree(mpm->param);
 					else
-						cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(P10));
+						cn->modos &= ~FlagAModo(*mods, protocolo->cmodos);
 				}
 			}
 		}

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.7 2005-07-13 14:06:24 Trocotronic Exp $ 
+ * $Id: nickserv.h,v 1.8 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #define NS_SID 0x1
@@ -28,7 +28,7 @@ struct _ns
 	Modulo *hmod;
 };
 
-extern NickServ nickserv;
+extern NickServ *nickserv;
 
 #define NS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
 #define NS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
@@ -43,21 +43,13 @@ extern NickServ nickserv;
 #define NS_OPT_QUIT 0x10
 #define NS_OPT_LIST 0x20
 #define NS_OPT_NODROP 0x40
-#ifdef UDB
-#define NS_OPT_UDB 0x80
-#endif
 
 #define NS_SQL "nicks"
-#ifndef UDB
 #define NS_FORBIDS "nforbids"
-#endif
 #define NS_SIGN_IDOK 61
 #define NS_SIGN_DROP 62
 #define NS_SIGN_REG 63
 
-#ifdef UDB
-#define IsNickUDB(x) (IsReg(x) && atoi(SQLCogeRegistro(NS_SQL, x, "opts")) & NS_OPT_UDB)
-#endif
 #define IsSusp(x) (SQLCogeRegistro(NS_SQL, x, "suspend"))
 
 #define CACHE_INTENTOS_ID "intentos_id"

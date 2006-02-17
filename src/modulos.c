@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.15 2005-12-25 21:14:26 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.16 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,96 +18,43 @@ Nivel *niveles[MAX_NIVS];
 int nivs = 0;
 
 Modulo *modulos = NULL;
-Modulo *CreaModulo(char *archivo)
+Modulo *CreaModulo(char *modulo)
 {
-	char *amod, tmppath[128];
-#ifdef _WIN32
-	HMODULE modulo;
-	char tmppdb[128], pdb[128];
-#else
-	void *modulo;
-#endif
+	Recurso hmod;
+	char archivo[128], tmppath[MAX_PATH];
 	int (*mod_carga)(Modulo *), (*mod_descarga)(Modulo *);
 	ModInfo *inf;
-	Modulo *ex;
-	amod = strrchr(archivo, '/');
-	if (!amod)
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", archivo);
-		return NULL;
-	}
-	amod++;
-	ircsprintf(tmppath, "./tmp/%s", amod);
-#ifdef _WIN32
-	strcpy(pdb, archivo);
-	amod = strrchr(pdb, '.');
-	if (!amod)
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (falla pdb)", archivo);
-		return NULL;
-	}
-	strcpy(amod, ".pdb");
-	amod = strrchr(pdb, '/');
-	if (!amod)
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta pdb)", pdb);
-		return NULL;
-	}
-	amod++;
-	ircsprintf(tmppdb, "./tmp/%s", amod);
-#endif
-	for (ex = modulos; ex; ex = ex->sig)
-	{
-		if (!strcasecmp(ex->archivo, archivo))
-		{
-			ex->cargado = 1; /* está en conf */
-			return ex; /* no creamos lo que está creado */
-		}
-	}
-	if (!copyfile(archivo, tmppath))
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", archivo);
-		return NULL;
-	}
-#ifdef _WIN32
-	if (!copyfile(pdb, tmppdb))
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar pdb)", pdb);
-		return NULL;
-	}
-#endif
-	if ((modulo = irc_dlopen(tmppath, RTLD_LAZY)))
+	if ((hmod = CopiaDll(modulo, archivo, tmppath)))
 	{
 		Modulo *mod;
-		irc_dlsym(modulo, "Mod_Carga", mod_carga);
+		irc_dlsym(hmod, "Mod_Carga", mod_carga);
 		if (!mod_carga)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Carga)", amod);
-			irc_dlclose(modulo);
+			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Carga)", archivo);
+			irc_dlclose(hmod);
 			return NULL;
 		}
-		irc_dlsym(modulo, "Mod_Descarga", mod_descarga);
+		irc_dlsym(hmod, "Mod_Descarga", mod_descarga);
 		if (!mod_descarga)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Descarga)", amod);
-			irc_dlclose(modulo);
+			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Descarga)", archivo);
+			irc_dlclose(hmod);
 			return NULL;
 		}
-		irc_dlsym(modulo, "Mod_Info", inf);
+		irc_dlsym(hmod, "Mod_Info", inf);
 		if (!inf || !inf->nombre)
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Info)", amod);
-			irc_dlclose(modulo);
+			Alerta(FADV, "Ha sido imposible cargar %s (Mod_Info)", archivo);
+			irc_dlclose(hmod);
 			return NULL;
 		}
 		BMalloc(mod, Modulo);
-		mod->archivo = strdup(archivo);
+		mod->archivo = strdup(modulo);
 		mod->tmparchivo = strdup(tmppath);
-		mod->hmod = modulo;
+		mod->hmod = hmod;
 		mod->id = id;
 		mod->carga = mod_carga;
 		mod->descarga = mod_descarga;
-		mod->cargado = 1; /* está en conf */
 		mod->info = inf;
 		id <<= 1;
 		if (!modulos)
@@ -126,44 +73,19 @@ Modulo *CreaModulo(char *archivo)
 		}
 		return mod;
 	}
-	else
-		Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", amod, irc_dlerror());
 	return NULL;
 }
 void DescargaModulo(Modulo *ex)
 {
 	DesconectaBot(ex->nick, "Refrescando");
-	if (ex->cargado == 2) /* está cargado */
-	{
-		if (ex->descarga)
-			(*ex->descarga)(ex);
-		ircfree(ex->archivo);
-		ircfree(ex->tmparchivo);
-		BorraItem(ex, modulos);
-		ex->cargado = 0;
-		ex->comandos = 0; /* hay que vaciarlo! */
-		irc_dlclose(ex->hmod);
-		Free(ex);
-	}
-}
-void CargaModulos()
-{
-	Modulo *ex;
-	for (ex = modulos; ex; ex = ex->sig)
-	{
-		if (ex->cargado) /* está en conf */
-		{
-			int val;
-			val = (*ex->carga)(ex);
-			if (val)
-			{
-				DescargaModulo(ex);
-				Alerta(FADV, "No se ha podido cargar el modulo %s", ex->archivo);
-				continue;
-			}
-			ex->cargado = 2;
-		}
-	}
+	if (ex->descarga)
+		(*ex->descarga)(ex);
+	ircfree(ex->archivo);
+	ircfree(ex->tmparchivo);
+	BorraItem(ex, modulos);
+	ex->comandos = 0; /* hay que vaciarlo! */
+	irc_dlclose(ex->hmod);
+	Free(ex);
 }
 void DescargaModulos()
 {
@@ -171,8 +93,7 @@ void DescargaModulos()
 	for (ex = modulos; ex; ex = sig)
 	{
 		sig = ex->sig;
-		if (ex->cargado)
-			DescargaModulo(ex);
+		DescargaModulo(ex);
 	}
 	id = 1;
 }
@@ -183,7 +104,7 @@ Modulo *BuscaModulo(char *nick, Modulo *donde)
 		return NULL;
 	for (ex = donde; ex; ex = ex->sig)
 	{
-		if (ex->cargado && !strcasecmp(nick, ex->nick))
+		if (!strcasecmp(nick, ex->nick))
 			return ex;
 	}
 	return NULL;
@@ -205,7 +126,7 @@ const char *ErrorDl(void)
  * @cat: Modulos
  * @ver: BuscaFuncion, ParseaConfiguracion, BuscaComMod, TieneNivel
  !*/
-bCom *CargadoComMod(char *com, Modulo *mod)
+Funcion *BuscaFuncion(char *com, Modulo *mod)
 {
 	int i;
 	for (i = 0; i < mod->comandos; i++)
@@ -216,34 +137,12 @@ bCom *CargadoComMod(char *com, Modulo *mod)
 	return NULL;
 }
 /*!
- * @desc: Busca si una función está cargada mediante su comando y su nivel.
- * @params: $mod [in] Módulo donde buscar.
- 	    $nombre [in] Nombre del comando.
- 	    $nivel [out] Contendrá el nivel de la función necesario para ejecutarse. Si es 0, la función no existe.
- * @ret: Devuelve la dirección de la función que ejecutará ese comando. NULL si no existe.
- * @cat: Modulos
- * @ver: CargadoComMod ParseaConfiguracion BuscaComMod TieneNivel
- !*/
-Mod_Func BuscaFuncion(Modulo *mod, char *nombre, u_int *nivel)
-{
-	bCom *bcom;
-	if ((bcom = CargadoComMod(nombre, mod)))
-	{
-		if (nivel)
-			*nivel = bcom->nivel;
-		return bcom->func;
-	}
-	if (nivel)
-		*nivel = 0;
-	return NULL;
-}
-/*!
  * @desc: Busca el nombre de una función dentro de una lista estática de comandos.
  * @params: $coms [in] Lista de comandos.
  	    $func [in] Nombre de la función.
  * @cat: Modulos
- * @ret: Devuelve el comando asociado a esa función. NULL si no existe en la lista.
- * @ver: BuscaFuncion ParseaConfiguracion TieneNivel CargadoComMod
+ * @ret: Devuelve el comando de la lista estática asociado a esa función. NULL si no existe en la lista.
+ * @ver: BuscaFuncion ParseaConfiguracion TieneNivel
  !*/
 bCom *BuscaComMod(bCom *coms, char *func)
 {
@@ -258,27 +157,55 @@ bCom *BuscaComMod(bCom *coms, char *func)
 	return NULL;
 }
 /*!
+ * @desc: Busca la ayuda asociada a un comando. Si existe, se la muestra al usuario.
+ * @params: $cl [in] Cliente a informar.
+		$com [in] Comando a busca.
+		$mod [in] Módulo al que hace referencia.
+		$param [in] Listado de parámetros enviados al privado.
+		$params [in] Número de elementos de la lista de parámetros.
+ * @cat: Modulos
+ * @ret: Devuelve 1 si existe una función de ayuda asociada a ese comando. 0, si no.
+ * @ver: ListaDescrips
+ !*/	
+int MuestraAyudaComando(Cliente *cl, char *com, Modulo *mod, char **param, int params)
+{
+	Funcion *func;
+	if ((func = BuscaFuncion(com, mod)))
+	{
+		if (func->func_help && TieneNivel(cl, func->com, mod, NULL))
+		{
+			if (params < 3)
+			{
+				Responde(cl, mod->cl, "\00312%s", func->com);
+				Responde(cl, mod->cl, " ");
+			}
+			func->func_help(cl, param, params);
+			return 1;
+		}
+	}
+	return 0;
+}
+/*!
  * @desc: Comprueba si un cliente tiene nivel para ejecutar una función.
  * @params: $cl [in] Cliente.
  	    $func [in] Nombre del comando que ha usado el cliente.
  	    $mod [in] Módulo que ha llamado el cliente.
  	    $ex [out] Vale 1 si esa función existe. 0, si no existe.
  * @cat: Modulos
- * @ver: BuscaComMod ParseaConfiguracion CargadoComMod BuscaFuncion
+ * @ver: BuscaComMod ParseaConfiguracion BuscaFuncion
  * @ret: Devuelve la dirección de la función que se ejecutará. NULL si no existe o si no tiene nivel.
  !*/
-Mod_Func TieneNivel(Cliente *cl, char *func, Modulo *mod, char *ex)
+Funcion *TieneNivel(Cliente *cl, char *func, Modulo *mod, char *ex)
 {
-	Mod_Func modfunc;
-	u_int niv;
+	Funcion *cm;
 	if (ex)
 		*ex = 0;
-	if ((modfunc = BuscaFuncion(mod, func, &niv)))
+	if ((cm = BuscaFuncion(func, mod)))
 	{
 		if (ex)
 			*ex = 1;
-		if (cl->nivel >= niv)
-			return modfunc;
+		if (cl->nivel >= cm->nivel)
+			return cm;
 	}
 	return NULL;
 }
@@ -289,26 +216,28 @@ int BuscaOptNiv(char *nombre)
 		return niv->nivel;
 	return 0;
 }
-bCom *CreaCom(bCom *padre)
+Funcion *CreaCom(bCom *padre)
 {
-	bCom *cm = NULL;
-	BMalloc(cm, bCom);
+	Funcion *cm = NULL;
+	BMalloc(cm, Funcion);
 	if (padre)
 	{
 		cm->func = padre->func;
-		cm->com = strdup(padre->com);
+		cm->com = strdup(strtoupper(padre->com));
 		cm->nivel = padre->nivel;
+		cm->descrip = padre->descrip;
+		cm->func_help = padre->func_help;
 	}
 	return cm;
 }
 /*!
- * @desc: Parsea un bloque de configuración correspondiente a funciones cargadas del módulo.
+ * @desc: Parsea el bloque funciones { } con las funciones soportadas por el módulo.
  * @params: $config [in] Rama o bloque de funciones del archivo de configuración. Llamado por ParseaConfiguracion.
 		Si es NULL, cargará todos los comandos que se pasen por el tercer parámetro.
  	    $mod [in] Recurso del módulo a cargar estos comandos.
  	    $coms [in] Lista completa de los comandos soportados por el módulo.
  * @cat: Modulos
- * @ver: ParseaConfiguracion TieneNivel CargadoComMod BuscaFuncion BuscaComMod
+ * @ver: ParseaConfiguracion TieneNivel BuscaFuncion BuscaComMod
  !*/
  
 int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
@@ -323,7 +252,7 @@ int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
 		{
 			if ((cm = BuscaComMod(coms, config->seccion[p]->item)))
 			{
-				if (!CargadoComMod(cm->com, mod))
+				if (!BuscaFuncion(cm->com, mod))
 					mod->comando[mod->comandos++] = CreaCom(cm);
 			}
 			else
@@ -353,14 +282,14 @@ int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
 int TestComMod(Conf *config, bCom *coms, char avisa)
 {
 	int errores = 0;
-	bCom *cm = NULL;
+	FILE *fp;
 	if (!config->data)
 	{
 		if (avisa)
 			Error("[%s:%i] Falta nombre de función", config->archivo, config->linea);
 		return 1;
 	}
-	if ((cm = BuscaComMod(coms, config->data)))
+	if (BuscaComMod(coms, config->data) || (fp = fopen(config->data, "r")))
 	{
 		int p;
 		for (p = 0; p < config->secciones; p++)
@@ -384,6 +313,7 @@ int TestComMod(Conf *config, bCom *coms, char avisa)
 				}
 			}
 		}
+		fclose(fp);
 	}
 	else
 	{
@@ -393,6 +323,20 @@ int TestComMod(Conf *config, bCom *coms, char avisa)
 	}
 	return errores;
 }
+bCom *BuscaComModRemoto(char *remoto, Recurso *hmod)
+{
+	Recurso mod;
+	char archivo[128], tmppath[MAX_PATH];
+	bCom *cm;
+	if ((mod = CopiaDll(remoto, archivo, tmppath)))
+	{
+		irc_dlsym(mod, "comando", cm);
+		*hmod = mod;
+		return cm;
+	}
+	return NULL;
+}
+	
 /*!
  * @desc: Setea en memoria una función a partir de su bloque funcion { }
  * @params: $config [in] Bloque función de configuración.
@@ -404,11 +348,14 @@ int TestComMod(Conf *config, bCom *coms, char avisa)
 void SetComMod(Conf *config, Modulo *mod, bCom *coms)
 {
 	bCom *cm = NULL;
-	if ((cm = BuscaComMod(coms, config->data)))
+	char  *amod = NULL;
+	Recurso hmod = NULL;
+	if ((cm = BuscaComMod(coms, config->data)) || (cm = BuscaComModRemoto(config->data, &hmod)))
 	{
 		int p;
-		bCom *com;
+		Funcion *com;
 		com = CreaCom(cm);
+		com->hmod = hmod;
 		for (p = 0; p < config->secciones; p++)
 		{
 			if (!strcmp(config->seccion[p]->item, "nivel"))
@@ -416,7 +363,7 @@ void SetComMod(Conf *config, Modulo *mod, bCom *coms)
 			else if (!strcmp(config->seccion[p]->item, "comando"))
 				ircstrdup(com->com, config->seccion[p]->data);
 		}
-		if (!CargadoComMod(com->com, mod)) /* con uno basta */
+		if (!BuscaFuncion(com->com, mod)) /* con uno basta */
 			mod->comando[mod->comandos++] = com;
 	}
 }
@@ -425,10 +372,28 @@ void LiberaComs(Modulo *mod)
 	int i;
 	for (i = 0; i < mod->comandos; i++)
 	{
+		if (mod->comando[i]->hmod)
+			irc_dlclose(mod->comando[i]->hmod);
 		ircfree(mod->comando[i]->com);
 		ircfree(mod->comando[i]);
 	}
 	mod->comandos = 0;
+}
+/*!
+ * @desc: Lista todos los comandos y su descripción cargados en el módulo en cuyos cuales el usuario tenga suficiente nivel para ejecutarlos. Función para sistemas de AYUDA.
+ * @params: $mod [in] Modulo al cual pertenecen las funciones que se pretenden listar.
+ 		  $cl [in] Cliente al que se desea hacer el listado.
+ * @cat: Modulos
+ * @ver: MuestraAyudaComando
+ !*/
+void ListaDescrips(Modulo *mod, Cliente *cl)
+{
+	int i;
+	for (i = 0; i < mod->comandos; i++)
+	{
+		if (TieneNivel(cl, mod->comando[i]->com, mod, NULL))
+			Responde(cl, mod->cl, "\00312%s\003 %s", mod->comando[i]->com, mod->comando[i]->descrip);
+	}
 }
 u_int InsertaNivel(char *nombre, char *flags)
 {

@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.12 2005-12-04 14:09:25 Trocotronic Exp $
+// $Id: colossus.rc,v 1.13 2006-02-17 19:19:03 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -95,7 +95,7 @@ BEGIN
             VALUE "FileDescription", "Colossus - Servicios de red\0"
             VALUE "FileVersion", "1.3\0"
             VALUE "InternalName", "Colossus\0"
-            VALUE "LegalCopyright", "Copyright © 2004-2005\0"
+            VALUE "LegalCopyright", "Copyright © 2004-2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "\0"
             VALUE "PrivateBuild", "\0"
@@ -152,28 +152,26 @@ BEGIN
 END
 
 
-ACERCA DIALOG DISCARDABLE  0, 0, 163, 123
+ACERCA DIALOG DISCARDABLE  0, 0, 163, 113
 STYLE DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Acerca de Colossus..."
 FONT 8, "Tahoma"
 BEGIN
     LTEXT           "Autor: Trocotronic",IDC_STATIC,10,10,76,8	
-    LTEXT           "©2004-2005",IDC_VER,10,20,76,8
+    LTEXT           "©2004-2006",IDC_VER,10,20,76,8
     CONTROL         "http://www.rallados.net",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
     CONTROL         BMP_LOGO,IDC_STATIC,"Static",SS_BITMAP,111,3,64,64
-    GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,70,BS_LEFT
+    GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,60,BS_LEFT
     LTEXT           "OpenSSL: ",IDC_STATIC,14,56,40,8
     LTEXT           "Desconocido",IDC_OPENV,75,56,78,8
     LTEXT           "ZLib: ",IDC_STATIC,14,66,25,8
     LTEXT           "Desconocido",IDC_ZLIBV,75,66,78,8
-    LTEXT           "UDB: ",IDC_STATIC,14,76,18,8
-    LTEXT           "Desconocido",IDC_UDBV,75,76,78,8
-    LTEXT           "Cliente SQL: ",IDC_STATIC,14,86,60,8
-    LTEXT           "Desconocido",IDC_SQLCV,75,86,78,8
-    LTEXT           "Servidor SQL: ",IDC_STATIC,14,96,60,8
-    LTEXT           "Desconocido",IDC_SQLSV,75,96,78,8
-    LTEXT           "PThread: ",IDC_STATIC,14,106,30,8
-    LTEXT           "Desconocido",IDC_PTHV,75,106,78,8
+    LTEXT           "Cliente SQL: ",IDC_STATIC,14,76,60,8
+    LTEXT           "Desconocido",IDC_SQLCV,75,76,78,8
+    LTEXT           "Servidor SQL: ",IDC_STATIC,14,86,60,8
+    LTEXT           "Desconocido",IDC_SQLSV,75,86,78,8
+    LTEXT           "PThread: ",IDC_STATIC,14,96,30,8
+    LTEXT           "Desconocido",IDC_PTHV,75,96,78,8
 END
 
 PREGUNTACAMPO DIALOG DISCARDABLE  0, 0, 174, 67

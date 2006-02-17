@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.12 2005-12-25 21:15:06 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.13 2006-02-17 19:19:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,9 +8,6 @@
 #include "resource.h"
 #ifdef USA_ZLIB
 #include "zip.h"
-#endif
-#ifdef UDB
-#include "bdd.h"
 #endif
 #include <commctrl.h>
 #include <windows.h>
@@ -183,10 +180,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
 					for (ex = modulos; ex; ex = ex->sig)
-					{
-						if (ex->cargado) /* está en conf */
-							AppendMenu(hConfig, MF_STRING, i++, ex->config);
-					}
+						AppendMenu(hConfig, MF_STRING, i++, ex->config);
 					mitem.cbSize = sizeof(MENUITEMINFO);
 					mitem.fMask = MIIM_SUBMENU;
 					mitem.hSubMenu = hConfig;
@@ -240,10 +234,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
 					for (ex = modulos; ex; ex = ex->sig)
-					{
-						if (ex->cargado) /* está en conf */
 							AppendMenu(hConfig, MF_STRING, i++, ex->config);
-					}
 					TrackPopupMenu(hConfig, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
 					SendMessage(hDlg, WM_NULL, 0, 0);
 					break;
@@ -325,9 +316,6 @@ LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
 			hFont = CreateFont(8,0,0,0,0,0,1,0,ANSI_CHARSET,0,0,PROOF_QUALITY,0,"MS Sans Serif");
 			SendMessage(GetDlgItem(hDlg, IDC_WEB), WM_SETFONT, (WPARAM)hFont,TRUE);
-#ifdef UDB
-			SetDlgItemText(hDlg, IDC_UDBV, UDB_VER);
-#endif
 #ifdef USA_SSL
 			SetDlgItemText(hDlg, IDC_OPENV, strchr(OPENSSL_VERSION_TEXT, ' ')+1);
 #endif

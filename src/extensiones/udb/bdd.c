@@ -1,23 +1,15 @@
-/*
- * $Id: bdd.c,v 1.35 2005-12-04 14:09:22 Trocotronic Exp $ 
- */
-
+#include "struct.h"
+#include "ircd.h"
+#include "bdd.h"
+#include "md5.h"
+#include <sys/stat.h>
 #ifdef _WIN32
 #include <io.h>
 #else
 #include <sys/io.h>
-#endif
-#include "struct.h"
-#include "ircd.h"
-#include <sys/stat.h>
-#include "md5.h"
-
-#ifdef UDB
-#include "bdd.h"
-#ifndef _WIN32
 #define O_BINARY 0x0
-//#include <sys/mman.h>
 #endif
+
 Udb *nicks = NULL;
 Udb *chans = NULL;
 Udb *ips = NULL;
@@ -34,8 +26,14 @@ time_t gmts[DBMAX];
 int regs[DBMAX];
 u_int BDD_TOTAL = 0;
 int dataver = 0;
+
 void SetDataVer(int);
 int GetDataVer();
+int ActualizaHash(Udb *);
+Udb *IdAUdb(int);
+void CargaBloques();
+int TruncaBloque(Cliente *, Udb *, u_long);
+
 Opts NivelesBDD[] = {
 	{ 0x1 , "OPER" } ,
 	{ 0x2 , "ADMIN" } ,
@@ -322,7 +320,6 @@ void BddInit()
 			ActualizaDataVer3();
 	}
 	SetDataVer(3);
-	CargaBloques();
 	//printea(ips, 0);
 }
 void CifraCadenaAHex(char *origen, char *destino, int len)
@@ -414,7 +411,7 @@ void SetDataVer(int v)
 	fwrite(ver, 1, 2, fh);
 	fclose(fh);
 }
-DLLFUNC int ActualizaGMT(Udb *bloque, time_t gm)
+int ActualizaGMT(Udb *bloque, time_t gm)
 {
 	char lee[11];
 	FILE *fh;
@@ -428,7 +425,7 @@ DLLFUNC int ActualizaGMT(Udb *bloque, time_t gm)
 	gmts[bloque->id] = hora;
 	return 0;
 }
-DLLFUNC int ActualizaHash(Udb *bloque)
+int ActualizaHash(Udb *bloque)
 {
 	char lee[9];
 	FILE *fh;
@@ -443,7 +440,7 @@ DLLFUNC int ActualizaHash(Udb *bloque)
 	return 0;
 }
 /* devuelve el puntero a todo el bloque a partir de su id o letra */
-DLLFUNC Udb *IdAUdb(int id)
+Udb *IdAUdb(int id)
 {
 	Udb *reg;
 	for (reg = ultimo; reg; reg = reg->mid)
@@ -491,13 +488,13 @@ Udb *BuscaUdbEnHash(char *clave, int donde, Udb *lugar)
 	}
 	return lugar;
 }
-DLLFUNC Udb *BuscaRegistro(int tipo, char *clave)
+Udb *BuscaRegistro(int tipo, char *clave)
 {
 	if (!clave)
 		return NULL;
 	return BuscaUdbEnHash(clave, tipo, NULL);
 }
-DLLFUNC Udb *BuscaBloque(char *clave, Udb *bloque)
+Udb *BuscaBloque(char *clave, Udb *bloque)
 {
 	Udb *aux;
 	if (!clave)
@@ -609,7 +606,6 @@ void BorraRegistro(int tipo, Udb *reg, int archivo)
 	reg->data_char = NULL;
 	reg->data_long = 0L;
 	down = reg->down;
-	
 	reg->down = NULL;
 	if (archivo)
 		GuardaEnArchivo(reg, tipo);
@@ -668,7 +664,7 @@ Udb *InsertaRegistro(int tipo, Udb *bloque, char *item, char *data_char, u_long 
 		GuardaEnArchivo(reg, tipo);
 	return reg;
 }
-DLLFUNC int NivelOperBdd(char *oper)
+int NivelOperBdd(char *oper)
 {
 	Udb *reg;
 	if ((reg = BuscaRegistro(BDD_NICKS, oper)))
@@ -718,7 +714,7 @@ char *CifraIpTEA(char *ipreal)
 	}
 	return cifrada;
 }	
-DLLFUNC int ParseaLinea(int tipo, char *cur, int archivo)
+int ParseaLinea(int tipo, char *cur, int archivo)
 {
 	char *ds, *cop, *sp;
 	Udb *bloq;
@@ -766,7 +762,7 @@ DLLFUNC int ParseaLinea(int tipo, char *cur, int archivo)
 	Free(cop);
 	return ins;
 }
-DLLFUNC void CargaBloque(int tipo)
+void CargaBloque(int tipo)
 {
 	Udb *root;
 	u_long lee, obtiene, trunca = 0L, bytes = 0L;
@@ -851,7 +847,7 @@ DLLFUNC void CargaBloque(int tipo)
 	if (trunca)
 		TruncaBloque(&me, root, trunca);
 }
-DLLFUNC void DescargaBloque(int tipo)
+void DescargaBloque(int tipo)
 {
 	Udb *aux, *sig, *bloq;
 	bloq = IdAUdb(tipo);
@@ -914,7 +910,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 	}
 	return 0;
 }
-DLLFUNC int Optimiza(Udb *bloq)
+int Optimiza(Udb *bloq)
 {
 	FILE *fp;
 	if ((fp = fopen(bloq->item, "wb")))
@@ -924,5 +920,35 @@ DLLFUNC int Optimiza(Udb *bloq)
 	CargaBloque(bloq->id);
 	return 0;
 }
-#endif
-
+/*!
+ * @desc: Propaga un registro UDB por la red.
+ * @params: $item [in] Cadena con formato a propagar.
+ 	    $... [in] Argumentos variables según cadena con formato.
+ * @cat: IRCd
+ !*/
+ 
+void PropagaRegistro(char *item, ...)
+{
+	va_list vl;
+	char r, buf[1024];
+	int ins;
+	Udb *bloq;
+	u_long pos;
+	va_start(vl, item);
+	ircvsprintf(buf, item, vl);
+	va_end(vl);
+	r = buf[0];
+	bloq = IdAUdb(r);
+	pos = bloq->data_long;
+	ins = ParseaLinea(bloq->id, &buf[3], 1);
+	if (strchr(buf, ' '))
+	{
+		if (ins == 1)
+			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, buf);
+	}
+	else
+	{
+		if (ins == -1)
+			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
+	}
+}

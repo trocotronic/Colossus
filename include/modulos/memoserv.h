@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.h,v 1.4 2005-07-13 14:06:24 Trocotronic Exp $ 
+ * $Id: memoserv.h,v 1.5 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 typedef struct _ms MemoServ;
@@ -19,7 +19,7 @@ struct _ms
 #define MS_SQL "mensajes"
 #define MS_SET "mopts"
 
-extern MemoServ memoserv;
+extern MemoServ *memoserv;
 
 DLLFUNC extern int MSSend(char *, char *, char *);
 

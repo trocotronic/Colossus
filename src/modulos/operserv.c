@@ -1,79 +1,72 @@
 /*
- * $Id: operserv.c,v 1.26 2005-12-25 21:14:58 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.27 2006-02-17 19:19:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
-#ifdef UDB
-#include "bdd.h"
-#endif
 #include "modulos/operserv.h"
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
 
-OperServ operserv;
-#define ExFunc(x) TieneNivel(cl, x, operserv.hmod, NULL)
+OperServ *operserv = NULL;
+#define ExFunc(x) TieneNivel(cl, x, operserv->hmod, NULL)
 Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
 char *confirm = NULL;
 
 BOTFUNC(OSHelp);
 BOTFUNC(OSRaw);
+BOTFUNCHELP(OSHRaw);
 BOTFUNC(OSRestart);
+BOTFUNCHELP(OSHRestart);
 BOTFUNC(OSRehash);
-//BOTFUNC(OSBackup);
-//BOTFUNC(OSRestaura);
+BOTFUNCHELP(OSHRehash);
 BOTFUNC(OSGline);
+BOTFUNCHELP(OSHGline);
 BOTFUNC(OSOpers);
+BOTFUNCHELP(OSHOpers);
 BOTFUNC(OSSajoin);
+BOTFUNCHELP(OSHSajoin);
 BOTFUNC(OSSapart);
+BOTFUNCHELP(OSHSapart);
 BOTFUNC(OSRejoin);
+BOTFUNCHELP(OSHRejoin);
 BOTFUNC(OSKill);
+BOTFUNCHELP(OSHKill);
 BOTFUNC(OSGlobal);
+BOTFUNCHELP(OSHGlobal);
 BOTFUNC(OSNoticias);
+BOTFUNCHELP(OSHNoticias);
 BOTFUNC(OSClose);
+BOTFUNCHELP(OSHClose);
 BOTFUNC(OSVaciar);
-#ifdef UDB
-BOTFUNC(OSModos);
-BOTFUNC(OSSnomask);
-BOTFUNC(OSOpt);
-BOTFUNC(OSBck);
-#endif
+BOTFUNCHELP(OSHVaciar);
 BOTFUNC(OSAkill);
+BOTFUNCHELP(OSHAkill);
 
 static bCom operserv_coms[] = {
-	{ "help" , OSHelp , N3 } ,
-	{ "raw" , OSRaw , N3 } ,
-	{ "restart" , OSRestart , N5 } ,
-	{ "rehash" , OSRehash , N5 } ,
-	//{ "backup" , OSBackup , ROOTS } ,
-	{ "close" , OSClose , N5 } ,
-	//{ "restaura" , OSRestaura , ROOTS } ,
-	{ "gline" , OSGline , N3 } ,
-	{ "opers" , OSOpers , N4 } ,
-	{ "sajoin" , OSSajoin , N2 } ,
-	{ "sapart" , OSSapart , N2 } ,
-	{ "rejoin" , OSRejoin , N2 } ,
-	{ "kill" , OSKill , N2 } ,
-	{ "global" , OSGlobal , N2 } ,
-	{ "noticias" , OSNoticias , N4 } ,
-	{ "vaciar" , OSVaciar , N5 } ,
-#ifdef UDB
-	{ "modos" , OSModos , N4 } ,
-	{ "snomask" , OSSnomask , N4 } ,
-	{ "optimiza" , OSOpt , N4 } ,
-	//{ "backup" , OSBck , ADMINS } ,
-#endif
-	{ "akill" , OSAkill , N3 } ,
-	{ 0x0 , 0x0 , 0x0 }
+	{ "help" , OSHelp , N3 , "Muestra esta ayuda." , NULL } ,
+	{ "raw" , OSRaw , N3 , "Manda un raw al servidor." , OSHRaw } ,
+	{ "restart" , OSRestart , N5 , "Reinicia los servicios." , OSHRestart } ,
+	{ "rehash" , OSRehash , N5 , "Refresca los servicios." , OSHRehash} ,
+	{ "close" , OSClose , N5 , "Cierra el programa." , OSHClose } ,
+	{ "gline" , OSGline , N3 , "Gestiona las glines de la red." , OSHGline } ,
+	{ "opers" , OSOpers , N4 , "Administra los operadores de la red." , OSHOpers } ,
+	{ "sajoin" , OSSajoin , N2 , "Ejecuta SAJOIN sobre un usuario." , OSHSajoin } ,
+	{ "sapart" , OSSapart , N2 , "Ejecuta SAPART sobre un usuario." , OSHSapart } ,
+	{ "rejoin" , OSRejoin , N2 , "Obliga a un usuario a reentrar a un canal." , OSHRejoin } ,
+	{ "kill" , OSKill , N2 , "Desconecta a un usuario." , OSHKill } ,
+	{ "global" , OSGlobal , N2 , "Manda un mensaje global." , OSHGlobal } ,
+	{ "noticias" , OSNoticias , N4 , "Administra las noticias de la red." , OSHNoticias } ,
+	{ "vaciar" , OSVaciar , N5 , "Elimina todos los registros de la base de datos." , OSHVaciar } ,
+	{ "akill" , OSAkill , N3 , "Prohibe la conexión de una ip/host o usuario permanentemente." , OSHAkill } ,
+	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
-#ifndef UDB
 int OSSigIdOk	(Cliente *);
-#endif
 int OSSigSQL	();
 int OSSigSynch	();
 void OSCargaNoticias();
@@ -130,9 +123,7 @@ int MOD_DESCARGA(OperServ)()
 {
 	BorraSenyal(SIGN_JOIN, OSCmdJoin);
 	BorraSenyal(SIGN_POST_NICK, OSCmdNick);
-#ifndef UDB
 	BorraSenyal(NS_SIGN_IDOK, OSSigIdOk);
-#endif
 	BorraSenyal(SIGN_SQL, OSSigSQL);
 	BorraSenyal(SIGN_SYNCH, OSSigSynch);
 	OSDescargaNoticias();
@@ -153,7 +144,9 @@ int OSTest(Conf *config, int *errores)
 void OSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	operserv.maxlist = 30;
+	if (!operserv)
+		BMalloc(operserv, OperServ);
+	operserv->maxlist = 30;
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -161,9 +154,9 @@ void OSSet(Conf *config, Modulo *mod)
 			if (!strcmp(config->seccion[i]->item, "funciones"))
 				ProcesaComsMod(config->seccion[i], mod, operserv_coms);
 			else if (!strcmp(config->seccion[i]->item, "autoop"))
-				operserv.opts |= OS_OPTS_AOP;
+				operserv->opts |= OS_OPTS_AOP;
 			else if (!strcmp(config->seccion[i]->item, "maxlist"))
-				operserv.maxlist = atoi(config->seccion[i]->data);
+				operserv->maxlist = atoi(config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "funcion"))
 				SetComMod(config->seccion[i], mod, operserv_coms);
 			else if (!strcmp(config->seccion[i]->item, "alias"))
@@ -180,9 +173,7 @@ void OSSet(Conf *config, Modulo *mod)
 		ProcesaComsMod(NULL, mod, operserv_coms);
 	InsertaSenyal(SIGN_JOIN, OSCmdJoin);
 	InsertaSenyal(SIGN_POST_NICK, OSCmdNick);
-#ifndef UDB
 	InsertaSenyal(NS_SIGN_IDOK, OSSigIdOk);
-#endif
 	InsertaSenyal(SIGN_SQL, OSSigSQL);
 	InsertaSenyal(SIGN_SYNCH, OSSigSynch);
 	BotSet(operserv);
@@ -226,7 +217,7 @@ void OSCargaNoticia(int id)
 	if (!refrescando)
 	{
 		if (!(gn = OSEsBotNoticia(not->botname)))
-			not->cl = CreaBot(not->botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
+			not->cl = CreaBot(not->botname, operserv->hmod->ident, operserv->hmod->host, "kdBq", operserv->hmod->realname);
 		else
 			not->cl = gn->cl;
 	}
@@ -277,7 +268,7 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 	if (gnoticias == MAXNOT)
 		return 0;
 	if (!id && !(gn = OSEsBotNoticia(botname)))
-		cl = CreaBot(botname, operserv.hmod->ident, operserv.hmod->host, "kdBq", operserv.hmod->realname);
+		cl = CreaBot(botname, operserv->hmod->ident, operserv->hmod->host, "kdBq", operserv->hmod->realname);
 	if (gn)
 		cl = gn->cl;
 	not = (Noticia *)Malloc(sizeof(Noticia));
@@ -322,244 +313,171 @@ int OSReinicia()
 	Reinicia();
 	return 0;
 }
+BOTFUNCHELP(OSHRaw)
+{
+	Responde(cl, CLI(operserv), "Manda un raw al servidor.");
+	Responde(cl, CLI(operserv), "Este comando actúa directamente al servidor.");
+	Responde(cl, CLI(operserv), "No es procesado por los servicios, con lo que no tiene un registro sobre él.");
+	Responde(cl, CLI(operserv), "Sólo debe usarse para fines administrativos cuya justificación sea de peso.");
+	Responde(cl, CLI(operserv), "No usárase si no se tuviera conocimiento explícito de los raw's del servidor.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312RAW linea");
+	Responde(cl, CLI(operserv), "Ejemplo: \00312RAW %s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
+	Responde(cl, CLI(operserv), "Ejecutaría el comando \00312:%s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
+	return 0;
+}
+BOTFUNCHELP(OSHGline)
+{
+	Responde(cl, CLI(operserv), "Administra los bloqueos de la red.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|user@host} [tiempo motivo]");
+	Responde(cl, CLI(operserv), "Para añadir una gline se antepone '+' antes de la gline. Para quitarla, '-'.");
+	Responde(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
+	return 0;
+}
+BOTFUNCHELP(OSHSajoin)
+{
+	Responde(cl, CLI(operserv), "Fuerza a un usuario a entrar en un canal.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SAJOIN usuario #canal");
+	return 0;
+}
+BOTFUNCHELP(OSHSapart)
+{
+	Responde(cl, CLI(operserv), "Fuerza a un usuario a salir de un canal.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SAPART usuario #canal");
+	return 0;
+}
+BOTFUNCHELP(OSHRejoin)
+{
+	Responde(cl, CLI(operserv), "Fuerza a un usuario a reentrar en un canal.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312REJOIN usuario #canal");
+	return 0;
+}
+BOTFUNCHELP(OSHKill)
+{
+	Responde(cl, CLI(operserv), "Desconecta a un usuario de la red.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312KILL usuario [motivo]");
+	return 0;
+}
+BOTFUNCHELP(OSHGlobal)
+{
+	Responde(cl, CLI(operserv), "Envía un mensaje global.");
+	Responde(cl, CLI(operserv), "Dispone de varios parámetros para especificar sus destinatarios y el modo de envío.");
+	Responde(cl, CLI(operserv), "Estos son:");
+	Responde(cl, CLI(operserv), "\00312o\003 Exclusivo a operadores.");
+	Responde(cl, CLI(operserv), "\00312p\003 Para preopers.");
+	Responde(cl, CLI(operserv), "\00312b\003 Utiliza un bot para mandar el mensaje.");
+	Responde(cl, CLI(operserv), "\00312m\003 Vía memo.");
+	Responde(cl, CLI(operserv), "\00312n\003 Vía notice.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312GLOBAL [-parámetros [[bot]] mensaje");
+	Responde(cl, CLI(operserv), "Si no se especifican modos, se envía a todos los usuarios vía privmsg.");
+	return 0;
+}
+BOTFUNCHELP(OSHNoticias)
+{
+	Responde(cl, CLI(operserv), "Gestiona las noticias de la red.");
+	Responde(cl, CLI(operserv), "Estas noticias son mostradas cuando se conecta un usuario en forma de privado.");
+	Responde(cl, CLI(operserv), "Se muestra la fecha y el cuerpo de la noticia y son mandadas por el bot especificado.");
+	Responde(cl, CLI(operserv), "Las noticias son acumulativas si no se borran.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Comandos disponibles:");
+	Responde(cl, CLI(operserv), "\00312ADD\003 Añade una noticia.");
+	Responde(cl, CLI(operserv), "\00312DEL\003 Bora una noticia.");
+	Responde(cl, CLI(operserv), "\00312LIST\003 Lista las noticias actuales.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis:");
+	Responde(cl, CLI(operserv), "\00312ADD bot noticia");
+	Responde(cl, CLI(operserv), "\00312DEL nº");
+	Responde(cl, CLI(operserv), "\00312LIST");
+	return 0;
+}
+BOTFUNCHELP(OSHAkill)
+{
+	Responde(cl, CLI(operserv), "La principal ventaja es que estas prohibiciones nunca se pierden, aunque se reinicie el servidor.");
+	Responde(cl, CLI(operserv), "Su entrada siempre será prohibida, aunque los servicios no estén conectados.");
+	Responde(cl, CLI(operserv), "Si no se especifica ninguna acción (+ o -) se listarán los host que coincidan con el patrón.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis:");
+	Responde(cl, CLI(operserv), "AKILL [[user@]{host|ip} [motivo]]");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Ejemplos:");
+	Responde(cl, CLI(operserv), "Añadir akills.");
+	Responde(cl, CLI(operserv), "AKILL +pepito@palotes.com largo");
+	Responde(cl, CLI(operserv), "AKILL +127.0.0.1 largo");
+	Responde(cl, CLI(operserv), "Eliminar akills");
+	Responde(cl, CLI(operserv), "AKILL -google.com");
+	Responde(cl, CLI(operserv), "AKILL -*@*.aol.com");
+	Responde(cl, CLI(operserv), "Listar akills");
+	Responde(cl, CLI(operserv), "AKILL *@.com");
+	return 0;
+}
+BOTFUNCHELP(OSHOpers)
+{
+	Responde(cl, CLI(operserv), "Administra los operadores de la red.");
+	Responde(cl, CLI(operserv), "Cuando un usuario es identificador como propietario de su nick, y figura como operador, se le da el modo +h.");
+	Responde(cl, CLI(operserv), "Así queda reconocido como operador de red.");
+	Responde(cl, CLI(operserv), "Rangos:");
+	Responde(cl, CLI(operserv), "\00312PREO");
+	Responde(cl, CLI(operserv), "\00312OPER (+h)");
+	Responde(cl, CLI(operserv), "\00312DEVEL");
+	Responde(cl, CLI(operserv), "\00312ADMIN (+N)");
+	Responde(cl, CLI(operserv), "\00312ROOT");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312OPERS usuario [rango]");
+	return 0;
+}
+BOTFUNCHELP(OSHRestart)
+{
+	Responde(cl, CLI(operserv), "Reinicia los servicios.");
+	Responde(cl, CLI(operserv), "Cierra y vuelve a abrir el programa.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312RESTART");
+	return 0;
+}
+BOTFUNCHELP(OSHRehash)
+{
+	Responde(cl, CLI(operserv), "Refresca los servicios.");
+	Responde(cl, CLI(operserv), "Este comando resulta útil cuando se han modificado los archivos de configuración o hay alguna desincronización.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312REHASH");
+	return 0;
+}
+BOTFUNCHELP(OSHClose)
+{
+	Responde(cl, CLI(operserv), "Cierra el programa.");
+	Responde(cl, CLI(operserv), "Una vez cerrado no se podrá volver ejecutar si no es manualmente.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312CLOSE");
+	return 0;
+}
+BOTFUNCHELP(OSHVaciar)
+{
+	Responde(cl, CLI(operserv), "Elimina todos los registros de la base de datos.");
+	Responde(cl, CLI(operserv), "Requiere confirmación.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312VACIAR");
+	return 0;
+}
 BOTFUNC(OSHelp)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), "\00312%s\003 se encarga de gestionar la red de forma global y reservada al personal cualificado para realizar esta tarea.", operserv.hmod->nick);
+		Responde(cl, CLI(operserv), "\00312%s\003 se encarga de gestionar la red de forma global y reservada al personal cualificado para realizar esta tarea.", operserv->hmod->nick);
 		Responde(cl, CLI(operserv), "Esta gestión permite tener un control exhaustivo sobre las actividades de la red para su buen funcionamiento.");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Comandos disponibles:");
-		FuncResp(operserv, "RAW", "Manda un raw al servidor.");
-		FuncResp(operserv, "GLINE", "Gestiona las glines de la red.");
-		FuncResp(operserv, "SAJOIN", "Ejecuta SAJOIN sobre un usuario.");
-		FuncResp(operserv, "SAPART", "Ejecuta SAPART sobre un usuario.");
-		FuncResp(operserv, "REJOIN", "Obliga a un usuario a reentrar a un canal.");
-		FuncResp(operserv, "KILL", "Desconecta a un usuario.");
-		FuncResp(operserv, "GLOBAL", "Manda un mensaje global.");
-		FuncResp(operserv, "NOTICIAS", "Administra las noticias de la red.");
-		FuncResp(operserv, "AKILL", "Prohibe la conexión de una ip/host o usuario permanentemente.");
-		FuncResp(operserv, "OPERS", "Administra los operadores de la red.");
-#ifdef UDB
-		FuncResp(operserv, "MODOS", "Fija los modos de operador que se obtiene automáticamente (BDD).");
-		FuncResp(operserv, "SNOMASK", "Fija las máscaras de operador que se obtiene automáticamente (BDD).");
-#endif
-		FuncResp(operserv, "RESTART", "Reinicia los servicios.");
-		FuncResp(operserv, "REHASH", "Refresca los servicios.");
-		//FuncResp(operserv, "BACKUP", "Crea una copia de seguridad de la base de datos.");
-		//FuncResp(operserv, "RESTAURA", "Restaura la base de datos.");
-		FuncResp(operserv, "CLOSE", "Cierra el programa.");
-		FuncResp(operserv, "VACIAR", "Elimina todos los registros de la base de datos.");
+		ListaDescrips(operserv->hmod, cl);
 		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Para más información, \00312/msg %s %s comando", operserv.hmod->nick, strtoupper(param[0]));
+		Responde(cl, CLI(operserv), "Para más información, \00312/msg %s %s comando", operserv->hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "RAW") && ExFunc("RAW"))
-	{
-		Responde(cl, CLI(operserv), "\00312RAW");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Manda un raw al servidor.");
-		Responde(cl, CLI(operserv), "Este comando actúa directamente al servidor.");
-		Responde(cl, CLI(operserv), "No es procesado por los servicios, con lo que no tiene un registro sobre él.");
-		Responde(cl, CLI(operserv), "Sólo debe usarse para fines administrativos cuya justificación sea de peso.");
-		Responde(cl, CLI(operserv), "No usárase si no se tuviera conocimiento explícito de los raw's del servidor.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312RAW linea");
-		Responde(cl, CLI(operserv), "Ejemplo: \00312RAW %s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
-		Responde(cl, CLI(operserv), "Ejecutaría el comando \00312:%s SWHOIS %s :Esto es un swhois", me.nombre, cl->nombre);
-	}
-	else if (!strcasecmp(param[1], "GLINE") && ExFunc("GLINE"))
-	{
-		Responde(cl, CLI(operserv), "\00312GLINES");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Administra los bloqueos de la red.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|user@host} [tiempo motivo]");
-		Responde(cl, CLI(operserv), "Para añadir una gline se antepone '+' antes de la gline. Para quitarla, '-'.");
-		Responde(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
-	}
-	else if (!strcasecmp(param[1], "SAJOIN") && ExFunc("SAJOIN"))
-	{
-		Responde(cl, CLI(operserv), "\00312SAJOIN");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Fuerza a un usuario a entrar en un canal.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312SAJOIN usuario #canal");
-	}
-	else if (!strcasecmp(param[1], "SAPART") && ExFunc("SAPART"))
-	{
-		Responde(cl, CLI(operserv), "\00312SAPART");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Fuerza a un usuario a salir de un canal.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312SAPART usuario #canal");
-	}
-	else if (!strcasecmp(param[1], "REJOIN") && ExFunc("REJOIN"))
-	{
-		Responde(cl, CLI(operserv), "\00312REJOIN");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Fuerza a un usuario a reentrar en un canal.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312REJOIN usuario #canal");
-	}
-	else if (!strcasecmp(param[1], "KILL") && ExFunc("KILL"))
-	{
-		Responde(cl, CLI(operserv), "\00312KILL");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Desconecta a un usuario de la red.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312KILL usuario [motivo]");
-	}
-	else if (!strcasecmp(param[1], "GLOBAL") && ExFunc("GLOBAL"))
-	{
-		Responde(cl, CLI(operserv), "\00312GLOBAL");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Envía un mensaje global.");
-		Responde(cl, CLI(operserv), "Dispone de varios parámetros para especificar sus destinatarios y el modo de envío.");
-		Responde(cl, CLI(operserv), "Estos son:");
-		Responde(cl, CLI(operserv), "\00312o\003 Exclusivo a operadores.");
-		Responde(cl, CLI(operserv), "\00312p\003 Para preopers.");
-		Responde(cl, CLI(operserv), "\00312b\003 Utiliza un bot para mandar el mensaje.");
-		Responde(cl, CLI(operserv), "\00312m\003 Vía memo.");
-		Responde(cl, CLI(operserv), "\00312n\003 Vía notice.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312GLOBAL [-parámetros [[bot]] mensaje");
-		Responde(cl, CLI(operserv), "Si no se especifican modos, se envía a todos los usuarios vía privmsg.");
-	}
-	else if (!strcasecmp(param[1], "NOTICIAS") && ExFunc("NOTICIAS"))
-	{
-		Responde(cl, CLI(operserv), "\00312NOTICIAS");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Gestiona las noticias de la red.");
-		Responde(cl, CLI(operserv), "Estas noticias son mostradas cuando se conecta un usuario en forma de privado.");
-		Responde(cl, CLI(operserv), "Se muestra la fecha y el cuerpo de la noticia y son mandadas por el bot especificado.");
-		Responde(cl, CLI(operserv), "Las noticias son acumulativas si no se borran.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Comandos disponibles:");
-		Responde(cl, CLI(operserv), "\00312ADD\003 Añade una noticia.");
-		Responde(cl, CLI(operserv), "\00312DEL\003 Bora una noticia.");
-		Responde(cl, CLI(operserv), "\00312LIST\003 Lista las noticias actuales.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis:");
-		Responde(cl, CLI(operserv), "\00312ADD bot noticia");
-		Responde(cl, CLI(operserv), "\00312DEL nº");
-		Responde(cl, CLI(operserv), "\00312LIST");
-	}
-	else if (!strcasecmp(param[1], "AKILL") && ExFunc("AKILL"))
-	{
-		Responde(cl, CLI(operserv), "\00312AKILL");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Prohibe la conexión de una ip/host o un usuario de forma permanente.");
-		Responde(cl, CLI(operserv), "La principal ventaja es que estas prohibiciones nunca se pierden, aunque se reinicie el servidor.");
-		Responde(cl, CLI(operserv), "Su entrada siempre será prohibida, aunque los servicios no estén conectados.");
-		Responde(cl, CLI(operserv), "Si no se especifica ninguna acción (+ o -) se listarán los host que coincidan con el patrón.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis:");
-		Responde(cl, CLI(operserv), "AKILL [[user@]{host|ip} [motivo]]");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Ejemplos:");
-		Responde(cl, CLI(operserv), "Añadir akills.");
-		Responde(cl, CLI(operserv), "AKILL +pepito@palotes.com largo");
-		Responde(cl, CLI(operserv), "AKILL +127.0.0.1 largo");
-		Responde(cl, CLI(operserv), "Eliminar akills");
-		Responde(cl, CLI(operserv), "AKILL -google.com");
-		Responde(cl, CLI(operserv), "AKILL -*@*.aol.com");
-		Responde(cl, CLI(operserv), "Listar akills");
-		Responde(cl, CLI(operserv), "AKILL *@.com");
-	}
-	else if (!strcasecmp(param[1], "OPERS") && ExFunc("OPERS"))
-	{
-		Responde(cl, CLI(operserv), "\00312OPERS");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Administra los operadores de la red.");
-		Responde(cl, CLI(operserv), "Cuando un usuario es identificador como propietario de su nick, y figura como operador, se le da el modo +h.");
-		Responde(cl, CLI(operserv), "Así queda reconocido como operador de red.");
-		Responde(cl, CLI(operserv), "Rangos:");
-		Responde(cl, CLI(operserv), "\00312PREO");
-		Responde(cl, CLI(operserv), "\00312OPER (+h)");
-		Responde(cl, CLI(operserv), "\00312DEVEL");
-		Responde(cl, CLI(operserv), "\00312ADMIN (+N)");
-		Responde(cl, CLI(operserv), "\00312ROOT");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312OPERS usuario [rango]");
-	}
-#ifdef UDB
-	else if (!strcasecmp(param[1], "MODOS") && ExFunc("MODOS"))
-	{
-		Responde(cl, CLI(operserv), "\00312MODOS");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Fija los modos de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
-		Responde(cl, CLI(operserv), "Estos modos son: \00312ohAOkNCWqHX");
-		Responde(cl, CLI(operserv), "Serán otorgados de forma automática cada vez que el operador use su nick vía /nick nick:pass");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312MODOS operador [modos]");
-		Responde(cl, CLI(operserv), "Si no se especifican modos, se borrarán los que pueda haber.");
-	}
-	else if (!strcasecmp(param[1], "SNOMASK") && ExFunc("SNOMASK"))
-	{
-		Responde(cl, CLI(operserv), "\00312SNOMASK");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Fija las máscaras de operador que recibirá un operador de red añadido vía BDD (no por .conf).");
-		Responde(cl, CLI(operserv), "Serán otorgadas de forma automática cada vez que el operador use su nick vía /nick nick:pass");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312SNOMASK operador [snomasks]");
-		Responde(cl, CLI(operserv), "Si no se especifican máscaras, se borrarán las que pueda haber.");
-	}
-#endif
-	else if (!strcasecmp(param[1], "RESTART") && ExFunc("RESTART"))
-	{
-		Responde(cl, CLI(operserv), "\00312RESTART");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Reinicia los servicios.");
-		Responde(cl, CLI(operserv), "Cierra y vuelve a abrir el programa.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312RESTART");
-	}
-	else if (!strcasecmp(param[1], "REHASH") && ExFunc("REHASH"))
-	{
-		Responde(cl, CLI(operserv), "\00312REHASH");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Refresca los servicios.");
-		Responde(cl, CLI(operserv), "Este comando resulta útil cuando se han modificado los archivos de configuración o hay alguna desincronización.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312REHASH");
-	}
-	/*else if (!strcasecmp(param[1], "BACKUP") && IsRoot(cl) && ExFunc("BACKUP"))
-	{
-		Responde(cl, CLI(operserv), "\00312BACKUP");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Crea una copia de seguridad de la base de datos y se guarda en el archivo backup.sql");
-		Responde(cl, CLI(operserv), "Cada vez que se inicie el programa y detecte este archivo pedirá su restauración.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312BACKUPP");
-	}
-	else if (!strcasecmp(param[1], "RESTAURAR") && IsRoot(cl) && ExFunc("RESTAURAR"))
-	{
-		Responde(cl, CLI(operserv), "\00312RESTAURAR");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Restaura una copia de base de datos realizada con el comando BACKUP");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR");
-	}*/
-	else if (!strcasecmp(param[1], "CLOSE") && ExFunc("CLOSE"))
-	{
-		Responde(cl, CLI(operserv), "\00312CLOSE");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Cierra el programa.");
-		Responde(cl, CLI(operserv), "Una vez cerrado no se podrá volver ejecutar si no es manualmente.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312CLOSE");
-	}
-	else if (!strcasecmp(param[1], "VACIAR") && ExFunc("VACIAR"))
-	{
-		Responde(cl, CLI(operserv), "\00312VACIAR");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Elimina todos los registros de la base de datos.");
-		Responde(cl, CLI(operserv), "Requiere confirmación.");
-		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Sintaxis: \00312VACIAR");
-	}
-	else
+	else if (!MuestraAyudaComando(cl, param[1], operserv->hmod, param, params))
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Opción desconocida.");
+	EOI(operserv, 0);
 	return 0;
 }
 BOTFUNC(OSRaw)
@@ -573,17 +491,20 @@ BOTFUNC(OSRaw)
 	raw = Unifica(param, params, 1, -1);
 	EnviaAServidor("%s", raw);
 	Responde(cl, CLI(operserv), "Comando ejecutado \00312%s\003.", raw);
+	EOI(operserv, 1);
 	return 0;
 }
 BOTFUNC(OSRestart)
 {
 	Responde(cl, CLI(operserv), "Los servicios van a reiniciarse.");
 	IniciaCrono("reinicia", NULL, 1, 1, OSReinicia, NULL, 0);
+	EOI(operserv, 2);
 	return 0;
 }
 BOTFUNC(OSRehash)
 {
 	Refresca();
+	EOI(operserv, 3);
 	return 0;
 }
 /*
@@ -648,13 +569,11 @@ BOTFUNC(OSGline)
 		ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
 		Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
 	}
+	EOI(operserv, 4);
 	return 0;
 }
 BOTFUNC(OSOpers)
 {
-#ifdef UDB
-	int nivel = 0;
-#endif
 	Nivel *niv = NULL;
 	if (params < 2)
 	{
@@ -668,44 +587,25 @@ BOTFUNC(OSOpers)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
-#ifdef UDB
-		if (!(nivel = BuscaOpt(param[2], NivelesBDD)))
+		if (!(niv = BuscaNivel(param[2])))
 		{
-#endif
-			if (!(niv = BuscaNivel(param[2])))
-			{
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nivel no existe.");
-				return 1;
-			}
-#ifdef UDB
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nivel no existe.");
+			return 1;
 		}
-		if (nivel)
-			PropagaRegistro("N::%s::O %c%i", param[1], CHAR_NUM, nivel);
-		else
-#endif
-			SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);		
+		SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);		
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1], param[2]);
 	}
 	else
 	{
-#ifdef UDB
-		if (!(nivel = NivelOperBdd(param[1])))
+		if (!SQLCogeRegistro(OS_SQL, param[1], "nivel"))
 		{
-#endif
-			if (!SQLCogeRegistro(OS_SQL, param[1], "nivel"))
-			{
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
-				return 1;
-			}
-#ifdef UDB
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
+			return 1;
 		}
-		if (nivel)
-			PropagaRegistro("N::%s::O", param[1]);
-		else
-#endif
-			SQLBorra(OS_SQL, param[1]);
+		SQLBorra(OS_SQL, param[1]);
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1]);
 	}
+	EOI(operserv, 5);
 	return 0;
 }
 BOTFUNC(OSSajoin)
@@ -733,6 +633,7 @@ BOTFUNC(OSSajoin)
 	}
 	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a entrar en \00312%s\003.", param[1], param[2]);
+	EOI(operserv, 6);
 	return 0;
 }
 BOTFUNC(OSSapart)
@@ -760,6 +661,7 @@ BOTFUNC(OSSapart)
 	}
 	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir de \00312%s\003.", param[1], param[2]);
+	EOI(operserv, 7);
 	return 0;
 }
 BOTFUNC(OSRejoin)
@@ -788,6 +690,7 @@ BOTFUNC(OSRejoin)
 	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
 	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir y a entrar en \00312%s\003.", param[1], param[2]);
+	EOI(operserv, 8);
 	return 0;
 }
 BOTFUNC(OSKill)
@@ -810,6 +713,7 @@ BOTFUNC(OSKill)
 	}
 	ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(operserv), Unifica(param, params, 2, -1));
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido desconectado.", param[1]);
+	EOI(operserv, 9);
 	return 0;
 }
 BOTFUNC(OSGlobal)
@@ -849,7 +753,7 @@ BOTFUNC(OSGlobal)
 				if (opts & 0x4)
 					MSSend(row[0], param[2], Unifica(param, params, 3, -1));
 				else
-					MSSend(row[0], operserv.hmod->nick, Unifica(param, params, 2, -1));
+					MSSend(row[0], operserv->hmod->nick, Unifica(param, params, 2, -1));
 			}
 			SQLFreeRes(res);
 		}
@@ -860,7 +764,7 @@ BOTFUNC(OSGlobal)
 		Cliente *al, *bl = CLI(operserv);
 		if (opts & 0x4)
 		{
-			bl = CreaBot(param[2], operserv.hmod->ident, operserv.hmod->host, operserv.hmod->modos, operserv.hmod->realname);
+			bl = CreaBot(param[2], operserv->hmod->ident, operserv->hmod->host, operserv->hmod->modos, operserv->hmod->realname);
 			msg = Unifica(param, params, 3, -1);
 		}
 		else
@@ -885,6 +789,7 @@ BOTFUNC(OSGlobal)
 			ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, conf_set->red);
 		Responde(cl, CLI(operserv), "Mensaje global enviado.");
 	}
+	EOI(operserv, 10);
 	return 0;
 }
 BOTFUNC(OSNoticias)
@@ -954,6 +859,7 @@ BOTFUNC(OSNoticias)
 		Responde(cl, CLI(operserv), OS_ERR_SNTX, "NOTICIAS ADD|DEL|LIST parámetros");
 		return 1;
 	}
+	EOI(operserv, 11);
 	return 0;
 }
 BOTFUNC(OSAkill)
@@ -1020,119 +926,21 @@ BOTFUNC(OSAkill)
 			return 1;
 		}
 		Responde(cl, CLI(operserv), "*** AKILLS que coinciden con \00312%s\003 ***", param[1]);
-		for (i = 0; i < operserv.maxlist && (row = SQLFetchRow(res)); i++)
+		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res)); i++)
 			Responde(cl, CLI(operserv), "\00312%s\003: %s", row[0], row[1]);
 		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 		SQLFreeRes(res);
 	}
+	EOI(operserv, 12);
 	return 0;
 }
 BOTFUNC(OSClose)
 {
 	Responde(cl, CLI(operserv), "Los servicios van a cerrarse.");
 	CierraColossus(0);
+	EOI(operserv, 13);
 	return 0;
 }
-#ifdef UDB
-BOTFUNC(OSModos)
-{
-	if (params < 2)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "MODOS nick [modos]");
-		return 1;
-	}
-	if (!IsNickUDB(param[1]))
-	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está migrado.");
-		return 1;
-	}
-	if (params == 3)
-	{
-		char *modos;
-		for (modos = param[2]; !BadPtr(modos); modos++)
-		{
-			if (!strchr("+ohaAOkNCWqHX", *modos))
-			{
-				ircsprintf(buf, "El modo %c está prohibido. Sólo se permiten los modos ohaAOkNCWqHX.", *modos);
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, buf);
-				return 1;
-			}
-		}
-		PropagaRegistro("N::%s::M %s", param[1], param[2]);
-		Responde(cl, CLI(operserv), "Los modos de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
-	}
-	else
-	{
-		PropagaRegistro("N::%s::M", param[1]);
-		Responde(cl, CLI(operserv), "Se han eliminado los modos de operador para \00312%s", param[1]);
-	}
-	return 0;
-}
-BOTFUNC(OSSnomask)
-{
-	if (params < 2)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "SNOMASK nick [máscaras]");
-		return 1;
-	}
-	if (!IsNickUDB(param[1]))
-	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está migrado.");
-		return 1;
-	}
-	if (params == 3)
-	{
-		char *modos;
-		for (modos = param[2]; !BadPtr(modos); modos++)
-		{
-			if (!strchr("cefFGjknNoqsSv", *modos))
-			{
-				ircsprintf(buf, "La máscara %c está prohibido. Sólo se permiten las máscaras cefFGjknNoqsSv.", *modos);
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, buf);
-				return 1;
-			}
-		}
-		PropagaRegistro("N::%s::K %s", param[1], param[2]);
-		Responde(cl, CLI(operserv), "Las máscaras de operador para \00312%s\003 se han puesto a \00312%s", param[1], param[2]);
-	}
-	else
-	{
-		PropagaRegistro("N::%s::K", param[1]);
-		Responde(cl, CLI(operserv), "Se han eliminado las máscaras de operador para \00312%s", param[1]);
-	}
-	return 0;
-}
-BOTFUNC(OSOpt)
-{
-	u_int i;
-	time_t hora = time(0);
-	Udb *aux;
-	for (i = 0; i < BDD_TOTAL; i++)
-	{
-		aux = IdAUdb(i);
-		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, bloques[i], hora);
-		Optimiza(aux);
-		ActualizaGMT(aux, hora);
-	}
-	Responde(cl, CLI(operserv), "Se han optimizado todos los bloques");
-	return 0;
-}		
-BOTFUNC(OSBck)
-{
-	u_int i;
-	time_t hora = time(0);
-	Udb *aux;
-	for (i = 0; i < BDD_TOTAL; i++)
-	{
-		aux = IdAUdb(i);
-		EnviaAServidor(":%s DB * BCK %c %lu", me.nombre, bloques[i], hora);
-		//Optimiza(aux);
-		//ActualizaGMT(aux, hora);
-	}
-	Responde(cl, CLI(operserv), "Todos los servidores han hecho una copia de sus bloques");
-	return 0;
-}
-#endif
 BOTFUNC(OSVaciar)
 {
 	if (params < 2)
@@ -1159,6 +967,7 @@ BOTFUNC(OSVaciar)
 		Responde(cl, CLI(operserv), "Se ha vaciado toda la base de datos. Se procederá a reiniciar el programa en 5 segundos...");
 		IniciaCrono("reinicia", NULL, 1, 5, OSReinicia, NULL, 0);
 	}
+	EOI(operserv, 14);
 	return 0;
 }
 int OSCmdNick(Cliente *cl, int nuevo)
@@ -1177,7 +986,7 @@ int OSCmdNick(Cliente *cl, int nuevo)
 }
 int OSCmdJoin(Cliente *cl, Canal *cn)
 {
-	if (!IsOper(cl) || !(operserv.opts & OS_OPTS_AOP))
+	if (!IsOper(cl) || !(operserv->opts & OS_OPTS_AOP))
 		return 0;
 	if (!IsChanReg(cn->nombre))
 		ProtFunc(P_MODO_CANAL)(RedOverride ? &me : CLI(operserv), cn, "+o %s", TRIO(cl));
@@ -1195,7 +1004,7 @@ int OSSigIdOk(Cliente *cl)
 			for (i = 0; i < nivs; i++)
 			{
 				if (nivel & niveles[i]->nivel)
-					ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv.hmod->nick, niveles[i]->flags, 1);
+					ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv->hmod->nick, niveles[i]->flags, 1);
 			}
 		}
 		cl->nivel |= nivel;
@@ -1245,7 +1054,7 @@ int OSSigSynch()
 	{
 		while ((row = SQLFetchRow(res)))
 		{
-			bl = CreaBot(row[0], operserv.hmod->ident, operserv.hmod->host, "+oqkBd", "Servicio de noticias");
+			bl = CreaBot(row[0], operserv->hmod->ident, operserv->hmod->host, "+oqkBd", "Servicio de noticias");
 			for (i = 0; i < gnoticias; i++)
 			{
 				if (!strcmp(row[0], gnoticia[i]->botname))

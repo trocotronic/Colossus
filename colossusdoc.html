@@ -5,14 +5,14 @@
 <title>Colossus</title>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.20 2005-12-25 21:12:25 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.21 2006-02-17 19:19:01 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.rallados.net" target="_blank"><font size="3">http://www.rallados.net</font></a><font size="3"><br>
     <b>Versi&oacute;n actual:</b> 1.3<br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 10/12/2005</font><br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 24/01/2006</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
    &nbsp;<br>
@@ -20,7 +20,7 @@
   <font size="+1">1.- <a href="#intro">Introducci&oacute;n</a></font><br>
   <font size="+1">2.- <a href="#instalacion">Instalaci&oacute;n</a></font><br>
   <font size="+1">3.- <a href="#caracteristicas">Caracter&iacute;sticas</a></font><br>
-  <font size="+1">4.- <a href="#udb">UDB</a></font><br>
+  <font size="+1">4.- <a href="#ext">Extensiones</a></font><br>
   <font size="+1">5.- <a href="#mysql">SQL y bases de datos</a></font><br>
   <font size="+1">6.- <a href="#remoto">Conexi&oacute;n remota</a> </font><br>
   <font size="+1">7.- <a href="#zlib">SSL y ZLib</a></font><br>
@@ -43,9 +43,11 @@
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.4 <a href="#memoserv">MemoServ</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  9.5 <a href="#ipserv">IpServ</a></font><br> 
   <font size="+1">10.- <a href="#protos">Configuraci&oacute;n de protocolos</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.1 <a href="#unreal">UnrealIRCD [UDB]</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.1 <a href="#unreal">UnrealIRCD</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.2 <a href="#p10">P10</a></font><br>
-  <font size="+1">11.- <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
+  <font size="+1">11.- <a href="#exts">Configuraci&oacute;n de extensiones</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.1 <a href="#udb">UDB</a></font><br>
+  <font size="+1">12.- <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
   <p><br>
     <b><font size="6"><a name="intro"></a>1.0 Introducci&oacute;n </font></b><br>
     Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
@@ -93,20 +95,16 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <li><b>IpServ: </b>servicio de ips virtuales.  
 </ul>
   <p>&nbsp;</p>
-  <p><b><font size="6"><a name="udb"></a>4.0 UDB (Unreal Data Base)</font></b></p>
-  <p>El sistema UDB es exclusivo de <a href="http://www.rallados.net" target="_blank">Rallados</a>. Su uso principal es la de poder distribuir bases de datos por toda la red de forma s&iacute;ncrona. 
-  As&iacute; se consigue que todos los nodos tengan unos registros globales que no dependan del mismo. Con s&oacute;lo introducir un registro en un nodo, 
-  inmediatamente se propaga por toda la red de forma instant&aacute;nea y sincronizada. </p>
-  <p>Para ello se usa el protocolo UDB propuesto &uacute;nicamente para este fin. Actualmente el protocolo en desarrollo es el UDB3.2, dejando obsoletas e incompatibles la primera y segunda versi&oacute;n. 
-  Esta nueva versi&oacute;n incorpora cuantiosos cambios que dan lugar a un nuevo sistema de bases de datos. Es un protocolo abierto y libre, 
-  con lo cual se consigue que puedan usarse distintos servicios que potenc&iacute;en las caracter&iacute;sticas de la red al un&iacute;sono. 
-  Es tarea del desarrollador aprovechar estas caracter&iacute;sticas.</p>
-  <p>El sistema se compone de varios bloques (nicks, canales, ips y set) que contienen varias directrices que conforman el ircd. 
-  Es parecido a la configuraci&oacute;n de UnrealIRCd, puesto que usa el formato bloque::seccion::subseccion valor. La propagaci&oacute;n de la red se hace mediante el comando DB. 
-  En este, se proporciona la informaci&oacute;n necesaria para a&ntilde;adir el registro en el nodo local y propagarlo al siguiente. As&iacute;, en pocos segundos toda la red queda actualizada con la informaci&oacute;n. 
-  Tan s&oacute;lo es necesario introducirla por un servidor HUB. Generalmente, y por norma, se hace a trav&eacute;s del nodo de servicio.</p>
-  <p>Colossus tiene integrado soporte UDB de forma opcional (definido a voluntad del compilador). Est&aacute;n elaborados para explotar al m&aacute;ximo todas las opciones que ofrece UDB. 
-  Todas las tablas est&aacute;n preparadas para ser usadas con Colossus.</p>
+  <p><b><font size="6"><a name="ext"></a>4.0 Extensiones</font></b></p>
+  <p>A partir de la versión 1.3, se crea un sistema de extensiones para protocolos. Estas extensiones permiten modificar el protocolo actual. Por ejemplo, para añadir nuevos modos de canal o añadir algún comando adicional.</p>
+  <p>Así pues, hay protocolos estándar (UnrealIRCd o P10) y otras variantes (como UDB o Irc-Hispano), que se basan en protocolos más robustos.</p>
+  <p>Además, no sólo modifican el protocolo sino que complementan las funciones de los servicios cargados.<br />
+  Por ejemplo, es posible añadir comandos para gestionar tablas a través de algún servicio.</p>
+  <p>Estas extensiones se cargan a través del bloque <i>extension{ }</i> dentro del bloque <i>protocolo { }</i>. <br />
+  Actualmente se soportan las siguientes extensiones:<br />
+  <ul><li><b>udb.dll</b>: extensión que contiene todo lo necesario para usar el protocolo UDB con todas sus prestaciones.<br />
+  Añade varios comandos a ChanServ, OperServ, IpServ y NickServ. También modifica algunas funciones de estos servicios ya existentes.<br /></li>
+  </ul></p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="mysql"></a>5.0 SQL y bases de datos</font></b></p>
   <p>Colossus utiliza sistemas de bases de datos SQL para guardar informaci&oacute;n de forma permanente. Actualmente se soportan dos motores SQL que deber&aacute;n indicarse en el bloque db { }.<br />Estos bloques son:</p>
@@ -298,6 +296,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
   	modos modos;
   	residente "#canal1,...,#canalN";
   	config archivo.inc;
+  	serial "clave";
 };</pre>
   <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix. 
   As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. 
@@ -311,6 +310,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
   <p><b>residente</b><br>Es <i>opcional</i> y son los canales en los que permanece permanentemente. </p>
   <p><b>config</b><br>Nombre del archivo de configuraci&oacute;n del m&oacute;dulo. Debe estar en la misma carpeta que el m&oacute;dulo.<br>Es opcional, puesto que 
   no todos los m&oacute;dulos requerir&aacute;n una configuraci&oacute;n extendida. </p>
+  <p><b>serial</b><br>Clave de acceso al m&oacute;dulo. Los m&oacute;dulos de acceso privado requieren esta directriz para ser usados. Es <i>opcional</i>.</p>
   <p>Ejemplo:</p>
 <pre>modulo &quot;modulos/chanserv.[dll|so]&quot; {
 	nick ChanServ;
@@ -393,7 +393,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="bots"></a>9.0 Configuraci&oacute;n de m&oacute;dulos</font></b></p>
   <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.</p>
-  <p>Esta configuraci&ooacute; puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>. Si no se especifica ésta, se tomará la configuración por defecto.</p>
+  <p>Esta configuraci&oacute;n puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>. Si no se especifica &eacute;sta, se tomar&aacute; la configuraci&oacute;n por defecto.</p>
   <p>&nbsp;</p>
   <p>Adem&aacute;s, poseen dos bloques comunes en todos los m&oacute;dulos</p>
   <p><b><font size="4"><a name="funciones"></a>9.0.1 Bloque funciones { }</font></b></p>
@@ -433,7 +433,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
 };</pre>
   <p>Si el usuario ejecuta /msg ChanServ clear #canal ops, en realidad se ejecutar&aacute; /msg ChanServ clear #canal o</p>
   <p>Este bloque se utiliza b&aacute;sicamente para acortar comandos que requieran trabajar con modos de canal propios de protocolos.</p>
-  <p>Pueden usarse tantos alias como se quiera. Pero no lo sobrecargue puesto que los privados irán lentos.</p>
+  <p>Pueden usarse tantos alias como se quiera. Pero no lo sobrecargue puesto que los privados ir&aacute;n lentos.</p>
   <p>&nbsp;</p>
   <p><b>NOTA:</b> Algunos m&oacute;dulos requieren que antes est&eacute;n cargados otros m&oacute;dulos.</p>
   <p>&nbsp;</p>
@@ -443,7 +443,6 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
   <pre>NickServ {
   	sid;  //opcional
   	secure;  //opcional
-  	automigrar;  //opcional // S&oacute;lo en soporte UDB
   	prot KILL|NICK;
   	recovernick formato-%s;
   	securepass formato;
@@ -470,7 +469,6 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
 };</pre>
 <p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
 <p><b>secure</b><br>Se utiliza para que los usuarios no falseen sus cuentas de correo. Al registrar un nick, si est&aacute; especificado <b>secure</b>, se le enviar&aacute; una contrase&ntilde;a temporal al mail especificado. </p>
-<p><b>automigrar</b><br>Si est&aacute; en soporte UDB, realiza la migraci&oacute;n autom&aacute;tica del registro del nick a las tablas de toda la red. </p>
 <p><b>prot</b><br>Especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick. 
 S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>NICK</b> (se le cambia el nick al usuario). </p>
 <p><b>recovernick</b><br>Patr&oacute;n que se sigue al cambiar el nick a un usuario. El par&aacute;metro %s es sustitu&iacute;do por el nick anterior. Para m&aacute;s informaci&oacute;n lea la secci&oacute;n de <a href="#patrones">par&aacute;metros de patr&oacute;n</a>. </p>
@@ -497,14 +495,11 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <tr><td>liberar</td><td>3</td><td>LIBERAR</td></tr>
 <tr><td>swhois</td><td>2</td><td>SWHOIS</td></tr>
 <tr><td>rename</td><td>3</td><td>RENAME</td></tr>
-<tr><td>migrar (3)</td><td>1</td><td>MIGRAR</td></tr>
-<tr><td>demigrar (3)</td><td>1</td><td>DEMIGRAR</td></tr>
 <tr><td>forbid</td><td>4</td><td>FORBID</td></tr>
 <tr><td>marca</td><td>3</td><td>MARCA</td></tr>
 </table>
 (1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
 (2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
-(3): S&oacute;lo para UDB.<br />
 </p>
 <p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
@@ -607,15 +602,10 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <tr><td>unforbid</td><td>4</td><td>UNFORBID</td></tr>
 <tr><td>block</td><td>2</td><td>BLOCK</td></tr>
 <tr><td>token</td><td>1</td><td>TOKEN</td></tr>
-<tr><td>migrar (3)</td><td>1</td><td>MIGRAR</td></tr>
-<tr><td>demigrar (3)</td><td>1</td><td>DEMIGRAR</td></tr>
-<tr><td>proteger (3)</td><td>1</td><td>PROTEGER</td></tr>
 <tr><td>marca</td><td>3</td><td>MARCA</td></tr>
 </table>
 (1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
 (2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
-(3): S&oacute;lo para UDB.<br />
-(4): S&oacute;lo en protocolos que lo soporten.<br />
 </p>
 <p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
@@ -705,13 +695,9 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <tr><td>global</td><td>2</td><td>GLOBAL</td></tr>
 <tr><td>noticias</td><td>4</td><td>NOTICIAS</td></tr>
 <tr><td>vaciar</td><td>5</td><td>VACIAR</td></tr>
-<tr><td>modos (2)</td><td>4</td><td>MODOS</td></tr>
-<tr><td>snomask (2)</td><td>4</td><td>SNOMASK</td></tr>
-<tr><td>optimiza (2)</td><td>4</td><td>OPTIMIZA</td></tr>
 <tr><td>akill</td><td>3</td><td>AKILL</td></tr>
 </table>
 (1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
-(2): S&oacute;lo para UDB.<br />
 </p>
 <p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
@@ -824,12 +810,8 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <tr><td>setipv2</td><td>2</td><td>SETIPV2</td></tr>
 <tr><td>temphost</td><td>2</td><td>TEMPHOST</td></tr>
 <tr><td>clones</td><td>4</td><td>CLONES</td></tr>
-<tr><td>set (2)</td><td>4</td><td>SET</td></tr>
-<tr><td>dns (2)</td><td>4</td><td>DNS</td></tr>
-<tr><td>nolines (2)</td><td>3</td><td>NOLINES</td></tr>
 </table>
 (1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
-(2): S&oacute;lo para UDB.<br />
 </p>
 <p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
 <p>Ejemplo:</p>
@@ -852,9 +834,9 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p><b><font size="6"><a name="protos"></a>10.0 Configuraci&oacute;n de protocolos</font></b></p>
 <p>Colossus soporta la conexi&oacute;n a distintos ircds. Seg&uacute;n los que sean se requerir&aacute; un protocolo u otro con opciones que var&iacute;an entre s&iacute;.<br>
 A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opciones de configuraci&oacute;n.</p>
-<p><b><font size="5"><a name="unreal"></a>10.1 UnrealIRCd [UDB]</font></b></p>
-<p>Protocolo usado en redes UnrealIRCd[+UDB] 3.2 y superiores.</p>
-<pre>protocolo protocolos/unreal[_udb].[dll|so] {
+<p><b><font size="5"><a name="unreal"></a>10.1 UnrealIRCd</font></b></p>
+<p>Protocolo usado en redes UnrealIRCd 3.2 y superiores.</p>
+<pre>protocolo protocolos/unreal.[dll|so] {
 	no_server_deop; // opcional
 	autojoin {
 		usuarios "#canal1,...,#canalN"; // opcional
@@ -870,6 +852,10 @@ A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opcione
 		resto1 modos; // opcional
 		resto2 modos; // opcional
 	}; // opcional
+	extension protocolos/extension.[dll|so] {
+		...
+		opciones
+	}; // opcional
 };</pre>
 <p><b>no_server_deop</b><br>Se utiliza para evitar que al linkar dos nodos, uno quite todos los modos de .&amp;@%+ que pueda haber en un canal. </p>
 <p><b>autojoin { }</b><br>Autojoin de usuarios y operadores.</p>
@@ -880,8 +866,9 @@ A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opcione
 <li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "kfL".</li>
 <li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "lj".</li></ul>
 Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
+<p><b>extension</b>: bloque que añade una extensión al protocolo. 
 <p>Ejemplo:</p>
-<pre>protocolo protocolos/unreal_udb.dll {
+<pre>protocolo protocolos/unreal.dll {
 	no_server_deop;
 	autojoin {
 		usuarios "#rallados";
@@ -890,6 +877,9 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 	modos {
 		usuarios +i;
 		canales +S;
+	};
+	extension protocolos/udb.dll {
+		...
 	};
 };</pre>
 <p>&nbsp;</p>
@@ -907,6 +897,10 @@ Este protocolo corresponde al P10 nativo. IRCu de <a href="http://www.undernet.o
 		resto1 modos; // opcional
 		resto2 modos; // opcional
 	}; // opcional
+	extension protocolos/extension.[dll|so] {
+		...
+		opciones
+	}; // opcional
 };</pre>
 <p><b>red</b><br>Nombre de la red.</p>
 <p><b>nicklen</b><br>Longitud m&aacute;xima permitida en los nicks.</p>
@@ -917,6 +911,7 @@ Este protocolo corresponde al P10 nativo. IRCu de <a href="http://www.undernet.o
 <li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "k".</li>
 <li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "l".</li></ul>
 Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
+<p><b>extension</b>: bloque que añade una extensión al protocolo. 
 <p>Ejemplo:</p>
 <pre>protocolo protocolos/p10.dll {
 	red Rallados;
@@ -926,7 +921,52 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="6"><a name="patrones"></a>11.0 Par&aacute;metros de patr&oacute;n</font></b></p>
+<p><b><font size="6"><a name="exts"></a>11.0 Configuraci&oacute;n de extensiones</font></b></p>
+<p>Estas extensiones complementan los protocolos actuales.<br>
+A continuaci&oacute;n tiene una lista de las extensiones soportados y sus opciones de configuraci&oacute;n.</p>
+<p><b><font size="5"><a name="udb"></a>11.1 UDB</font></b></p>
+<p>Extensión usada en redes UnrealIRCd 3.2 y superiores.</p>
+<pre>extension protocolos/udb.[dll|so] {
+	autooptimizar; // opcional
+	ChanServ {
+		automigrar; // opcional
+		funciones {
+			migrar;
+			demigrar;
+			proteger;
+		};
+	}; // opcional
+	NickServ {
+		automigrar; // opcional
+		funciones {
+			migrar;
+			demigrar;
+		};
+	}; // opcional
+	IpServ {
+		funciones {
+			set;
+			dns;
+			nolines;
+		};
+	}; // opcional
+	OperServ {
+		funciones {
+			modos;
+			snomask;
+			optimiza;
+		};
+	}; // opcional
+};</pre>
+<p><b>autooptimizar</b><br>Ejecuta una optimización periódicamente de las tablas para ahorrar información.</p>
+<p><b>NickServ, IpServ, ChanServ, OperServ</b><br>Complementan distintamente a estos módulos. Estas configuraciones son las mismas que existen para las configuraciones particulares, 
+como los bloques <i>funciones</i>, <i>funcion</i> y algún otro parámetro.</p>
+<p><b>automigrar</b><br>Los módulos <i>NickServ</i> y <i>ChanServ</i> permiten automigrar el registro de nicks y canales a los bloques de la red, respectivamente.</p>
+<br>
+<p><b>NOTA:</b> Si no se especifica un bloque para módulos, se cargan por defecto todas sus funciones complementarias. <br>
+Si se especifica un bloque para algún módulo, deben especificarse también las funciones que van a cargarse.</p>
+<p>&nbsp;</p>
+<p><b><font size="6"><a name="patrones"></a>12.0 Par&aacute;metros de patr&oacute;n</font></b></p>
 <p>Algunos campos requieren un patr&oacute;n a seguir que contenga comodines que sean intercambiados por valores aleatorios. Estos son:</p>
 <ul>
   <li>? una cifra</li>

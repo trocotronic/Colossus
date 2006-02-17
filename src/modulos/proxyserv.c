@@ -1,21 +1,19 @@
 /*
- * $Id: proxyserv.c,v 1.19 2005-12-25 21:15:06 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.20 2006-02-17 19:19:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
-#ifdef UDB
-#include "bdd.h"
-#endif
 #include "modulos/proxyserv.h"
 
-ProxyServ proxyserv;
-#define ExFunc(x) TieneNivel(cl, x, proxyserv.hmod, NULL)
+ProxyServ *proxyserv = NULL;
+#define ExFunc(x) TieneNivel(cl, x, proxyserv->hmod, NULL)
 
 BOTFUNC(PSHelp);
 BOTFUNC(PSHost);
+BOTFUNCHELP(PSHHost);
 
 int PSSigSQL();
 #ifdef USA_THREADS
@@ -30,9 +28,9 @@ char *lista = NULL;
 int PSCmdNick(Cliente *, int);
 
 static bCom proxyserv_coms[] = {
-	{ "help" , PSHelp , N4 } ,
-	{ "host" , PSHost , N4 } ,
-	{ 0x0 , 0x0 , 0x0 }
+	{ "help" , PSHelp , N4 , "Muestra esta ayuda." , NULL } ,
+	{ "host" , PSHost , N4 , "Host que omiten el escáner." , PSHHost } ,
+	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
 void PSSet(Conf *, Modulo *);
@@ -49,6 +47,7 @@ int MOD_CARGA(ProxyServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	mod->activo = 1;
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -82,6 +81,13 @@ int MOD_CARGA(ProxyServ)(Modulo *mod)
 }
 int MOD_DESCARGA(ProxyServ)()
 {
+	Proxys *px;
+	int i;
+	for (px = proxys; px; px = px->sig)
+	{
+		for (i = 0; i < proxyserv->puertos; i++)
+			SockClose(px->puerto[i]->sck, LOCAL);
+	}
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
 	BorraSenyal(SIGN_SQL, PSSigSQL);
 	BotUnset(proxyserv);
@@ -130,16 +136,18 @@ int PSTest(Conf *config, int *errores)
 void PSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	proxyserv.puertos = 0;
-	proxyserv.maxlist = 30;
-	proxyserv.tiempo = 3600;
+	if (!proxyserv)
+		BMalloc(proxyserv, ProxyServ);
+	proxyserv->puertos = 0;
+	proxyserv->maxlist = 30;
+	proxyserv->tiempo = 3600;
 	ircfree(lista);
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
 		{
 			if (!strcmp(config->seccion[i]->item, "tiempo"))
-				proxyserv.tiempo = atoi(config->seccion[i]->data) * 60;
+				proxyserv->tiempo = atoi(config->seccion[i]->data) * 60;
 			else if (!strcmp(config->seccion[i]->item, "funciones"))
 				ProcesaComsMod(config->seccion[i], mod, proxyserv_coms);
 			else if (!strcmp(config->seccion[i]->item, "funcion"))
@@ -147,10 +155,10 @@ void PSSet(Conf *config, Modulo *mod)
 			else if (!strcmp(config->seccion[i]->item, "puertos"))
 			{
 				for (p = 0; p < config->seccion[i]->secciones; p++)
-					proxyserv.puerto[proxyserv.puertos++] = atoi(config->seccion[i]->seccion[p]->item);
+					proxyserv->puerto[proxyserv->puertos++] = atoi(config->seccion[i]->seccion[p]->item);
 			}
 			else if (!strcmp(config->seccion[i]->item, "maxlist"))
-				proxyserv.maxlist = atoi(config->seccion[i]->data);
+				proxyserv->maxlist = atoi(config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "alias"))
 			{
 				for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -179,50 +187,49 @@ void PSEscanea(char *host)
 		return;
 	}
 	BMalloc(px, Proxys);
-	for (i = 0; i < proxyserv.puertos; i++)
+	for (i = 0; i < proxyserv->puertos; i++)
 	{
 		BMalloc(px->puerto[i], struct subp);
 #ifdef USA_THREADS
-		if ((px->puerto[i]->sck = SockOpen(host, proxyserv.puerto[i], NULL, NULL, NULL, NULL, !ADD)))
+		if ((px->puerto[i]->sck = SockOpen(host, proxyserv->puerto[i], NULL, NULL, NULL, NULL, !ADD)))
 #else
-		if ((px->puerto[i]->sck = SockOpen(host, proxyserv.puerto[i], PSFin, NULL, NULL, PSFin, ADD)))
+		if ((px->puerto[i]->sck = SockOpen(host, proxyserv->puerto[i], PSFin, NULL, NULL, PSFin, ADD)))
 #endif
 		{
-			px->puerto[i]->puerto = proxyserv.puerto[i];
+			px->puerto[i]->puerto = proxyserv->puerto[i];
 			px->puertos++;
 		}
 	}
 	px->host = host; /* ya es un strdup */
 	AddItem(px, proxys);
 }
+BOTFUNCHELP(PSHHost)
+{
+	Responde(cl, CLI(proxyserv), "Gestiona los hosts que omiten el escán.");
+	Responde(cl, CLI(proxyserv), "Estos hosts no se someterán al escán de puertos y podrán entrar libremente.");
+	Responde(cl, CLI(proxyserv), "Cabe mencionar que si el usuario conecta sin su DNS resuelto, figurará su ip en vez de su host.");
+	Responde(cl, CLI(proxyserv), "Por este motivo, es importante añadir el host o la ip, según conecte el usuario.");
+	Responde(cl, CLI(proxyserv), "Si no se especifica ni + ni -, se usará el patrón como búsqueda.");
+	Responde(cl, CLI(proxyserv), " ");
+	Responde(cl, CLI(proxyserv), "Sintaxis: \00312HOST {+|-|patrón}[{host|ip}]");
+	return 0;
+}
 BOTFUNC(PSHelp)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(proxyserv), "\00312%s\003 controla las conexiones entrantes para detectar si se tratan de proxies.", proxyserv.hmod->nick);
+		Responde(cl, CLI(proxyserv), "\00312%s\003 controla las conexiones entrantes para detectar si se tratan de proxies.", proxyserv->hmod->nick);
 		Responde(cl, CLI(proxyserv), "Para ello efectua un escán de puertos en la máquina. Si detecta alguno que está abierto desconecta al usuario.");
 		Responde(cl, CLI(proxyserv), "En dicha desconexión figuran los puertos abiertos.");
 		Responde(cl, CLI(proxyserv), "El usuario podrá conectar de nuevo si cierra estos puertos.");
-		Responde(cl, CLI(proxyserv), "El tiempo de desconexión es de \00312%i\003 minutos.", proxyserv.tiempo / 60);
+		Responde(cl, CLI(proxyserv), "El tiempo de desconexión es de \00312%i\003 minutos.", proxyserv->tiempo / 60);
 		Responde(cl, CLI(proxyserv), " ");
 		Responde(cl, CLI(proxyserv), "Comandos disponibles:");
-		FuncResp(proxyserv, "HOST", "Host que omiten el escán.");
+		ListaDescrips(proxyserv->hmod, cl);
 		Responde(cl, CLI(proxyserv), " ");
-		Responde(cl, CLI(proxyserv), "Para más información, \00312/msg %s %s comando", proxyserv.hmod->nick, strtoupper(param[0]));
+		Responde(cl, CLI(proxyserv), "Para más información, \00312/msg %s %s comando", proxyserv->hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "HOST") && ExFunc("HOST"))
-	{
-		Responde(cl, CLI(proxyserv), "\00312HOST");
-		Responde(cl, CLI(proxyserv), " ");
-		Responde(cl, CLI(proxyserv), "Gestiona los hosts que omiten el escán.");
-		Responde(cl, CLI(proxyserv), "Estos hosts no se someterán al escán de puertos y podrán entrar libremente.");
-		Responde(cl, CLI(proxyserv), "Cabe mencionar que si el usuario conecta sin su DNS resuelto, figurará su ip en vez de su host.");
-		Responde(cl, CLI(proxyserv), "Por este motivo, es importante añadir el host o la ip, según conecte el usuario.");
-		Responde(cl, CLI(proxyserv), "Si no se especifica ni + ni -, se usará el patrón como búsqueda.");
-		Responde(cl, CLI(proxyserv), " ");
-		Responde(cl, CLI(proxyserv), "Sintaxis: \00312HOST {+|-|patrón}[{host|ip}]");
-	}
-	else
+	else if (!MuestraAyudaComando(cl, param[1], proxyserv->hmod, param, params))
 		Responde(cl, CLI(proxyserv), XS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
@@ -256,7 +263,7 @@ BOTFUNC(PSHost)
 			return 1;
 		}
 		Responde(cl, CLI(proxyserv), "*** Hosts que coinciden con el patrón \00312%s\003 ***", param[1]);
-		for (i = 0; i < proxyserv.maxlist && (row = SQLFetchRow(res)); i++)
+		for (i = 0; i < proxyserv->maxlist && (row = SQLFetchRow(res)); i++)
 			Responde(cl, CLI(proxyserv), "\00312%s", row[0]);
 		Responde(cl, CLI(proxyserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 		SQLFreeRes(res);
@@ -273,7 +280,7 @@ int PSCmdNick(Cliente *cl, int nuevo)
 			host = strdup(cl->ip);
 		else
 			host = strdup(cl->host);
-		if (CogeCache(CACHE_PROXY, host, proxyserv.hmod->id) || SQLCogeRegistro(XS_SQL, host, NULL))
+		if (CogeCache(CACHE_PROXY, host, proxyserv->hmod->id) || SQLCogeRegistro(XS_SQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
 		{
@@ -317,7 +324,7 @@ SOCKFUNC(PSFin)
 	if (!px)
 		return 0;
 #endif
-	if (++px->escaneados == proxyserv.puertos) /* fin del scan */
+	if (++px->escaneados == proxyserv->puertos) /* fin del scan */
 	{
 		int i;
 		char abiertos[256];
@@ -337,10 +344,10 @@ SOCKFUNC(PSFin)
 		{
 			char motivo[300];
 			ircsprintf(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos + 1);
-			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv.tiempo, motivo);
+			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);
 		}
 		else
-			InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv.hmod->id, px->host);
+			InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
 		BorraItem(px, proxys);
 		Free(px->host);
 		Free(px);

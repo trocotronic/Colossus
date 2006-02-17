@@ -3,9 +3,6 @@
 #include "modulos.h"
 #include "protocolos.h"
 #include "md5.h"
-#ifdef UDB
-#include "bdd.h"
-#endif
 #ifdef USA_ZLIB
 #include "zip.h"
 #endif
@@ -34,10 +31,6 @@ Tkl *tklines[TKL_MAX];
 IRCFUNC(m_chghost);
 IRCFUNC(m_chgident);
 IRCFUNC(m_chgname);
-#ifdef UDB
-IRCFUNC(m_db);
-IRCFUNC(m_dbq);
-#endif
 IRCFUNC(m_eos);
 IRCFUNC(m_netinfo);
 IRCFUNC(m_sajoin);
@@ -67,6 +60,7 @@ IRCFUNC(m_rehash);
 IRCFUNC(sincroniza);
 IRCFUNC(m_sjoin);
 IRCFUNC(m_tkl);
+IRCFUNC(m_sethost);
 
 ProtInfo PROT_INFO(Unreal) = {
 	"Protocolo UnrealIRCd" ,
@@ -74,137 +68,6 @@ ProtInfo PROT_INFO(Unreal) = {
 	"Trocotronic" ,
 	"trocotronic@rallados.net" 
 };
-/*Com comandos[] = {
-	{ "CONNECT" , "7" } ,
-	{ "CHATOPS" , "p" } ,
-	{ "ADMIN" , "@" } ,
-	{ "ADDOMOTD" , "AR" } ,
-	{ "ADDLINE" , "z" } ,
-	{ "TOPIC" , ")" } ,
-	{ "SERVER" , "'" } ,
-	{ "GLINE" , "}" } ,
-	{ "SHUN" , "BL" } ,
-	{ "TEMPSHUN" , "Tz" } ,
-	{ "WHOIS" , "#" } ,
-	{ "NETINFO" , "AO" } ,
-	{ "KILL" , "." } ,
-	{ "SVSMODE" , "n" } ,
-	{ "SVS2MODE" , "v" } ,
-#ifdef UDB
-	{ "SVS3MODE" , "vv" } ,
-#endif
-	{ "VHOST" , "BE" } ,
-	{ "OPER" , ";" } ,
-	{ "SJOIN" , "~" } ,
-	{ "WHO" , "\"" } ,
-	{ "PROTOCTL" , "_" } ,
-	{ "LINKS" , "0" } ,
-	{ "SAPART" , "AY" } ,
-	{ "SAJOIN" , "AX" } ,
-	{ "UNZLINE" , "r" } ,
-	{ "UNKLINE" , "X" } ,
-	{ "TSCTL" , "AW" } ,
-	{ "SWHOIS" , "BA" } ,
-	{ "SVSWATCH" , "Bw" } ,
-	{ "SVSSILENCE" , "Bs" } ,
-	{ "SVSPART" , "BT" } ,
-	{ "SVSO" , "BB" } ,
-	{ "SVSNOOP" , "f" } ,
-	{ "SVSNLINE" , "BR" } ,
-	{ "SVSNICK" , "e" } ,
-	{ "SVSMOTD" , "AS" } ,
-	{ "SVSLUSERS" , "BU" } ,
-	{ "SVSJOIN" , "BX" } ,
-	{ "SETNAME" , "AE" } ,
-	{ "SETHOST" , "AA" } ,
-	{ "SENDUMODE" , "AP" } ,
-	{ "SMO" , "AU" } ,
-	{ "SDESC" , "AG" } ,
-	{ "RPING" , "AM" } ,
-	{ "RPONG" , "AN" } ,
-	{ "RAKILL" , "Y" } ,
-	{ "NACHAT" , "AC" } ,
-	{ "MKPASSWD" , "y" } ,
-	{ "LAG" , "AF" } ,
-	{ "HTM" , "BH" } ,
-	{ "DUMMY" , "DU" } ,
-	{ "CYCLE" , "BP" } ,
-	{ "CHGNAME" , "BK" } ,
-	{ "CHGIDENT" , "AZ" } ,
-	{ "CHGHOST" , "AL" } ,
-	{ "AWAY" , "6" } ,
-	{ "AKILL" , "V" } ,
-	{ "ADMINCHAT" , "x" } ,
-	{ "TIME" , ">" } ,
-	{ "SVSNO" , "BV" } ,
-	{ "SVS2NO" , "BW" } ,
-	{ "SVSKILL" , "h" } ,
-	{ "SENDSNO" , "Ss" } ,
-	{ "LIST" , "(" } ,
-	{ "ADDMOTD" , "AQ" } ,
-	{ "WHOWAS" , "$" } ,
-	{ "WALLOPS" , "=" } ,
-	{ "USERHOST" , "J" } ,
-	{ "UNSQLINE" , "d" } ,
-	{ "UNDCCDENY" , "BJ" } ,
-	{ "UMODE2" , "|" } ,
-	{ "TRACE" , "b" } ,
-	{ "SVSFLINE" , "BC" } ,
-	{ "SQUIT" , "-" } ,
-	{ "SQLINE" , "c" } ,
-	{ "SILENCE" , "U" } ,
-	{ "SAMODE" , "o" } ,
-	{ "RULES" , "t" } ,
-	{ "QUIT" , "," } ,
-	{ "PING" , "8" } ,
-	{ "PONG" , "9" } ,
-	{ "PASS" , "<" } ,
-	{ "PRIVMSG" , "!" } ,
-	{ "NOTICE" , "B" } ,
-	{ "MAP" , "u" } ,
-	{ "LOCOPS" , "^" } ,
-	{ "KNOCK" , "AI" } ,
-	{ "KICK" , "H" } ,
-	{ "ISON" , "K" } ,
-	{ "INVITE" , "*" } ,
-	{ "HELP" , "4" } ,
-	{ "GLOBOPS" , "]" } ,
-	{ "EOS" , "ES" } ,
-	{ "DCCDENY" , "BI" } ,
-	{ "CLOSE" , "Q" } ,
-	{ "STATS" , "2" } ,
-	{ "JOIN" , "C" } ,
-	{ "PART" , "D" } ,
-	{ "MODE" , "G" } ,
-	{ "NICK" , "&" } ,
-	{ "ERROR" , "5" } ,
-	{ "DNS" , "T" } ,
-	{ "TKL" , "BD" } ,
-	{ "MOTD" , "F" } ,
-	{ "USER" , "%" } ,
-	{ "INFO" , "/" } ,
-	{ "SUMMON" , "1" } ,
-	{ "USERS" , "3" } ,
-	{ "VERSION" , "+" } ,
-	{ "NAMES" , "?" } ,
-	{ "LUSERS" , "E" } ,
-	{ "SERVICE" , "I" } ,
-	{ "WATCH" , "`" } ,
-	{ "DALINFO" , "w" } ,
-	{ "CREDITS" , "AJ" } ,
-	{ "LICENCE" , "AK" } ,
-	{ "BOTMOTD" , "BF" } ,
-	{ "OPERMOTD" , "AV" } ,
-	{ "MODULE" , "BQ" } ,
-	{ "ALIAS" , "AH" } ,
-	{ "REHASH" , "O" } ,
-	{ "DIE" , "R" } ,
-	{ "RESTART" , "P" } ,
-	{ "DB" , "DB" } ,
-	{ "DBQ" , "DBQ" } ,
-	{ "GHOST" , "GT" } ,
-	{ NULL , NULL }
-};*/
 
 #define MSG_SWHOIS "SWHOIS"
 #define TOK_SWHOIS "BA"
@@ -220,10 +83,6 @@ ProtInfo PROT_INFO(Unreal) = {
 #define TOK_UNSQLINE "d"
 #define MSG_LAG "LAG"
 #define TOK_LAG "AF"
-#ifdef UDB
-#define MSG_SVS3MODE "SVS3MODE"
-#define TOK_SVS3MODE "vv"
-#endif
 #define MSG_SVS2MODE "SVS2MODE"
 #define TOK_SVS2MODE "v"
 
@@ -277,12 +136,6 @@ ProtInfo PROT_INFO(Unreal) = {
 #define TOK_CHGIDENT "AZ"
 #define MSG_CHGNAME "CHGNAME"
 #define TOK_CHGNAME "BK"
-#ifdef UDB
-#define MSG_DB "DB"
-#define TOK_DB "DB"
-#define MSG_DBQ "DBQ"
-#define TOK_DBQ "DBQ"
-#endif
 #define MSG_EOS "EOS"
 #define TOK_EOS "ES"
 #define MSG_NETINFO "NETINFO"
@@ -306,152 +159,59 @@ ProtInfo PROT_INFO(Unreal) = {
 #define MSG_TKL "TKL"
 #define TOK_TKL "BD"
 
-#define U_INVISIBLE 	0x1
-#define U_OPER 		0x2
-#define U_WALLOP  	0x4
-#define U_FAILOP  	0x8
-#define U_HELPOP  	0x10
-#define U_REGNICK  	0x20
-#define U_SADMIN  	0x40
-#define U_ADMIN  	0x80
-#define U_RGSTRONLY  	0x100
-#define U_WEBTV  	0x200
-#define U_SERVICES  	0x400
-#define U_HIDE 		0x800
-#define U_NETADMIN 	0x1000
-#define U_COADMIN 	0x2000
-#define U_WHOIS 	0x4000
-#define U_KIX 		0x8000
-#define U_BOT 		0x10000
-#define U_SECURE 	0x20000
-#define U_VICTIM 	0x40000
-#define U_DEAF 		0x80000
-#define U_HIDEOPER 	0x100000
-#define U_SETHOST	0x200000
-#define U_STRIPBADWORDS 0x400000
-#define U_HIDEWHOIS 	0x800000
-#define U_NOCTCP 	0x1000000
-#define U_LOCOP		0x20000000
-#ifdef UDB
-#define U_SUSPEND 	0x40000000
-#define U_PRIVDEAF	0x80000000
-#define U_SHOWIP	0x100000000
-#endif
+u_long UMODE_INVISIBLE;
+u_long UMODE_OPER;
+u_long UMODE_WALLOP;
+u_long UMODE_FAILOP;
+u_long UMODE_HELPOP;
+u_long UMODE_SADMIN;
+u_long UMODE_ADMIN;
+u_long UMODE_RGSTRONLY;
+u_long UMODE_WEBTV;
+u_long UMODE_SERVICES;
+u_long UMODE_NETADMIN;
+u_long UMODE_COADMIN;
+u_long UMODE_WHOIS;
+u_long UMODE_KIX;
+u_long UMODE_BOT;
+u_long UMODE_SECURE;
+u_long UMODE_VICTIM;
+u_long UMODE_DEAF;
+u_long UMODE_HIDEOPER;
+u_long UMODE_SETHOST;
+u_long UMODE_STRIPBADWORDS;
+u_long UMODE_HIDEWHOIS;
+u_long UMODE_NOCTCP;
+u_long UMODE_LOCOP;
 
-#define C_CHANOP	0x1
-#define C_VOICE		0x2
-#define C_PRIVATE	0x4
-#define C_SECRET	0x8
-#define C_MODERATED  	0x10
-#define C_TOPICLIMIT 	0x20
-#define C_CHANOWNER	0x40
-#define C_CHANPROT	0x80
-#define C_HALFOP	0x100
-#define C_EXCEPT	0x200
-#define C_BAN		0x400
-#define C_INVITEONLY 	0x800
-#define C_NOPRIVMSGS 	0x1000
-#define C_KEY		0x2000
-#define C_LIMIT		0x4000
-#define C_RGSTR		0x8000
-#define C_RGSTRONLY 	0x10000
-#define C_LINK		0x20000
-#define C_NOCOLOR	0x40000
-#define C_OPERONLY   	0x80000
-#define C_ADMONLY   	0x100000
-#define C_NOKICKS   	0x200000
-#define C_STRIP	   	0x400000
-#define C_NOKNOCK	0x800000
-#define C_NOINVITE  	0x1000000
-#define C_FLOODLIMIT	0x2000000
-#define C_MODREG	0x4000000
-#define C_STRIPBADWORDS	0x8000000
-#define C_NOCTCP	0x10000000
-#define C_AUDITORIUM	0x20000000
-#define C_ONLYSECURE	0x40000000
-#define C_NONICKCHANGE	0x80000000
-
-mTab PROT_UMODOS(Unreal)[] = {
-	{ U_REGNICK , 'r' },
-	{ U_NETADMIN , 'N' },
-	{ U_OPER , 'o' },
-	{ U_HELPOP , 'h' },
-	{ U_HIDE , 'x' },
-#ifdef UDB
-	{ U_SUSPEND , 'S' },
-	{ U_PRIVDEAF, 'D' },
-#endif
-	{ U_INVISIBLE , 'i' },
-	{ U_WALLOP , 'w' },
-	{ U_FAILOP , 'g' },
-	{ U_SADMIN , 'a' },
-	{ U_ADMIN , 'A' },
-	{ U_RGSTRONLY , 'R' },
-	{ U_WEBTV , 'V' },
-#ifdef UDB
-	{ U_SERVICES , 'k' },
-#else
-	{ U_SERVICES , 'S' },
-#endif
-	{ U_COADMIN , 'C' },
-	{ U_WHOIS , 'W' },
-	{ U_KIX , 'q' },
-	{ U_BOT , 'B' },
-	{ U_SECURE , 'z' },
-	{ U_VICTIM , 'v' },
-	{ U_DEAF , 'd' },
-	{ U_HIDEOPER , 'H' },
-	{ U_SETHOST , 't' },
-	{ U_STRIPBADWORDS , 'G' },
-	{ U_HIDEWHOIS , 'p' },
-	{ U_NOCTCP , 'T' },
-	{ U_LOCOP , 'O' },
-	{ 0x0 , '0' } /* el caracter 0 (no \0) indica fin de array */
-};
-
-mTab PROT_CMODOS(Unreal)[] = {
-	{ C_RGSTR , 'r' },
-	{ C_RGSTRONLY , 'R' },
-	{ C_OPERONLY , 'O' },
-	{ C_ADMONLY , 'A' },
-	{ C_HALFOP , 'h' },
-	{ C_CHANPROT , 'a' },
-	{ C_CHANOWNER , 'q' },
-	{ C_CHANOP , 'o' },
-	{ C_VOICE , 'v' },
-	{ C_PRIVATE , 'p' },
-	{ C_SECRET , 's' },
-	{ C_MODERATED , 'm' },
-	{ C_TOPICLIMIT , 't' },
-	{ C_EXCEPT , 'e' },
-	{ C_BAN , 'b' },
-	{ C_INVITEONLY , 'i' },
-	{ C_NOPRIVMSGS , 'n' },
-	{ C_KEY , 'k' },
-	{ C_LIMIT , 'l' },
-	{ C_LINK , 'L' },
-	{ C_NOCOLOR , 'c' },
-	{ C_NOKICKS , 'Q' },
-	{ C_STRIP , 'S' },
-	{ C_NOKNOCK , 'K' },
-	{ C_NOINVITE , 'V' },
-	{ C_FLOODLIMIT , 'f' },
-	{ C_MODREG , 'M' },
-	{ C_STRIPBADWORDS , 'G' },
-	{ C_NOCTCP , 'C' },
-	{ C_AUDITORIUM , 'u' },
-	{ C_ONLYSECURE , 'z' },
-	{ C_NONICKCHANGE , 'N' },
-	{ 0x0 , '0' }
-};
+u_long CHMODE_PRIVATE;
+u_long CHMODE_SECRET;
+u_long CHMODE_MODERATED;
+u_long CHMODE_TOPICLIMIT;
+u_long CHMODE_INVITEONLY;
+u_long CHMODE_NOPRIVMSGS;
+u_long CHMODE_KEY;
+u_long CHMODE_LIMIT;
+u_long CHMODE_RGSTRONLY;
+u_long CHMODE_LINK;
+u_long CHMODE_NOCOLOR;
+u_long CHMODE_OPERONLY;
+u_long CHMODE_ADMONLY;
+u_long CHMODE_NOKICKS;
+u_long CHMODE_STRIP;
+u_long CHMODE_NOKNOCK;
+u_long CHMODE_NOINVITE;
+u_long CHMODE_FLOODLIMIT;
+u_long CHMODE_MODREG;
+u_long CHMODE_STRIPBADWORDS;
+u_long CHMODE_NOCTCP;
+u_long CHMODE_AUDITORIUM;
+u_long CHMODE_ONLYSECURE;
+u_long CHMODE_NONICKCHANGE;
 
 void ProcesaModos(Canal *, char *);
-void ProcesaModo(Cliente *, Canal *, char **, int);
-void EntraCliente(Cliente *, char *);
-#ifdef UDB
-void UdbDaleCosas(Cliente *);
-int UdbCompruebaOpts(Proc *);
-#endif
+DLLFUNC void ProcesaModo(Cliente *, Canal *, char **, int);
+DLLFUNC void EntraCliente(Cliente *, char *);
 char *DecodeIP(char *buf)
 {
 	int len = strlen(buf);
@@ -490,11 +250,7 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 	ircvsprintf(buf, modos, vl);
 	va_end(vl);
 	ProcesaModosCliente(cl, modos);
-#ifdef UDB
-	EnviaAServidor(":%s %s %s %s %lu", bl->nombre, TOK_SVS3MODE, cl->nombre, buf, time(0));
-#else
 	EnviaAServidor(":%s %s %s %s %lu", bl->nombre, TOK_SVS2MODE, cl->nombre, buf, time(0));
-#endif
 	Senyal2(SIGN_UMODE, cl, modos);
 	return 0;
 }
@@ -603,7 +359,7 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 int p_nuevonick(Cliente *al)
 {
 	gethostname(buf, sizeof(buf));
-	EnviaAServidor("%s %s 1 %lu %s %s %s 0 +%s %s %s :%s", TOK_NICK, al->nombre, time(0), al->ident, al->host, al->server->nombre, ModosAFlags(al->modos, PROT_UMODOS(Unreal), NULL), al->host, EncodeIP(buf), al->info);
+	EnviaAServidor("%s %s 1 %lu %s %s %s 0 +%s %s %s :%s", TOK_NICK, al->nombre, time(0), al->ident, al->host, al->server->nombre, ModosAFlags(al->modos, protocolo->umodos, NULL), al->host, EncodeIP(buf), al->info);
 	return 0;
 }
 int p_priv(Cliente *cl, Cliente *bl, char *mensaje, ...)
@@ -723,43 +479,6 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 		EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_NOTICE, cl->nombre, buf);
 	return 0;
 }
-/*
- * Lista de comandos propio de cada ircd
- * Cada posición está asignada, no debe alterarse el orden
- * Si un comando no existe, debe especificarse COM_NULL en esa posición
- */
-Com PROT_COMANDOS(Unreal)[] = {
-	{ MSG_NULL , TOK_NULL , (void *)p_trio } ,
-	{ MSG_UMODE2 , TOK_UMODE2 , (void *)p_umode } ,
-#ifdef UDB
-	{ MSG_SVS3MODE , TOK_SVS3MODE ,(void *) p_svsmode } ,
-#else
-	{ MSG_SVS2MODE , TOK_SVS2MODE , (void *)p_svsmode } ,
-#endif
-	{ MSG_MODE , TOK_MODE , (void *)p_mode } ,
-	{ MSG_NICK , TOK_NICK , (void *)p_nick } ,
-	{ MSG_SVSNICK , TOK_SVSNICK , (void *)p_svsnick } ,
-	{ MSG_JOIN , TOK_JOIN , (void *)p_join } ,
-	{ MSG_SVSJOIN , TOK_SVSJOIN , (void *)p_svsjoin } ,
-	{ MSG_PART , TOK_PART , (void *)p_part } ,
-	{ MSG_SVSPART , TOK_SVSPART , (void *)p_svspart } ,
-	{ MSG_QUIT , TOK_QUIT , (void *)p_quit } ,
-	{ MSG_KILL , TOK_KILL , (void *)p_kill } ,
-	{ MSG_NICK , TOK_NICK , (void *)p_nuevonick } ,
-	{ MSG_PRIVATE , TOK_PRIVATE , (void *)p_priv } ,
-	{ MSG_SETHOST , TOK_SETHOST , (void *)p_sethost } ,
-	{ MSG_CHGHOST , TOK_CHGHOST , (void *)p_chghost } ,
-	{ MSG_SQLINE , TOK_SQLINE , (void *)p_sqline } ,
-	{ MSG_LAG , TOK_LAG , (void *)p_lag } ,
-	{ MSG_SWHOIS , TOK_SWHOIS , (void *)p_swhois } ,
-	{ MSG_GLINE , TOK_GLINE , (void *)p_tkl } ,
-	{ MSG_KICK , TOK_KICK , (void *)p_kick } ,
-	{ MSG_TOPIC , TOK_TOPIC , (void *)p_topic } ,
-	{ MSG_NOTICE , TOK_NOTICE , (void *)p_notice } ,
-	{ MSG_INVITE , TOK_INVITE , (void *)p_invite } ,
-	{ MSG_NULL , TOK_NULL , (void *)p_msg_vl } ,
-	COM_NULL
-};
 int test(Conf *config, int *errores)
 {
 	Conf *eval, *aux;
@@ -907,15 +626,17 @@ void set(Conf *config)
 					modpm2 = config->seccion[i]->seccion[p]->data;
 			}
 		}
+		else if (!strcmp(config->seccion[i]->item, "extension"))
+		{
+			if (!CreaExtension(config->seccion[i], protocolo))
+				Error("[%s:%s::%i] No se ha podido crear la extensión %s", config->seccion[i]->archivo, config->seccion[i]->item, config->seccion[i]->linea, config->seccion[i]->data);
+		}
 	}
 	ircstrdup(protocolo->modcl, modcl);
 	ircstrdup(protocolo->modmk, modmk);
 	ircstrdup(protocolo->modpm1, modpm1);
 	ircstrdup(protocolo->modpm2, modpm2);
 	bzero(tklines, sizeof(tklines));
-#ifdef UDB
-	IniciaProceso(UdbCompruebaOpts);
-#endif
 }
 int PROT_CARGA(Unreal)(Conf *config)
 {
@@ -927,6 +648,31 @@ int PROT_CARGA(Unreal)(Conf *config)
 		Error("[%s] La configuracion de %s es errónea", config->archivo, PROT_INFO(Unreal).nombre);
 		return ++errores;
 	}
+	protocolo->comandos[P_TRIO] = (int(*)())p_trio;
+	protocolo->comandos[P_MODO_USUARIO_LOCAL] = p_umode;
+	protocolo->comandos[P_MODO_USUARIO_REMOTO] = p_svsmode;
+	protocolo->comandos[P_MODO_CANAL] = p_mode;
+	protocolo->comandos[P_CAMBIO_USUARIO_LOCAL] = p_nick;
+	protocolo->comandos[P_CAMBIO_USUARIO_REMOTO] = p_svsnick;
+	protocolo->comandos[P_JOIN_USUARIO_LOCAL] = p_join;
+	protocolo->comandos[P_JOIN_USUARIO_REMOTO] = p_svsjoin;
+	protocolo->comandos[P_PART_USUARIO_LOCAL] = p_part;
+	protocolo->comandos[P_PART_USUARIO_REMOTO] = p_svspart;
+	protocolo->comandos[P_QUIT_USUARIO_LOCAL] = p_quit;
+	protocolo->comandos[P_QUIT_USUARIO_REMOTO] = p_kill;
+	protocolo->comandos[P_NUEVO_USUARIO] = p_nuevonick;
+	protocolo->comandos[P_PRIVADO] = p_priv;
+	protocolo->comandos[P_CAMBIO_HOST_LOCAL] = p_sethost;
+	protocolo->comandos[P_CAMBIO_HOST_REMOTO] = p_chghost;
+	protocolo->comandos[P_FORB_NICK] = p_sqline;
+	protocolo->comandos[P_LAG] = p_lag;
+	protocolo->comandos[P_WHOIS_ESPECIAL] = p_swhois;
+	protocolo->comandos[P_GLINE] = p_tkl;
+	protocolo->comandos[P_KICK] = p_kick;
+	protocolo->comandos[P_TOPIC] = p_topic;
+	protocolo->comandos[P_NOTICE] = p_notice;
+	protocolo->comandos[P_INVITE] = p_invite;
+	protocolo->comandos[P_MSG_VL] = p_msg_vl;
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
 	InsertaComando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
 	InsertaComando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);
@@ -952,10 +698,6 @@ int PROT_CARGA(Unreal)(Conf *config)
 	InsertaComando(MSG_CHGHOST, TOK_CHGHOST, m_chghost, INI, MAXPARA);
 	InsertaComando(MSG_CHGIDENT, TOK_CHGIDENT, m_chgident, INI, MAXPARA);
 	InsertaComando(MSG_CHGNAME, TOK_CHGNAME, m_chgname, INI, 2);
-#ifdef UDB
-	InsertaComando(MSG_DB, TOK_DB, m_db, INI, 5);
-	InsertaComando(MSG_DBQ, TOK_DBQ, m_dbq, INI, 2);
-#endif
 	InsertaComando(MSG_EOS, TOK_EOS, m_eos, INI, MAXPARA);
 	InsertaComando(MSG_NETINFO, TOK_NETINFO, m_netinfo, INI, MAXPARA);
 	InsertaComando(MSG_SAJOIN, TOK_SAJOIN, m_sajoin, INI, MAXPARA);
@@ -963,6 +705,58 @@ int PROT_CARGA(Unreal)(Conf *config)
 	InsertaComando(MSG_MODULE, TOK_MODULE, m_module, INI, MAXPARA);
 	InsertaComando(MSG_SJOIN, TOK_SJOIN, m_sjoin, INI, MAXPARA);
 	InsertaComando(MSG_TKL, TOK_TKL, m_tkl, INI, MAXPARA);
+	InsertaComando(MSG_SETHOST, TOK_SETHOST, m_sethost, INI, MAXPARA);
+	InsertaModoProtocolo('r', &UMODE_REGNICK, protocolo->umodos);
+	InsertaModoProtocolo('N', &UMODE_NETADMIN, protocolo->umodos);
+	InsertaModoProtocolo('o', &UMODE_OPER, protocolo->umodos);
+	InsertaModoProtocolo('h', &UMODE_HELPOP, protocolo->umodos);
+	InsertaModoProtocolo('x', &UMODE_HIDE, protocolo->umodos);
+	InsertaModoProtocolo('i', &UMODE_INVISIBLE, protocolo->umodos);
+	InsertaModoProtocolo('w', &UMODE_WALLOP, protocolo->umodos);
+	InsertaModoProtocolo('g', &UMODE_FAILOP, protocolo->umodos);
+	InsertaModoProtocolo('a', &UMODE_SADMIN, protocolo->umodos);
+	InsertaModoProtocolo('A', &UMODE_ADMIN, protocolo->umodos);
+	InsertaModoProtocolo('R', &UMODE_RGSTRONLY, protocolo->umodos);
+	InsertaModoProtocolo('V', &UMODE_WEBTV, protocolo->umodos);
+	InsertaModoProtocolo('S', &UMODE_SERVICES, protocolo->umodos);
+	InsertaModoProtocolo('C', &UMODE_COADMIN, protocolo->umodos);
+	InsertaModoProtocolo('w', &UMODE_WHOIS, protocolo->umodos);
+	InsertaModoProtocolo('q', &UMODE_KIX, protocolo->umodos);
+	InsertaModoProtocolo('B', &UMODE_BOT, protocolo->umodos);
+	InsertaModoProtocolo('z', &UMODE_SECURE, protocolo->umodos);
+	InsertaModoProtocolo('v', &UMODE_VICTIM, protocolo->umodos);
+	InsertaModoProtocolo('d', &UMODE_DEAF, protocolo->umodos);
+	InsertaModoProtocolo('H', &UMODE_HIDEOPER, protocolo->umodos);
+	InsertaModoProtocolo('t', &UMODE_SETHOST, protocolo->umodos);
+	InsertaModoProtocolo('G', &UMODE_STRIPBADWORDS, protocolo->umodos);
+	InsertaModoProtocolo('p', &UMODE_HIDEWHOIS, protocolo->umodos);
+	InsertaModoProtocolo('T', &UMODE_NOCTCP, protocolo->umodos);
+	InsertaModoProtocolo('O', &UMODE_LOCOP, protocolo->umodos);
+	InsertaModoProtocolo('r', &CHMODE_RGSTR, protocolo->cmodos);
+	InsertaModoProtocolo('R', &CHMODE_RGSTRONLY, protocolo->cmodos);
+	InsertaModoProtocolo('O', &CHMODE_OPERONLY, protocolo->cmodos);
+	InsertaModoProtocolo('A', &CHMODE_ADMONLY, protocolo->cmodos);
+	InsertaModoProtocolo('p', &CHMODE_PRIVATE, protocolo->cmodos);
+	InsertaModoProtocolo('s', &CHMODE_SECRET, protocolo->cmodos);
+	InsertaModoProtocolo('m', &CHMODE_MODERATED, protocolo->cmodos);
+	InsertaModoProtocolo('t', &CHMODE_TOPICLIMIT, protocolo->cmodos);
+	InsertaModoProtocolo('i', &CHMODE_INVITEONLY, protocolo->cmodos);
+	InsertaModoProtocolo('n', &CHMODE_NOPRIVMSGS, protocolo->cmodos);
+	InsertaModoProtocolo('k', &CHMODE_KEY, protocolo->cmodos);
+	InsertaModoProtocolo('l', &CHMODE_LIMIT, protocolo->cmodos);
+	InsertaModoProtocolo('L', &CHMODE_LINK, protocolo->cmodos);
+	InsertaModoProtocolo('c', &CHMODE_NOCOLOR, protocolo->cmodos);
+	InsertaModoProtocolo('Q', &CHMODE_NOKICKS, protocolo->cmodos);
+	InsertaModoProtocolo('S', &CHMODE_STRIP, protocolo->cmodos);
+	InsertaModoProtocolo('K', &CHMODE_NOKNOCK, protocolo->cmodos);
+	InsertaModoProtocolo('V', &CHMODE_NOINVITE, protocolo->cmodos);
+	InsertaModoProtocolo('f', &CHMODE_FLOODLIMIT, protocolo->cmodos);
+	InsertaModoProtocolo('M', &CHMODE_MODREG, protocolo->cmodos);
+	InsertaModoProtocolo('G', &CHMODE_STRIPBADWORDS, protocolo->cmodos);
+	InsertaModoProtocolo('C', &CHMODE_NOCTCP, protocolo->cmodos);
+	InsertaModoProtocolo('u', &CHMODE_AUDITORIUM, protocolo->cmodos);
+	InsertaModoProtocolo('z', &CHMODE_ONLYSECURE, protocolo->cmodos);
+	InsertaModoProtocolo('N', &CHMODE_NONICKCHANGE, protocolo->cmodos);
 	return 0;
 }
 int PROT_DESCARGA(Unreal)()
@@ -992,10 +786,6 @@ int PROT_DESCARGA(Unreal)()
 	BorraComando(MSG_CHGHOST, m_chghost);
 	BorraComando(MSG_CHGIDENT, m_chgident);
 	BorraComando(MSG_CHGNAME, m_chgname);
-#ifdef UDB
-	BorraComando(MSG_DB, m_db);
-	BorraComando(MSG_DBQ, m_dbq);
-#endif
 	BorraComando(MSG_EOS, m_eos);
 	BorraComando(MSG_NETINFO, m_netinfo);
 	BorraComando(MSG_SAJOIN, m_sajoin);
@@ -1003,9 +793,7 @@ int PROT_DESCARGA(Unreal)()
 	BorraComando(MSG_MODULE, m_module);
 	BorraComando(MSG_SJOIN, m_sjoin);
 	BorraComando(MSG_TKL, m_tkl);
-#ifdef UDB
-	DetieneProceso(UdbCompruebaOpts);
-#endif
+	BorraComando(MSG_SETHOST, m_sethost);
 	return 0;
 }
 void PROT_INICIA(Unreal)()
@@ -1017,10 +805,8 @@ void PROT_INICIA(Unreal)()
 		ircfree(aux);
 	}
 	servidores = NULL;
+	Senyal(SIGN_SOCKOPEN);
 	EnviaAServidor("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64 TKLEXT");
-#ifdef UDB
-	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s,SD", me.nombre);
-#endif
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
 		EnviaAServidor("PROTOCTL ZIP");
@@ -1165,7 +951,7 @@ IRCFUNC(m_msg)
 	}
 	if ((mod = BuscaModulo(parv[1], modulos)))
 	{
-		Mod_Func func;
+		Funcion *func;
 		char ex;
 		Alias *aux;
 		if ((aux = BuscaAlias(param, params, mod)))
@@ -1196,7 +982,7 @@ IRCFUNC(m_msg)
 			params = k;
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
-			func(cl, parv, parc, param, params);
+			func->func(cl, parv, parc, param, params);
 		else
 		{
 			if (!ex && !EsServidor(cl))
@@ -1268,22 +1054,7 @@ IRCFUNC(m_nick)
 		if (strcasecmp(parv[1], cl->nombre))
 		{
 			ProcesaModosCliente(cl, "-r");
-#ifdef UDB
-			ProcesaModosCliente(cl, "-S");
-			{
-				Udb *bloq, *reg;
-				if ((reg = BuscaRegistro(BDD_NICKS, cl->nombre)) && (bloq = BuscaBloque(N_MOD_TOK, reg)))
-				{
-					char tmp[32];
-					ircsprintf(tmp, "-%s", bloq->data_char);
-					ProcesaModosCliente(cl, tmp);
-				}
-			}
-#endif
 			CambiaNick(cl, parv[1]);
-#ifdef UDB
-			UdbDaleCosas(cl);
-#endif
 		}
 		else
 			CambiaNick(cl, parv[1]);
@@ -1438,17 +1209,9 @@ IRCFUNC(m_sjoin)
 		mod[0] = '\0';
 		while (*p)
 		{
-#ifdef UDB
-			if (*p == '.')
-#else
 			if (*p == '*')
-#endif
 				strcat(mod, "q");
-#ifdef UDB
-			else if (*p == '$')
-#else
 			else if (*p == '~')
-#endif
 				strcat(mod, "a");
 			else if (*p == '@')
 				strcat(mod, "o");
@@ -1676,252 +1439,12 @@ IRCFUNC(m_chgname)
 	ircstrdup(cl->info, parv[2]);
 	return 0;
 }
-#ifdef UDB
-IRCFUNC(m_db)
-{
-	static int bloqs = 0;
-	if (parc < 5)
-	{
-		EnviaAServidor(":%s DB %s ERR 0 %i", me.nombre, cl->nombre, E_UDB_PARAMS);
-		return 1;
-	}
-	if (match(parv[1], me.nombre))
-		return 0;
-	if (!strcasecmp(parv[2], "INF"))
-	{
-		Udb *bloq;
-		time_t gm;
-		bloq = IdAUdb(*parv[3]);
-		gm = atoul(parv[5]);
-		if (strcmp(parv[4], bloq->data_char))
-		{
-			if (gm > gmts[bloq->id])
-			{
-				TruncaBloque(cl, bloq, 0);
-				EnviaAServidor(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
-				ActualizaGMT(bloq, gm);
-				if (++bloqs == BDD_TOTAL)
-					EnviaAServidor(":%s %s", me.nombre, TOK_EOS);
-			}
-			else if (gm == gmts[bloq->id])
-				EnviaAServidor(":%s DB %s RES %c %lu", me.nombre, parv[0], *parv[3], bloq->data_long);
-			/* si es menor, el otro nodo vaciará su db y nos mandará un RES, será cuando empecemos el resumen. abremos terminado nuestro burst */
-		}
-		else
-		{
-			if (++bloqs == BDD_TOTAL)
-				EnviaAServidor(":%s %s", me.nombre, TOK_EOS);
-		}
-	}
-	else if (!strcasecmp(parv[2], "RES"))
-	{
-		u_long bytes;
-		Udb *bloq;
-		bloq = IdAUdb(*parv[3]);
-		bytes = atoul(parv[4]);
-		if (bytes < bloq->data_long) /* tiene menos, se los mandamos */
-		{
-			FILE *fp;
-			if ((fp = fopen(bloq->item, "rb")))
-			{
-				char linea[512], *d;
-				fseek(fp, bytes, SEEK_SET);
-				while (!feof(fp))
-				{
-					bzero(linea, 512);
-					if (!fgets(linea, 512, fp))
-						break;
-					if ((d = strchr(linea, '\r')))
-						*d = '\0';
-					if ((d = strchr(linea, '\n')))
-						*d = '\0';
-					if (strchr(linea, ' '))
-						EnviaAServidor(":%s DB * INS %lu %c::%s", me.nombre, bytes, *parv[3], linea);
-					else
-						EnviaAServidor(":%s DB * DEL %lu %c::%s", me.nombre, bytes, *parv[3], linea);
-					bytes = ftell(fp);
-				}
-				fclose(fp);
-				EnviaAServidor(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
-			}
-		}
-		else if (!bytes && !bloq->data_long)
-			EnviaAServidor(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
-		if (++bloqs == BDD_TOTAL)
-				EnviaAServidor(":%s %s", me.nombre, TOK_EOS);
-	}
-	else if (!strcasecmp(parv[2], "INS"))
-	{
-		char buf[1024], tipo, *r = parv[4];
-		u_long bytes;
-		Udb *bloq;
-		tipo = *r;
-		if (!strchr(bloques, tipo))
-		{
-			EnviaAServidor(":%s DB %s ERR INS %i %c", me.nombre, cl->nombre, E_UDB_NODB, tipo);
-			return 1;
-		}
-		bytes = atoul(parv[3]);
-		bloq = IdAUdb(tipo);
-		if (bytes != bloq->data_long)
-		{
-			EnviaAServidor(":%s DB %s ERR INS %i %c %lu", me.nombre, cl->nombre, E_UDB_LEN, tipo, bloq->data_long);
-			return 1;
-		}
-		r += 3;
-		ircsprintf(buf, "%s %s", r, Unifica(parv, parc, 5, -1));
-		ParseaLinea(bloq->id, buf, 1);
-	}
-	else if (!strcasecmp(parv[2], "DEL"))
-	{
-		char tipo, *r = parv[4];
-		u_long bytes;
-		Udb *bloq;
-		tipo = *r;
-		if (!strchr(bloques, tipo))
-		{
-			EnviaAServidor(":%s DB %s ERR DEL %i %c", me.nombre, cl->nombre, E_UDB_NODB, tipo);
-			return 1;
-		}
-		bytes = atoul(parv[3]);
-		bloq = IdAUdb(tipo);
-		if (bytes != bloq->data_long)
-		{
-			EnviaAServidor(":%s DB %s ERR DEL %i %c %lu", me.nombre, cl->nombre, E_UDB_LEN, tipo, bloq->data_long);
-			return 1;
-		}
-		r += 3;
-		ParseaLinea(bloq->id, r, 1);
-	}
-	else if (!strcasecmp(parv[2], "DRP"))
-	{
-		Udb *bloq;
-		u_long bytes;
-		if (!strchr(bloques, *parv[3]))
-		{
-			EnviaAServidor(":%s DB %s ERR DRP %i %c", me.nombre, cl->nombre, E_UDB_NODB, *parv[3]);
-			return 1;
-		}
-		bloq = IdAUdb(*parv[3]);
-		bytes = atoul(parv[4]);
-		if (bytes > bloq->data_long)
-		{
-			EnviaAServidor(":%s DB %s ERR DRP %i %c", me.nombre, cl->nombre, E_UDB_LEN, *parv[3]);
-			return 1;
-		}
-		TruncaBloque(cl, bloq, bytes);
-	}
-	else if (!strcmp(parv[2], "ERR")) /* tratamiento de errores */
-	{
-		int error = 0;
-		error = atoi(parv[4]);
-		switch (error)
-		{
-			case E_UDB_LEN:
-			{
-				Udb *bloq;
-				u_long bytes;
-				char *cb;
-				bloq = IdAUdb(*parv[5]);
-				cb = strchr(parv[5], ' ') + 1; /* esto siempre debe cumplirse, si no a cascar */
-				bytes = atoul(cb);
-				TruncaBloque(cl, bloq, bytes);
-				break;
-			}
-		}
-		/* una vez hemos terminado, retornamos puesto que estos comandos sólo van dirigidos a un nodo */
-		return 1;
-	}
-	/* DB * OPT <bdd> <NULL>*/
-	else if (!strcmp(parv[2], "OPT"))
-	{
-		Udb *bloq;
-		if (!strchr(bloques, *parv[3]))
-		{
-			EnviaAServidor(":%s DB %s ERR OPT %i %c", me.nombre, cl->nombre, E_UDB_NODB, *parv[3]);
-			return 1;
-		}
-		bloq = IdAUdb(*parv[3]);
-		Optimiza(bloq);
-	}
-	return 0;
-}
-IRCFUNC(m_dbq)
-{
-	char *cur, *pos, *ds;
-	Udb *bloq;
-	pos = cur = strdup(parv[2]);
-	if (!(bloq = IdAUdb(*pos)))
-	{
-		EnviaAServidor(":%s 339 %s :La base de datos %c no existe.", me.nombre, cl->nombre, *pos);
-		return 0;
-	}
-	if (parc == 3)
-		parv[1] = parv[2];
-	if (*(++cur) != '\0')
-	{
-		if (*cur++ != ':' || *cur++ != ':' || *cur == '\0')
-		{
-			EnviaAServidor(":%s 339 %s :Formato de bloque incorrecto.", me.nombre, cl->nombre);
-			return 1;
-		}
-		
-		while ((ds = strchr(cur, ':')))
-		{
-			if (*(ds + 1) == ':')
-			{
-				*ds++ = '\0';
-				if (!(bloq = BuscaBloque(cur, bloq)))
-					goto nobloq;
-			}
-			else
-				break;
-			cur = ++ds;
-		}
-		if (!(bloq = BuscaBloque(cur, bloq)))
-		{
-			nobloq:
-			EnviaAServidor(":%s 339 %s :No se encuentra el bloque %s.", me.nombre, cl->nombre, cur);
-		}
-		else
-		{
-			if (bloq->data_long)
-				EnviaAServidor(":%s 339 %s :DBQ %s %lu", me.nombre, cl->nombre, parv[1], bloq->data_long);
-			else if (bloq->data_char)
-				EnviaAServidor(":%s 339 %s :DBQ %s %s", me.nombre, cl->nombre, parv[1], bloq->data_char);
-			else
-			{
-				Udb *aux;
-				for (aux = bloq->down; aux; aux = aux->mid)
-				{
-					if (aux->data_long)
-						EnviaAServidor(":%s 339 %s :DBQ %s::%c %lu", me.nombre, cl->nombre, parv[1], aux->id, aux->data_long);
-					else if (aux->data_char)
-						EnviaAServidor(":%s 339 %s :DBQ %s::%c %s", me.nombre, cl->nombre, parv[1], aux->id, aux->data_char);
-					else
-						EnviaAServidor(":%s 339 %s :DBQ %s::%c (no tiene datos)", me.nombre, cl->nombre, parv[1], aux->id);
-				}
-			}
-		}
-	}
-	else
-	{
-		int id = bloq->id;
-		EnviaAServidor(":%s 339 %s :%i %i %lu %s %lu %X", me.nombre, cl->nombre, id, regs[id], bloq->data_long, bloq->data_char, LeeGMT(id), LeeHash(id));
-	} 
-	Free(pos);
-	return 0;
-}
-#endif
 IRCFUNC(m_eos)
 {
 	if (cl == linkado)
 	{
 		EnviaAServidor(":%s %s", me.nombre, TOK_VERSION);
 		EnviaAServidor(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
-#ifdef UDB
-		UdbCompruebaOpts(NULL);
-#endif
 		intentos = 0;
 		Senyal(SIGN_EOS);
 #ifdef _WIN32		
@@ -1978,15 +1501,8 @@ IRCFUNC(m_module)
 }
 IRCFUNC(sincroniza)
 {
-#ifdef UDB
-	Udb *aux;
-#endif
 	tburst = microtime();
-#ifdef UDB
-	for (aux = ultimo; aux; aux = aux->mid)
-		EnviaAServidor(":%s DB %s INF %c %s %lu", me.nombre, cl->nombre, bloques[aux->id], aux->data_char, gmts[aux->id]);
-#endif	
-	Senyal(SIGN_SYNCH);
+	Senyal1(SIGN_SYNCH, cl);
 	return 0;
 }
 int TipoTKL(char tipo)
@@ -2042,6 +1558,12 @@ IRCFUNC(m_tkl)
 	}
 	return 0;
 }
+IRCFUNC(m_sethost)
+{
+	ircstrdup(cl->vhost, parv[1]);
+	GeneraMascara(cl);
+	return 1;
+}
 void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 {
 	int modo = ADD, param = 1;
@@ -2073,7 +1595,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 					BorraBanDeCanal(&cn->exc, parv[param]);
 				param++;
-				break;*/
+				break;
 			case 'k':
 				if (!parv[param])
 					break;
@@ -2134,7 +1656,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				}
 				param++;
 				break;
-			/*case 'q':
+			case 'q':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
@@ -2183,14 +1705,17 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 			{
 				MallaCliente *mcl;
 				MallaMascara *mmk;
+				MallaParam *mpm;
 				if (modo == ADD)
 				{
 					if ((mcl = BuscaMallaCliente(cn, *mods)))
 						InsertaModoCliente(&mcl->malla, BuscaCliente(parv[param], NULL));
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						InsertaMascara(cl, &mmk->malla, parv[param]);
+					else if ((mpm = BuscaMallaParam(cn, *mods)))
+						ircstrdup(mpm->param, parv[param]);
 					else
-						cn->modos |= FlagAModo(*mods, PROT_CMODOS(Unreal));
+						cn->modos |= FlagAModo(*mods, protocolo->cmodos);
 #ifdef DEBUG
 					for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
 					{
@@ -2208,8 +1733,10 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 						BorraModoCliente(&mcl->malla, BuscaCliente(parv[param], NULL));
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						BorraMascaraDeCanal(&mmk->malla, parv[param]);
+					else if ((mpm = BuscaMallaParam(cn, *mods)))
+						ircfree(mpm->param);
 					else
-						cn->modos &= ~FlagAModo(*mods, PROT_CMODOS(Unreal));
+						cn->modos &= ~FlagAModo(*mods, protocolo->cmodos);
 				}
 			}
 		}
@@ -2348,54 +1875,3 @@ long base64dec(char *b64)
 	else
 		return 0;
 }
-#ifdef UDB
-void UdbDaleCosas(Cliente *cl)
-{
-	Udb *reg, *bloq;
-	if (!(reg = BuscaRegistro(BDD_NICKS, cl->nombre)))
-		return;
-	if (!BuscaBloque(N_SUS_TOK, reg))
-	{
-		ProcesaModosCliente(cl, "+r");
-		if ((bloq = BuscaBloque(N_MOD_TOK, reg)))
-			ProcesaModosCliente(cl, bloq->data_char);
-		if ((bloq = BuscaBloque(N_OPE_TOK, reg)))
-		{
-			u_long nivel = bloq->data_long;
-			if (nivel & BuscaOpt("OPER", NivelesBDD))
-				ProcesaModosCliente(cl, "+h");
-			if (nivel & BuscaOpt("ADMIN", NivelesBDD) || nivel & BuscaOpt("ROOT", NivelesBDD))
-				ProcesaModosCliente(cl, "+oN");
-		}
-	}
-	else
-		ProcesaModosCliente(cl, "+S");
-}
-int UdbCompruebaOpts(Proc *proc)
-{
-	time_t hora = time(0);
-	u_int i;
-	Udb *aux;
-	if (!SockIrcd)
-		return 1;
-	if (!proc || proc->time + 1800 < hora)
-	{
-		for (i = 0; i < BDD_TOTAL; i++)
-		{
-			aux = IdAUdb(i);
-			if (gmts[i] && gmts[i] + 86400 < hora)
-			{
-				EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, bloques[i], hora);
-				Optimiza(aux);
-				ActualizaGMT(aux, hora);
-			}
-		}
-		if (proc)
-		{
-			proc->proc = 0;
-			proc->time = hora;
-		}
-	}
-	return 0;
-}
-#endif

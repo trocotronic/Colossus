@@ -4,7 +4,4 @@ EXPORTS
 	Prot_Descarga
 	Prot_Inicia
 	Prot_Parsea
-	Prot_Umodos
-	Prot_Cmodos
-	Prot_Comandos
 	

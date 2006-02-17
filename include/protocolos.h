@@ -1,20 +1,38 @@
 /*
- * $Id: protocolos.h,v 1.6 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.7 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
-
+typedef struct _extension Extension;
+typedef struct _proto Protocolo;
+typedef int (*Ext_Func)(Modulo *, Cliente *, char *[], int, char *[], int);
+#define EXTFUNC(x) int (x)(Modulo *mod, Cliente *cl, char *parv[], int parc, char *param[], int params)
+#define MAXMOD 64
 typedef struct _com
 {
 	char *msg;
 	char *tok;
 	void *(*func)();
 }Com;
-typedef struct _proto 
+typedef struct _senyalext
 {
-#ifdef _WIN32
-	HMODULE hprot;
-#else
-	void *hprot;
-#endif
+	struct _senyalext *sig;
+	int senyal;
+	Ext_Func func;
+}SenyalExt;
+struct _extension
+{
+	Extension *sig;
+	Recurso hmod;
+	ModInfo *info;
+	int (*carga)(Extension *, Protocolo *);
+	int (*descarga)(Extension *, Protocolo *);
+	char *archivo;
+	char *tmparchivo;
+	Conf *config;
+	SenyalExt *senyals[MAXSIGS];
+};
+struct _proto 
+{
+	Recurso hprot;
 	char *archivo;
 	char *tmparchivo;
 	ModInfo *info;
@@ -23,27 +41,23 @@ typedef struct _proto
 	//IRCFUNC(*sincroniza);
 	void (*inicia)();
 	SOCKFUNC(*parsea);
-	Com *especiales;
-	mTab *umodos;
-	mTab *cmodos;
+	mTab umodos[MAXMOD];
+	mTab cmodos[MAXMOD];
+	int (*comandos[25])();
 	char *modcl;
 	char *modmk;
 	char *modpm1;
 	char *modpm2;
-}Protocolo;
+	Extension *extensiones;
+};
 	
 extern MODVAR Protocolo *protocolo;
 extern int CargaProtocolo(Conf *);
+extern void DescargaProtocolo();
 extern void LiberaMemoriaProtocolo(Protocolo *);
 
 //Macros de compatibilidad
-#define MSG_NULL NULL
-#define TOK_NULL NULL
-#define p_null NULL
-#define COM_NULL { MSG_NULL , TOK_NULL , p_null }
-#define ProtMsg(x) (protocolo->especiales + x)->msg
-#define ProtTok(x) (protocolo->especiales + x)->tok
-#define ProtFunc(x) (protocolo->especiales + x)->func
+#define ProtFunc(x) protocolo->comandos[x]
 #define P_TRIO 0
 #define P_MODO_USUARIO_LOCAL 1
 #define P_MODO_USUARIO_REMOTO 2
@@ -74,37 +88,7 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #define ProtCmodo(x) (protocolo->cmodos + x)->mode
 #define ProtUmodo_f(x) (protocolo->umodos + x)->flag
 #define ProtCmodo_f(x) (protocolo->cmodos + x)->flag
-#define TRIO(x) ProtFunc(P_TRIO)(x)
-
-//estas macros corresponden a la posición dentro de la tabla
-// *** NO CAMBIAR EL ORDEN ***
-#define UMODE_REGNICK 	ProtUmodo(0)
-#define UMODE_NETADMIN	ProtUmodo(1)
-#define UMODE_OPER	ProtUmodo(2)
-#define UMODE_HELPOP	ProtUmodo(3)
-#define UMODE_HIDE	ProtUmodo(4)
-#ifdef UDB
-#define UMODE_SUSPEND	ProtUmodo(5)
-#endif
-
-#define MODE_RGSTR	ProtCmodo(0)
-#define MODE_RGSTRONLY 	ProtCmodo(1)
-#define MODE_OPERONLY   ProtCmodo(2)
-#define MODE_ADMONLY   	ProtCmodo(3)
-#define MODE_HALF	ProtCmodo(4)
-#define MODE_ADM	ProtCmodo(5)
-#define MODE_OWNER	ProtCmodo(6)
-
-#define UMODEF_REGNICK 	ProtUmodo_f(0)
-#define UMODEF_NETADMIN	ProtUmodo_f(1)
-#define UMODEF_OPER	ProtUmodo_f(2)
-#define UMODEF_HELPOP	ProtUmodo_f(3)
-#define UMODEF_HIDE	ProtUmodo_f(4)
-#ifdef UDB
-#define UMODEF_SUSPEND	ProtUmodo_f(5)
-#endif
-
-#define MODEF_RGSTR	ProtCmodo_f(0)
+#define TRIO(x) (char *)ProtFunc(P_TRIO)(x)
 
 #ifdef ENLACE_DINAMICO
  #define PROT_INFO(name) Prot_Info
@@ -125,3 +109,16 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
  #define PROT_CMODOS(name) name##_Cmodos
  #define PROT_COMANDOS(name) name##_Comandos
 #endif
+
+extern Extension *CreaExtension(Conf *, Protocolo *);
+extern int DescargaExtensiones(Protocolo *);
+extern int CargaExtensiones(Protocolo *);
+extern void InsertaSenyalExt(int, Ext_Func, Extension *);
+extern int BorraSenyalExt(int, Ext_Func, Extension *);
+//extern ExtFunc *BuscaExtFunc(Extension *, Modulo *);
+extern void LlamaSenyalExt(Modulo *, int, Cliente *, char **, int, char **, int);
+#define EOI(x,y) LlamaSenyalExt(x->hmod, y, cl, parv, parc, param, params)
+
+mTab *InsertaModoProtocolo(char, u_long *, mTab *);
+mTab *BuscaModoProtocolo(u_long, mTab *);
+extern MODVAR u_long UMODE_REGNICK, UMODE_HIDE, CHMODE_RGSTR;

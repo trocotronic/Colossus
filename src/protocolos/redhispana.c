@@ -607,10 +607,6 @@ void set(Conf *config)
 int PROT_CARGA(RH)(Conf *config)
 {
 	int errores = 0;
-#ifdef UDB
-	Error("Este protocolo está compilado bajo UDB y no debería estarlo.");
-	return ++errores;
-#endif
 	if (!test(config, &errores))
 		set(config);
 	else

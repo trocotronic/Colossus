@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.19 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.20 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -209,7 +209,7 @@ void DescargaConfiguracion()
  
 int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 {
-	int fp, linea;
+	int fp, linea, error = 0;
 	char *pitem, *pdata, *par, *ini, *f;
 	struct stat inode;
 	Conf *actual, *root;
@@ -262,6 +262,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 				if (!pitem)
 				{
 					pce("Datos sin ítem.");
+					error++;
 					break;
 				}
 				ini = ++par;
@@ -274,12 +275,14 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 					else if (BadPtr(par))
 					{
 						pce("Final de archivo inesperado.");
+						error++;
 						break;
 					}
 					else if (*par == '\n')
 					{
 						pce("Final de línea inesperado.");
 						linea++;
+						error++;
 						break;
 					}
 					par++;
@@ -293,6 +296,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 				else if (!pitem)
 				{
 					pce("Campo sin ítem.");
+					error++;
 					break;
 				}
 				BMalloc(actual, Conf);
@@ -309,6 +313,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 				if (!root->root)
 				{
 					pce("Hay llaves cerradas '}' de más.");
+					error++;
 					break;
 				}
 				root->root->seccion[root->root->secciones++] = root;
@@ -328,6 +333,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 						else if (BadPtr(par))
 						{
 							pce("Final de archivo inesperado.");
+							error++;
 							break;
 						}
 						par++;
@@ -380,6 +386,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 					pce("Datos extra, no se ha cerrado ';'.");
 					while (*par++ != ';');
 					pdata = pitem = NULL;
+					error++;
 					break;
 				}
 				while (*par != ' ' && *par != ';')
@@ -387,6 +394,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 					if (*par == '{' || *par == '\n' || *par == '\r')
 					{
 						Error("[%s:%i] Ítem inválido.", archivo, linea);
+						error++;
 						break;
 					}
 					par++;
@@ -425,7 +433,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 		pce("Final de archivo inesperado.");
 		return -5;
 	}
-	return 0;
+	return error;
 }
 /* 
  * distribuye_conf
@@ -435,12 +443,19 @@ void DistribuyeConfiguracion(Conf *config)
 {
 	int i, errores = 0;
 	cComConf *com;
+	Conf *prot = NULL;
 	for (i = 0; i < config->secciones; i++)
 	{
+		arriba:
 		com = &cComs[0];
 		while (com->nombre != 0x0)
 		{
-			if (!strcasecmp(config->seccion[i]->item, com->nombre))
+			if (!strcasecmp(config->seccion[i]->item, "protocolo"))
+			{
+				prot = config->seccion[i++];
+				goto arriba;
+			}
+			else if (!strcasecmp(config->seccion[i]->item, com->nombre))
 				break;
 			com++;
 		}
@@ -469,6 +484,8 @@ void DistribuyeConfiguracion(Conf *config)
 		}
 		com++;
 	}
+	if (prot)
+		TestProtocolo(prot, &errores);
 	if (errores)
 	{
 		Alerta(FERR, "Hay %i error%s en la configuracion. No se puede cargar", errores, errores > 1 ? "es" : "");
@@ -1042,6 +1059,7 @@ void ConfModulos(Conf *config)
 		Error("[%s:%s] Ha sido imposible cargar el módulo %s.", config->archivo, config->item, config->data);
 	else
 	{
+		int val;
 		for (i = 0; i < config->secciones; i++)
 		{
 			if (!strcmp(config->seccion[i]->item, "nick"))
@@ -1069,10 +1087,19 @@ void ConfModulos(Conf *config)
 				ircsprintf(mod->config, "%s/%s", path, config->seccion[i]->data);
 				Free(path);
 			}
+			else if (!strcmp(config->seccion[i]->item, "serial"))
+				ircstrdup(mod->serial, config->seccion[i]->data);
 		}
 		ircfree(mod->mascara);
 		mod->mascara = (char *)Malloc(sizeof(char) * (strlen(mod->nick) + 1 + strlen(mod->ident) + 1 + strlen(mod->host) + 1));
 		ircsprintf(mod->mascara, "%s!%s@%s", mod->nick, mod->ident, mod->host);
+		val = (*mod->carga)(mod);
+		if (val)
+		{
+			mod->descarga = NULL; /* no ha llegado a cargarse, por tanto no hace falta descargarlo remotamente */
+			Alerta(FADV, "No se ha podido cargar el modulo %s", mod->archivo);
+			DescargaModulo(mod);
+		}
 	}
 }
 int TestLog(Conf *config, int *errores)

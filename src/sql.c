@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.7 2005-11-01 14:12:14 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.8 2006-02-17 19:19:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -29,55 +29,14 @@ void LiberaSQL()
 	ircfree(sql);
 	sql = NULL;
 }
-int CargaSQL(char *archivo)
+int CargaSQL(char *sqlf)
 {
-	char *amod, tmppath[128];
-#ifdef _WIN32
-	char tmppdb[128], pdb[128];
-#endif
+	char archivo[128], tmppath[MAX_PATH];
 	int (*Carga)();
-	amod = strrchr(archivo, '/');
-	if (!amod)
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", archivo);
-		return 1;
-	}
-	amod++;
-	ircsprintf(tmppath, "./tmp/%s", amod);
-#ifdef _WIN32
-	strcpy(pdb, archivo);
-	amod = strrchr(pdb, '.');
-	if (!amod)
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (falla pdb)", archivo);
-		return 2;
-	}
-	strcpy(amod, ".pdb");
-	amod = strrchr(pdb, '/');
-	if (!amod)
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta pdb)", pdb);
-		return 2;
-	}
-	amod++;
-	ircsprintf(tmppdb, "./tmp/%s", amod);
-#endif
-	if (!copyfile(archivo, tmppath))
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", archivo);
-		return 2;
-	}
-#ifdef _WIN32
-	if (!copyfile(pdb, tmppdb))
-	{
-		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar pdb)", pdb);
-		return 2;
-	}
-#endif
 	if (sql)
 		LiberaSQL();
 	BMalloc(sql, struct _sql);
-	if ((sql->hmod = irc_dlopen(tmppath, RTLD_LAZY)))
+	if ((sql->hmod = CopiaDll(sqlf, archivo, tmppath)))
 	{
 		irc_dlsym(sql->hmod, "Carga", Carga);
 		if (!Carga)

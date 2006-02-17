@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.19 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.20 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -22,6 +22,7 @@ typedef struct _canal Canal;
 typedef struct _mascara Mascara;
 typedef struct _mallacliente MallaCliente;
 typedef struct _mallamascara MallaMascara;
+typedef struct _mallaparam MallaParam;
 /*!
  * @desc: Recurso de cliente. Estos clientes pueden ser usuarios o servidores.
  * @params: $nombre Nickname.
@@ -124,6 +125,21 @@ struct _mallamascara
 	u_int mascaras;
 };
 /*!
+ * @desc: Malla de parámetros por modo de canales.
+ * @params: $sig Siguiente nodo de la malla.
+ 	    $flag Modo asociado a la malla.
+ 	    $param Siguiente malla de nodo.
+ 	    $params Cantidad de parámetros en esta malla.
+ * @cat: IRCd
+ !*/
+struct _mallaparam
+{
+	MallaParam *sig;
+	char flag;
+	char *param;
+	u_int params;
+};
+/*!
  * @desc: Recurso de canal.
  * @params: $nombre Nombre.
  	    $modos Modos de canal que utiliza. Están en forma de bits.
@@ -146,10 +162,7 @@ struct _canal
 	u_long modos;
 	char *topic;
 	Cliente *ntopic;
-	char *clave;
-	u_int limite;
-	char *flood;
-	char *link;
+	MallaParam *mallapm;
 	MallaCliente *mallacl;
 	MallaMascara *mallamk;
 	LinkCliente *miembro;
@@ -199,11 +212,11 @@ extern void InsertaMascara(Cliente *, Mascara **, char *);
 extern int BorraMascaraDeCanal(Mascara **, char *);
 extern void InsertaModoCliente(LinkCliente **, Cliente *);
 extern int BorraModoCliente(LinkCliente **, Cliente *);
-extern MallaCliente *BuscaMallaCliente(Canal *cn, char flag);
-extern MallaMascara *BuscaMallaMascara(Canal *cn, char flag);
+extern MallaCliente *BuscaMallaCliente(Canal *, char);
+extern MallaMascara *BuscaMallaMascara(Canal *, char);
+extern MallaParam *BuscaMallaParam(Canal *, char);
 extern void GeneraMascara(Cliente *);
 extern void DistribuyeMe(Cliente *, Sock **);
-extern void CargaModulos(void);
 extern MODVAR Cliente me;
 extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[], int, int);
 /*!
@@ -271,6 +284,8 @@ extern char *TipoMascara(char *, int);
 #define SIGN_POST_NICK 10
 #define SIGN_AWAY 11
 #define SIGN_PART 12
+#define SIGN_STARTUP 13
+#define SIGN_SOCKOPEN 14
 /*!
  * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.
  * @params: $sck [in] Recurso de conexión.
@@ -297,9 +312,6 @@ extern char *TipoMascara(char *, int);
 #define EsBot(x) (x->tipo == TBOT)
 extern int EsLink(LinkCliente *, Cliente *);
 extern int EsLinkCanal(LinkCanal *, Canal *);
-#ifdef UDB
-DLLFUNC void PropagaRegistro(char *, ...);
-#endif
 extern int AbreSockIrcd(void);
 extern MODVAR int intentos;
 extern void LiberaMemoriaCliente(Cliente *);

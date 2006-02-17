@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.11 2005-12-25 22:14:48 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.12 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -24,13 +24,17 @@
 #define irc_dlclose FreeLibrary
 #define irc_dlsym(x,y,z) z = (void *)GetProcAddress(x,y)
 #define irc_dlerror ErrorDl
+#define Recurso HMODULE
+#define Recurso HMODULE
 #else
 #define irc_dlopen dlopen
 #define irc_dlclose dlclose
 #define irc_dlsym(x,y,z) z = dlsym(x,y)
 #define irc_dlerror dlerror
 #define DLLFUNC
+#define Recurso void *
 #endif
+
 
 /* 
  * Macros de portabilidad

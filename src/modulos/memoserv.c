@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.21 2005-12-25 21:14:58 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.22 2006-02-17 19:19:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,28 +10,35 @@
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
 
-MemoServ memoserv;
-#define ExFunc(x) TieneNivel(cl, x, memoserv.hmod, NULL)
+MemoServ *memoserv = NULL;
+#define ExFunc(x) TieneNivel(cl, x, memoserv->hmod, NULL)
 
 BOTFUNC(MSHelp);
 BOTFUNC(MSMemo);
+BOTFUNCHELP(MSHSend);
 BOTFUNC(MSRead);
+BOTFUNCHELP(MSHRead);
 BOTFUNC(MSDel);
+BOTFUNCHELP(MSHDel);
 BOTFUNC(MSList);
+BOTFUNCHELP(MSHList);
 BOTFUNC(MSOpts);
+BOTFUNCHELP(MSHSet);
 BOTFUNC(MSInfo);
-BOTFUNC(MSCancela);
+BOTFUNCHELP(MSHInfo);
+BOTFUNC(MSCancelar);
+BOTFUNCHELP(MSHCancelar);
 
 static bCom memoserv_coms[] = {
-	{ "help" , MSHelp , N0 } ,
-	{ "send" , MSMemo , N1 } ,
-	{ "read" , MSRead , N1 } ,
-	{ "del" , MSDel , N1 } ,
-	{ "list" , MSList , N1 } ,
-	{ "set" , MSOpts , N1 } ,
-	{ "info" , MSInfo , N1 } ,
-	{ "cancelar" , MSCancela , N1 } ,
-	{ 0x0 , 0x0 , 0x0 }
+	{ "help" , MSHelp , N0 , "Muestra esta ayuda." , NULL } ,
+	{ "send" , MSMemo , N1 , "Envía un mensaje." , MSHSend } ,
+	{ "read" , MSRead , N1 , "Lee un mensaje." , MSHRead } ,
+	{ "del" , MSDel , N1 , "Borra un mensaje." , MSHDel } ,
+	{ "list" , MSList , N1 , "Lista los mensajes." , MSHList } ,
+	{ "set" , MSOpts , N1 , "Fija tus opciones." , MSHSet } ,
+	{ "info" , MSInfo , N1 , "Muestra información de tu configuración." , MSHInfo } ,
+	{ "cancelar" , MSCancelar , N1 , "Cancela el último mensaje que hayas enviado." , MSHCancelar } ,
+	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
 int MSCmdAway(Cliente *, char *);
@@ -114,16 +121,18 @@ int MSTest(Conf *config, int *errores)
 void MSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	memoserv.def = 5;
-	memoserv.cada = 30;
+	if (!memoserv)
+		BMalloc(memoserv, MemoServ);
+	memoserv->def = 5;
+	memoserv->cada = 30;
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
 		{
 			if (!strcmp(config->seccion[i]->item, "defecto"))
-				memoserv.def = atoi(config->seccion[i]->data);
+				memoserv->def = atoi(config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "cada"))
-				memoserv.cada = atoi(config->seccion[i]->data);
+				memoserv->cada = atoi(config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "funciones"))
 				ProcesaComsMod(config->seccion[i], mod, memoserv_coms);
 			else if (!strcmp(config->seccion[i]->item, "funcion"))
@@ -150,11 +159,84 @@ void MSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(CS_SIGN_REG, MSSigRegistra);
 	BotSet(memoserv);
 }
+BOTFUNCHELP(MSHSend)
+{
+	Responde(cl, CLI(memoserv), "Envía un mensaje a un usuario o canal.");
+	Responde(cl, CLI(memoserv), "El mensaje es guardado hasta que no se borra y puede leerse tantas veces se quiera.");
+	Responde(cl, CLI(memoserv), "Cuando se deja un mensaje a un usuario, se le notificará de que tiene mensajes pendientes para leer.");
+	Responde(cl, CLI(memoserv), "Si es a un canal, cada vez que entre un usuario y tenga nivel suficiente, se le notificará de que el canal tiene mensajes.");
+	Responde(cl, CLI(memoserv), "Tanto el nick o canal destinatario deben estar registrados.");
+	Responde(cl, CLI(memoserv), "Sólo pueden enviarse mensajes cada \00312%i\003 segundos.", memoserv->cada);
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312SEND nick|#canal mensaje");
+	return 0;
+}
+BOTFUNCHELP(MSHRead)
+{
+	Responde(cl, CLI(memoserv), "Lee un mensaje.");
+	Responde(cl, CLI(memoserv), "El número de mensaje es el mismo que aparece antepuesto al hacer un LIST.");
+	Responde(cl, CLI(memoserv), "Adicionalmente, puedes especificar NEW para leer todos los mensajes nuevos o LAST para leer el último.");
+	Responde(cl, CLI(memoserv), "Un mensaje lo podrás leer siempre que quieras hasta que sea borrado.");
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312READ [#canal] nº|NEW|LAST");
+	return 0;
+}
+BOTFUNCHELP(MSHDel)
+{
+	Responde(cl, CLI(memoserv), "Borra un mensaje.");
+	Responde(cl, CLI(memoserv), "El número de mensaje es el mismo que aparece antepuesto al hacer LIST.");
+	Responde(cl, CLI(memoserv), "Adicionalmente, puedes especificar ALL para borrarlos todos a la vez.");
+	Responde(cl, CLI(memoserv), "Recuerda que una vez borrado, no lo podrás recuperar.");
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintxis: \00312DEL [#canal] nº|ALL");
+	return 0;
+}
+BOTFUNCHELP(MSHList)
+{
+	Responde(cl, CLI(memoserv), "Lista todos los mensajes.");
+	Responde(cl, CLI(memoserv), "Se detalla la fecha de emisión, el emisor y el número que ocupa.");
+	Responde(cl, CLI(memoserv), "Además, si va precedido por un asterisco, marca que el mensaje es nuevo y todavía no se ha leído.");
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312LIST [#canal]");
+	return 0;
+}
+BOTFUNCHELP(MSHInfo)
+{
+	Responde(cl, CLI(memoserv), "Muestra distinta información procedente de tus opciones.");
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312INFO [#canal]");
+	return 0;
+}
+BOTFUNCHELP(MSHCancelar)
+{
+	Responde(cl, CLI(memoserv), "Cancela el último mensaje que has enviado.");
+	Responde(cl, CLI(memoserv), "Esto puede servir para cerciorarse de enviar un mensaje.");
+	Responde(cl, CLI(memoserv), "Recuerda que si has enviado uno después, tendrás que cancelar ambos ya que se elimina primero el último.");
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312CANCELAR nick|#canal");
+	return 0;
+}
+BOTFUNCHELP(MSHSet)
+{
+	Responde(cl, CLI(memoserv), "Fija las distintas opciones.");
+	Responde(cl, CLI(memoserv), " ");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312SET [#canal] LIMITE nº");
+	Responde(cl, CLI(memoserv), "Fija el nº máximo de mensajes que puede recibir.");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312SET #canal NOTIFY ON|OFF");
+	Responde(cl, CLI(memoserv), "Avisa si hay mensajes nuevos en el canal.");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312SET NOTIFY {+|-}modos");
+	Responde(cl, CLI(memoserv), "Fija distintos métodos de notificación de tus memos:");
+	Responde(cl, CLI(memoserv), "-\00312l\003 Te notifica de mensajes nuevos al identificarte como propietario de tu nick.");
+	Responde(cl, CLI(memoserv), "-\00312n\003 Te notifica de mensajes nuevos cuando te son enviados al instante.");
+	Responde(cl, CLI(memoserv), "-\00312w\003 Te notifica de mensajes nuevos cuando vuevles del estado de away.");
+	Responde(cl, CLI(memoserv), "NOTA: El tener el modo +w deshabilita los demás. Esto es así porque sólo se quiere ser informado cuando no se está away.");
+	return 0;
+}
 BOTFUNC(MSHelp)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(memoserv), "\00312%s\003 se encarga de gestionar el servicio de mensajería.", memoserv.hmod->nick);
+		Responde(cl, CLI(memoserv), "\00312%s\003 se encarga de gestionar el servicio de mensajería.", memoserv->hmod->nick);
 		Responde(cl, CLI(memoserv), "Este servicio permite enviar y recibir mensajes entre usuarios aunque no estén conectados simultáneamente.");
 		Responde(cl, CLI(memoserv), "Además, permite mantener un historial de mensajes recibidos y enviar de nuevos a usuarios que se encuentren desconectados.");
 		Responde(cl, CLI(memoserv), "Cuando se conecten, y según su configuración, recibirán un aviso de que tienen nuevos mensajes para leer.");
@@ -162,99 +244,11 @@ BOTFUNC(MSHelp)
 		Responde(cl, CLI(memoserv), "Este servicio sólo es para usuarios y canales registrados.");
 		Responde(cl, CLI(memoserv), " ");
 		Responde(cl, CLI(memoserv), "Comandos disponibles:");
-		FuncResp(memoserv, "SEND", "Envía un mensaje.");
-		FuncResp(memoserv, "READ", "Lee un mensaje.");
-		FuncResp(memoserv, "DEL", "Borra un mensaje.");
-		FuncResp(memoserv, "LIST", "Lista los mensajes.");
-		FuncResp(memoserv, "SET", "Fija tus opciones.");
-		FuncResp(memoserv, "INFO", "Muestra información de tu configuración.");
-		FuncResp(memoserv, "CANCELAR", "Cancela el último mensaje.");
+		ListaDescrips(memoserv->hmod, cl);
 		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Para más información, \00312/msg %s %s comando", memoserv.hmod->nick, strtoupper(param[0]));
+		Responde(cl, CLI(memoserv), "Para más información, \00312/msg %s %s comando", memoserv->hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "SEND") && ExFunc("SEND"))
-	{
-		Responde(cl, CLI(memoserv), "\00312SEND");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Envía un mensaje a un usuario o canal.");
-		Responde(cl, CLI(memoserv), "El mensaje es guardado hasta que no se borra y puede leerse tantas veces se quiera.");
-		Responde(cl, CLI(memoserv), "Cuando se deja un mensaje a un usuario, se le notificará de que tiene mensajes pendientes para leer.");
-		Responde(cl, CLI(memoserv), "Si es a un canal, cada vez que entre un usuario y tenga nivel suficiente, se le notificará de que el canal tiene mensajes.");
-		Responde(cl, CLI(memoserv), "Tanto el nick o canal destinatario deben estar registrados.");
-		Responde(cl, CLI(memoserv), "Sólo pueden enviarse mensajes cada \00312%i\003 segundos.", memoserv.cada);
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312SEND nick|#canal mensaje");
-	}
-	else if (!strcasecmp(param[1], "READ") && ExFunc("READ"))
-	{
-		Responde(cl, CLI(memoserv), "\00312READ");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Lee un mensaje.");
-		Responde(cl, CLI(memoserv), "El número de mensaje es el mismo que aparece antepuesto al hacer un LIST.");
-		Responde(cl, CLI(memoserv), "Adicionalmente, puedes especificar NEW para leer todos los mensajes nuevos o LAST para leer el último.");
-		Responde(cl, CLI(memoserv), "Un mensaje lo podrás leer siempre que quieras hasta que sea borrado.");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312READ [#canal] nº|NEW|LAST");
-	}
-	else if (!strcasecmp(param[1], "DEL") && ExFunc("DEL"))
-	{
-		Responde(cl, CLI(memoserv), "\00312DEL");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Borra un mensaje.");
-		Responde(cl, CLI(memoserv), "El número de mensaje es el mismo que aparece antepuesto al hacer LIST.");
-		Responde(cl, CLI(memoserv), "Adicionalmente, puedes especificar ALL para borrarlos todos a la vez.");
-		Responde(cl, CLI(memoserv), "Recuerda que una vez borrado, no lo podrás recuperar.");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintxis: \00312DEL [#canal] nº|ALL");
-	}
-	else if (!strcasecmp(param[1], "LIST") && ExFunc("LIST"))
-	{
-		Responde(cl, CLI(memoserv), "\00312LIST");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Lista todos los mensajes.");
-		Responde(cl, CLI(memoserv), "Se detalla la fecha de emisión, el emisor y el número que ocupa.");
-		Responde(cl, CLI(memoserv), "Además, si va precedido por un asterisco, marca que el mensaje es nuevo y todavía no se ha leído.");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312LIST [#canal]");
-	}
-	else if (!strcasecmp(param[1], "INFO") && ExFunc("INFO"))
-	{
-		Responde(cl, CLI(memoserv), "\00312INFO");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Muestra distinta información procedente de tus opciones.");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312INFO [#canal]");
-	}
-	else if (!strcasecmp(param[1], "CANCELAR") && ExFunc("CANCELAR"))
-	{
-		Responde(cl, CLI(memoserv), "\00312CANCELAR");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Cancela el último mensaje que has enviado.");
-		Responde(cl, CLI(memoserv), "Esto puede servir para cerciorarse de enviar un mensaje.");
-		Responde(cl, CLI(memoserv), "Recuerda que si has enviado uno después, tendrás que cancelar ambos ya que se elimina primero el último.");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312CANCELAR nick|#canal");
-	}
-#ifdef UDB
-	else if (!strcasecmp(param[1], "SET") && ExFunc("SET"))
-	{
-		Responde(cl, CLI(memoserv), "\00312SET");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Fija las distintas opciones.");
-		Responde(cl, CLI(memoserv), " ");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312SET [#canal] LIMITE nº");
-		Responde(cl, CLI(memoserv), "Fija el nº máximo de mensajes que puede recibir.");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312SET #canal NOTIFY ON|OFF");
-		Responde(cl, CLI(memoserv), "Avisa si hay mensajes nuevos en el canal.");
-		Responde(cl, CLI(memoserv), "Sintaxis: \00312SET NOTIFY {+|-}modos");
-		Responde(cl, CLI(memoserv), "Fija distintos métodos de notificación de tus memos:");
-		Responde(cl, CLI(memoserv), "-\00312l\003 Te notifica de mensajes nuevos al identificarte como propietario de tu nick.");
-		Responde(cl, CLI(memoserv), "-\00312n\003 Te notifica de mensajes nuevos cuando te son enviados al instante.");
-		Responde(cl, CLI(memoserv), "-\00312w\003 Te notifica de mensajes nuevos cuando vuevles del estado de away.");
-		Responde(cl, CLI(memoserv), "NOTA: El tener el modo +w deshabilita los demás. Esto es así porque sólo se quiere ser informado cuando no se está away.");
-	}
-#endif
-	else
+	else if (!MuestraAyudaComando(cl, param[1], memoserv->hmod, param, params))
 		Responde(cl, CLI(memoserv), NS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
@@ -408,9 +402,9 @@ BOTFUNC(MSMemo)
 		if ((res = SQLQuery("SELECT MAX(fecha) from %s%s where LOWER(de)='%s'", PREFIJO, MS_SQL, strtolower(cl->nombre))))
 		{
 			row = SQLFetchRow(res);
-			if (row[0] && (atol(row[0]) + memoserv.cada) > time(0))
+			if (row[0] && (atol(row[0]) + memoserv->cada) > time(0))
 			{
-				ircsprintf(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv.cada);
+				ircsprintf(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv->cada);
 				Responde(cl, CLI(memoserv), MS_ERR_EMPT, buf);
 				return 1;
 			}
@@ -705,7 +699,7 @@ BOTFUNC(MSInfo)
 	}	
 	return 0;
 }
-BOTFUNC(MSCancela)
+BOTFUNC(MSCancelar)
 {
 	SQLRes res;
 	SQLRow row;
@@ -851,7 +845,7 @@ int MSSigSQL()
   			"item varchar(255) default NULL, "
   			"opts varchar(255) default NULL, "
   			"limite int4 default '%i' "
-			");", PREFIJO, MS_SET, memoserv.def))
+			");", PREFIJO, MS_SET, memoserv->def))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{

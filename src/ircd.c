@@ -1,14 +1,11 @@
 /*
- * $Id: ircd.c,v 1.32 2005-12-25 21:13:13 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.33 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
-#ifdef UDB
-#include "bdd.h"
-#endif
 
 /*!
  * @desc: Contiene la fecha de inicio de la conexión con el servidor IRCd.
@@ -81,15 +78,13 @@ void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, u_char par
 			if (com->funcion[i] == func)
 				return;
 		}
-		com->funcion[com->funciones] = func;
-		com->funciones++;
+		com->funcion[com->funciones++] = func;
 		return;
 	}
-	com = (Comando *)Malloc(sizeof(Comando));
-	com->cmd = cmd;
-	com->tok = tok;
-	com->funciones = 1;
-	com->funcion[0] = func;
+	BMalloc(com, Comando);
+	com->cmd = strdup(cmd);
+	com->tok = strdup(tok);
+	com->funcion[com->funciones++] = func;
 	com->params = params;
 	com->cuando = cuando;
 	AddItem(com, comandos);
@@ -110,7 +105,12 @@ int BorraComando(char *cmd, IRCFUNC(*func))
 					i++;
 				}
 				if (!--com->funciones)
-					LiberaItem(com, comandos);
+				{
+					BorraItem(com, comandos);
+					Free(com->cmd);
+					Free(com->tok);
+					Free(com);
+				}
 				return 1;
 			}
 		}
@@ -341,7 +341,7 @@ MallaCliente *CreaMallaCliente(char flag)
 	mcl->flag = flag;
 	return mcl;
 }
-extern MallaCliente *BuscaMallaCliente(Canal *cn, char flag)
+MallaCliente *BuscaMallaCliente(Canal *cn, char flag)
 {
 	MallaCliente *mcl;
 	for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
@@ -351,7 +351,14 @@ extern MallaCliente *BuscaMallaCliente(Canal *cn, char flag)
 	}
 	return NULL;
 }
-extern MallaMascara *BuscaMallaMascara(Canal *cn, char flag)
+MallaMascara *CreaMallaMascara(char flag)
+{
+	MallaMascara *mmk;
+	BMalloc(mmk, MallaMascara);
+	mmk->flag = flag;
+	return mmk;
+}
+MallaMascara *BuscaMallaMascara(Canal *cn, char flag)
 {
 	MallaMascara *mmk;
 	for (mmk = cn->mallamk; mmk; mmk = mmk->sig)
@@ -361,12 +368,22 @@ extern MallaMascara *BuscaMallaMascara(Canal *cn, char flag)
 	}
 	return NULL;
 }
-MallaMascara *CreaMallaMascara(char flag)
+MallaParam *CreaMallaParam(char flag)
 {
-	MallaMascara *mmk;
-	BMalloc(mmk, MallaMascara);
-	mmk->flag = flag;
-	return mmk;
+	MallaParam *mpm;
+	BMalloc(mpm, MallaParam);
+	mpm->flag = flag;
+	return mpm;
+}
+MallaParam *BuscaMallaParam(Canal *cn, char flag)
+{
+	MallaParam *mpm;
+	for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
+	{
+		if (mpm->flag == flag)
+			return mpm;
+	}
+	return NULL;
 }
 Canal *InfoCanal(char *canal, int crea)
 {
@@ -384,6 +401,10 @@ Canal *InfoCanal(char *canal, int crea)
 			AddItem(CreaMallaCliente(*c), cn->mallacl);
 		for (c = protocolo->modmk; !BadPtr(c); c++)
 			AddItem(CreaMallaMascara(*c), cn->mallamk);
+		for (c = protocolo->modpm1; !BadPtr(c); c++)
+			AddItem(CreaMallaParam(*c), cn->mallapm);
+		for (c = protocolo->modpm2; !BadPtr(c); c++)
+			AddItem(CreaMallaParam(*c), cn->mallapm);
 		AddItem(cn, canales);
 		InsertaCanalEnHash(cn, canal, cTab);
 	}
@@ -452,11 +473,7 @@ int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 	}
 	for (maux = cn->mallacl; maux; maux = maux->sig)
 		BorraModoCliente(&maux->malla, cl);
-	if (!cn->miembros 
-#ifdef UDB
-		&& !(cn->modos & MODE_RGSTR)
-#endif
-	)
+	if (!cn->miembros)
 		LiberaMemoriaCanal(cn);
 	return 0;
 }
@@ -704,41 +721,6 @@ int EsLinkCanal(LinkCanal *link, Canal *cn)
 	}
 	return 0;
 }
-#ifdef UDB
-
-/*!
- * @desc: Propaga un registro UDB por la red.
- * @params: $item [in] Cadena con formato a propagar.
- 	    $... [in] Argumentos variables según cadena con formato.
- * @cat: IRCd
- !*/
- 
-void PropagaRegistro(char *item, ...)
-{
-	va_list vl;
-	char r, buf[1024];
-	int ins;
-	Udb *bloq;
-	u_long pos;
-	va_start(vl, item);
-	ircvsprintf(buf, item, vl);
-	va_end(vl);
-	r = buf[0];
-	bloq = IdAUdb(r);
-	pos = bloq->data_long;
-	ins = ParseaLinea(bloq->id, &buf[3], 1);
-	if (strchr(buf, ' '))
-	{
-		if (ins == 1)
-			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, buf);
-	}
-	else
-	{
-		if (ins == -1)
-			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
-	}
-}
-#endif
 void LiberaMemoriaCliente(Cliente *cl)
 {
 	LinkCanal *aux, *tmp;
@@ -763,8 +745,6 @@ void LiberaMemoriaCliente(Cliente *cl)
 	Free(cl->vmask);
 	Free(cl->trio);
 	Free(cl->info);
-	//for (i = 0; i < cl->fundadores; i++)
-	//	ircfree(cl->fundador[i]);
 	for (aux = cl->canal; aux; aux = tmp)
 	{
 		tmp = aux->sig;
@@ -776,6 +756,7 @@ void LiberaMemoriaCanal(Canal *cn)
 {
 	MallaMascara *maux, *mtmp;
 	MallaCliente *caux, *ctmp;
+	MallaParam *paux, *ptmp;
 	LinkCliente *aux, *tmp;
 	Mascara *kaux, *ktmp;
 	BorraCanalDeHash(cn, cn->nombre, cTab);
@@ -786,9 +767,6 @@ void LiberaMemoriaCanal(Canal *cn)
 	if (cn->sig)
 		cn->sig->prev = cn->prev;
 	ircfree(cn->topic);
-	ircfree(cn->clave);
-	ircfree(cn->flood);
-	ircfree(cn->link);
 	for (maux = cn->mallamk; maux; maux = mtmp)
 	{
 		mtmp = maux->sig;
@@ -809,6 +787,12 @@ void LiberaMemoriaCanal(Canal *cn)
 			Free(aux);
 		}
 		Free(caux);
+	}
+	for (paux = cn->mallapm; paux; paux = ptmp)
+	{
+		ptmp = paux->sig;
+		ircfree(paux->param);
+		Free(paux);
 	}
 	for (aux = cn->miembro; aux; aux = tmp)
 	{
@@ -888,7 +872,7 @@ void ReconectaBot(char *nick)
 u_long FlagAModo(char flag, mTab tabla[])
 {
 	mTab *aux = &tabla[0];
-	while (aux->flag != '0')
+	while (aux->flag)
 	{
 		if (aux->flag == flag)
 			return aux->mode;
@@ -899,7 +883,7 @@ u_long FlagAModo(char flag, mTab tabla[])
 char ModoAFlag(u_long mode, mTab tabla[])
 {
 	mTab *aux = &tabla[0];
-	while (aux->flag != '0')
+	while (aux->flag)
 	{
 		if (aux->mode == mode)
 			return aux->flag;
@@ -937,7 +921,7 @@ char *ModosAFlags(u_long modes, mTab tabla[], Canal *cn)
 	mTab *aux = &tabla[0];
 	char *flags;
 	flags = buf;
-	while (aux->flag != '0')
+	while (aux->flag)
 	{
 		if (modes & aux->mode)
 			*flags++ = aux->flag;
@@ -946,20 +930,11 @@ char *ModosAFlags(u_long modes, mTab tabla[], Canal *cn)
 	*flags = '\0';
 	if (cn)
 	{
-		if (cn->clave)
+		MallaParam *mpm;
+		for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
 		{
 			strcat(flags, " ");
-			strcat(flags, cn->clave);
-		}
-		if (cn->link)
-		{
-			strcat(flags, " ");
-			strcat(flags, cn->link);
-		}
-		if (cn->flood)
-		{
-			strcat(flags, " ");
-			strcat(flags, cn->flood);
+			strcat(flags, mpm->param);
 		}
 	}
 	return buf;
@@ -1024,9 +999,6 @@ int EntraResidentes()
 				EntraBot(aux->cl, canal);
 		}
 	}
-#ifdef UDB
-	PropagaRegistro("S::D md5");
-#endif
 	return 0;
 }
 int EntraBots()

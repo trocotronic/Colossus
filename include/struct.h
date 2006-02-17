@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.52 2005-12-25 22:18:54 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.53 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -227,13 +227,13 @@ extern char *Mx(char *);
 typedef struct _senyal
 {
 	struct _senyal *sig;
-	short senyal;
+	int senyal;
 	int (*func)();
 }Senyal;
 #define MAXSIGS 256
 extern MODVAR Senyal *senyals[MAXSIGS];
-extern void InsertaSenyal(short, int (*)());
-extern int BorraSenyal(short, int (*)());
+extern void InsertaSenyal(int, int (*)());
+extern int BorraSenyal(int, int (*)());
 #define Senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
 #define Senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
 #define Senyal2(s,x,y) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
@@ -399,6 +399,7 @@ extern VOIDSIG Reinicia();
 extern int Pregunta(char *);
 extern VOIDSIG Refresca();
 extern int copyfile(char *, char *);
+extern Recurso CopiaDll(char *, char *, char *);
 #ifdef USA_SSL
 #define SSLFLAG_FAILIFNOCERT 	0x1
 #define SSLFLAG_VERIFYCERT 	0x2
@@ -410,7 +411,7 @@ extern int b64_encode(char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
 extern MODVAR int refrescando;
 #define Creditos() 																\
-	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2005", COLOSSUS_VERSION);								\
+	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2006", COLOSSUS_VERSION);								\
 	Responde(cl, bl, " ");															\
 	Responde(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");						\
 	Responde(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\
@@ -469,3 +470,4 @@ extern char *base64_decode(char *);
 extern char *Encripta(char *, char *);
 extern char *Desencripta(char *, char *);
 extern char *Long2Char(u_long);
+extern time_t GMTime();

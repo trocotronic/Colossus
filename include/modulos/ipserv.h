@@ -1,13 +1,11 @@
 /*
- * $Id: ipserv.h,v 1.3 2005-07-13 14:06:24 Trocotronic Exp $ 
+ * $Id: ipserv.h,v 1.4 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 typedef struct _is IpServ;
 struct _is
 {
-#ifndef UDB
 	int clones;
-#endif
 	char *sufijo;
 	int cambio;
 	Modulo *hmod;
@@ -18,8 +16,8 @@ struct _is
 #define IS_ERR_EMPT "\00304ERROR: %s"
 
 #define IS_SQL "ips"
-#ifndef UDB
 #define IS_CLONS "clons"
-#endif
 
-extern IpServ ipserv;
+extern IpServ *ipserv;
+
+#define IS_SIGN_DROP 30

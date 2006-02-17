@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.h,v 1.5 2005-07-13 14:06:25 Trocotronic Exp $ 
+ * $Id: proxyserv.h,v 1.6 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #define XS_MAX_PORTS 32
@@ -14,7 +14,7 @@ struct _xs
 	Modulo *hmod;
 };
 
-extern ProxyServ proxyserv;
+extern ProxyServ *proxyserv;
 
 #define XS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
 #define XS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"

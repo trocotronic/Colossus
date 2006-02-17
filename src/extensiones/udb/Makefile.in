@@ -1,0 +1,22 @@
+## $Id: Makefile.in,v 1.1 2006-02-17 19:19:04 Trocotronic Exp $
+
+INCLUDES = ../include/ircd.h ../include/md5.h \
+	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
+	../include/ircsprintf.h ../include/struct.h
+OBJS=bdd.o chanserv.o ipserv.o nickserv.o operserv.o udb.o
+build: $(OBJS)
+	$(CC) $(CFLAGS) -o udb.so $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
+bdd.o: bdd.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c bdd.c
+chanserv.o: chanserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c chanserv.c
+ipserv.o: ipserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c ipserv.c
+nickserv.o: nickserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c nickserv.c
+operserv.o: operserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c operserv.c
+udb.o: udb.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c udb.c
+clean:
+	$(RM) -f *.o *.so *~ core

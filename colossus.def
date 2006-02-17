@@ -11,6 +11,7 @@ EXPORTS
 	BorraComando
 	BorraModoCliente
 	BorraSenyal
+	BorraSenyalExt
 	BorraTKL
 	BuscaAlias
 	BuscaCanal
@@ -21,11 +22,14 @@ EXPORTS
 	BuscaFuncion
 	BuscaMallaCliente
 	BuscaMallaMascara
+	BuscaMallaParam
+	BuscaModoProtocolo
 	BuscaModulo
 	BuscaNivel
 	BuscaOpt
 	BuscaOptNiv
 	CambiaNick
+	CargaExtensiones
 	ChkBtCon
 	CierraColossus
 	CierraIrcd
@@ -34,8 +38,10 @@ EXPORTS
 	Crc32
 	CreaAlias
 	CreaBot
+	CreaExtension
 	Debug
 	DescargaAliases
+	DescargaExtensiones
 	DesconectaBot
 	Desencripta
 	DetieneProceso
@@ -66,13 +72,17 @@ EXPORTS
 	InsertaClienteEnCanal
 	InsertaComando
 	InsertaModoCliente
+	InsertaModoProtocolo
 	InsertaSenyal
+	InsertaSenyalExt
 	InsertaTKL
 	IrcdEscucha
 	LiberaComs
 	LiberaMemoriaCanal
 	LiberaMemoriaCliente
 	LiberaMemoriaConfiguracion
+	ListaDescrips
+	LlamaSenyalExt
 	Loguea
 	Long2Char
 	MDString
@@ -80,6 +90,7 @@ EXPORTS
 	MascaraTKL
 	ModoAFlag
 	ModosAFlags
+	MuestraAyudaComando
 	NTL_tolower_tab
 	NTL_toupper_tab
 	NuevoCliente
@@ -175,5 +186,8 @@ EXPORTS
 	tea
 	timers
 	tokbuf
+	UMODE_REGNICK
+	UMODE_HIDE
+	CHMODE_RGSTR
 	uTab
 	untea

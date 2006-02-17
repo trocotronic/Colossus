@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.12 2005-12-04 14:09:25 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.13 2006-02-17 19:19:03 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -34,6 +34,7 @@ Name: "enccert"; Description: "&Encriptar certificado"; GroupDescription: "Opcio
 Source: "..\..\Colossus.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\Colossus.pdb"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\cambios"; DestDir: "{app}"; DestName: "cambios.txt"; Flags: ignoreversion
+Source: "..\..\ejemplo.conf"; DestDir: "{app}"; DestName: "ejemplo.conf"; Flags: ignoreversion
 Source: "..\..\proximamente"; DestDir: "{app}"; DestName: "proximamente.txt"; Flags: ignoreversion
 Source: "..\..\pthreadVC2.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\..\colossusdoc.html"; DestDir: "{app}"; Flags: ignoreversion

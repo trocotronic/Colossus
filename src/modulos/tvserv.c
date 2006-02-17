@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.9 2005-12-25 21:15:06 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.10 2006-02-17 19:19:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,8 +7,8 @@
 #include "modulos.h"
 #include "modulos/tvserv.h"
 
-TvServ tvserv;
-#define ExFunc(x) TieneNivel(cl, x, tvserv.hmod, NULL)
+TvServ *tvserv = NULL;
+#define ExFunc(x) TieneNivel(cl, x, tvserv->hmod, NULL)
 
 SOCKFUNC(TSAbreProg);
 SOCKFUNC(TSLeeProg);
@@ -17,18 +17,20 @@ SOCKFUNC(TSAbreHoroscopo);
 SOCKFUNC(TSLeeHoroscopo);
 SOCKFUNC(TSCierraHoroscopo);
 BOTFUNC(TSTv);
+BOTFUNCHELP(TSHTv);
 BOTFUNC(TSHelp);
 BOTFUNC(TSHoroscopo);
+BOTFUNCHELP(TSHHoroscopo);
 Sock *prog = NULL, *hor = NULL;
 Cadena *viendo = NULL;
 int horosc = 1;
 int TSSigSQL();
 
 static bCom tvserv_coms[] = {
-	{ "help" , TSHelp , N1 } ,
-	{ "tv" , TSTv , N1 } ,
-	{ "horoscopo" , TSHoroscopo , N1 } ,
-	{ 0x0 , 0x0 , 0x0 }
+	{ "help" , TSHelp , N1 , "Muestra esta ayuda." , NULL } ,
+	{ "tv" , TSTv , N1 , "Programación de las televisiones de España." , TSHTv } ,
+	{ "horoscopo" , TSHoroscopo , N1 , "Horóscopo del día." , TSHHoroscopo } ,
+	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
 void TSSet(Conf *, Modulo *);
@@ -45,7 +47,7 @@ Cadena cadenas[] = {
 	{ "TVE1" , "TVE1" , 'n' } ,
 	{ "TVE2" , "TVE2" , 'n' } ,
 	{ "T5" , "Tele+5" , 'n' } ,
-	{ "C+" , "Canal+Plus" , 'n' } ,
+	{ "Cuatro" , "Cuatro" , 'n' } ,
 	{ "A3" , "Antena+3" , 'n' } ,
 	{ "Canal2" , "Canal+2" , 'a' } ,
 	{ "Canal9" , "Canal+9" , 'a' } ,
@@ -100,6 +102,7 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	mod->activo = 1;
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -133,6 +136,10 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 }
 int MOD_DESCARGA(TvServ)()
 {
+	if (prog)
+		SockClose(prog, LOCAL);
+	if (hor)
+		SockClose(hor, LOCAL);
 	BorraSenyal(SIGN_SQL, TSSigSQL);
 	BotUnset(tvserv);
 	return 0;
@@ -151,6 +158,8 @@ int TSTest(Conf *config, int *errores)
 void TSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
+	if (!tvserv)
+		BMalloc(tvserv, TvServ);
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -261,7 +270,7 @@ BOTFUNC(TSTv)
 		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TV cadena");
 		return 1;
 	}
-	if (! TSBuscaCadena(param[1]))
+	if (!TSBuscaCadena(param[1]))
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta cadena no existe");
 		return 1;
@@ -276,46 +285,43 @@ BOTFUNC(TSTv)
 		Responde(cl, CLI(tvserv), row[0]);
 	return 0;
 }
+BOTFUNCHELP(TSHTv)
+{
+	int i;
+	Responde(cl, CLI(tvserv), "Muestra la programación de las distintas cadenas de la televisión de España.");
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Cadenas disponibles:");
+	for (i = 0; cadenas[i].nombre; i++)
+		Responde(cl, CLI(tvserv), cadenas[i].nombre);
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Sintaxis: \00312TV cadena");
+	return 0;
+}
+BOTFUNCHELP(TSHHoroscopo)
+{
+	int i;
+	Responde(cl, CLI(tvserv), "Muestra la predicción del día del signo zodiacal que se indique.");
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Zodiacos disponibles:");
+	for (i = 0; horoscopos[i]; i++)
+		Responde(cl, CLI(tvserv), horoscopos[i]);
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Sintaxis: \00312HOROSCOPO signo");
+	return 0;
+}
 BOTFUNC(TSHelp)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(tvserv), "\00312%s\003 es un servicio de ocio para los usuarios que ofrece distintos servicios.", tvserv.hmod->nick);
+		Responde(cl, CLI(tvserv), "\00312%s\003 es un servicio de ocio para los usuarios que ofrece distintos servicios.", tvserv->hmod->nick);
 		Responde(cl, CLI(tvserv), "Todos los servicios se actualizan a diario.");
 		Responde(cl, CLI(tvserv), " ");
 		Responde(cl, CLI(tvserv), "Servicios prestados:");
-		FuncResp(tvserv, "TV", "Programación de las televisiones de España.");
-		FuncResp(tvserv, "HOROSCOPO", "Horóscopo del día.");
+		ListaDescrips(tvserv->hmod, cl);
 		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Para más información, \00312/msg %s %s comando", tvserv.hmod->nick, strtoupper(param[0]));
+		Responde(cl, CLI(tvserv), "Para más información, \00312/msg %s %s comando", tvserv->hmod->nick, strtoupper(param[0]));
 	}
-	else if (!strcasecmp(param[1], "TV") && ExFunc("TV"))
-	{
-		int i;
-		Responde(cl, CLI(tvserv), "\00312TV");
-		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Muestra la programación de las distintas cadenas de la televisión de España.");
-		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Cadenas disponibles:");
-		for (i = 0; cadenas[i].nombre; i++)
-			Responde(cl, CLI(tvserv), cadenas[i].nombre);
-		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Sintaxis: \00312TV cadena");
-	}
-	else if (!strcasecmp(param[1], "HOROSCOPO") && ExFunc("HOROSCOPO"))
-	{
-		int i = 0;
-		Responde(cl, CLI(tvserv), "\00312HOROSCOPO");
-		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Muestra la predicción del día del signo zodiacal que se indique.");
-		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Zodiacos disponibles:");
-		while (horoscopos[i])
-			Responde(cl, CLI(tvserv), horoscopos[i++]);
-		Responde(cl, CLI(tvserv), " ");
-		Responde(cl, CLI(tvserv), "Sintaxis: \00312HOROSCOPO signo");
-	}
-	else
+	else if (!MuestraAyudaComando(cl, param[1], tvserv->hmod, param, params))
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }

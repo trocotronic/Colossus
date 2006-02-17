@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.13 2005-12-04 14:09:22 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.14 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 #define MAXMODS 128
@@ -8,7 +8,10 @@
 #define MAX_NIVS 16
 
 #define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params)
+#define BOTFUNCHELP(x) int (x)(Cliente *cl, char *param[], int params)
 typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int);
+typedef int (*Mod_FuncHelp)(Cliente *, char *[], int);
+typedef struct _mod Modulo;
 
 /*!
  * @desc: Recurso de comandos para módulos.
@@ -32,7 +35,18 @@ typedef struct _bcom
 	char *com;
 	Mod_Func func;
 	u_int nivel;
+	char *descrip;
+	Mod_FuncHelp func_help;
 }bCom;
+typedef struct _funcion
+{
+	char *com;
+	Mod_Func func;
+	u_int nivel;
+	char *descrip;
+	Mod_FuncHelp func_help;
+	Recurso hmod;
+}Funcion;
 typedef struct _info
 {
 	char *nombre;
@@ -68,14 +82,10 @@ struct _alias
  	    <b>Todos los demás miembros no deben usarse.</b>
  * @cat: Modulos
  !*/
-typedef struct _mod
+struct _mod
 {
-	struct _mod *sig;
-#ifdef _WIN32
-	HMODULE hmod;
-#else
-	void *hmod;
-#endif
+	Modulo *sig;
+	Recurso hmod;
 	char *archivo;
 	char *tmparchivo;
 	char *nick;
@@ -89,14 +99,15 @@ typedef struct _mod
 	char *config;
 	Cliente *cl;
 	Alias *aliases;
-	char cargado;
+	unsigned activo:1;
 	ModInfo *info;
-	bCom *comando[MAX_COMS];
+	char *serial;
+	Funcion *comando[MAX_COMS];
 	int comandos;
-	int (*carga)(struct _mod *);
-	int (*descarga)(struct _mod *);
+	int (*carga)(Modulo *);
+	int (*descarga)(Modulo *);
 	void *conf; /* es un puntero a su estructura, según lo defina. habrá que hacer cast *CADA VEZ* */
-}Modulo;
+};
 
 extern MODVAR Modulo *modulos;
 extern Modulo *BuscaModulo(char *, Modulo *);
@@ -106,6 +117,7 @@ extern Modulo *BuscaModulo(char *, Modulo *);
 #define ERR_FORB "\00304ERROR: Acceso denegado."
 #define ERR_NSUP "\00304ERROR: Este comando no está soportado en este servidor."
 extern void DescargaModulos(void);
+extern void DescargaModulo(Modulo *);
 extern Modulo *CreaModulo(char *);
 #ifdef _WIN32
 extern const char *ErrorDl(void);
@@ -118,24 +130,23 @@ extern const char *ErrorDl(void);
  * @cat: Modulos
  * @ret: Devuelve el recurso cliente del módulo.
  !*/
-#define CLI(x) x.hmod->cl
+#define CLI(x) x->hmod->cl
 /*!
  * @desc: Función a ejecutar dentro de cada módulo una vez se haya cargado.
  * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
- * @sntx: void BotSet(void mod)
+ * @sntx: void BotSet(void *mod)
  * @cat: Modulos
  * @ver: BotUnset
  !*/
-#define BotSet(x) x.hmod = mod; mod->conf = &(x)
+#define BotSet(x) x->hmod = mod; mod->conf = x
 /*!
  * @desc: Función a ejecutar dentro de cada módulo una vez se haya descargado.
  * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
- * @sntx: void BotUnset(void mod)
+ * @sntx: void BotUnset(void *mod)
  * @cat: Modulos
  * @ver: BotSet
  !*/
-#define BotUnset(x) LiberaComs(x.hmod); DescargaAliases(x.hmod); x.hmod->conf = NULL; x.hmod = NULL; 
-extern Mod_Func BuscaFuncion(Modulo *, char *, u_int *);
+#define BotUnset(x) LiberaComs(x->hmod); DescargaAliases(x->hmod); x->hmod->conf = NULL; x->hmod = NULL; Free(x);
 /*!
  * @desc: Responde a un usuario con especificación de una función si esta función existe y está cargada. Muy útil para sistemas de AYUDA.
  * @params: $mod [in] Estructura del módulo. Dependerá de cada módulo.
@@ -144,7 +155,10 @@ extern Mod_Func BuscaFuncion(Modulo *, char *, u_int *);
  * @cat: Modulos
  * @sntx: void FuncResp(void mod, char *nombre, char *cont)
  !*/
-#define FuncResp(x,y,z) do { if (TieneNivel(cl,y,x.hmod,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
+#define FuncResp(x,y,z) do { if (TieneNivel(cl,y,x->hmod,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
+
+extern void ListaDescrips(Modulo *, Cliente *); 
+extern int MuestraAyudaComando(Cliente *, char *, Modulo *, char **m, int);
 
 #ifdef ENLACE_DINAMICO
  #define MOD_INFO(name) Mod_Info
@@ -191,7 +205,7 @@ extern Nivel *niveles[MAX_NIVS];
 #define N14 0x2000
 #define N15 0x4000
 
-extern Mod_Func TieneNivel(Cliente *, char *, Modulo *, char *);
+extern Funcion *TieneNivel(Cliente *, char *, Modulo *, char *);
 
 extern Alias *CreaAlias(char *, char *, Modulo *);
 extern void DescargaAliases(Modulo *);

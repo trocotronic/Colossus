@@ -1,5 +1,5 @@
 /*
- * $Id: sql.h,v 1.2 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: sql.h,v 1.3 2006-02-17 19:19:02 Trocotronic Exp $ 
  */
 
 typedef char ** SQLRow;
@@ -7,11 +7,7 @@ typedef void * SQLRes;
 #define MAX_TAB 128
 typedef struct _sql {
 	void *recurso;
-#ifdef _WIN32
-	HMODULE hmod;
-#else
-	void *hmod;
-#endif
+	Recurso hmod;
 	SQLRes (*Query)(const char *);
 	char **(*FetchRow)(SQLRes);
 	void (*FreeRes)(SQLRes);
