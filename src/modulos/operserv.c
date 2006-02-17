@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.27 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.28 2006-02-17 23:31:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1003,8 +1003,8 @@ int OSSigIdOk(Cliente *cl)
 			int i;
 			for (i = 0; i < nivs; i++)
 			{
-				if (nivel & niveles[i]->nivel)
-					ProtFunc(P_MODO_USUARIO_REMOTO)(cl, operserv->hmod->nick, niveles[i]->flags, 1);
+				if ((nivel & niveles[i]->nivel) && niveles[i]->flags)
+					ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(operserv), niveles[i]->flags, 1);
 			}
 		}
 		cl->nivel |= nivel;
