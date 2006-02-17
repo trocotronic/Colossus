@@ -1,6 +1,6 @@
-## $Id: Makefile,v 1.23 2006-02-17 19:19:02 Trocotronic Exp $
+## $Id: Makefile,v 1.24 2006-02-17 19:44:16 Trocotronic Exp $
 
-OBJS=bdd.o hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
+OBJS=hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
 	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
