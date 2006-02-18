@@ -422,7 +422,7 @@ IRCFUNC(m_dbq)
 	else
 	{
 		int id = bloq->id;
-		EnviaAServidor(":%s 339 %s :%i %i %lu %s %lu %X", me.nombre, cl->nombre, id, regs[id], bloq->data_long, bloq->data_char, LeeGMT(id), LeeHash(id));
+		EnviaAServidor(":%s 339 %s :%i %i %lu %s %lu %lX", me.nombre, cl->nombre, id, regs[id], bloq->data_long, bloq->data_char, LeeGMT(id), LeeHash(id));
 	} 
 	Free(pos);
 	return 0;

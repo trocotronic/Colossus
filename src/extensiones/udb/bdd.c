@@ -756,7 +756,9 @@ void CargaBloque(int tipo)
 	char linea[BUFSIZE], *c;
 	FILE *fp;
 	root = IdAUdb(tipo);
-	if ((lee = LeeHash(tipo)) != (obtiene = ObtieneHash(root)))
+	lee = LeeHash(tipo);
+	obtiene = ObtieneHash(root);
+	if (lee != obtiene)
 	{
 		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
 		if ((fp = fopen(root->item, "wb")))
