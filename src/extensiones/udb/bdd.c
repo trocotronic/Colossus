@@ -359,15 +359,15 @@ u_long ObtieneHash(Udb *bloq)
 }
 u_long LeeHash(int id)
 {
-	u_int hash = 0;
+	u_long hash = 0L;
 	char lee[9];
 	if (fseek(fcrc, 8 * id, SEEK_SET))
 		return 0L;
 	bzero(lee, 9);
 	fread(lee, 1, 8, fcrc);
-	if (!sscanf(lee, "%X", &hash))
+	if (!sscanf(lee, "%lX", &hash))
 		return 0L;
-	return (u_long)hash;
+	return hash;
 }
 time_t LeeGMT(int id)
 {
@@ -376,7 +376,7 @@ time_t LeeGMT(int id)
 		return 0L;
 	bzero(lee, 11);
 	fread(lee, 1, 10, fcrc);
-	return atoul(lee);
+	return (time_t)atoul(lee);
 }
 int GetDataVer()
 {
@@ -422,7 +422,7 @@ int ActualizaHash(Udb *bloque)
 	if (fseek(fcrc, 8 * bloque->id, SEEK_SET))
 		return -1;
 	lo = ObtieneHash(bloque);
-	ircsprintf(lee, "%X", lo);
+	ircsprintf(lee, "%lX", lo);
 	fwrite(lee, 1, 8, fcrc);
 	return 0;
 }

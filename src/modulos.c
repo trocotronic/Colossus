@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.17 2006-02-17 19:47:34 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.18 2006-02-18 14:46:18 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -348,7 +348,6 @@ bCom *BuscaComModRemoto(char *remoto, Recurso *hmod)
 void SetComMod(Conf *config, Modulo *mod, bCom *coms)
 {
 	bCom *cm = NULL;
-	char  *amod = NULL;
 	Recurso hmod = NULL;
 	if ((cm = BuscaComMod(coms, config->data)) || (cm = BuscaComModRemoto(config->data, &hmod)))
 	{
