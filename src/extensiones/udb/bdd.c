@@ -227,6 +227,7 @@ int ActualizaDataVer2()
 				}
 			}
 		}
+		fflush(tmp);
 		fclose(fp);
 		fclose(tmp);
 		unlink(p1);
@@ -277,6 +278,7 @@ int ActualizaDataVer3()
 			fwrite(buf, 1, strlen(buf), tmp);
 		}
 	}
+	fflush(tmp);
 	fclose(fp);
 	fclose(tmp);
 	unlink(DB_DIR "nicks.udb");
@@ -339,11 +341,11 @@ u_long ObtieneHash(Udb *bloq)
 	u_long hashl = 0L;
 	struct stat inode;
 	if ((fp = open(bloq->item, O_RDONLY|O_BINARY|O_CREAT, S_IREAD|S_IWRITE)) == -1)
-		return 0;
+		return 0L;
 	if (fstat(fp, &inode) == -1)
 	{
 		close(fp);
-		return 0;
+		return 0L;
 	}
 	par = (char *)malloc(inode.st_size + 1);
 	par[inode.st_size] = '\0';
@@ -401,6 +403,7 @@ void SetDataVer(int v)
 		return;
 	ircsprintf(ver, "%X", v);
 	fwrite(ver, 1, 2, fcrc);
+	fflush(fcrc);
 }
 int ActualizaGMT(Udb *bloque, time_t gm)
 {
@@ -411,6 +414,7 @@ int ActualizaGMT(Udb *bloque, time_t gm)
 		return -1;
 	ircsprintf(lee, "%lu", hora);
 	fwrite(lee, 1, 10, fcrc);
+	fflush(fcrc);
 	gmts[bloque->id] = hora;
 	return 0;
 }
@@ -424,6 +428,7 @@ int ActualizaHash(Udb *bloque)
 	lo = ObtieneHash(bloque);
 	ircsprintf(lee, "%lX", lo);
 	fwrite(lee, 1, 8, fcrc);
+	fflush(fcrc);
 	return 0;
 }
 /* devuelve el puntero a todo el bloque a partir de su id o letra */
@@ -758,6 +763,7 @@ void CargaBloque(int tipo)
 	root = IdAUdb(tipo);
 	lee = LeeHash(tipo);
 	obtiene = ObtieneHash(root);
+	Debug("%lu %lu", lee, obtiene);
 	if (lee != obtiene)
 	{
 		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
@@ -879,6 +885,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 				EnviaAServidor(":%s DB %s ERR DRP %i %c fwrite", me.nombre, cl->nombre, E_UDB_FATAL, bdd);
 				return 1;
 			}
+			fflush(fp);
 			fclose(fp);
 			ActualizaHash(bloq);
 			DescargaBloque(bloq->id);
