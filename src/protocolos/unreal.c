@@ -1778,7 +1778,7 @@ void EntraCliente(Cliente *cl, char *canal)
 			}
 			p_mode(&me, cn, "+sAm");
 		}
-		else if (modcanales)
+		if (modcanales)
 			p_mode(&me, cn, modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);

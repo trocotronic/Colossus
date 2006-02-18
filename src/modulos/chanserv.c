@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.32 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.33 2006-02-18 14:34:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -2417,7 +2417,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	char *forb;
 	SQLRes res;
 	SQLRow row;
-	int opts, i;
+	int opts, i, max;
 	char *entry, *modos, *topic, *susp;
 	Akick *akicks;
 	CsRegistros *cres;
@@ -2475,18 +2475,17 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 				{
 					if (!strcasecmp(cres->sub[i].canal, cn->nombre))
 					{
-						int max;
 						strcpy(buf, cres->sub[i].autos);
-						max = strlen(cres->sub[i].autos);
-						for (i = 0; i < max; i++)
-						{
-							strcat(tokbuf, cl->nombre);
-							strcat(tokbuf, " ");
-						}
 						break;
 					}
 				}
 			}
+		}
+		max = strlen(buf);
+		for (i = 0; i < max; i++)
+		{
+			strcat(tokbuf, cl->nombre);
+			strcat(tokbuf, " ");
 		}
 		if (CSTieneNivel(cl->nombre, cn->nombre, 0L))
 			SQLInserta(CS_SQL, cn->nombre, "ultimo", "%lu", time(0));

@@ -51,7 +51,6 @@ u_long UMODE_SHOWIP;
 extern u_long UMODE_SERVICES;
 extern void ProcesaModo(Cliente *, Canal *, char **, int);
 extern void EntraCliente(Cliente *, char *);
-extern MODVAR char *modcanales;
 IRCFUNC(*sjoin);
 IRCFUNC(m_sjoin_U);
 int opts = 0;

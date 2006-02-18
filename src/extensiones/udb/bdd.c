@@ -163,9 +163,9 @@ int ActualizaDataVer2()
 	for (i = 0; archivos[i]; i++)
 	{
 		ircsprintf(p1, "%s%s", DB_DIR, archivos[i]);
-		if (!(fp = fopen(p1, "r")))
+		if (!(fp = fopen(p1, "rb")))
 			return 1;
-		if (!(tmp = fopen(p2, "w")))
+		if (!(tmp = fopen(p2, "wb")))
 			return 1;
 		while (fgets(buf, sizeof(buf), fp))
 		{
@@ -240,9 +240,9 @@ int ActualizaDataVer3()
 {
 	FILE *fp, *tmp;
 	char *c, buf[8192];
-	if (!(fp = fopen(DB_DIR "nicks.udb", "r")))
+	if (!(fp = fopen(DB_DIR "nicks.udb", "rb")))
 		return 1;
-	if (!(tmp = fopen(DB_DIR "temporal", "w")))
+	if (!(tmp = fopen(DB_DIR "temporal", "wb")))
 		return 1;
 	while (fgets(buf, sizeof(buf), fp))
 	{
@@ -305,10 +305,10 @@ void BddInit()
 	if (!ips)
 		ips = AltaBloque('I', DB_DIR "ips.udb", &BDD_IPS);
 	AltaHash();
-	if ((fh = fopen(DB_DIR "crcs", "a")))
+	if ((fh = fopen(DB_DIR "crcs", "ab")))
 	{
 		fclose(fh);
-		fcrc = fopen(DB_DIR "crcs", "r+");
+		fcrc = fopen(DB_DIR "crcs", "r+b");
 	}
 	switch ((ver = GetDataVer()))
 	{
@@ -543,7 +543,7 @@ int GuardaEnArchivo(Udb *reg, int tipo)
 	form[0] = '\0';
 	root = DaFormato(form, reg);
 	strcat(form, "\n");
-	if (!(fp = fopen(root->item, "a")))
+	if (!(fp = fopen(root->item, "ab")))
 		return -1;
 	fputs(form, fp);
 	fclose(fp);
@@ -759,7 +759,7 @@ void CargaBloque(int tipo)
 	if ((lee = LeeHash(tipo)) != (obtiene = ObtieneHash(root)))
 	{
 		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
-		if ((fp = fopen(root->item, "w")))
+		if ((fp = fopen(root->item, "wb")))
 		{
 			fclose(fp);
 			ActualizaHash(root);
@@ -769,7 +769,7 @@ void CargaBloque(int tipo)
 		return;
 	}
 	gmts[tipo] = LeeGMT(tipo);
-	if ((fp = fopen(root->item, "r")))
+	if ((fp = fopen(root->item, "rb")))
 	{
 		while (fgets(linea, sizeof(linea), fp))
 		{
@@ -859,7 +859,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 	FILE *fp;
 	char *contenido = NULL, bdd;
 	bdd = bloq->id & 0xFF;
-	if ((fp = fopen(bloq->item, "r")))
+	if ((fp = fopen(bloq->item, "rb")))
 	{
 		contenido = Malloc(bytes);
 		if (fread(contenido, 1, bytes, fp) != bytes)
@@ -869,7 +869,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 			return 1;
 		}
 		fclose(fp);
-		if ((fp = fopen(bloq->item, "w")))
+		if ((fp = fopen(bloq->item, "wb")))
 		{
 			if (fwrite(contenido, 1, bytes, fp) != bytes)
 			{
@@ -900,7 +900,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 int Optimiza(Udb *bloq)
 {
 	FILE *fp;
-	if ((fp = fopen(bloq->item, "w")))
+	if ((fp = fopen(bloq->item, "wb")))
 		fclose(fp);
 	GuardaEnArchivoInv(bloq->down, bloq->id);
 	DescargaBloque(bloq->id);

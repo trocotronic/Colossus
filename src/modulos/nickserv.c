@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.33 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.34 2006-02-18 14:34:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -45,7 +45,7 @@ BOTFUNCHELP(NSHMarcas);
 
 int NSSigSQL		();
 int NSCmdPreNick 	(Cliente *, char *);
-int NSCmdPostNick 	(Cliente *);
+int NSCmdPostNick 	(Cliente *, int);
 int NSCmdUmode		(Cliente *, char *);
 int NSSigQuit 		(Cliente *, char *);
 int NSSigIdOk 		(Cliente *);
@@ -1140,7 +1140,7 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 	}
 	return 0;
 }
-int NSCmdPostNick(Cliente *cl)
+int NSCmdPostNick(Cliente *cl, int nuevo)
 {
 	char *motivo = NULL;
 	if ((motivo = SQLCogeRegistro(NS_FORBIDS, cl->nombre, "motivo")))

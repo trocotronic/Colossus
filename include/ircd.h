@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.20 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.21 2006-02-18 14:34:32 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -218,7 +218,7 @@ extern MallaParam *BuscaMallaParam(Canal *, char);
 extern void GeneraMascara(Cliente *);
 extern void DistribuyeMe(Cliente *, Sock **);
 extern MODVAR Cliente me;
-extern void inserta_bot(char *, char *, char *, char *, char *, char *, char *[], int, int);
+
 /*!
  * @desc: Consulta si un usuario está registrado.
  * @params: $nick [in] Nick del usuario.
