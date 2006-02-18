@@ -763,7 +763,6 @@ void CargaBloque(int tipo)
 	root = IdAUdb(tipo);
 	lee = LeeHash(tipo);
 	obtiene = ObtieneHash(root);
-	Debug("%lu %lu", lee, obtiene);
 	if (lee != obtiene)
 	{
 		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
