@@ -26,6 +26,7 @@ time_t gmts[DBMAX];
 int regs[DBMAX];
 u_int BDD_TOTAL = 0;
 int dataver = 0;
+FILE *fcrc = NULL;
 
 void SetDataVer(int);
 int GetDataVer();
@@ -162,9 +163,9 @@ int ActualizaDataVer2()
 	for (i = 0; archivos[i]; i++)
 	{
 		ircsprintf(p1, "%s%s", DB_DIR, archivos[i]);
-		if (!(fp = fopen(p1, "rb")))
+		if (!(fp = fopen(p1, "r")))
 			return 1;
-		if (!(tmp = fopen(p2, "wb")))
+		if (!(tmp = fopen(p2, "w")))
 			return 1;
 		while (fgets(buf, sizeof(buf), fp))
 		{
@@ -239,9 +240,9 @@ int ActualizaDataVer3()
 {
 	FILE *fp, *tmp;
 	char *c, buf[8192];
-	if (!(fp = fopen(DB_DIR "nicks.udb", "rb")))
+	if (!(fp = fopen(DB_DIR "nicks.udb", "r")))
 		return 1;
-	if (!(tmp = fopen(DB_DIR "temporal", "wb")))
+	if (!(tmp = fopen(DB_DIR "temporal", "w")))
 		return 1;
 	while (fgets(buf, sizeof(buf), fp))
 	{
@@ -305,7 +306,10 @@ void BddInit()
 		ips = AltaBloque('I', DB_DIR "ips.udb", &BDD_IPS);
 	AltaHash();
 	if ((fh = fopen(DB_DIR "crcs", "a")))
+	{
 		fclose(fh);
+		fcrc = fopen(DB_DIR "crcs", "r+");
+	}
 	switch ((ver = GetDataVer()))
 	{
 		case 0:
@@ -355,55 +359,34 @@ u_long ObtieneHash(Udb *bloq)
 }
 u_long LeeHash(int id)
 {
-	FILE *fp;
 	u_int hash = 0;
 	char lee[9];
-	if (!(fp = fopen(DB_DIR "crcs", "r")))
+	if (fseek(fcrc, 8 * id, SEEK_SET))
 		return 0L;
-	if (fseek(fp, 8 * id, SEEK_SET))
-	{
-		fclose(fp);
-		return 0L;
-	}
 	bzero(lee, 9);
-	fread(lee, 1, 8, fp);
-	fclose(fp);
+	fread(lee, 1, 8, fcrc);
 	if (!sscanf(lee, "%X", &hash))
 		return 0L;
 	return (u_long)hash;
 }
 time_t LeeGMT(int id)
 {
-	FILE *fp;
 	char lee[11];
-	if (!(fp = fopen(DB_DIR "crcs", "r")))
+	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * id, SEEK_SET))
 		return 0L;
-	if (fseek(fp, BDD_TOTAL * 8 + 10 * id, SEEK_SET))
-	{
-		fclose(fp);
-		return 0L;
-	}
 	bzero(lee, 11);
-	fread(lee, 1, 10, fp);
-	fclose(fp);
+	fread(lee, 1, 10, fcrc);
 	return atoul(lee);
 }
 int GetDataVer()
 {
 	if (!dataver)
 	{
-		FILE *fp;
 		char ver[3];
-		if (!(fp = fopen(DB_DIR "crcs", "r")))
+		if (fseek(fcrc, 72, SEEK_SET))
 			return 0;
-		if (fseek(fp, 72, SEEK_SET))
-		{
-			fclose(fp);
-			return 0;
-		}
 		bzero(ver, 3);
-		fread(ver, 1, 2, fp);
-		fclose(fp);
+		fread(ver, 1, 2, fcrc);
 		if (!sscanf(ver, "%X", &dataver))
 			return 0;
 		return dataver;
@@ -413,55 +396,34 @@ int GetDataVer()
 void SetDataVer(int v)
 {
 	char ver[3];
-	FILE *fh;
 	bzero(ver, 3);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+	if (fseek(fcrc, 72, SEEK_SET))
 		return;
-	if (fseek(fh, 72, SEEK_SET))
-	{
-		fclose(fh);
-		return;
-	}
 	ircsprintf(ver, "%X", v);
-	fwrite(ver, 1, 2, fh);
-	fclose(fh);
+	fwrite(ver, 1, 2, fcrc);
 }
 int ActualizaGMT(Udb *bloque, time_t gm)
 {
 	char lee[11];
-	FILE *fh;
 	time_t hora = gm ? gm : time(0);
 	bzero(lee, 11);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * bloque->id, SEEK_SET))
 		return -1;
-	if (fseek(fh, BDD_TOTAL * 8 + 10 * bloque->id, SEEK_SET))
-	{
-		fclose(fh);
-		return -1;
-	}
-	ircsprintf(lee, "%ul", hora);
-	fwrite(lee, 1, 10, fh);
-	fclose(fh);
+	ircsprintf(lee, "%lu", hora);
+	fwrite(lee, 1, 10, fcrc);
 	gmts[bloque->id] = hora;
 	return 0;
 }
 int ActualizaHash(Udb *bloque)
 {
 	char lee[9];
-	FILE *fh;
 	u_long lo;
 	bzero(lee, 9);
-	if (!(fh = fopen(DB_DIR "crcs", "r+")))
+	if (fseek(fcrc, 8 * bloque->id, SEEK_SET))
 		return -1;
-	if (fseek(fh, 8 * bloque->id, SEEK_SET))
-	{
-		fclose(fh);
-		return -1;
-	}
 	lo = ObtieneHash(bloque);
 	ircsprintf(lee, "%X", lo);
-	fwrite(lee, 1, 8, fh);
-	fclose(fh);
+	fwrite(lee, 1, 8, fcrc);
 	return 0;
 }
 /* devuelve el puntero a todo el bloque a partir de su id o letra */
@@ -581,7 +543,7 @@ int GuardaEnArchivo(Udb *reg, int tipo)
 	form[0] = '\0';
 	root = DaFormato(form, reg);
 	strcat(form, "\n");
-	if (!(fp = fopen(root->item, "ab")))
+	if (!(fp = fopen(root->item, "a")))
 		return -1;
 	fputs(form, fp);
 	fclose(fp);
@@ -797,7 +759,7 @@ void CargaBloque(int tipo)
 	if ((lee = LeeHash(tipo)) != (obtiene = ObtieneHash(root)))
 	{
 		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
-		if ((fp = fopen(root->item, "wb")))
+		if ((fp = fopen(root->item, "w")))
 		{
 			fclose(fp);
 			ActualizaHash(root);
@@ -807,7 +769,7 @@ void CargaBloque(int tipo)
 		return;
 	}
 	gmts[tipo] = LeeGMT(tipo);
-	if ((fp = fopen(root->item, "rb")))
+	if ((fp = fopen(root->item, "r")))
 	{
 		while (fgets(linea, sizeof(linea), fp))
 		{
@@ -897,7 +859,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 	FILE *fp;
 	char *contenido = NULL, bdd;
 	bdd = bloq->id & 0xFF;
-	if ((fp = fopen(bloq->item, "rb")))
+	if ((fp = fopen(bloq->item, "r")))
 	{
 		contenido = Malloc(bytes);
 		if (fread(contenido, 1, bytes, fp) != bytes)
@@ -907,7 +869,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 			return 1;
 		}
 		fclose(fp);
-		if ((fp = fopen(bloq->item, "wb")))
+		if ((fp = fopen(bloq->item, "w")))
 		{
 			if (fwrite(contenido, 1, bytes, fp) != bytes)
 			{
@@ -938,7 +900,7 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 int Optimiza(Udb *bloq)
 {
 	FILE *fp;
-	if ((fp = fopen(bloq->item, "wb")))
+	if ((fp = fopen(bloq->item, "w")))
 		fclose(fp);
 	GuardaEnArchivoInv(bloq->down, bloq->id);
 	DescargaBloque(bloq->id);
