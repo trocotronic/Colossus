@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.33 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.34 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -40,6 +40,7 @@ Canal *canal_debug = NULL;
 Protocolo *protocolo = NULL;
 Comando *comandos = NULL;
 char modebuf[BUFSIZE], parabuf[BUFSIZE];
+Tkl *tklines[TKL_MAX];
 
 Comando *BuscaComando(char *accion)
 {
@@ -1057,4 +1058,14 @@ int BorraTKL(Tkl **lugar, char *user, char *host)
 		prev = aux;
 	}
 	return 0;
+}
+Tkl *BuscaTKL(int tipo, char *mask, Tkl *lugar)
+{
+	Tkl *aux;
+	for (aux = lugar; aux; aux = aux->sig)
+	{
+		if (!strcasecmp(aux->mascara, mask))
+			return aux;
+	}
+	return NULL;
 }

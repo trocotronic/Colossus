@@ -13,7 +13,6 @@
 #define TKL_SHUN 2
 #define TKL_SPAMF 3
 #define TKL_QLINE 4
-#define TKL_MAX 5 /* máximo! */
 
 #define PROTOCOL 2305
 
@@ -26,7 +25,6 @@ char *autoopers = NULL;
 LinkCliente *servidores = NULL;
 long base64dec(char *);
 char *base64enc(long);
-Tkl *tklines[TKL_MAX];
 
 IRCFUNC(m_chghost);
 IRCFUNC(m_chgident);
@@ -304,6 +302,8 @@ int p_part(Cliente *bl, Canal *cn, char *motivo, ...)
 }
 int p_svspart(Cliente *cl, Canal *cn, char *motivo, ...)
 {
+	if (!cn)
+		return 1;
 	if (motivo)
 	{
 		char buf[BUFSIZE];
@@ -412,11 +412,26 @@ int p_swhois(Cliente *cl, char *swhois)
 }
 int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *motivo)
 {
+	Tkl *tkl;
+	ircsprintf(buf, "%s@%s", ident, host);
+	if ((tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])))
+	{
+		if (!tkl->fin || !strcmp(motivo, tkl->motivo))
+			return 1;
+	}
 	if (modo == ADD)
-		EnviaAServidor(":%s TKL + G %s %s %s %lu %lu :%s", me.nombre, ident, host, bl->mask, 
-			!tiempo ? 0 : time(0) + tiempo, time(0), motivo ? motivo : "");
+	{
+		time_t ini, fin;
+		ini = time(0);
+		fin = (!tiempo ? 0 : time(0) + tiempo);
+		EnviaAServidor(":%s BD + G %s %s %s %lu %lu :%s", me.nombre, ident, host, bl->mask, fin, ini, motivo ? motivo : "");
+		InsertaTKL('G', ident, host, bl->mask, motivo, ini, fin);
+	}
 	else if (modo == DEL)
-		EnviaAServidor(":%s TKL - G %s %s %s", me.nombre, ident, host, bl->mask);
+	{
+		EnviaAServidor(":%s BD - G %s %s %s", me.nombre, ident, host, bl->mask);
+		BorraTKL(&tklines[TKL_GLINE], ident, host);
+	}
 	return 0;
 }
 int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
@@ -636,7 +651,6 @@ void set(Conf *config)
 	ircstrdup(protocolo->modmk, modmk);
 	ircstrdup(protocolo->modpm1, modpm1);
 	ircstrdup(protocolo->modpm2, modpm2);
-	bzero(tklines, sizeof(tklines));
 }
 int PROT_CARGA(Unreal)(Conf *config)
 {
@@ -1068,16 +1082,16 @@ IRCFUNC(m_topic)
 	if (parc == 6)
 	{
 		cn = InfoCanal(parv[1], !0);
-		ircstrdup(cn->topic, parv[4]);
+		ircstrdup(cn->topic, parv[5]);
 		cn->ntopic = cl;
 	}
 	else if (parc == 5)
 	{
 		cn = InfoCanal(parv[1], !0);
-		ircstrdup(cn->topic, parv[3]);
+		ircstrdup(cn->topic, parv[4]);
 		cn->ntopic = cl;
 	}
-	Senyal3(SIGN_TOPIC, cl, cn, parc == 6 ? parv[4] : parv[3]);
+	Senyal3(SIGN_TOPIC, cl, cn, parc == 6 ? parv[5] : parv[4]);
 	return 0;
 }
 IRCFUNC(m_quit)

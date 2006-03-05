@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.16 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.17 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -322,7 +322,7 @@ Sock *SockAccept(Sock *list, int pres)
  
 void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 {
-	char buf[BUFSIZE], *msg;
+	char buf[SOCKBUF], *msg;
 	int len;
 	if (!sck)
 		return;
@@ -583,7 +583,7 @@ int Desencola(DBuf *bufc, char *buf, int bytes)
 }
 void EnviaCola(Sock *sck)
 {
-	char buf[BUFSIZE], *msg;
+	char buf[SOCKBUF], *msg;
 	int len = 0;
 #ifdef USA_ZLIB
 	int mas = 0;
@@ -632,7 +632,7 @@ void EnviaCola(Sock *sck)
 }
 int LeeMensaje(Sock *sck)
 {
-	char lee[BUF_SOCK];
+	char lee[SOCKBUF];
 	int len = 0;
 	if (EsCerr(sck))
 		return -3;
@@ -683,7 +683,7 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 	do
 	{
 #endif
-		while(--len >= 0)
+		while(--len >= 0 && !EsCerr(sck))
 		{
 			char g = (*b = *p++);
 			if (g == '\n' || g == '\r') /* asumo que terminan en \r\n o \r o \n, pero nunca \n\r */
@@ -861,9 +861,10 @@ int LeeSocks() /* devuelve los bytes leídos */
 			lee += len;
 			while (SockActual->recvQ->len > 0)
 			{
-				char read[BUFSIZE];
+				char read[SOCKBUF];
 				int cop = 0;
 				cop = CopiaSlot(SockActual->recvQ, read, sizeof(read));
+				//Debug("&&&& %i", cop);
 				//Debug("Creando mensaje %X %s", SockActual, read);
 				if (cop > 0)
 				{

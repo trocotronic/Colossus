@@ -173,7 +173,7 @@ EXTFUNC(NSRegister_U)
 	{
 		int opts = atoi(SQLCogeRegistro(NS_SQL, cl->nombre, "opts"));
 		char *pass;
-		SQLInserta(CS_SQL, cl->nombre, "opts", "%i", opts | NS_OPT_UDB);
+		SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts | NS_OPT_UDB);
 		if ((pass = SQLCogeRegistro(NS_SQL, cl->nombre, "pass")))
 			PropagaRegistro("N::%s::P %s", cl->nombre, pass);
 		NSCambiaInv(cl);
@@ -252,8 +252,8 @@ EXTFUNC(NSSendpass_U)
 	char *pass;
 	if (mod != nickserv->hmod)
 		return 1;
-	if (IsNickUDB(cl->nombre) && (pass = SQLCogeRegistro(NS_SQL, cl->nombre, "pass")))
-		PropagaRegistro("N::%s::P %s", cl->nombre, pass);
+	if (IsNickUDB(param[1]) && (pass = SQLCogeRegistro(NS_SQL, param[1], "pass")))
+		PropagaRegistro("N::%s::P %s", param[1], pass);
 	return 0;
 }
 int NSSigDrop(char *nick)

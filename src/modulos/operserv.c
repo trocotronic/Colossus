@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.28 2006-02-17 23:31:36 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.29 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -69,6 +69,7 @@ static bCom operserv_coms[] = {
 int OSSigIdOk	(Cliente *);
 int OSSigSQL	();
 int OSSigSynch	();
+int OSSigEOS	();
 void OSCargaNoticias();
 void OSDescargaNoticias();
 
@@ -126,6 +127,7 @@ int MOD_DESCARGA(OperServ)()
 	BorraSenyal(NS_SIGN_IDOK, OSSigIdOk);
 	BorraSenyal(SIGN_SQL, OSSigSQL);
 	BorraSenyal(SIGN_SYNCH, OSSigSynch);
+	BorraSenyal(SIGN_EOS, OSSigEOS);
 	OSDescargaNoticias();
 	BotUnset(operserv);
 	return 0;
@@ -176,6 +178,7 @@ void OSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(NS_SIGN_IDOK, OSSigIdOk);
 	InsertaSenyal(SIGN_SQL, OSSigSQL);
 	InsertaSenyal(SIGN_SYNCH, OSSigSynch);
+	InsertaSenyal(SIGN_EOS, OSSigEOS);
 	BotSet(operserv);
 }
 Noticia *OSEsBotNoticia(char *botname)
@@ -1049,7 +1052,6 @@ int OSSigSynch()
 	int i = 0;
 	SQLRes res;
 	SQLRow row;
-	char *c;
 	if ((res = SQLQuery("SELECT DISTINCT bot from %s%s", PREFIJO, OS_NOTICIAS)))
 	{
 		while ((row = SQLFetchRow(res)))
@@ -1063,6 +1065,13 @@ int OSSigSynch()
 		}
 		SQLFreeRes(res);
 	}
+	return 0;
+}
+int OSSigEOS()
+{
+	SQLRes res;
+	SQLRow row;
+	char *c;
 	if ((res = SQLQuery("SELECT item,motivo from %s%s ", PREFIJO, OS_AKILL)))
 	{
 		while ((row = SQLFetchRow(res)))

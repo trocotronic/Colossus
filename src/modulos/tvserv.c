@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.10 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.11 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,7 +8,6 @@
 #include "modulos/tvserv.h"
 
 TvServ *tvserv = NULL;
-#define ExFunc(x) TieneNivel(cl, x, tvserv->hmod, NULL)
 
 SOCKFUNC(TSAbreProg);
 SOCKFUNC(TSLeeProg);
@@ -16,25 +15,52 @@ SOCKFUNC(TSCierraProg);
 SOCKFUNC(TSAbreHoroscopo);
 SOCKFUNC(TSLeeHoroscopo);
 SOCKFUNC(TSCierraHoroscopo);
+SOCKFUNC(TSAbreTiempo);
+SOCKFUNC(TSLeeTiempo);
+SOCKFUNC(TSCierraTiempo);
+SOCKFUNC(TSAbreCine);
+SOCKFUNC(TSLeeCine);
+SOCKFUNC(TSLeePeli);
+SOCKFUNC(TSAbreLiga);
+SOCKFUNC(TSLeeLiga);
 BOTFUNC(TSTv);
 BOTFUNCHELP(TSHTv);
 BOTFUNC(TSHelp);
 BOTFUNC(TSHoroscopo);
 BOTFUNCHELP(TSHHoroscopo);
+BOTFUNC(TSTiempo);
+BOTFUNCHELP(TSHTiempo);
+BOTFUNC(TSCine);
+BOTFUNCHELP(TSHCine);
+BOTFUNC(TSPelis);
+BOTFUNCHELP(TSHPelis);
+BOTFUNC(TSLiga);
+BOTFUNCHELP(TSHLiga);
+
+int hora = 6;
 Sock *prog = NULL, *hor = NULL;
 Cadena *viendo = NULL;
 int horosc = 1;
-int TSSigSQL();
+DataSock *cola[MAX_COLA];
 
 static bCom tvserv_coms[] = {
 	{ "help" , TSHelp , N1 , "Muestra esta ayuda." , NULL } ,
 	{ "tv" , TSTv , N1 , "Programación de las televisiones de España." , TSHTv } ,
 	{ "horoscopo" , TSHoroscopo , N1 , "Horóscopo del día." , TSHHoroscopo } ,
+	{ "tiempo" , TSTiempo , N1, "Previsión meteorológica." , TSHTiempo } ,
+	{ "cine" , TSCine , N1 , "Cartelera de cines españoles." , TSHCine } ,
+	{ "pelis" , TSPelis , N1 , "Información de las películas que se proyectan en los cines españoles." , TSHPelis } ,
+	{ "liga" , TSLiga , N1 , "Información sobre la liga de fútbol profesional." , TSHLiga } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
 void TSSet(Conf *, Modulo *);
 int TSTest(Conf *, int *);
+int ActualizaTvServ();
+char *TSFecha(time_t);
+void TSActualizaHoroscopo();
+void TSActualizaProg();
+int TSSigSQL();
 
 ModInfo MOD_INFO(TvServ) = {
 	"TvServ" ,
@@ -78,6 +104,225 @@ char *horoscopos[] = {
 	"Piscis" ,
 	NULL
 };
+Opts provincias[] = {
+	{ 1 , "A Coruña" } ,
+	{ 5 , "Alava" } ,
+	{ 2 , "Albacete" } ,
+	{ 3 , "Alicante" } ,
+	{ 4 , "Almeria" } ,
+	{ 6 , "Asturias" } ,
+	{ 7 , "Avila" } ,
+	{ 8 , "Badajoz" } ,
+	{ 10 , "Barcelona" } ,
+	{ 12 , "Burgos" } ,
+	{ 13 , "Caceres" } ,
+	{ 15 , "Cadiz" } ,
+	{ 14 , "Cantabria" } ,
+	{ 16 , "Castellon" } ,
+	{ 17 , "Ceuta" } ,
+	{ 18 , "Ciudad Real" } ,
+	{ 19 , "Cordoba" } ,
+	{ 20 , "Cuenca" } ,
+	{ 21 , "Girona" } ,
+	{ 22 , "Granada" } ,
+	{ 23 , "Guadalajara" } ,
+	{ 24 , "Guipuzcoa" } ,
+	{ 25 , "Huelva" } ,
+	{ 26 , "Huesca" } ,
+	{ 9 , "Islas Baleares" } ,
+	{ 27 , "Jaen" } ,
+	{ 31 , "La Rioja" } ,
+	{ 30 , "Las Palmas" } ,
+	{ 28 , "Leon" },
+	{ 29 , "Lleida" } ,
+	{ 32 , "Lugo" } ,
+	{ 33 , "Madrid" } ,
+	{ 34 , "Malaga" } ,
+	{ 35 , "Melilla" } ,
+	{ 36 , "Murcia" } ,
+	{ 37 , "Navarra" } ,
+	{ 38 , "Ourense" } ,
+	{ 39 , "Palencia" } ,
+	{ 40 , "Pontevedra" } ,
+	{ 41 , "Salamanca" } ,
+	{ 46 , "Santa Cruz de Tenerife" } ,
+	{ 42 , "Segovia" } ,
+	{ 43 , "Sevilla" } ,
+	{ 44 , "Soria" } ,
+	{ 45 , "Tarragona" } ,
+	{ 46 , "Teruel" } ,
+	{ 47 , "Toledo" } ,
+	{ 49 , "Valencia" } ,
+	{ 50 , "Valladolid" } ,
+	{ 11 , "Vizcaya" } ,
+	{ 51 , "Zamora" } ,
+	{ 52 , "Zaragoza" } ,
+	{ 0x0 , 0x0 }
+};
+char *prov1[] = { "A Coruña","CEE","Ferrol","Naron","Santa Eugenia de Ribeira","Santiago",NULL };
+char *prov2[] = { "Albacete","Almansa","Villarrobledo",NULL };
+char *prov3[] = { "Alicante","Alcoy","Benidorm","Denia","Elche","Orihuela","Petrer","San Juan","Torrevieja","Villajoyosa","Xabia",NULL };
+char *prov4[] = { "Almeria","Aguadulce","El Ejido","Roquetas de Mar",NULL };
+char *prov5[] = { "Vitoria",NULL };
+char *prov6[] = { "Oviedo","Aviles","Gijon","Pola de Siero",NULL };
+char *prov7[] = { "Avila",NULL };
+char *prov8[] = { "Badajoz","Almendralejo","Don Benito","Merida","Villanueva de la Serena",NULL };
+char *prov9[] = { "Palma de Mallorca","Alaior","Cala Ratjada","Ciutadella","Eivissa","Inca","Manacor","Mao",NULL };
+char *prov10[] = { "Barcelona","Abrera","Arenys de Mar","Badalona","Barbera del Valles","Berga","Calella","Cerdanyola del Valles","Cornella","El Prat de Llobregat","Gava","Granollers","Igualada","L'Hospitalet","Manresa","Mataro","Mollet","Pineda de Mar","Sabadell","Sant Cugat","Sant Feliu de Llobregat","Sitges","Terrassa","Vic","Viladecans","Vilafranca del Penedes","Vilanova i la Geltru",NULL };
+char *prov11[] = { "Bilbao","Barakaldo","Basauri","Guetxo","Leioa","Ondarroa","Santurce",NULL };
+char *prov12[] = { "Burgos",NULL };
+char *prov13[] = { "Caceres","Coria","Plasencia",NULL };
+char *prov14[] = { "Santander","Camargo","El Astillero","Los Corrales de Buelna","Noja",NULL };
+char *prov15[] = { "Cadiz","Algeciras","Arcos de la Frontera","Chiclana","Jerez de la Frontera","La Linea","Los Barrios","Puerto de Santa Maria","Rota","San Fernando","Sanlucar de Barrameda",NULL };
+char *prov16[] = { "Castellon","Benicarlo","Benicasim","Grao de Castellon","Segorbe","Vila-Real","Vinaros",NULL };
+char *prov17[] = { "Ceuta",NULL };
+char *prov18[] = { "Ciudad Real","Alcazar de San Juan","Puertollano","Valdepeñas",NULL };
+char *prov19[] = { "Cordoba","Puente Genil",NULL };
+char *prov20[] = { "Cuenca",NULL };
+char *prov21[] = { "Girona","Blanes","Figueres","Olot","Palamos","Platja d'Aro","Ripoll","Roses",NULL };
+char *prov22[] = { "Granada","Baza","Motril","Pulianas",NULL };
+char *prov23[] = { "Guadalajara",NULL };
+char *prov24[] = { "San Sebastian","Azkoitia","Beasain","Eibar","Irun","Oñati","Tolosa","Usurbil","Zarauz","Zumaia",NULL };
+char *prov25[] = { "Huelva","Isla Cristina","Lepe",NULL };
+char *prov26[] = { "Huesca","Barbastro","Binefar","Fraga","Graus","Jaca","Mequinenza","Monzon","Sabiñanigo","Tamarite de Litera",NULL };
+char *prov27[] = { "Jaen","Andujar","Linares","Ubeda",NULL };
+char *prov28[] = { "Leon","Cistierna","Ponferrada","Santa Maria",NULL };
+char *prov29[] = { "Lleida","Agramunt","Alfarras","Balaguer","Bellpuig","Cervera","La Pobla de Segur","La Seu d'Urgell","Linyola","Mollerussa","Penelles","Pont de suert","Ponts","Solsona","Sort","Tarrega","Tremp","Vielha",NULL };
+char *prov30[] = { "Las Palmas de Gran Canaria","Fuerteventura","Lanzarote","Santa Lucia",NULL };
+char *prov31[] = { "Logroño","Calahorra","Viana",NULL };
+char *prov32[] = { "Lugo","Foz","Monforte de Lemos",NULL };
+char *prov33[] = { "Madrid","Alcala de Henares","Alcobendas","Alcorcon","Aranjuez","Arroyomolinos","Boadilla del Monte","Collado Villalba","Coslada","Fuenlabrada","Getafe","Las Rozas","Leganes","Majadahonda","Mejorada del Campo","Mostoles","Parla","Pozuelo de Alarcon","Rivas-Vaciamadrid","San Fernando de Henares","San Lorenzo de El Escorial","San Martin de Valdeiglesias","San Sebastian de los Reyes","Torrejon de Ardoz","Torrelodones","Tres Cantos","Valdemoro",NULL };
+char *prov34[] = { "Malaga","Antequera","Benalmadena","Cala del Moral","Coin","Estepona","Fuengirola","Marbella","Mijas","Ronda","Velez",NULL };
+char *prov35[] = { "Melilla",NULL };
+char *prov36[] = { "Murcia","Aguilas","Alhama","Cartagena","Lorca","Los Alcazares","San Javier","Totana",NULL };
+char *prov37[] = { "Pamplona","Estella","Huarte","Tudela",NULL };
+char *prov38[] = { "Ourense",NULL };
+char *prov39[] = { "Palencia","Aguilar de Campoo",NULL };
+char *prov40[] = { "Pontevedra","Cangas","Lalin","Ponteareas","Teis","Vigo","Villagarcia de Arosa",NULL };
+char *prov41[] = { "Salamanca","Bejar","Ciudad Rodrigo","Peñaranda de bracamonte",NULL };
+char *prov42[] = { "Segovia",NULL };
+char *prov43[] = { "Sevilla","Alcala de Guadaira","Bormujos","Camas","Dos Hermanas","Ecija","Tomares","Utrera",NULL };
+char *prov44[] = { "Soria",NULL };
+char *prov45[] = { "Tarragona","Amposta","Comarruga","Cubelles","El Vendrell","Montblanc","Reus","Roquetes",NULL };
+char *prov46[] = { "Santa Cruz de Tenerife","Candelaria","Frontera (Isla de Hierro)","Icod de los Vinos","La Laguna","Playa de las Americas","Puerto de la Cruz","Villa de la Orotava",NULL };
+char *prov47[] = { "Teruel","Alcorisa",NULL };
+char *prov48[] = { "Toledo","Talavera de la Reina","Torrijos","Villacañas",NULL };
+char *prov49[] = { "Valencia","Aldaya","Alfafar","Alzira","Canet d'Enberenger","Cullera","El Saler","Gandia","L'Eliana","Oliva","Onteniente","Paterna","Sagunt","Sedavi","Serra","Xativa","Xeraco","Xirivella",NULL };
+char *prov50[] = { "Valladolid","Medina del Campo","Medina de Rio Seco","Peñafiel","Zaratan",NULL };
+char *prov51[] = { "Zamora",NULL };
+char *prov52[] = { "Zaragoza","Calatayud",NULL };
+char **pueblos[] = { 
+	prov1 , prov2 , prov3 , prov4 , prov5 , prov6 , prov7 , prov8 , prov9 , prov10 ,
+	prov11 , prov12 , prov13 , prov14 , prov15 , prov16 , prov17 , prov18 , prov19 , prov20 ,
+	prov21 , prov22 , prov23 , prov24 , prov25 , prov26 , prov27 , prov28 , prov29 , prov30 ,
+	prov31 , prov32 , prov33 , prov34 , prov35 , prov36 , prov37 , prov38 , prov39 , prov40 ,
+	prov41 , prov42 , prov43 , prov44 , prov45 , prov46 , prov47 , prov48 , prov49 , prov50 ,
+	prov51 , prov52
+};
+
+char *prid1[] = { "6","2223","45","2118","1294","52",NULL };
+char *prid2[] = { "123","1133","293",NULL };
+char *prid3[] = { "43","201","55","140","143","202","291","56","142","203","57",NULL };
+char *prid4[] = { "118","174","279","2185",NULL };
+char *prid5[] = { "51",NULL };
+char *prid6[] = { "115","185","116","1129",NULL };
+char *prid7[] = { "59",NULL };
+char *prid8[] = { "122","1231","278","156","1262",NULL };
+char *prid9[] = { "36","182","1260","181","267","178","272","180",NULL };
+char *prid10[] = { "1","1112","67","68","69","233","213","71","73","1145","75","77","72","78","79","65","81","83","86","87","88","1140","90","98","287","1166","1302",NULL };
+char *prid11[] = { "4","108","107","110","109","1161","1293",NULL };
+char *prid12[] = { "62",NULL };
+char *prid13[] = { "158","255","151",NULL };
+char *prid14[] = { "124","166","1111","2190","2191",NULL };
+char *prid15[] = { "163","149","1135","150","147","155","2175","154","1283","152","2235",NULL };
+char *prid16[] = { "42","53","1315","2205","170","1131","54",NULL };
+char *prid17[] = { "198",NULL };
+char *prid18[] = { "145","218","1212","2231",NULL };
+char *prid19[] = { "148","289",NULL };
+char *prid20[] = { "112",NULL };
+char *prid21[] = { "76","211","93","94","100","95","234","285",NULL };
+char *prid22[] = { "117","1089","217","2228",NULL };
+char *prid23[] = { "111",NULL };
+char *prid24[] = { "2176","1169","1170","1254","281","1171","1172","264","1256","1173",NULL };
+char *prid25[] = { "153","212","1090",NULL };
+char *prid26[] = { "34","241","237","240","239","242","235","238","243","236",NULL };
+char *prid27[] = { "119","244","176","177",NULL };
+char *prid28[] = { "60","1124","1136","295",NULL };
+char *prid29[] = { "63","2194","230","221","2193","222","226","1188","223","219","1290","276","1139","224","227","220","225","228",NULL };
+char *prid30[] = { "188","2180","192","283",NULL };
+char *prid31[] = { "113","268","2233",NULL };
+char *prid32[] = { "49","253","256",NULL };
+char *prid33[] = { "2","8","9","10","105","2178","12","14","16","17","18","19","20","21","22","23","24","26","27","1137","33","28","2229","29","280","31","273",NULL };
+char *prid34[] = { "125","245","1692","1312","2226","159","1088","161","246","247","209",NULL };
+char *prid35[] = { "164",NULL };
+char *prid36[] = { "120","1128","284","191","197","2173","2224","275",NULL };
+char *prid37[] = { "132","196","2234","282",NULL };
+char *prid38[] = { "50",NULL };
+char *prid39[] = { "126","1211",NULL };
+char *prid40[] = { "48","286","2222","252","2208","46","254",NULL };
+char *prid41[] = { "61","2241","1085","1083",NULL };
+char *prid42[] = { "128",NULL };
+char *prid43[] = { "7","210","1317","250","1091","160","248","2174",NULL };
+char *prid44[] = { "146",NULL };
+char *prid45[] = { "64","1093","1247","1291","232","231","84","96",NULL };
+char *prid46[] = { "190","1115","277","1134","274","2128","189","1318",NULL };
+char *prid47[] = { "35","249",NULL };
+char *prid48[] = { "165","297","1316","1147",NULL };
+char *prid49[] = { "5","2018","2237","1168","251","2179","206","38","39","1096","1151","1108","41","134","2225","168","2186","135",NULL };
+char *prid50[] = { "58","1127","1087","1084","2009",NULL };
+char *prid51[] = { "129",NULL };
+char *prid52[] = { "3","1289",NULL };
+char **prids[] = {
+	prid1 , prid2 , prid3 , prid4 , prid5 , prid6 , prid7 , prid8 , prid9 , prid10 ,
+	prid11 , prid12 , prid13 , prid14 , prid15 , prid16 , prid17 , prid18 , prid19 , prid20 ,
+	prid21 , prid22 , prid23 , prid24 , prid25 , prid26 , prid27 , prid28 , prid29 , prid30 ,
+	prid31 , prid32 , prid33 , prid34 , prid35 , prid36 , prid37 , prid38 , prid39 , prid40 ,
+	prid41 , prid42 , prid43 , prid44 , prid45 , prid46 , prid47 , prid48 , prid49 , prid50 ,
+	prid51 , prid52
+};
+
+DataSock *BuscaCola(Sock *sck)
+{
+	int i;
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i] && cola[i]->sck == sck)
+			return cola[i];
+	}
+	return NULL;
+}
+DataSock *InsertaCola(char *query, int numero, Cliente *cl)
+{
+	int i;
+	for (i = 0; i < MAX_COLA && cola[i]; i++);
+	if (i < MAX_COLA)
+	{
+		DataSock *dts;
+		BMalloc(dts, DataSock);
+		if (query)
+			ircstrdup(dts->query, query);
+		dts->numero = numero;
+		dts->cl = cl;
+		cola[i] = dts;
+		return dts;
+	}
+	return NULL;
+}
+int BorraCola(Sock *sck)
+{
+	int i;
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i] && cola[i]->sck == sck)
+		{
+			ircfree(cola[i]->query);
+			ircfree(cola[i]);
+			return 1;
+		}
+	}
+	return 0;
+}
+
 Cadena *TSBuscaCadena(char *nombre)
 {
 	int i;
@@ -136,10 +381,16 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 }
 int MOD_DESCARGA(TvServ)()
 {
+	int i;
 	if (prog)
 		SockClose(prog, LOCAL);
 	if (hor)
 		SockClose(hor, LOCAL);
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i])
+			SockClose(cola[i]->sck, LOCAL);
+	}
 	BorraSenyal(SIGN_SQL, TSSigSQL);
 	BotUnset(tvserv);
 	return 0;
@@ -158,6 +409,9 @@ int TSTest(Conf *config, int *errores)
 void TSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
+	struct tm *tmptr;
+	time_t ts;
+	int pts = 0;
 	if (!tvserv)
 		BMalloc(tvserv, TvServ);
 	if (config)
@@ -181,6 +435,15 @@ void TSSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, tvserv_coms);
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
+	ts = time(0);
+	tmptr = localtime(&ts);
+	if (tmptr->tm_hour < hora)
+		pts += ((hora - 1) - tmptr->tm_hour) * 3600;
+	else
+		pts += (23 - tmptr->tm_hour) * 3600 + 3600 * hora;
+	pts += (60 - tmptr->tm_min) * 60;
+	IniciaCrono("actualiza_tvserv", SockIrcd, 1, pts, ActualizaTvServ, NULL, 0);
+	bzero(cola, sizeof(DataSock) * MAX_COLA);
 	BotSet(tvserv);
 }
 char *TSQuitaTags(char *str, char *dest)
@@ -196,17 +459,54 @@ char *TSQuitaTags(char *str, char *dest)
 		}
 		else if (*c == '&')
 		{
-			/*if (!strncmp("&nbsp;", c, 6))
+			if (!strncmp("&nbsp;", c, 6))
 			{
-				*dest++ = 2;
 				*dest++ = ' ';
 				c += 6;
 			}
-			else*/
+			else if (!strncmp("acute;", c+2, 6))
+			{
+				switch (*(c+1))
+				{
+					case 'a':
+					case 'A':
+						*dest++ = *(c+1)+128;
+						break;
+					case 'u':
+					case 'U':
+						*dest++ = *(c+1)+133;
+						break;
+					default:
+						*dest++ = *(c+1)+132;
+				}
+				c += 8;
+			}
+			else if (!strncmp("&quot;", c, 6))
+			{
+				*dest++ = '"';
+				c += 6;
+			}
+			else if (!strncmp("tilde;", c+2, 6))
+			{
+				*dest++ = *(c+1)+131;
+				c += 8;
+			}
+			else if (*(c+1) == '#')
+			{
+				char tmp[5];
+				int i;
+				c += 2;
+				for (i = 0; i < 4 && *c != ';'; i++)
+					tmp[i] = *c++;
+				tmp[i] = '\0';
+				*dest++ = atoi(tmp);
+				c++;
+			}
+			else
 				*dest++ = *c++;
 		}
 		else if (*c == '\t')
-			break;
+			c++;
 		else if (*c == '\'')
 		{
 			*dest++ = '\\';
@@ -223,9 +523,10 @@ char *TSFecha(time_t ts)
 {
 	static char TSFecha[9];
 	struct tm *timeptr;
-	ts -= 21600;
-    	timeptr = localtime(&ts);
+	ts -= hora * 3600;
+    	timeptr = localtime(&ts); 
     	ircsprintf(TSFecha, "%.2d/%.2d/%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100);
+    	//ircsprintf(TSFecha, "%.2d/%.2d/%.2d %.2d:%.2d:%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100, timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
     	return TSFecha;
 }
 void TSActualizaProg()
@@ -259,12 +560,16 @@ void TSActualizaHoroscopo()
 			return;
 	}
 	else
+	{
+		hor = SockOpen("www.teletexto.com", 80, TSAbreLiga, TSLeeLiga, NULL, NULL, ADD);
 		i = 1;
+	}
 }
 BOTFUNC(TSTv)
 {
 	SQLRes res;
 	SQLRow row;
+	char *tsf = TSFecha(time(NULL));
 	if (params < 2)
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TV cadena");
@@ -275,14 +580,219 @@ BOTFUNC(TSTv)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta cadena no existe");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_TV, TSFecha(time(NULL)), strtolower(param[1]))))
+	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_TV, tsf, strtolower(param[1]))))
 	{
 		TSActualizaProg();
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
 		return 1;
 	}
+	Responde(cl, CLI(tvserv), "\00312%s\003 (%s)", param[1], tsf);
 	while ((row = SQLFetchRow(res)))
 		Responde(cl, CLI(tvserv), row[0]);
+	return 0;
+}
+BOTFUNC(TSTiempo)
+{
+	char pueblo[256];
+	DataSock *dts;
+	int n;
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TIEMPO [nº] pueblo");
+		return 1;
+	}
+	if (CogeCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, tvserv->hmod->id))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Debes esperar almenos 30 segundos antes de volver a usar este servicio");
+		return 1;
+	}
+	/*if (*param[1] == '\'')
+	{
+		param[1]++;
+		for (i = 1; i < params; i++)
+		{
+			if ((c = strchr(param[i], '\'')))
+			{
+				*c = '\0';
+				strncpy(pueblo, Unifica(param, params, 1, i), sizeof(pueblo));
+				break;
+			}
+		}
+		if (i == params)
+		{
+			Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Has olvidado cerrar comillas");
+			return 1;
+		}
+	}
+	else
+		strncpy(pueblo, param[1], sizeof(pueblo));
+	
+	i++;
+	if (*param[i] == '\'')
+	{
+		int j;
+		param[i]++;
+		for (j = i; j < params; j++)
+		{
+			if ((c = strchr(param[j], '\'')))
+			{
+				*c = '\0';
+				strncpy(pueblo, Unifica(param, params, i, j), sizeof(pueblo));
+				break;
+			}
+		}
+		if (j == params)
+		{
+			Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Has olvidado cerrar comillas");
+			return 1;
+		}
+	}
+	else
+		strncpy(pueblo, param[i], sizeof(pueblo));
+	if (!(p = TSBuscaProvincia(provincia)))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta provincia no existe");
+		return 1;
+	}
+	*/
+	if (!isdigit(*param[1]))
+	{
+		strncpy(pueblo, str_replace(Unifica(param, params, 1, -1), ' ', '+'), sizeof(pueblo));
+		n = 0;
+	}
+	else
+	{
+		strncpy(pueblo, str_replace(Unifica(param, params, 2, -1), ' ', '+'), sizeof(pueblo));
+		n = atoi(param[1]);
+	}
+	strncpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
+	//strncpy(provincia, str_replace(p, ' ', '+'), sizeof(provincia));
+	//strncpy(provincia, str_replace(p, 'ñ', 'n'), sizeof(provincia));
+	ircsprintf(buf, "/buscar.php?criterio=%s", pueblo);
+	if ((dts = InsertaCola(buf, n, cl)))
+		dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreTiempo, TSLeeTiempo, NULL, TSCierraTiempo, ADD);
+	else
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
+		return 1;
+	}
+	return 0;
+}
+BOTFUNC(TSCine)
+{
+	char pueblo[256], *p;
+	int i, j, b = 0, n;
+	DataSock *dts;
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, "CINE [nº] pueblo");
+		return 1;
+	}
+	if (CogeCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, tvserv->hmod->id))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Debes esperar almenos 30 segundos antes de volver a usar este servicio");
+		return 1;
+	}
+	if (!isdigit(*param[1]))
+	{
+		p = Unifica(param, params, 1, -1);
+		n = 0;
+	}
+	else
+	{
+		p = Unifica(param, params, 2, -1);
+		n = atoi(param[1]);
+	}
+	for (i = 0; i < 52 && !b; i++)
+	{
+		for (j = 0; pueblos[i][j]; j++)
+		{
+			if (!strcasecmp(pueblos[i][j], p))
+			{
+				b = 1;
+				break;
+			}
+		}
+	}
+	if (!b)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este pueblo no dispone de un cine");
+		return 1;
+	}
+	strncpy(pueblo, str_replace(p, ' ', '+'), sizeof(pueblo));
+	strncpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
+	ircsprintf(buf, "/cartelera/?provincia=%i&buscar=&municipio=%s", i, prids[i-1][j]);
+	if ((dts = InsertaCola(buf, n, cl)))
+		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraTiempo, ADD);
+	else
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
+		return 1;
+	}
+	return 0;
+}
+BOTFUNC(TSPelis)
+{
+	DataSock *dts;
+	int n = 0;
+	if (CogeCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, tvserv->hmod->id))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Debes esperar almenos 30 segundos antes de volver a usar este servicio");
+		return 1;
+	}
+	if (params > 1)
+	{
+		if (!isdigit(*param[1]))
+		{
+			ircsprintf(buf, "/metropoli/cine.html?%s", Unifica(param, params, 1, -1));
+			strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
+		}
+		else
+		{
+			strcpy(buf, "/metropoli/cine.html");
+			n = atoi(param[1]);
+		}
+	}
+	else
+	{
+		strcpy(buf, "/metropoli/cine.html");
+		n = -1;
+	}
+	if ((dts = InsertaCola(buf, n, cl)))
+		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeePeli, NULL, TSCierraTiempo, ADD);
+	else
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
+		return 1;
+	}
+	return 0;
+}
+BOTFUNC(TSLiga)
+{
+	SQLRes res;
+	SQLRow row;
+	int i;
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, "LIGA {1a|2a}");
+		return 1;
+	}
+	if (strcasecmp(param[1], "1a") && strcasecmp(param[1], "2a"))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_SNTX, "Sólo se aceptan 1a y 2a división");
+		return 1;
+	}
+	if (!(res = SQLQuery("SELECT * from %s%s where division='%c'", PREFIJO, TS_LI, *param[1])))
+	{
+		DataSock *dts;
+		if ((dts = InsertaCola("/edicion/marca/futbol/1a_division/es/index.html", 1, cl)))
+			dts->sck = SockOpen("www.marca.com", 80, TSAbreLiga, TSLeeLiga, NULL, TSCierraTiempo, ADD);
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
+		return 1;
+	}
+	Responde(cl, CLI(tvserv), "Clasificación de la Liga \00312%s\003 división", param[1]);
+	for (i = 1; (row = SQLFetchRow(res)); i++)
+		Responde(cl, CLI(tvserv), "\00312%i\003 %s - %s", i, row[1], row[2]);
 	return 0;
 }
 BOTFUNCHELP(TSHTv)
@@ -309,6 +819,38 @@ BOTFUNCHELP(TSHHoroscopo)
 	Responde(cl, CLI(tvserv), "Sintaxis: \00312HOROSCOPO signo");
 	return 0;
 }
+BOTFUNCHELP(TSHTiempo)
+{
+	Responde(cl, CLI(tvserv), "Consulta la previsión meteorológica para un pueblo/ciudad del mundo.");
+	Responde(cl, CLI(tvserv), "Este comando realiza una búsqueda y muestra el resultado.");
+	Responde(cl, CLI(tvserv), "En caso de encontrar varias coincidencias con el pueblo/ciudad proporcionado, se mostrará una lista con varios resultados precedidos por un número.");
+	Responde(cl, CLI(tvserv), "Para consultar el tiempo de un elemento de esta lista, tendrá que especificar el número que le precede.");
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Sintaxis: \00312TIEMPO [nº] pueblo/ciudad");
+	return 0;
+}
+BOTFUNCHELP(TSHCine)
+{
+	Responde(cl, CLI(tvserv), "Realiza una búsqueda de la cartelera de un pueblo/ciudad.");
+	Responde(cl, CLI(tvserv), "Si el pueblo dispone de un cine o más, se mostrará una lista con todos los cines precedidos por un número.");
+	Responde(cl, CLI(tvserv), "Este número es el que tendrá que especificar nuevamente para consultar la cartelera, seguido del pueblo al que pertenece.");
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Sintaxis: \00312CINE [nº] pueblo/ciudad");
+	return 0;
+}
+BOTFUNCHELP(TSHPelis)
+{
+	Responde(cl, CLI(tvserv), "Muestra información sobre una película que se esté proyectando en los cines españoles.");
+	Responde(cl, CLI(tvserv), "Si no se especifica ningún parámetro, se listarán todas las películas reconocidas precedidas por un número.");
+	Responde(cl, CLI(tvserv), "También es posible efectuar esta consulta a partir del número mencionado.");
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Sintaxis: \00312PELIS [película|nº]");
+	return 0;
+}
+BOTFUNCHELP(TSHLiga)
+{
+	return 0;
+}
 BOTFUNC(TSHelp)
 {
 	if (params < 2)
@@ -329,7 +871,7 @@ BOTFUNC(TSHoroscopo)
 {
 	SQLRes res;
 	SQLRow row;
-	char *h;
+	char *h, *tsf = TSFecha(time(NULL));
 	if (params < 2)
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_PARA, "HOROSCOPO signo");
@@ -340,13 +882,13 @@ BOTFUNC(TSHoroscopo)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este horóscopo no existe");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_HO, TSFecha(time(NULL)), strtolower(param[1]))))
+	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_HO, tsf, strtolower(param[1]))))
 	{
 		TSActualizaHoroscopo();
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
 		return 1;
 	}
-	Responde(cl, CLI(tvserv), "\00312%s", h);
+	Responde(cl, CLI(tvserv), "\00312%s\003 (%s)", h, tsf);
 	while ((row = SQLFetchRow(res)))
 		Responde(cl, CLI(tvserv), row[0]);
 	return 0;
@@ -357,7 +899,6 @@ SOCKFUNC(TSAbreProg)
 	SockWrite(prog, OPT_CRLF, "Accept: */*");
 	SockWrite(prog, OPT_CRLF, "Host: www.teletexto.com");
 	SockWrite(prog, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(prog, OPT_CRLF, "");
 	SockWrite(prog, OPT_CRLF, "");
 	return 0;
 }
@@ -398,7 +939,6 @@ SOCKFUNC(TSAbreHoroscopo)
 	SockWrite(hor, OPT_CRLF, "Accept: */*");
 	SockWrite(hor, OPT_CRLF, "Host: www.teletexto.com");
 	SockWrite(hor, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(hor, OPT_CRLF, "");
 	SockWrite(hor, OPT_CRLF, "");
 	return 0;
 }
@@ -448,6 +988,469 @@ SOCKFUNC(TSCierraHoroscopo)
 	TSActualizaHoroscopo();
 	return 0;
 }
+SOCKFUNC(TSAbreTiempo)
+{
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	//SockWrite(sck, OPT_CRLF, "GET /prediccion_para-%s-Espana-Europa--1.html HTTP/1.1", tiempo.query);
+	SockWrite(sck, OPT_CRLF, "GET %s HTTP/1.1", dts->query);
+	SockWrite(sck, OPT_CRLF, "Accept: */*");
+	SockWrite(sck, OPT_CRLF, "Host: tiempo.meteored.com");
+	SockWrite(sck, OPT_CRLF, "Connection: Keep-alive");
+	SockWrite(sck, OPT_CRLF, "");
+	return 0;
+}
+SOCKFUNC(TSLeeTiempo)
+{
+	char tmp[SOCKBUF], *c, *d;
+	DataSock *dts;
+	Cliente *cl;
+	static int dia = 0, sig = 0;
+	int numero;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	cl = dts->cl;
+	numero = dts->numero;
+	if (!strncmp("<font size=1", data, 12))
+	{
+		int regs;
+		TSQuitaTags(data, tmp);
+		sscanf(tmp, "Número de registros encontrados: %i", &regs);
+		c = strstr(data, "f'>");
+		c += 4;
+		if (regs == 1)
+		{
+			if ((c = strchr(c, '\'')))
+			{
+				c++;
+				d = strchr(c, '\'');
+				*d = '\0';
+				if ((d = strrchr(c, '.')))
+					*d = '\0';
+				ircsprintf(buf, "/%s-%i.html", c, ++dia);
+				strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
+				SockClose(sck, LOCAL);	
+				if ((dts = InsertaCola(buf, 0, cl)))
+					dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreTiempo, TSLeeTiempo, NULL, TSCierraTiempo, ADD);
+			}
+		}
+		else if (regs > 1)
+		{
+			if (!dts->numero)
+			{
+				int i;
+				Responde(cl, CLI(tvserv), "Se han encontrado varias coincidencias. Use /msg %s TIEMPO <nº> '%s'", CLI(tvserv)->nombre, strchr(dts->query, '=')+1);
+				for (c = data, i = 1; (c = strstr(c, ".html")); i++)
+				{
+					c += 7;
+					if ((d = strstr(c, "</a>")))
+					{
+						*d = '\0';
+						Responde(cl, CLI(tvserv), "\00312%i\003.- %s", i, c);
+					}
+					c = d+1;
+				}
+				SockClose(sck, LOCAL);	
+			}
+			else if (dts->numero > regs)
+			{
+				Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este número no existe. Vuelva a ejecutar la búsqueda");
+				return 1;
+			}
+			else
+			{
+				int i;
+				for (c = data, i = 1; (c = strstr(c, "<a href='")); i++)
+				{
+					if (i == dts->numero)
+					{
+						c += 9;
+						d = strchr(c, '\'');
+						*d = '\0';
+						if ((d = strrchr(c, '.')))
+						{
+							*d = '\0';
+							ircsprintf(buf, "/%s-%i.html", c, ++dia);
+							strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));	
+							SockClose(sck, LOCAL);	
+							if ((dts = InsertaCola(buf, 0, cl)))
+								dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreTiempo, TSLeeTiempo, NULL, TSCierraTiempo, ADD);
+						}
+						break;
+					}
+					else
+						c = strstr(c, "</a>");
+				}
+			}
+		}
+		else
+		{
+			Responde(cl, CLI(tvserv), TS_ERR_EMPT, "No se han encontrado coincidencias");
+			SockClose(sck, LOCAL);
+			return 1;
+		}
+	}
+	else if (!strncmp("<!-- M", data, 6))
+		sig = 1;
+	else if (sig)
+	{
+		char *tok;
+		TSQuitaTags(data, tmp);
+		for (tok = strtok(tmp, "."); tok; tok = strtok(NULL, "."))
+			Responde(cl, CLI(tvserv), "%s.", tok+1);
+		dia = sig = 0;
+		if (!IsOper(cl))
+			InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
+		SockClose(sck, LOCAL);
+	}
+	return 0;
+}
+SOCKFUNC(TSCierraTiempo)
+{
+	BorraCola(sck);
+	return 0;
+}
+SOCKFUNC(TSAbreCine)
+{
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	SockWrite(sck, OPT_CRLF, "GET %s HTTP/1.1", dts->query);
+	SockWrite(sck, OPT_CRLF, "Accept: */*");
+	SockWrite(sck, OPT_CRLF, "Host: www.elmundo.es");
+	SockWrite(sck, OPT_CRLF, "Connection: Keep-alive");
+	SockWrite(sck, OPT_CRLF, "");
+	return 0;
+}
+/*
+SOCKFUNC(TSLeeCine2)
+{
+	char tmp[SOCKBUF], *c, *d;
+	static int i = 1, m = 0;
+	Cliente *cl;
+	if (m)
+	{
+		if (!strncmp("<br><f", data, 6))
+		{
+			m = 0;
+			SockClose(sck, LOCAL);
+		}
+		else
+		{
+			TSQuitaTags(data, tmp);
+			if (tmp[0] != '\0')
+				Responde(cl, CLI(tvserv), tmp);
+		}
+	}
+	else if (!strncmp("Location:", data, 9))
+	{
+		SockClose(sck, LOCAL);
+		ircstrdup(cine.query, strchr(data, ' ')+1);
+		cine.cl = cl;
+		cin = SockOpen("www.terra.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraCine, ADD);
+	}
+	else if (!strncmp("	<b>", data, 4))
+	{
+		int regs = 0;
+		TSQuitaTags(data, tmp);
+		if (regs > 1)
+		{
+			if (!cine.numero)
+			{
+				sscanf(tmp, "Se han encontrado %i", &regs);
+				Responde(cl, CLI(tvserv), "Se han encontrado varias coincidencias. Use /msg %s CINE <nº> '%s'", CLI(tvserv)->nombre, "null");
+			}
+		}
+	}
+	else if (!strncmp("		<a", data, 4))
+	{
+		if (!cine.numero)
+		{
+			TSQuitaTags(data, tmp);
+			Responde(cl, CLI(tvserv), "\00312%i\003.- %s", i++, tmp);
+		}
+		else if (i++ == cine.numero)
+		{
+			c = strchr(data, '"')+1;
+			d = strchr(c, '"');
+			*d = '\0';
+			SockClose(sck, LOCAL);
+			ircstrdup(cine.query, c);
+			cine.cl = cl;
+			cin = SockOpen("www.terra.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraCine, ADD);
+		}
+	}
+	else if (!strncmp("              <tr", data, 17))
+		m = 1;
+	else if (!strncmp("		No", data, 4))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "No se han encontrado coincidencias");
+		SockClose(sck, LOCAL);
+		return 1;
+	}
+	else if (strstr(data, "ca141x11"))
+	{
+		i = 1;
+		m = 0;
+		SockClose(sck, LOCAL);
+	}
+	return 0;
+}
+*/
+SOCKFUNC(TSLeeCine)
+{
+	static int m = 0, n = 0, i = 1;
+	char tmp[SOCKBUF], *c, *d;
+	Cliente *cl;
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	cl = dts->cl;
+	//Debug("%s", data);
+	if (m)
+	{
+		if (*(data+1) == '/')
+		{
+			SockClose(sck, LOCAL);
+			m = 0;
+			i = 1;
+		}
+		else
+		{
+			if (!dts->numero)
+			{
+				TSQuitaTags(data, tmp);
+				Responde(cl, CLI(tvserv), "\00312%i\003.- %s", i++, tmp);
+			}
+			else if (i++ == dts->numero)
+			{
+				c = strchr(data, '"')+1;
+				d = strchr(c, '"');
+				*d = '\0';
+				SockClose(sck, LOCAL);
+				if ((dts = InsertaCola(c, 0, cl)))
+					dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraTiempo, ADD);
+				m = 0;
+			}
+		}
+	}
+	else if (n)
+	{
+		if (strstr(data, "VOLVER"))
+		{
+			m = n = 0;
+			i = 1;
+			SockClose(sck, LOCAL);
+			if (!IsOper(cl))
+				InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
+		}
+		else
+		{
+			if (!strncmp("</ta", data, 4))
+				Responde(cl, CLI(tvserv), " ");
+			else
+			{
+				TSQuitaTags(data, tmp);
+				if (!strncmp("<a", data, 2))
+					Responde(cl, CLI(tvserv), "%c%s", 31, tmp);
+				else
+				{
+					for (i = 0; tmp[i] == ' ' && tmp[i] != '\0'; i++);
+					if (tmp[i] != '\0')
+						Responde(cl, CLI(tvserv), &tmp[i]);
+				}
+			}
+		}
+	}
+	else if (!strncmp("<td align=\"l", data, 12))
+	{
+		n = 1;
+		TSQuitaTags(data, tmp);
+		if (tmp[0] != '\0')
+			Responde(cl, CLI(tvserv), tmp);
+	}
+	else if (strstr(data, "Seleccione un cine"))
+	{
+		if (!dts->numero)
+		{
+			int prov, i, j, k = 1;
+			char t[8];
+			sscanf(dts->query, "/cartelera/?provincia=%i&buscar=&municipio=%s", &prov, &t);
+			for (i = 0; i < 52 && k; i++)
+			{
+				for (j = 0; prids[i][j]; j++)
+				{
+					if (!strcasecmp(t, prids[i][j]))
+					{
+						Responde(cl, CLI(tvserv), "Se han encontrado varios cines en esta localidad. Use /msg %s CINE <nº> '%s'", CLI(tvserv)->nombre, pueblos[i][j]);
+						k = 0;
+						break;
+					}
+				}
+			}
+		}
+		m = 1;
+	}
+	return 0;
+}
+SOCKFUNC(TSLeePeli)
+{
+	static int m = 0, n = 0, i = 1;
+	char tmp[SOCKBUF], *c, *d;
+	static char snd[BUFSIZE];
+	Cliente *cl;
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	cl = dts->cl;
+	if (m)
+	{
+		if (!strncmp("</s", data, 3))
+		{
+			i = 1;
+			m = 0;
+			SockClose(sck, LOCAL);
+			if (dts->numero != -1)
+				Responde(cl, CLI(tvserv), TS_ERR_EMPT, "No se ha encontrado esta película");
+		}
+		else
+		{
+			if (dts->numero == -1)
+			{
+				TSQuitaTags(data, tmp);
+				if (tmp[0] != '\0')
+					Responde(cl, CLI(tvserv), "\00312%i\003.- %s", i++, tmp);
+			}
+			else if (!dts->numero)
+			{
+				TSQuitaTags(data, tmp);
+				c = strchr(dts->query, '?')+1;
+				if (!strcasecmp(tmp, c))
+				{
+					reloc:
+					c = strchr(data, '"')+1;
+					d = strchr(c, '?');
+					*d = '\0';
+					SockClose(sck, LOCAL);
+					if ((dts = InsertaCola(c, 0, cl)))
+						dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeePeli, NULL, TSCierraTiempo, ADD);
+					m = 0;
+					i = 1;
+				}
+			}
+			else if (dts->numero == i++)
+				goto reloc;
+		}
+	}
+	else if (n)
+	{
+		if (!strncmp("</tr>", data, 5))
+		{
+			if (snd[0] != '\0')
+			{
+				if (snd[0] == ' ' && snd[1] != '\0')
+					Responde(cl, CLI(tvserv), &snd[1]);
+				else
+					Responde(cl, CLI(tvserv), snd);
+				snd[0] = '\0';
+			}
+		}
+		else if (!strncmp(data, "</ta", 4))
+				strcat(snd, " ");
+		else if (!strncmp("<td height=\"6", data, 13))
+		{
+			n = 0;
+			snd[0] = '\0';
+			SockClose(sck, LOCAL);
+		}
+		else
+		{
+			TSQuitaTags(data, tmp);
+			if (tmp[0] != '\0')
+			{
+				if (tmp[0] != ' ')
+					strcat(snd, " ");
+				strcat(snd, tmp);
+			}
+		}
+	}
+	else if (!strncmp("<option s", data, 9))
+	{
+		m = 1;
+		ircstrdup(dts->query, str_replace(dts->query, '+', ' '));
+	}
+	else if (strstr(data, "&nbsp;CARTELERA"))
+	{
+		snd[0] = '\0';
+		n = 1;
+	}
+	return 0;
+}
+SOCKFUNC(TSAbreLiga)
+{
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	SockWrite(sck, OPT_CRLF, "GET %s HTTP/1.1", dts->query);
+	SockWrite(sck, OPT_CRLF, "Accept: */*");
+	SockWrite(sck, OPT_CRLF, "Host: www.marca.com");
+	SockWrite(sck, OPT_CRLF, "Connection: Keep-alive");
+	SockWrite(sck, OPT_CRLF, "");
+	return 0;
+}
+SOCKFUNC(TSLeeLiga)
+{
+	static int m = 0;
+	int i;
+	static char tmp2[BUFSIZE], *c, *d, *e;
+	char tmp[SOCKBUF];
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
+	if (m)
+	{
+		if (!strncmp(data, " <tr", 4))
+			tmp2[0] = '\0';
+		else if (!strncmp(data, " </tr", 5))
+		{
+			c = strchr(tmp2, '\t');
+			c++;
+			d = strchr(c, '\t');
+			*d++ = '\0';
+			e = strchr(d, '\t');
+			*e = '\0';
+			SQLInserta(TS_LI, c, "puntos", d);
+			SQLInserta(TS_LI, c, "division", "%i", dts->numero);
+		}
+		else if (!strncmp(data, "<!-- ^", 6))
+		{
+			if (dts->numero++ < 2)
+			{
+				ircsprintf(buf, "/edicion/marca/futbol/%ia_division/es/index.html", dts->numero);
+				if ((dts = InsertaCola(buf, dts->numero, dts->cl)))
+					dts->sck = SockOpen("www.marca.com", 80, TSAbreLiga, TSLeeLiga, NULL, TSCierraTiempo, ADD);
+			}
+			SockClose(sck, LOCAL);
+		}
+		else
+		{
+			TSQuitaTags(data, tmp);
+			if (tmp[0] != '\0')
+			{
+				for (i = 0; tmp[i] == ' '; i++);
+				strcat(tmp2, &tmp[i]);
+				strcat(tmp2, "\t");
+			}
+		}
+	}	
+	else if (!strncmp(data, "<!-- v", 6))
+	{
+		tmp2[0] = '\0';
+		m = 1;
+	}
+	return 0;
+}
 int TSSigSQL()
 {
 	if (!SQLEsTabla(TS_TV))
@@ -468,6 +1471,22 @@ int TSSigSQL()
 			");", PREFIJO, TS_HO))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
 	}
+	if (!SQLEsTabla(TS_LI))
+	{
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"n SERIAL, "
+  			"item varchar(255) default NULL, "
+  			"puntos int2 default '0', "
+  			"division int2 default '0' "
+			");", PREFIJO, TS_LI))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
+	}
 	SQLCargaTablas();
 	return 1;
+}
+int ActualizaTvServ()
+{
+	TSActualizaHoroscopo();
+	TSActualizaProg();
+	return 0;
 }

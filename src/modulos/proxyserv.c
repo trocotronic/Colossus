@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.20 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.21 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -16,6 +16,7 @@ BOTFUNC(PSHost);
 BOTFUNCHELP(PSHHost);
 
 int PSSigSQL();
+int PSSigEOS();
 #ifdef USA_THREADS
 void *PSLoop(void *);
 HANDLE proxythread;
@@ -90,6 +91,7 @@ int MOD_DESCARGA(ProxyServ)()
 	}
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
 	BorraSenyal(SIGN_SQL, PSSigSQL);
+	BorraSenyal(SIGN_EOS, PSSigEOS);
 	BotUnset(proxyserv);
 	return 0;
 }
@@ -124,11 +126,13 @@ int PSTest(Conf *config, int *errores)
 		error_parcial += TestComMod(eval, proxyserv_coms, 1);
 	if ((eval = BuscaEntrada(config, "lista")))
 	{
-		if (!fopen(eval->data, "r"))
+		FILE *fp;
+		if (!(fp = fopen(eval->data, "r")))
 		{
 			Error("[%s:%s] No se puede abrir el archivo %s]\n", config->archivo, config->item, eval->data);
 			error_parcial++;
 		}
+		fclose(fp);
 	}
 	*errores += error_parcial;
 	return error_parcial;
@@ -175,6 +179,7 @@ void PSSet(Conf *config, Modulo *mod)
 		ProcesaComsMod(NULL, mod, proxyserv_coms);
 	InsertaSenyal(SIGN_POST_NICK, PSCmdNick);
 	InsertaSenyal(SIGN_SQL, PSSigSQL);
+	InsertaSenyal(SIGN_EOS, PSSigEOS);
 	BotSet(proxyserv);
 }
 void PSEscanea(char *host)
@@ -308,6 +313,24 @@ int PSSigSQL()
 #endif
 	return 1;
 }
+int PSSigEOS()
+{
+	FILE *fp;
+	char tmp[BUFSIZE], *c;
+	if ((fp = fopen(lista, "r")))
+	{
+		while ((fgets(tmp, sizeof(tmp), fp)))
+		{
+			if ((c = strchr(tmp, '\n')))
+				*c = '\0';
+			if ((c = strchr(tmp, '\r')))
+				*c = '\0';
+			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", tmp, 0, "Posible proxy ilegal");
+		}
+		fclose(fp);
+	}
+	return 0;
+}
 #ifdef USA_THREADS
 void PSFin(Proxys *px)
 #else
@@ -324,30 +347,36 @@ SOCKFUNC(PSFin)
 	if (!px)
 		return 0;
 #endif
-	if (++px->escaneados == proxyserv->puertos) /* fin del scan */
+	if (data || ++px->escaneados == proxyserv->puertos) /* fin del scan */
 	{
 		int i;
 		char abiertos[256];
-		abiertos[0] = '\0';
-		for (i = 0; i < px->puertos; i++)
+		if (!data)
 		{
-			if (EsOk(px->puerto[i]->sck))
+			abiertos[0] = '\0';
+			for (i = 0; i < px->puertos; i++)
 			{
-				char puerto[10];
-				puerto[0] = '\0';
-				ircsprintf(puerto, " %i", px->puerto[i]->puerto);
-				strcat(abiertos, puerto);
-				SockClose(px->puerto[i]->sck, 0);
+				if (EsOk(px->puerto[i]->sck))
+				{
+					char puerto[10];
+					puerto[0] = '\0';
+					ircsprintf(puerto, " %i", px->puerto[i]->puerto);
+					strcat(abiertos, puerto);
+					px->puerto[i]->sck->closefunc = NULL;
+					SockClose(px->puerto[i]->sck, LOCAL);
+				}
 			}
+			if (abiertos[0] != '\0')
+			{
+				char motivo[300];
+				ircsprintf(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos + 1);
+				ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);
+			}
+			else
+				InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
 		}
-		if (abiertos[0] != '\0')
-		{
-			char motivo[300];
-			ircsprintf(motivo, "Posible proxy ilegal. Puertos abiertos: %s", abiertos + 1);
-			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);
-		}
-		else
-			InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
+		for (i = 0; i < px->puertos; i++)
+			Free(px->puerto[i]);
 		BorraItem(px, proxys);
 		Free(px->host);
 		Free(px);

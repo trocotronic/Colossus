@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.21 2006-02-18 14:34:32 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.22 2006-03-05 18:44:27 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -357,5 +357,8 @@ typedef struct _tkl
 	char *motivo;
 	time_t inicio, fin;
 }Tkl;
-Tkl *InsertaTKL(int, char *, char *, char *, char *, time_t, time_t);
-int BorraTKL(Tkl **, char *, char *);
+extern Tkl *InsertaTKL(int, char *, char *, char *, char *, time_t, time_t);
+extern int BorraTKL(Tkl **, char *, char *);
+extern Tkl *BuscaTKL(int, char*, Tkl *);
+#define TKL_MAX 16 /* máximo! */
+extern MODVAR Tkl *tklines[TKL_MAX];

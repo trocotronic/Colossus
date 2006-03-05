@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.34 2006-02-18 14:34:32 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.35 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -470,9 +470,8 @@ BOTFUNC(NSHelp)
 BOTFUNC(NSRegister)
 {
 	u_int i, opts;
-	u_long ultimo;
 	char *dominio;
-	char *mail, *pass, *usermask, *cache;
+	char *mail, *pass, *usermask;
 	SQLRes res = NULL;
 	usermask = strchr(cl->mask, '!') + 1;
 	if (strlen(cl->nombre) > (u_int)(conf_set->nicklen - 7)) /* 6 minimo de contraseña +1 de los ':' */
@@ -489,18 +488,12 @@ BOTFUNC(NSRegister)
 			Responde(cl, CLI(nickserv), NS_ERR_PARA, "REGISTER tupass tu@email");
 		return 1;
 	}
-	if ((cache = CogeCache(CACHE_ULTIMO_REG, usermask, nickserv->hmod->id)))
+	if (CogeCache(CACHE_ULTIMO_REG, usermask, nickserv->hmod->id))
 	{
-		ultimo = atoul(cache);
-		if ((ultimo + (3600 * nickserv->min_reg)) > (u_long)time(0))
-		{
-			char buf[512];
-			ircsprintf(buf, "No puedes efectuar otro registro hasta que no pasen %i horas.", nickserv->min_reg);
-			Responde(cl, CLI(nickserv), NS_ERR_EMPT, buf);
-			return 1;
-		}
-		else
-			BorraCache(CACHE_ULTIMO_REG, usermask, nickserv->hmod->id);
+		char buf[512];
+		ircsprintf(buf, "No puedes efectuar otro registro hasta que no pasen %i horas.", nickserv->min_reg);
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, buf);
+		return 1;
 	}
 	/* comprobamos que no esté registrado */
 	if (IsReg(cl->nombre))
@@ -627,13 +620,11 @@ BOTFUNC(NSOpts)
 		ircsprintf(buf, "Nuevo email: %s", param[2]);
 		NSMarca(cl, param[1], buf);
 		Responde(cl, CLI(nickserv), "Tu email se ha cambiado a \00312%s\003.", param[2]);
-		return 0;
 	}
 	else if (!strcasecmp(param[1], "URL"))
 	{
 		SQLInserta(NS_SQL, cl->nombre, "url", param[2]);
 		Responde(cl, CLI(nickserv), "Tu url se ha cambiado a \00312%s\003.", param[2]);
-		return 0;
 	}
 	else if (!strcasecmp(param[1], "KILL"))
 	{
@@ -644,7 +635,6 @@ BOTFUNC(NSOpts)
 		}
 		SQLInserta(NS_SQL, cl->nombre, "killtime", param[2]);
 		Responde(cl, CLI(nickserv), "Tu kill se ha cambiado a \00312%s\003.", param[2]);
-		return 0;
 	}
 	else if (!strcasecmp(param[1], "NODROP"))
 	{
@@ -663,15 +653,13 @@ BOTFUNC(NSOpts)
 			Responde(cl, CLI(nickserv), NS_ERR_FORB);
 			return 1;
 		}
-		return 0;
 	}
 	else if (!strcasecmp(param[1], "PASS"))
 	{
 		char *passmd5 = MDString(param[2]);
 		SQLInserta(NS_SQL, cl->nombre, "pass", passmd5);
 		NSMarca(cl, param[1], "Contraseña cambiada.");
-		Responde(cl, CLI(nickserv), "Tu contraseña se ha cambiado a \00312%s\003.", param[2]);
-		return 0;
+		Responde(cl, CLI(nickserv), "Tu contraseña se ha cambiado con éxito.");
 	}
 	else if (!strcasecmp(param[1], "HIDE"))
 	{
@@ -730,7 +718,6 @@ BOTFUNC(NSOpts)
 		}
 		SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
 		Responde(cl, CLI(nickserv), "Hide %s cambiado a \00312%s\003.", param[2], param[3]);
-		return 0;
 	}
 	else
 	{
@@ -761,8 +748,8 @@ BOTFUNC(NSDrop)
 		Responde(cl, CLI(nickserv), "Se ha dropeado el nick \00312%s\003.", param[1]);
 	else
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se ha podido dropear. Comuníquelo a la administración.");
-	return 0;
 	EOI(nickserv, 4);
+	return 0;
 }
 int NSBaja(char *nick, char opt)
 {
@@ -848,21 +835,23 @@ BOTFUNC(NSInfo)
 	SQLFreeRes(res);
 	if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
 	{
-		CsRegistros *regs;
-		int i;
+		char nickw[256];
+		strncpy(nickw, strtolower(param[1]), sizeof(nickw));
 		Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
-		if ((regs = busca_cregistro(param[1])))
+		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, nickw)))
 		{
-			for (i = 0; i < regs->subs; i++)
+			while ((row = SQLFetchRow(res)))
 			{
-				tokbuf[0] = '\0';
-				if (regs->sub[i].autos)
-					ircsprintf(tokbuf, " \003[\00312%s\003]", regs->sub[i].autos);
-				Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s%s%s\003 (\00312%lu\003)", regs->sub[i].canal, 
-					(regs->sub[i].flags ? "+" : ""), ModosAFlags(regs->sub[i].flags, cFlags, NULL), tokbuf, regs->sub[i].flags);
+				if (!BadPtr(row[2]) && !BadPtr(row[3]) && *row[2] != '0')
+					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s\003 [\00312%s\003] (\00312%s\003)", row[0], ModosAFlags(atoul(row[2]), cFlags, NULL), row[3], row[2]);
+				else if (!BadPtr(row[3]))
+					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: [\00312%s\003]", row[0], row[3]);
+				else if (!BadPtr(row[2]) && *row[2] != '0')
+					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s\003 (\00312%s\003)", row[0], ModosAFlags(atoul(row[2]), cFlags, NULL), row[2]);
 			}
+			SQLFreeRes(res);
 		}
-		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, strtolower(param[1]))))
+		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, nickw)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{

@@ -28,6 +28,7 @@ EXPORTS
 	BuscaNivel
 	BuscaOpt
 	BuscaOptNiv
+	BuscaTKL
 	CambiaNick
 	CargaExtensiones
 	ChkBtCon
@@ -185,6 +186,7 @@ EXPORTS
 	strcopia
 	tea
 	timers
+	tklines
 	tokbuf
 	UMODE_REGNICK
 	UMODE_HIDE

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.54 2006-02-17 19:47:34 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.55 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -87,7 +87,7 @@ typedef struct _sock Sock;
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data)
 #define MAXSOCKS MAXCONNECTIONS
 #define BUFSIZE 1024
-#define BUF_SOCK 8192
+#define SOCKBUF 4096
 #define DBUF 2032
 /*!
  * @desc: Devuelve el mínimo de dos números.
@@ -157,7 +157,7 @@ struct _sock
 	char estado;
 	int opts;
 	int slot;
-	char buffer[BUFSIZE]; /* buffer de parseo */
+	char buffer[SOCKBUF]; /* buffer de parseo */
 	int pos; /* posicion de escritura del buffer */
 #ifdef USA_ZLIB
 	struct _zlib *zlib;

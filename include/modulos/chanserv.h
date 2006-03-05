@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.10 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.11 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -18,32 +18,6 @@ struct _cs
 	int necesarios;
 	int antig;
 	Modulo *hmod;
-};
-typedef struct _csregistros CsRegistros;
-struct _csregistros
-{
-	struct _csregistros *sig;
-	char *nick;
-	struct _subc
-	{
-		char *canal;
-		u_long flags;
-		char *autos;
-	}sub[CS_MAX_REGS];
-	int subs;
-};
-typedef struct _akick Akick;
-struct _akick
-{
-	struct _akick *sig;
-	char *canal;
-	struct _akc
-	{
-		char *nick;
-		char *motivo;
-		char *puesto;
-	}akick[CS_MAX_AKICK];
-	int akicks;
 };
 /* Opciones */
 #define CS_OPT_RMOD 0x1 /* candado de modos +m */
@@ -78,6 +52,8 @@ struct _akick
 #define CS_SQL "canales"
 #define CS_TOK "ctokens"
 #define CS_FORBIDS "cforbids"
+#define CS_ACCESS "accesos"
+#define CS_AKICKS "akicks"
 #define CACHE_FUNDADORES "fundadores"
 
 #define CS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
@@ -88,7 +64,6 @@ struct _akick
 #define CS_ERR_FORB ERR_FORB
 
 DLLFUNC extern u_long CSTieneNivel(char *, char *, u_long);
-DLLFUNC extern CsRegistros *busca_cregistro(char *);
 DLLFUNC extern int ChanReg(char *);
 DLLFUNC extern char *IsChanSuspend(char *);
 DLLFUNC extern char *IsChanForbid(char *);

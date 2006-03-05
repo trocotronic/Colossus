@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.71 2006-02-17 23:05:57 Trocotronic Exp $ 
+ * $Id: main.c,v 1.72 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -512,6 +512,7 @@ int main(int argc, char *argv[])
 		cTab[i].item = NULL;
 		cTab[i].items = 0;
 	}
+	bzero(tklines, sizeof(tklines));
 	/* las primeras señales deben ser del núcleo */
 	InsertaSenyal(SIGN_SYNCH, EntraBots);
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
@@ -995,14 +996,21 @@ void CompruebaCronos()
 char *Unifica(char *array[], int total, int parte, int hasta)
 {
 	static char imp[BUFSIZE];
-	int i;
+	int i, len = sizeof(imp), j;
 	imp[0] = '\0';
 	for (i = parte; i < total; i++)
 	{
-		strcat(imp, array[i]);
-		if (i != total - 1)
-			strcat(imp, " ");
-		if (i == hasta)
+		if (len > 0)
+		{
+			j = strlen(array[i]);
+			strncat(imp, array[i], MIN(j, len));
+			len -= MIN(j, len);
+			if (i != total - 1)
+				strcat(imp, " ");
+			if (i == hasta)
+				break;
+		}
+		else
 			break;
 	}
 	return imp;
@@ -1283,7 +1291,7 @@ int CargaCache()
   			"valor varchar(255) default NULL, "
   			"hora int4 default '0', "
   			"owner int4 default '0', "
-  			"tipo varchar(255) default NULL "
+  			"tipo text default NULL "
 			");", PREFIJO, SQL_CACHE))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CACHE);
 	}

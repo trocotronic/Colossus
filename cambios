@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.38 2006-02-17 19:19:01 Trocotronic Exp $
+ * $Id: cambios,v 1.39 2006-03-05 18:44:27 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -371,3 +371,10 @@
 280106427 - Se flexibiliza el sistema de ayuda para hacerlo independiente de las funciones.
 300106428 - Arreglado un fallo con la descarga de comandos.
 100206429 - Simplifico la carga de dll/so.
+190206430 - Se añade un control de GLINEs.
+230206431 - Arreglado un fallo en el motor de sockets.
+260206432 - Arreglado un fallo al capturar el topic de los canales.
+040306433 - Se separa la gestión de registros de ChanSev a otra tabla así se libera memoria y se optimizan las búsquedas.
+040306434 - Ídem para los akicks.
+040306435 - Arreglado un fallo con el part remoto.
+050306436 - Se cambia levemente la sintaxis del comando ACCESS de ChanServ.

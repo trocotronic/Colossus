@@ -16,6 +16,7 @@ extern ChanServ *chanserv;
 int CSSigDrop(char *);
 int CSSigEOS_U();
 
+EXTFUNC(CSInfo_U);
 EXTFUNC(CSOpts_U);
 EXTFUNC(CSSuspender_U);
 EXTFUNC(CSLiberar_U);
@@ -61,6 +62,7 @@ void CargaChanServ(Extension *ext)
 		ProcesaComsMod(NULL, chanserv->hmod, chanserv_coms);
 	InsertaSenyal(SIGN_EOS, CSSigEOS_U);
 	InsertaSenyal(CS_SIGN_DROP, CSSigDrop);
+	InsertaSenyalExt(4, CSInfo_U, ext);
 	InsertaSenyalExt(9, CSOpts_U, ext);
 	InsertaSenyalExt(15, CSSuspender_U, ext);
 	InsertaSenyalExt(16, CSLiberar_U, ext);
@@ -72,6 +74,7 @@ void DescargaChanServ(Extension *ext)
 {
 	BorraSenyal(SIGN_EOS, CSSigEOS_U);
 	BorraSenyal(CS_SIGN_DROP, CSSigDrop);
+	BorraSenyalExt(4, CSInfo_U, ext);
 	BorraSenyalExt(9, CSOpts_U, ext);
 	BorraSenyalExt(15, CSSuspender_U, ext);
 	BorraSenyalExt(16, CSLiberar_U, ext);
@@ -133,6 +136,14 @@ void CSPropagaCanal(char *canal)
 	PropagaRegistro("C::%s::T %s", canal, row[2]);
 	PropagaRegistro("C::%s::P %s", canal, row[3]);
 	SQLFreeRes(res);
+}
+EXTFUNC(CSInfo_U)
+{
+	if (mod != chanserv->hmod)
+		return 1;
+	if (IsChanUDB(param[1]))
+		Responde(cl, CLI(chanserv), "Canal migrado a la \2BDD");
+	return 0;
 }
 EXTFUNC(CSOpts_U)
 {

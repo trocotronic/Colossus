@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.33 2006-02-18 14:34:32 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.34 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,9 +11,6 @@
 #include "modulos/nickserv.h"
 
 ChanServ *chanserv = NULL;
-#define ExFunc(x) TieneNivel(cl, x, chanserv->hmod, NULL)
-Hash csregs[UMAX];
-Hash akicks[CHMAX];
 
 BOTFUNC(CSHelp);
 BOTFUNC(CSDeauth);
@@ -76,18 +73,11 @@ int CSCmdJoin(Cliente *, Canal *);
 int CSCmdKick(Cliente *, Cliente *, Canal *, char *);
 int CSCmdTopic(Cliente *, Canal *, char *);
 
-void CSCargaRegistros(void);
-void CSCargaAkicks(void);
-void CSInsertaRegistro(char *, char *, u_long, char *);
-void CSBorraRegistro(char *, char *);
-Akick *CSInsertaAkick(char *, char *, char *, char *);
-void CSBorraAkick(char *, char *);
-Akick *CSBuscaAkicks(char *);
-int CSEsAkick(char *, char *);
-int CSEsRegistro(char *, char *);
 int CSTest(Conf *, int *);
 void CSSet(Conf *, Modulo *);
+SQLRow CSEsAkick(char *, char *);
 int CSTieneAuto(char *, char *, char);
+SQLRes CSEsAccess(char *, char *);
 mTab *modreg;
 
 static bCom chanserv_coms[] = {
@@ -275,56 +265,6 @@ void CSSet(Conf *config, Modulo *mod)
 	BotSet(chanserv);
 	//CargaExtensiones(mod);
 }
-void CSRegsAAccesos()
-{
-	Opts cFlags[] = {
-		{ 0x1 , "s" } ,
-		{ 0x2 , "e" } ,
-		{ 0x4 , "l" } ,
-		{ 0x80 , "r" } ,
-		{ 0x100 , "c" } ,
-		{ 0x200 , "k" } ,
-		{ 0x400 , "i" } ,
-		{ 0x800 , "j" } ,
-		{ 0x1000 , "g" } ,
-		{ 0x2000 , "m" } ,
-		{ 0x0 , NULL }
-	};
-	SQLRes *res;
-	SQLRow row;
-	char tmp[32], *tok;
-	if ((res = SQLQuery("SELECT item,regs FROM %s%s", PREFIJO, CS_SQL)))
-	{
-		Opts *ofl;
-		int opts;
-		char *c;
-		while ((row = SQLFetchRow(res)))
-		{
-			buf[0] = '\0';
-			for (tok = strtok(row[1], " "); tok; tok = strtok(NULL, " "))
-			{
-				tmp[0] = '\0';
-				if ((c = strchr(tok, ':')))
-					*c++ = '\0';
-				opts = atoi(c);
-				for (ofl = cFlags; ofl->item; ofl++)
-				{
-					if (ofl->opt & opts)
-						strcat(tmp, ofl->item);
-				}
-				if (tmp[0])
-				{
-					strcat(buf, " ");
-					strcat(buf, tok);
-					strcat(buf, ":");
-					strcat(buf, tmp);
-				}
-			}
-			if (buf[0])
-				SQLInserta(CS_SQL, row[0], "accesos", &buf[1]);
-		}
-	}
-}	
 void CSDebug(char *canal, char *formato, ...)
 {
 	char *opts;
@@ -379,117 +319,6 @@ int CSEsResidente(Modulo *mod, char *canal)
 	{
 		if (!strcasecmp(canal, aux))
 			return 1;
-	}
-	return 0;
-}
-u_long CSBorraAcceso(char *usuario, char *canal, char *autoprev)
-{
-	char *registros, *tok, *c, *lev;
-	u_long prev = 0L;
-	if (autoprev)
-		*autoprev = '\0';
-	if ((registros = SQLCogeRegistro(CS_SQL, canal, "accesos")))
-	{
-		buf[0] = '\0';
-		for (tok = strtok(registros, ":"); tok; tok = strtok(NULL, ":"))
-		{
-			if (!strcasecmp(tok, usuario))
-			{
-				lev = strtok(NULL, " ");
-				if (IsDigit(*lev))
-				{
-					if ((c = strchr(lev, ':')))
-					{
-						*c++ = '\0';
-						if (autoprev)
-							strcpy(autoprev, c);
-					}
-					prev = atol(lev);
-				}
-				else
-				{
-					if (autoprev)
-						strcpy(autoprev, lev);
-				}
-				continue;
-			}
-			strcat(buf, tok);
-			strcat(buf, ":");
-			strcat(buf, strtok(NULL, " "));
-			strcat(buf, " ");
-		}
-		CSBorraRegistro(usuario, canal);
-		SQLInserta(CS_SQL, canal, "accesos", buf);
-	}
-	return prev;
-}
-void CSBorraAkickDb(char *nick, char *canal)
-{
-	char *registros, *tok;
-	if ((registros = SQLCogeRegistro(CS_SQL, canal, "akick")))
-	{
-		buf[0] = '\0';
-		for (tok = strtok(registros, "\1"); tok; tok = strtok(NULL, "\1"))
-		{
-			if (!strcasecmp(tok, nick))
-			{
-				strtok(NULL, "\1");
-				strtok(NULL, "\t");
-				continue;
-			}
-			strcat(buf, tok);
-			strcat(buf, "\1");
-			strcat(buf, strtok(NULL, "\1"));
-			strcat(buf, "\1");
-			strcat(buf, strtok(NULL, "\t"));
-			strcat(buf, "\t");
-		}
-		CSBorraAkick(nick, canal);
-		SQLInserta(CS_SQL, canal, "akick", buf);
-	}
-}
-void CSInsertaAkickDb(char *nick, char *canal, char *emisor, char *motivo)
-{
-	Akick *aux;
-	int i;
-	aux = CSInsertaAkick(nick, canal, emisor, motivo);
-	buf[0] = '\0';
-	ircsprintf(buf, "%s\1%s\1%s", aux->akick[0].nick, aux->akick[0].motivo, aux->akick[0].puesto);
-	for (i = 1; i < aux->akicks; i++)
-	{
-		char *tmp;
-		tmp = (char *)Malloc(sizeof(char) * (strlen(aux->akick[i].nick) + strlen(aux->akick[i].motivo) + strlen(aux->akick[i].puesto) + 4));
-		ircsprintf(tmp, "\t%s\1%s\1%s", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
-		strcat(buf, tmp);
-		Free(tmp);
-	}
-	SQLInserta(CS_SQL, canal, "akick", buf);
-}
-int CSEsAkick(char *nick, char *canal)
-{
-	Akick *aux;
-	int i;
-	if ((aux = CSBuscaAkicks(canal)))
-	{
-		for (i = 0; i < aux->akicks; i++)
-		{
-			if (!strcasecmp(aux->akick[i].nick, nick))
-				return 1;
-		}
-	}
-	return 0;
-}
-int CSEsRegistro(char *nick, char *canal)
-{
-	CsRegistros *aux;
-	int i;
-	if ((aux = busca_cregistro(nick)))
-	{
-		for (i = 0; i < aux->subs; i++)
-		{
-			if (!strcasecmp(aux->sub[i].canal, canal))
-				return 1;
-		}
 	}
 	return 0;
 }
@@ -737,10 +566,10 @@ BOTFUNCHELP(CSHAkick)
 					"y se le pone un ban para que no pueda entrar.");
 	Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+k\003.");
 	Responde(cl, CLI(chanserv), " ");
-	Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal +nick|máscara [motivo]");
-	Responde(cl, CLI(chanserv), "Añade al nick o la máscara con el motivo opcional.");
-	Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal -nick|máscara");
-	Responde(cl, CLI(chanserv), "Borra al nick o la máscara.");
+	Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal nick|máscara motivo");
+	Responde(cl, CLI(chanserv), "Añade el nick o la máscara con el motivo indicado.");
+	Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal nick|máscara");
+	Responde(cl, CLI(chanserv), "Borra el nick o la máscara.");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal");
 	Responde(cl, CLI(chanserv), "Lista las diferentes entradas.");
 	return 0;
@@ -753,12 +582,14 @@ BOTFUNCHELP(CSHAccess)
 	Responde(cl, CLI(chanserv), "El fundador tiene acceso a todos ellos.");
 	Responde(cl, CLI(chanserv), "Paralelamente también dispone de automodos. Estos automodos se reciben cuando se entra en el canal.");
 	Responde(cl, CLI(chanserv), "Se especifican entre [ y ].");
+	Responde(cl, CLI(chanserv), "Si se especifican privilegios, se añadirán o quitarán a los que pudiera tener. En cambio, si se especifican automodos, "
+					"no se conservarán los que pudiera tener; sino que se usarán los especificados.");
 	Responde(cl, CLI(chanserv), " ");
 	Responde(cl, CLI(chanserv), "Accesos disponibles:");
 	Responde(cl, CLI(chanserv), "\00312+s\003 Fijar opciones (SET)");
 	Responde(cl, CLI(chanserv), "\00312+e\003 Editar la lista de accesos (ACCESS)");
 	Responde(cl, CLI(chanserv), "\00312+l\003 Listar la lista de accesos (ACCESS)");
-	Responde(cl, CLI(chanserv), "\00312+r\003 Comando MODO)");
+	Responde(cl, CLI(chanserv), "\00312+r\003 Comando (MODO)");
 	Responde(cl, CLI(chanserv), "\00312+c\003 Resetear opciones (CLEAR)");
 	Responde(cl, CLI(chanserv), "\00312+k\003 Gestionar la lista de auto-kicks (AKICK)");
 	Responde(cl, CLI(chanserv), "\00312+i\003 Invitar (INVITE)");
@@ -770,10 +601,12 @@ BOTFUNCHELP(CSHAccess)
 	Responde(cl, CLI(chanserv), "Un acceso no engloba otro. Por ejemplo, el tener +e no implica tener +l.");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal nick [+flags-flags] [automodos]");
 	Responde(cl, CLI(chanserv), "Añade los accesos al nick y sus automodos.");
-	Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal pepito -lv [o]");
-	Responde(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal y se le quitarían los privilegios de acceder a la lista y autovoz.");
+	Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal pepito -le [o]");
+	Responde(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal y se le quitarían los privilegios de acceder y editar lista.");
 	Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal pepito [h]");
 	Responde(cl, CLI(chanserv), "pepito recibiría el modo +h al entrar en #canal y no se modificarían los privilegios que tuviera.");
+	Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal nick []");
+	Responde(cl, CLI(chanserv), "Borra todos los automodos de este nick.");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal nick");
 	Responde(cl, CLI(chanserv), "Borra todos los accesos de este nick.");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal");
@@ -1088,10 +921,10 @@ BOTFUNC(CSInfo)
 		Responde(cl, CLI(chanserv), "Canal \2SEGURO");
 	if (opts & CS_OPT_NODROP)
 		Responde(cl, CLI(chanserv), "Canal \2NO DROPABLE");
+	EOI(chanserv, 4);
 	reg = (time_t)atol(row[10]);
 	Responde(cl, CLI(chanserv), "Último acceso: \00312%s", Fecha(&reg));
 	SQLFreeRes(res);
-	EOI(chanserv, 4);
 	return 0;
 }
 BOTFUNC(CSInvite)
@@ -1302,21 +1135,12 @@ BOTFUNC(CSClear)
 	}*/
 	else if (!strcasecmp(param[2], "ACCESOS"))
 	{
-		char *regs, *tok;
 		if (!IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 			return 1;
 		}
-		if ((regs = SQLCogeRegistro(CS_SQL, param[1], "accesos")))
-		{
-			for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
-			{
-				CSBorraRegistro(tok, param[1]);
-				strtok(NULL, " ");
-			}
-		}
-		SQLInserta(CS_SQL, param[1], "accesos", NULL);
+		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, strtolower(param[1]));
 		Responde(cl, CLI(chanserv), "Lista de accesos eliminada.");
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
@@ -1633,12 +1457,10 @@ BOTFUNC(CSOpts)
 }
 BOTFUNC(CSAkick)
 {
-	Akick *aux;
 	Canal *cn;
-	int i;
 	if (params < 2)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, "AKICK #canal [+-nick|mascara [motivo]]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "AKICK #canal [nick|mascara [motivo]]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -1663,62 +1485,47 @@ BOTFUNC(CSAkick)
 	}
 	if (params == 2)
 	{
-		if (!(aux = CSBuscaAkicks(param[1])) || !aux->akicks)
+		SQLRes res;
+		SQLRow row;
+		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, strtolower(param[1]))))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún akick.");
 			return 1;
 		}
-		for (i = 0; i < aux->akicks; i++)
-			Responde(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", aux->akick[i].nick, aux->akick[i].motivo, aux->akick[i].puesto);
+		while ((row = SQLFetchRow(res)))
+			Responde(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", row[1], row[2], row[3]);
+		SQLFreeRes(res);
 	}
-	else
+	else if (params == 3)
 	{
-		if (*param[2] == '+')
+		char mascaraw[256], canalw[256];
+		strncpy(canalw, strtolower(param[1]), sizeof(canalw));
+		strncpy(mascaraw, strtolower(param[2]), sizeof(mascaraw));
+		if (!SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(mascara)='%s'", PREFIJO, CS_AKICKS, canalw, mascaraw))
 		{
-			Cliente *al;
-			char *motivo = NULL;
-			if ((aux = CSBuscaAkicks(param[1])) && aux->akicks == CS_MAX_AKICK && !CSEsAkick(param[2] + 1, param[1]))
-			{
-				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No se aceptan más entradas.");
-				return 1;
-			}
-			if (params > 3)
-				motivo = Unifica(param, params, 3, -1);
-			else
-				motivo = "No eres bienvenid@.";
-			if (motivo && (strchr(motivo, '\t') || strchr(motivo, '\1')))
-			{
-				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este motivo contiene caracteres inválidos.");
-				return 1;
-			}
-			CSBorraAkickDb(param[2] + 1, param[1]);
-			CSInsertaAkickDb(param[2] + 1, param[1], parv[0], motivo);
-			if ((al = BuscaCliente(param[2] + 1, NULL)))
-				ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
-			Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2] + 1);
-		}
-		else if (*param[2] == '-')
-		{
-			if (!CSEsAkick(param[2] + 1, param[1]))
-			{
-				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Esta entrada no existe.");
-				return 1;
-			}
-			CSBorraAkickDb(param[2] + 1, param[1]);
-			Responde(cl, CLI(chanserv), "Entrada \00312%s\003 eliminada.", param[2] + 1);
-		}
-		else
-		{
-			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "AKICK +-nick|mascara [motivo]");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Esta entrada no existe");
 			return 1;
 		}
+		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(mascara)='%s'", PREFIJO, CS_AKICKS, canalw, mascaraw);
+		Responde(cl, CLI(chanserv), "Entrada \00312%s\003 eliminada.", param[2]);
+	}
+	else if (params > 3)
+	{
+		Cliente *al;
+		char *motivo = Unifica(param, params, 3, -1);
+		SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')", 
+			PREFIJO, CS_AKICKS,
+			param[1], param[2], 
+			motivo, cl->nombre);
+		if ((al = BuscaCliente(param[2], NULL)))
+			ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
+		Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2]);
 	}
 	EOI(chanserv, 10);
 	return 0;
 }
 BOTFUNC(CSAccess)
 {
-	char *registros;
 	if (params < 2)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, "ACCESS #canal [nick [+-flags]]");
@@ -1736,48 +1543,45 @@ BOTFUNC(CSAccess)
 	}
 	if (params == 2)
 	{
-		char *tok, *lev, *autof;
-		u_long niv = 0L;
+		SQLRes res;
+		SQLRow row;
 		if (!CSTieneNivel(parv[0], param[1], CS_LEV_LIS))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		if (!(registros = SQLCogeRegistro(CS_SQL, param[1], "accesos")))
+		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, param[1])))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún acceso.");
 			return 1;
 		}
 		Responde(cl, CLI(chanserv), "*** Accesos de \00312%s\003 ***", param[1]);
-		for (tok = strtok(registros, ":"); tok; tok = strtok(NULL, ":"))
+		while ((row = SQLFetchRow(res)))
 		{
-			niv = 0L;
-			autof = NULL;
-			lev = strtok(NULL, " ");
-			if (IsDigit(*lev))
-			{
-				if ((autof = strchr(lev, ':')))
-					*autof++ = '\0';
-				niv = atol(lev);
-			}
-			else
-				autof = lev;
-			tokbuf[0] = '\0';
-			if (autof)
-				ircsprintf(tokbuf, " \003[\00312%s\003]", autof);
-			Responde(cl, CLI(chanserv), "Nick: \00312%s\003 flags: \00312%s%s%s\003 (\00312%lu\003)", tok, (niv ? "+" : ""), ModosAFlags(niv, cFlags, NULL), tokbuf, niv);
+			if (!BadPtr(row[2]) && !BadPtr(row[3]) && *row[2] != '0')
+				Responde(cl, CLI(chanserv), "Nick: \00312%s\003 flags: \00312%s\003 [\00312%s\003] (\00312%s\003)", row[1], ModosAFlags(atoul(row[2]), cFlags, NULL), row[3], row[2]);
+			else if (!BadPtr(row[3]))
+				Responde(cl, CLI(chanserv), "Nick: \00312%s\003 flags: [\00312%s\003]", row[1], row[3]);
+			else if (!BadPtr(row[2]) && *row[2] != '0')
+				Responde(cl, CLI(chanserv), "Nick: \00312%s\003 flags: \00312%s\003 (\00312%s\003)", row[1], ModosAFlags(atoul(row[2]), cFlags, NULL), row[2]);
 		}
+		SQLFreeRes(res);
 	}
 	else if (params == 3)
 	{
-		CSBorraAcceso(param[2], param[1], NULL);
+		char nick[256], canal[256];
+		strncpy(nick, strtolower(param[2]), sizeof(nick));
+		strncpy(canal, strtolower(param[1]), sizeof(canal));
+		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, canal, nick);
 		Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 		CSDebug(param[1], "Acceso de %s eliminado", param[2]);
 	}
 	else if (params > 3)
 	{
-		char f = ADD, buf[512], *modos = NULL, *autof = NULL, autoprev[16];
-		u_long prev;
+		SQLRes res;
+		SQLRow row;
+		char f = ADD, *modos = NULL, *autof = NULL, canalw[256], nickw[256], *autom = NULL;
+		u_long prev = 0L;
 		if (!CSTieneNivel(parv[0], param[1], CS_LEV_EDT))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
@@ -1788,9 +1592,6 @@ BOTFUNC(CSAccess)
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
-		autoprev[0] = '[';
-		prev = CSBorraAcceso(param[2], param[1], &autoprev[1]);
-		chrcat(autoprev, ']');
 		if (*param[3] == '[')
 		{
 			autof = param[3];
@@ -1802,6 +1603,13 @@ BOTFUNC(CSAccess)
 			modos = param[3];
 			if (params > 4)
 				autof = param[4];
+		}
+		if ((res = CSEsAccess(param[1], param[2])))
+		{
+			row = SQLFetchRow(res);
+			prev = atoul(row[2]);
+			if (!BadPtr(row[3]))
+				autom = row[3];
 		}
 		while (!BadPtr(modos))
 		{
@@ -1821,34 +1629,40 @@ BOTFUNC(CSAccess)
 			}
 			modos++;
 		}
-		if (!autof && autoprev[1] != ']')
-			autof = autoprev;
-		if (prev || autof)
+		if (autof)
 		{
-			CsRegistros *aux;
-			if ((aux = busca_cregistro(param[2])) && aux->subs == CS_MAX_REGS && !CSEsRegistro(param[2], param[1]))
-			{
-				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick ya no acepta más registros.");
-				return 1;
-			}
-			registros = SQLCogeRegistro(CS_SQL, param[1], "accesos");
-			bzero(tokbuf, sizeof(tokbuf));
-			if (autof)
-				snprintf(tokbuf, (size_t)strlen(autof)-1, ":%s", autof+1);
-			if (prev)
-				sprintf(buf, "%s:%lu%s", param[2], prev, tokbuf);
-			else /* existe autof */
-				sprintf(buf, "%s%s", param[2], tokbuf);
-			SQLInserta(CS_SQL, param[1], "accesos", "%s%s", registros ? registros : "", buf);
-			CSInsertaRegistro(param[2], param[1], prev, &tokbuf[1]);
+			char *c;
+			autof = strdup(autof);
+			if ((c = strchr(autof, ']')))
+				*c = '\0';
+			if (*autof == '[')
+				autof++;
+		}
+		strncpy(canalw, strtolower(param[1]), sizeof(canalw));
+		strncpy(nickw, strtolower(param[2]), sizeof(nickw));
+		if (!res)
+			SQLQuery("INSERT INTO %s%s (canal,nick) values ('%s','%s')", PREFIJO, CS_ACCESS, param[1], param[2]);
+		SQLQuery("UPDATE %s%s SET nivel=%lu WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, prev, canalw, nickw);
+		if (autof)
+		{
+			SQLQuery("UPDATE %s%s SET automodos='%s' WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, autof, canalw, nickw);
+			autom = NULL;
+		}
+		if (prev || !BadPtr(autof) || autom)
+		{
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
-			CSDebug(param[1], "Acceso de %s cambiado a %s", param[2], Unifica(param, params, 3, -1));
+			CSDebug(param[1], "Acceso de \00312%s\003 cambiado a %s", param[2], Unifica(param, params, 3, -1));
 		}
 		else
 		{
+			SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, canalw, nickw);
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 			CSDebug(param[1], "Acceso de \00312%s\003 eliminado.", param[2]);
 		}
+		if (autof)
+			Free(autof);
+		if (res)
+			SQLFreeRes(res);
 	}
 	EOI(chanserv, 11);
 	return 0;
@@ -2419,8 +2233,6 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	SQLRow row;
 	int opts, i, max;
 	char *entry, *modos, *topic, *susp;
-	Akick *akicks;
-	CsRegistros *cres;
 	if (!IsOper(cl) && (forb = IsChanForbid(cn->nombre)))
 	{
 		if (ProtFunc(P_PART_USUARIO_REMOTO))
@@ -2451,34 +2263,23 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 				ProtFunc(P_PART_USUARIO_REMOTO)(cl, cn, NULL);
 			return 0;
 		}
-		if ((akicks = CSBuscaAkicks(cn->nombre)))
+		if ((row = CSEsAkick(cn->nombre, cl->mask)))
 		{
-			int i;
-			for (i = 0; i < akicks->akicks; i++)
-			{
-				if (!match(MascaraIrcd(akicks->akick[i].nick), cl->mask))
-				{
-					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", TipoMascara(cl->mask, chanserv->bantype));
-					ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", akicks->akick[i].motivo, akicks->akick[i].puesto);
-					return 0;
-				}
-			}
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", TipoMascara(cl->mask, chanserv->bantype));
+			ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", row[2], row[3]);
+			return 0;
 		}
 		buf[0] = tokbuf[0] = '\0';
 		if (CSEsFundador(cl, cn->nombre) || CSEsFundador_cache(cl, cn->nombre))
 			strcpy(buf, protocolo->modcl);
 		else
 		{
-			if (IsId(cl) && (cres = busca_cregistro(cl->nombre)))
+			if (IsId(cl) && (res = CSEsAccess(cn->nombre, cl->nombre)))
 			{
-				for (i = 0; i < cres->subs; i++)
-				{
-					if (!strcasecmp(cres->sub[i].canal, cn->nombre))
-					{
-						strcpy(buf, cres->sub[i].autos);
-						break;
-					}
-				}
+				row = SQLFetchRow(res);
+				if (!BadPtr(row[3]))
+					strcpy(buf, row[3]);
+				SQLFreeRes(res);
 			}
 		}
 		max = strlen(buf);
@@ -2540,7 +2341,6 @@ int CSSigSQL()
   			"ultimo int4 default '0', "
   			"ntopic text, "
   			"limite int2 default '5', "
-  			"akick text, "
   			"bjoins int4 default '0', "
   			"suspend text, "
   			"url varchar(255), "
@@ -2553,12 +2353,6 @@ int CSSigSQL()
 	{
 		if (!SQLEsCampo(CS_SQL, "marcas"))
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, CS_SQL);
-		if (!SQLEsCampo(CS_SQL, "accesos"))
-		{
-			SQLQuery("ALTER TABLE %s%s ADD COLUMN accesos text", PREFIJO, CS_SQL);
-			CSRegsAAccesos();
-			SQLQuery("ALTER TABLE %s%s DROP regs", PREFIJO, CS_SQL);
-		}	
 		if (!SQLEsCampo(CS_SQL, "suspend"))
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN suspend text", PREFIJO, CS_SQL);
 		SQLQuery("ALTER TABLE `%s%s` CHANGE `item` `item` VARCHAR( 255 )", PREFIJO, CS_SQL);
@@ -2583,9 +2377,101 @@ int CSSigSQL()
 			");", PREFIJO, CS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
 	}
+	if (!SQLEsTabla(CS_ACCESS))
+	{
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"canal varchar(255) default NULL, "
+  			"nick varchar(255) default NULL, "
+  			"nivel int8 default '0', "
+  			"automodos varchar(32) default NULL "
+			");", PREFIJO, CS_ACCESS))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
+		else
+		{
+			SQLRes res;
+			SQLRow row;
+			if ((res = SQLQuery("SELECT item,accesos FROM %s%s", PREFIJO, CS_SQL)))
+			{
+				while ((row = SQLFetchRow(res)))
+				{
+					if (!BadPtr(row[1]))
+					{
+						char *tok, *c, *lev = NULL, *autof = NULL;
+						for (tok = strtok(row[1], ":"); tok; tok = strtok(NULL, ":"))
+						{
+							lev = strtok(NULL, " ");
+							if (IsDigit(*lev))
+							{
+								if ((c = strchr(lev, ':')))
+								{
+									*c++ = '\0';
+									autof = c;
+								}
+							}
+							else
+							{
+								autof = lev;
+								lev = NULL;
+							}
+							if (lev && autof)
+								SQLQuery("INSERT INTO %s%s (canal,nick,nivel,automodos) values ('%s','%s','%s','%s')", 
+									PREFIJO, CS_ACCESS,
+									row[0], tok,
+									lev, autof);
+							else if (autof)
+								SQLQuery("INSERT INTO %s%s (canal,nick,automodos) values ('%s','%s','%s')", 
+									PREFIJO, CS_ACCESS,
+									row[0], tok, autof);
+							else if (lev)
+								SQLQuery("INSERT INTO %s%s (canal,nick,nivel) values ('%s','%s','%s')", 
+									PREFIJO, CS_ACCESS,
+									row[0], tok, lev);
+						}
+					}
+				}
+			}
+			SQLFreeRes(res);
+			SQLQuery("ALTER TABLE %s%s DROP accesos", PREFIJO, CS_SQL);
+		}
+	}
+	if (!SQLEsTabla(CS_AKICKS))
+	{
+		if (SQLQuery("CREATE TABLE %s%s ( "
+  			"canal varchar(255) default NULL, "
+  			"mascara varchar(255) default NULL, "
+  			"motivo varchar(255) default '0', "
+  			"autor varchar(64) default NULL "
+			");", PREFIJO, CS_AKICKS))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
+		else
+		{
+			SQLRes res;
+			SQLRow row;
+			if ((res = SQLQuery("SELECT item,akick from %s%s", PREFIJO, CS_SQL)))
+			{
+				while ((row = SQLFetchRow(res)))
+				{
+					if (!BadPtr(row[1]))
+					{
+						char *tok, *mo, *au;
+						for (tok = strtok(row[1], "\1"); tok; tok = strtok(NULL, "\1"))
+						{
+							mo = strtok(NULL, "\1");
+							au = strtok(NULL, "\t");
+							SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')", 
+								PREFIJO, CS_AKICKS,
+								row[0], tok,
+								mo, au);
+						
+						}
+					}
+				}
+			}
+			SQLFreeRes(res);
+			SQLQuery("ALTER TABLE %s%s DROP akick", PREFIJO, CS_SQL);
+		}
+	}
 	SQLCargaTablas();
-	CSCargaRegistros();
-	CSCargaAkicks();
 	return 1;
 }
 int CSSigEOS()
@@ -2623,284 +2509,75 @@ int CSSigPreNick(Cliente *cl, char *nuevo)
 int CSBaja(char *canal, char opt)
 {
 	Canal *an;
-	Akick *akick;
-	char *tok, *regs;
+	char canalw[256];
 	if (!opt && atoi(SQLCogeRegistro(CS_SQL, canal, "opts")) & CS_OPT_NODROP)
 		return 1;
-	an = BuscaCanal(canal, NULL);
-	if (an)
+	if ((an = BuscaCanal(canal, NULL)))
 	{
 		ProtFunc(P_MODO_CANAL)(CLI(chanserv), an, "-r");
 		if (RedOverride)
 			SacaBot(CLI(chanserv), canal, NULL);
 	}
-	if ((regs = SQLCogeRegistro(CS_SQL, canal, "accesos")))
-	{
-		for (tok = strtok(regs, ":"); tok; tok = strtok(NULL, ":"))
-		{
-			CSBorraRegistro(tok, canal);
-			strtok(NULL, " ");
-		}
-	}
-	if ((akick = CSBuscaAkicks(canal)))
-	{
-		int akicks = akick->akicks;
-		while (akicks)
-		{
-			CSBorraAkick(akick->akick[0].nick, canal);
-			akicks--;
-		}
-	}
+	strncpy(canalw, strtolower(canal), sizeof(canalw));
+	SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, canalw);
+	SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, canalw);
 	Senyal1(CS_SIGN_DROP, canal);
 	SQLBorra(CS_SQL, canal);
 	return 0;
 }
-CsRegistros *busca_cregistro(char *nick)
+SQLRow CSEsAkick(char *canal, char *mascara)
 {
-	CsRegistros *aux;
-	u_int hash;
-	hash = HashCliente(nick);
-	for (aux = (CsRegistros *)csregs[hash].item; aux; aux = aux->sig)
+	char canalw[256];
+	SQLRes res;
+	SQLRow row;
+	strncpy(canalw, strtolower(canal), sizeof(canalw));
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, canalw)))
 	{
-		if (!strcasecmp(aux->nick, nick))
-			return aux;
-	}
-	return NULL;
-}
-Akick *CSBuscaAkicks(char *canal)
-{
-	Akick *aux;
-	u_int hash;
-	hash = HashCanal(canal);
-	for (aux = (Akick *)akicks[hash].item; aux; aux = aux->sig)
-	{
-		if (!strcasecmp(aux->canal, canal))
-			return aux;
-	}
-	return NULL;
-}
-void CSInsertaRegistro(char *nick, char *canal, u_long flag, char *autof)
-{
-	CsRegistros *creg;
-	u_int hash = 0;
-	if (!(creg = busca_cregistro(nick)))
-	{
-		BMalloc(creg, CsRegistros);
-		creg->nick = strdup(nick);
-	}
-	hash = HashCliente(nick);
-	creg->sub[creg->subs].canal = strdup(canal);
-	creg->sub[creg->subs].flags = flag;
-	if (autof)
-		creg->sub[creg->subs].autos = strdup(autof);
-	else
-		creg->sub[creg->subs].autos = NULL;
-	creg->subs++;
-	if (!busca_cregistro(nick))
-	{
-		AddItem(creg, csregs[hash].item);
-		csregs[hash].items++;
-	}
-}
-Akick *CSInsertaAkick(char *nick, char *canal, char *emisor, char *motivo)
-{
-	Akick *akick;
-	u_int hash = 0;
-	if (!(akick = CSBuscaAkicks(canal)))
-	{
-		akick = (Akick *)Malloc(sizeof(Akick));
-		akick->akicks = 0;
-		akick->canal = strdup(canal);
-	}
-	hash = HashCanal(canal);
-	akick->akick[akick->akicks].nick = strdup(nick);
-	akick->akick[akick->akicks].motivo = strdup(motivo);
-	akick->akick[akick->akicks].puesto = strdup(emisor);
-	akick->akicks++;
-	if (!CSBuscaAkicks(canal))
-	{
-		AddItem(akick, akicks[hash].item);
-		akicks[hash].items++;
-	}
-	return akick;
-}
-int CSBorraRegistro_de_hash(CsRegistros *creg, char *nick)
-{
-	u_int hash;
-	hash = HashCliente(nick);
-	if (BorraItem(creg, csregs[hash].item))
-	{
-		csregs[hash].items--;
-		return 1;
-	}
-	return 0;
-}
-void CSBorraRegistro(char *nick, char *canal)
-{
-	CsRegistros *creg;
-	int i;
-	if (!(creg = busca_cregistro(nick)))
-		return;
-	for (i = 0; i < creg->subs; i++)
-	{
-		if (!strcasecmp(creg->sub[i].canal, canal))
+		while ((row = SQLFetchRow(res)))
 		{
-			/* liberamos el canal en cuestión */
-			Free(creg->sub[i].canal);
-			ircfree(creg->sub[i].autos);
-			/* ahora tenemos vía libre para desplazar la lista para abajo */
-			for (; i < creg->subs; i++)
-				creg->sub[i] = creg->sub[i+1];
-			if (!(--creg->subs))
+			if (!match(row[1], mascara))
 			{
-				CSBorraRegistro_de_hash(creg, nick);
-				Free(creg->nick);
-				Free(creg);
+				SQLFreeRes(res);
+				return row;
 			}
-			return;
 		}
 	}
+	SQLFreeRes(res);
+	return NULL;
 }
-int CSBorraAkick_de_hash(Akick *akick, char *canal)
+SQLRes CSEsAccess(char *canal, char *nick)
 {
-	u_int hash;
-	hash = HashCanal(canal);
-	if (BorraItem(akick, akicks[hash].item))
-	{
-			akicks[hash].items--;
-			return 1;
-	}
-	return 0;
-}
-void CSBorraAkick(char *nick, char *canal)
-{
-	Akick *akick;
-	int i;
-	if (!(akick = CSBuscaAkicks(canal)))
-		return;
-	for (i = 0; i < akick->akicks; i++)
-	{
-		if (!strcasecmp(akick->akick[i].nick, nick))
-		{
-			Free(akick->akick[i].motivo);
-			Free(akick->akick[i].puesto);
-			Free(akick->akick[i].nick);
-			for (; i < akick->akicks; i++)
-				akick->akick[i] = akick->akick[i+1];
-			if (!(--akick->akicks))
-			{
-				CSBorraAkick_de_hash(akick, canal);
-				Free(akick->canal);
-				Free(akick);
-			}
-			return;
-		}
-	}
+	char canalw[256], nickw[256];
+	strncpy(canalw, strtolower(canal), sizeof(canalw));
+	strncpy(nickw, strtolower(nick), sizeof(nickw));
+	return SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, canalw, nickw);
 }
 int CSDropanick(char *nick)
 {
-	CsRegistros *regs;
-	regs = busca_cregistro(nick);
-	if (regs)
-	{
-		int subs = regs->subs;
-		while(subs)
-		{
-			char tmp[512];
-			strncpy(tmp, regs->sub[0].canal, 512);
-			CSBorraAcceso(nick, tmp, NULL);
-			if (!strcasecmp(SQLCogeRegistro(CS_SQL, tmp, "founder"), nick))
-				SQLInserta(CS_SQL, tmp, "founder", CLI(chanserv)->nombre);
-			subs--;
-		}
-	}
+	SQLQuery("DELETE FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, strtolower(nick));
 	return 0;
-}
-void CSCargaRegistros()
-{
-	SQLRes res;
-	SQLRow row;
-	res = SQLQuery("SELECT item,accesos from %s%s", PREFIJO, CS_SQL);
-	if (!res)
-		return;
-	while ((row = SQLFetchRow(res)))
-	{
-		if (!BadPtr(row[1]))
-		{
-			char *tok, *c, *lev = NULL, *autof = NULL;
-			u_long l = 0L;
-			for (tok = strtok(row[1], ":"); tok; tok = strtok(NULL, ":"))
-			{
-				lev = strtok(NULL, " ");
-				if (IsDigit(*lev))
-				{
-					if ((c = strchr(lev, ':')))
-					{
-						*c++ = '\0';
-						autof = c;
-					}
-				}
-				else
-				{
-					autof = lev;
-					lev = NULL;
-				}
-				if (lev)
-					l = atol(lev);
-				CSInsertaRegistro(tok, row[0], l, autof);
-			}
-		}
-	}
-	SQLFreeRes(res);
-}
-void CSCargaAkicks()
-{
-	SQLRes res;
-	SQLRow row;
-	res = SQLQuery("SELECT item,akick from %s%s", PREFIJO, CS_SQL);
-	if (!res)
-		return;
-	while ((row = SQLFetchRow(res)))
-	{
-		if (!BadPtr(row[1]))
-		{
-			char *tok, *mo, *au;
-			for (tok = strtok(row[1], "\1"); tok; tok = strtok(NULL, "\1"))
-			{
-				mo = strtok(NULL, "\1");
-				au = strtok(NULL, "\t");
-				CSInsertaAkick(tok, row[0], au, mo);
-			}
-		}
-	}
-	SQLFreeRes(res);
 }
 u_long CSTieneNivel(char *nick, char *canal, u_long flag)
 {
-	CsRegistros *aux;
 	Cliente *al;
-	int i;
+	SQLRes res;
+	SQLRow row;
 	al = BuscaCliente(nick, NULL);
 	if ((!IsOper(al) && IsChanSuspend(canal)) || !IsId(al))
 		return 0L;
 	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))
 		return CS_LEV_ALL;
-	if ((aux = busca_cregistro(nick)))
+	if ((res = CSEsAccess(canal, nick)))
 	{
-		for (i = 0; i < aux->subs; i++)
-		{
-			if (!strcasecmp(aux->sub[i].canal, canal))
-			{
-				u_long nivel = 0L;
-				if (IsPreo(al))
-					nivel |= (CS_LEV_ALL & ~CS_LEV_MOD);
-				nivel |= aux->sub[i].flags;		
-				if (flag)
-					return (nivel & flag);
-				else
-					return aux->sub[i].flags;
-			}
-		}
+		u_long nivel = 0L;
+		row = SQLFetchRow(res);
+		nivel = atoul(row[2]);
+		if (IsPreo(al))
+			nivel |= (CS_LEV_ALL & ~CS_LEV_MOD);
+		if (flag)
+			return (nivel & flag);
+		else
+			return nivel;
 	}
 	if (IsPreo(al))
 		return (CS_LEV_ALL & ~CS_LEV_MOD);
@@ -2908,26 +2585,19 @@ u_long CSTieneNivel(char *nick, char *canal, u_long flag)
 }
 int CSTieneAuto(char *nick, char *canal, char autof)
 {
-	CsRegistros *aux;
 	Cliente *al;
-	int i;
+	SQLRes res;
+	SQLRow row;
 	al = BuscaCliente(nick, NULL);
 	if ((!IsOper(al) && IsChanSuspend(canal)) || !IsId(al))
 		return 0;
 	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))
 		return 1;
-	if ((aux = busca_cregistro(nick)))
+	if ((res = CSEsAccess(canal, nick)))
 	{
-		for (i = 0; i < aux->subs; i++)
-		{
-			if (!strcasecmp(aux->sub[i].canal, canal))
-			{
-				if (strchr(aux->sub[i].autos, autof))
-					return 1;
-				else
-					return 0;
-			}
-		}
+		row = SQLFetchRow(res);
+		if (strchr(row[3], autof))
+			return 1;
 	}
 	return 0;
 }
@@ -2996,8 +2666,7 @@ int CSSigSynch()
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
 		{
 			while ((row = SQLFetchRow(res)))
-					//EntraBot(CLI(chanserv), row[0]);
-					Debug("%s",row[0]);
+				EntraBot(CLI(chanserv), row[0]);
 			SQLFreeRes(res);
 		}
 	}

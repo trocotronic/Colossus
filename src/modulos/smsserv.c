@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.1 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.2 2006-03-05 18:44:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -243,25 +243,18 @@ BOTFUNC(SSSend)
 {
 	int num;
 	u_int max;
-	u_long ultimo;
-	char *texto, *cache, *usermask = strchr(cl->mask, '!') + 1;
+	char *texto, *usermask = strchr(cl->mask, '!') + 1;
 	if (params < 3)
 	{
 		Responde(cl, CLI(smsserv), SS_ERR_PARA, "SEND nº|nick mensaje");
 		return 1;
 	}
-	if ((cache = CogeCache(CACHE_ULTIMO_SMS, usermask, smsserv->hmod->id)))
+	if (CogeCache(CACHE_ULTIMO_SMS, usermask, smsserv->hmod->id))
 	{
-		ultimo = atoul(cache);
-		if ((ultimo + smsserv->espera) > (u_long)time(0))
-		{
-			char buf[512];
-			ircsprintf(buf, "No puedes enviar otro sms hasta que no pasen %i minutos.", smsserv->espera / 60);
-			Responde(cl, CLI(smsserv), SS_ERR_EMPT, buf);
-			return 1;
-		}
-		else
-			BorraCache(CACHE_ULTIMO_SMS, usermask, smsserv->hmod->id);
+		char buf[512];
+		ircsprintf(buf, "No puedes enviar otro sms hasta que no pasen %i minutos.", smsserv->espera / 60);
+		Responde(cl, CLI(smsserv), SS_ERR_EMPT, buf);
+		return 1;
 	}
 	if (isdigit(*param[1]))
 	{
