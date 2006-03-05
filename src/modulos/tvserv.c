@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.12 2006-03-05 18:49:51 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.13 2006-03-05 19:04:20 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -655,7 +655,7 @@ BOTFUNC(TSTiempo)
 		return 1;
 	}
 	*/
-	if (!isdigit(*param[1]))
+	if (!IsDigit(*param[1]))
 	{
 		strncpy(pueblo, str_replace(Unifica(param, params, 1, -1), ' ', '+'), sizeof(pueblo));
 		n = 0;
@@ -693,7 +693,7 @@ BOTFUNC(TSCine)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Debes esperar almenos 30 segundos antes de volver a usar este servicio");
 		return 1;
 	}
-	if (!isdigit(*param[1]))
+	if (!IsDigit(*param[1]))
 	{
 		p = Unifica(param, params, 1, -1);
 		n = 0;
@@ -742,7 +742,7 @@ BOTFUNC(TSPelis)
 	}
 	if (params > 1)
 	{
-		if (!isdigit(*param[1]))
+		if (!IsDigit(*param[1]))
 		{
 			ircsprintf(buf, "/metropoli/cine.html?%s", Unifica(param, params, 1, -1));
 			strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));

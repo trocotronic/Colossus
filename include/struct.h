@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.55 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.56 2006-03-05 19:04:20 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -60,8 +60,7 @@ extern int strcasecmp(const char *, const char *);
 #define snprintf _snprintf
 #define vsnprintf _vsnprintf
 #endif
-#define IsDigit(c) (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' \
-		 || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
+#define IsDigit(c) (c >= 48 && c <= 57)
 /*!
  * @desc: Hace una copia y libera el anterior contenido si no estuviera liberado.
  Es decir, si no apunta a NULL:

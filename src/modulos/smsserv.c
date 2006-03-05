@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.2 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.3 2006-03-05 19:04:20 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -256,7 +256,7 @@ BOTFUNC(SSSend)
 		Responde(cl, CLI(smsserv), SS_ERR_EMPT, buf);
 		return 1;
 	}
-	if (isdigit(*param[1]))
+	if (IsDigit(*param[1]))
 	{
 		if (smsserv->restringido && !IsOper(cl))
 		{
