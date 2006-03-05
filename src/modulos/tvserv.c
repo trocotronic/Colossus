@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.11 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.12 2006-03-05 18:49:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1276,7 +1276,7 @@ SOCKFUNC(TSLeeCine)
 		{
 			int prov, i, j, k = 1;
 			char t[8];
-			sscanf(dts->query, "/cartelera/?provincia=%i&buscar=&municipio=%s", &prov, &t);
+			sscanf(dts->query, "/cartelera/?provincia=%i&buscar=&municipio=%s", &prov, t);
 			for (i = 0; i < 52 && k; i++)
 			{
 				for (j = 0; prids[i][j]; j++)
