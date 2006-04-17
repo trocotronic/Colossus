@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.13 2006-02-17 19:19:03 Trocotronic Exp $
+// $Id: colossus.rc,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -159,7 +159,7 @@ FONT 8, "Tahoma"
 BEGIN
     LTEXT           "Autor: Trocotronic",IDC_STATIC,10,10,76,8	
     LTEXT           "©2004-2006",IDC_VER,10,20,76,8
-    CONTROL         "http://www.rallados.net",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
+    CONTROL         "http://www.redyc.com",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
     CONTROL         BMP_LOGO,IDC_STATIC,"Static",SS_BITMAP,111,3,64,64
     GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,60,BS_LEFT
     LTEXT           "OpenSSL: ",IDC_STATIC,14,56,40,8

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.20 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.21 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -563,8 +563,7 @@ int TestServer(Conf *config, int *errores)
 				Error("[%s:%s::%s::%i] El puerto_escucha debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;
 			}
-			aux = BuscaEntrada(config, "puerto");
-			if (puerto == atoi(aux->data))
+			if ((aux = BuscaEntrada(config, "puerto")) && puerto == atoi(aux->data))
 			{
 				Error("[%s:%s::%s::%i] El puerto_escucha no puede ser el mismo que puerto.", config->archivo, config->item, eval->item, eval->linea);
 				error_parcial++;

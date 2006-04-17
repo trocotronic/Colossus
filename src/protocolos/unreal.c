@@ -64,7 +64,7 @@ ProtInfo PROT_INFO(Unreal) = {
 	"Protocolo UnrealIRCd" ,
 	0.5 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net" 
+	"trocotronic@redyc.com" 
 };
 
 #define MSG_SWHOIS "SWHOIS"
@@ -247,9 +247,9 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 	va_start(vl, modos);
 	ircvsprintf(buf, modos, vl);
 	va_end(vl);
-	ProcesaModosCliente(cl, modos);
+	ProcesaModosCliente(cl, buf);
 	EnviaAServidor(":%s %s %s %s %lu", bl->nombre, TOK_SVS2MODE, cl->nombre, buf, time(0));
-	Senyal2(SIGN_UMODE, cl, modos);
+	Senyal2(SIGN_UMODE, cl, buf);
 	return 0;
 }
 int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
@@ -414,7 +414,7 @@ int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *mot
 {
 	Tkl *tkl;
 	ircsprintf(buf, "%s@%s", ident, host);
-	if ((tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])))
+	if (!bl || (tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])))
 	{
 		if (!tkl->fin || !strcmp(motivo, tkl->motivo))
 			return 1;
@@ -996,7 +996,7 @@ IRCFUNC(m_msg)
 			params = k;
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
-			func->func(cl, parv, parc, param, params);
+			func->func(cl, parv, parc, param, params, func);
 		else
 		{
 			if (!ex && !EsServidor(cl))
@@ -1191,6 +1191,7 @@ IRCFUNC(m_mode)
 					}
 				case 'b':
 				case 'e':
+				case 'I':
 				case 'k':
 				case 'L':
 				case 'l':
@@ -1359,7 +1360,7 @@ IRCFUNC(m_server)
 				CierraIrcd(NULL, NULL);
 				return 0;
 			}
-			sck->opts |= OPT_ZLIB;
+			SetZlib(sck);
 			sck->zlib->primero = 1;
 		}
 #endif
@@ -1459,9 +1460,8 @@ IRCFUNC(m_eos)
 	{
 		EnviaAServidor(":%s %s", me.nombre, TOK_VERSION);
 		EnviaAServidor(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
-		intentos = 0;
 		Senyal(SIGN_EOS);
-#ifdef _WIN32		
+#ifdef _WIN32
 		ChkBtCon(1, 0);
 #endif		
 	}
@@ -1534,7 +1534,7 @@ int TipoTKL(char tipo)
 		case 'Q':
 			return TKL_QLINE;
 	}
-	Info("Se ha insertado una TKL desconocida. Diríjase a http://www.rallados.net e informe al desarrollador");
+	Info("Se ha insertado una TKL desconocida. Diríjase a http://www.redyc.com e informe al desarrollador");
 	return -1; /* nunca debería pasar */
 }
 IRCFUNC(m_tkl)

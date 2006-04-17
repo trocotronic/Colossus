@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.17 2005-12-25 21:48:07 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.18 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -423,7 +423,7 @@ int DesencolaSmtp()
 	hostmx = conf_smtp ? conf_smtp->host : Mx(dominio);
 	if (!hostmx)
 		return 1;
-	if (!SockOpen(hostmx, 25, NULL, ProcesaSmtp, NULL, CierraSmtp, ADD))
+	if (!SockOpen(hostmx, 25, NULL, ProcesaSmtp, NULL, CierraSmtp))
 		return 1;
 	return 0;
 }
@@ -473,57 +473,57 @@ SOCKFUNC(ProcesaSmtp)
 	if (!ParseSmtp(data, 220))
 	{
 		if (conf_smtp && conf_smtp->login)
-			SockWrite(sck, OPT_CRLF, "EHLO Colossus");
+			SockWrite(sck, "EHLO Colossus");
 		else
 		{
-			SockWrite(sck, OPT_CRLF, "HELO Colossus");
+			SockWrite(sck, "HELO Colossus");
 			conta = 3;
 		}
 	}
 	if (!ParseSmtp(data, 250) && conta == 0)
 	{
-		SockWrite(sck, OPT_CRLF, "AUTH LOGIN");
+		SockWrite(sck, "AUTH LOGIN");
 		conta++;
 	}
 	else if (!ParseSmtp(data, 334) && conta == 1)
 	{
-		SockWrite(sck, OPT_CRLF, base64_encode(conf_smtp->login, strlen(conf_smtp->login)));
+		SockWrite(sck, base64_encode(conf_smtp->login, strlen(conf_smtp->login)));
 		conta++;
 	}
 	else if (!ParseSmtp(data, 334) && conta == 2)
 	{
-		SockWrite(sck, OPT_CRLF, base64_encode(conf_smtp->pass, strlen(conf_smtp->pass)));
+		SockWrite(sck, base64_encode(conf_smtp->pass, strlen(conf_smtp->pass)));
 		conta++;
 	}
 	else if (!ParseSmtp(data, 235))
 	{
-		SockWrite(sck, OPT_CRLF, "MAIL FROM: %s", smtp->de);
+		SockWrite(sck, "MAIL FROM: %s", smtp->de);
 		conta++;
 	}
 	else if (!ParseSmtp(data, 250) && conta == 3)
 	{
-		SockWrite(sck, OPT_CRLF, "MAIL FROM: %s", smtp->de);
+		SockWrite(sck, "MAIL FROM: %s", smtp->de);
 		conta++;
 	}
 	else if (!ParseSmtp(data, 250) && conta == 4)
 	{
-		SockWrite(sck, OPT_CRLF, "RCPT TO: %s", smtp->para);
+		SockWrite(sck, "RCPT TO: %s", smtp->para);
 		conta++;
 	}
 	else if (!ParseSmtp(data, 250) && conta == 5)
 	{
-		SockWrite(sck, OPT_CRLF, "DATA");
+		SockWrite(sck, "DATA");
 		conta++;
 	}
 	if (!ParseSmtp(data, 354))
 	{
-		SockWrite(sck, OPT_CRLF, "From: \"%s\" <%s>", conf_set->red, smtp->de);
-		SockWrite(sck, OPT_CRLF, "To: <%s>", smtp->para);
-		SockWrite(sck, OPT_CRLF, "Subject: %s", smtp->tema);
-		SockWrite(sck, OPT_CRLF, "Date: %lu", time(0));
-		SockWrite(sck, OPT_CRLF, "%s", smtp->cuerpo);
-		SockWrite(sck, OPT_CRLF, ".");
-		SockWrite(sck, OPT_CRLF, "QUIT");
+		SockWrite(sck, "From: \"%s\" <%s>", conf_set->red, smtp->de);
+		SockWrite(sck, "To: <%s>", smtp->para);
+		SockWrite(sck, "Subject: %s", smtp->tema);
+		SockWrite(sck, "Date: %lu", time(0));
+		SockWrite(sck, "%s", smtp->cuerpo);
+		SockWrite(sck, ".");
+		SockWrite(sck, "QUIT");
 		smtp->enviado = 1;
 	}
 	if (!ParseSmtp(data, 221))

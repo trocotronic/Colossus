@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.23 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.24 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -48,7 +48,7 @@ ModInfo MOD_INFO(IpServ) = {
 	"IpServ" ,
 	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 	
 int MOD_CARGA(IpServ)(Modulo *mod)
@@ -217,7 +217,7 @@ BOTFUNC(ISSetipv)
 	char *ipv;
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "SETIPV nick [ipv [caducidad]]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "nick [ipv [caducidad]]");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -260,7 +260,7 @@ BOTFUNC(ISTemphost)
 	}
 	if (params < 3)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "TEMPHOST nick nuevohost");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "nick nuevohost");
 		return 1;
 	}
 	if (!(al = BuscaCliente(param[1], NULL)))
@@ -277,14 +277,14 @@ BOTFUNC(ISClones)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "CLONES {ip|host} [nº]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "{ip|host} [nº]");
 		return 1;
 	}
 	if (params >= 3)
 	{
 		if (atoi(param[2]) < 1)
 		{
-			Responde(cl, CLI(ipserv), IS_ERR_SNTX, "CLONES {ip|host} número");
+			Responde(cl, CLI(ipserv), IS_ERR_SNTX, "El número de clones debe ser un número entero");
 			return 1;
 		}
 		SQLInserta(IS_CLONS, param[1], "clones", param[2]);

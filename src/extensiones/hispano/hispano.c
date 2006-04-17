@@ -27,7 +27,7 @@ int MOD_CARGA(Hispano)(Extension *ext, Protocolo *prot)
 }
 int MOD_DESCARGA(Hispano)(Extension *ext, Protocolo *prot)
 {
-	BorraComando("NICKN", m_nick);
+	BorraComando("NICK", m_nick);
 	InsertaComando("NICK", "N", nick, INI, MAXPARA);
 	return 0;
 }

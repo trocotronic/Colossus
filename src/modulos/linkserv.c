@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.13 2005-07-16 15:25:31 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -45,7 +45,7 @@ ModInfo info = {
 	"LinkServ" ,
 	0.2 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net" ,
+	"trocotronic@redyc.com" ,
 	"linkserv.inc"
 };
 int carga(Modulo *mod)
@@ -191,7 +191,7 @@ int linkserv_conecta_red(char *red)
 	links[linkS] = (Links *)Malloc(sizeof(Links));
 	serv = strdup(SQLCogeRegistro(LS_SQL, red, "servidor"));
 	puerto = SQLCogeRegistro(LS_SQL, red, "puerto");
-	if (!(links[linkS]->sck = SockOpen(serv, atoi(puerto), linkserv_sockop, linkserv_sockre, NULL, linkserv_sockcl, ADD)))
+	if (!(links[linkS]->sck = SockOpen(serv, atoi(puerto), linkserv_sockop, linkserv_sockre, NULL, linkserv_sockcl)))
 	{
 		Free(links[linkS]);
 		Free(serv);

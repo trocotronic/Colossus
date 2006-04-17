@@ -25,10 +25,9 @@ EXTFUNC(ISClones_U);
 int ISSigEOS_U	();
 int ISSigVDrop	(char *);
 int ISCompruebaCifrado_U();
-extern int ISSigDrop	(char *);
-extern int ISSigUmode		(Cliente *, char *);
-extern int ISSigNick		(Cliente *, int);
-extern int ISSigIdOk 		(Cliente *);
+int (*issigumode)();
+int (*issigidok)();
+int (*issignick)();
 #define IsNickUDB(x) (IsReg(x) && atoi(SQLCogeRegistro(NS_SQL, x, "opts")) & NS_OPT_UDB)
 #define NS_OPT_UDB 0x1000
 
@@ -60,9 +59,12 @@ void CargaIpServ(Extension *ext)
 	}
 	else
 		ProcesaComsMod(NULL, ipserv->hmod, ipserv_coms);
-	BorraSenyal(SIGN_POST_NICK, ISSigNick);
-	BorraSenyal(SIGN_UMODE, ISSigUmode);
-	BorraSenyal(NS_SIGN_IDOK, ISSigIdOk);
+	irc_dlsym(ipserv->hmod->hmod, "ISSigNick", issignick);
+	irc_dlsym(ipserv->hmod->hmod, "ISSigUmode", issigumode);
+	irc_dlsym(ipserv->hmod->hmod, "ISSigIdOk", issigidok);
+	BorraSenyal(SIGN_POST_NICK, issignick);
+	BorraSenyal(SIGN_UMODE, issigumode);
+	BorraSenyal(NS_SIGN_IDOK, issigidok);
 	InsertaSenyal(SIGN_EOS, ISSigEOS_U);
 	InsertaSenyal(IS_SIGN_DROP, ISSigVDrop);
 	InsertaSenyalExt(1, ISSetipv_U, ext);
@@ -74,9 +76,9 @@ void CargaIpServ(Extension *ext)
 }
 void DescargaIpServ(Extension *ext)
 {
-	InsertaSenyal(SIGN_POST_NICK, ISSigNick);
-	InsertaSenyal(SIGN_UMODE, ISSigUmode);
-	InsertaSenyal(NS_SIGN_IDOK, ISSigIdOk);
+	InsertaSenyal(SIGN_POST_NICK, issignick);
+	InsertaSenyal(SIGN_UMODE, issigumode);
+	InsertaSenyal(NS_SIGN_IDOK, issigidok);
 	BorraSenyal(SIGN_EOS, ISSigEOS_U);
 	BorraSenyal(IS_SIGN_DROP, ISSigVDrop);
 	BorraSenyalExt(1, ISSetipv_U, ext);

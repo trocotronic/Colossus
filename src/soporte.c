@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.7 2005-12-25 21:14:49 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.8 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -275,17 +275,13 @@ char *str_replace(char *str, char orig, char rep)
 	return rem;
 }
 
-/*!
- * @desc: Convierte una cadena a minúsculas.
- * @params: $str [in] Cadena a convertir.
- * @ret: Devuelve la cadena convertida a minúsculas.
- * @cat: Programa
- * @ver: strtoupper
- !*/
-#ifndef _WIN32
 char *strtolower(char *str)
 {
 	static char tol[BUFSIZE];
+#ifdef _WIN32
+	strncpy(tol, str, sizeof(tol));
+	return _strlwr(tol);
+#else
 	char *tolo;
 	tolo = &tol[0];
 	strcpy(tolo, str);
@@ -295,10 +291,15 @@ char *strtolower(char *str)
 		tolo++;
 	}
 	return tol;
+#endif
 }
 char *strtoupper(char *str)
 {
 	static char tou[BUFSIZE];
+#ifdef _WIN32
+	strncpy(tou, str, sizeof(tou));
+	return _strupr(tou);
+#else
 	char *toup;
 	toup = &tou[0];
 	strcpy(toup, str);
@@ -308,8 +309,9 @@ char *strtoupper(char *str)
 		toup++;
 	}
 	return tou;
-}
 #endif
+}
+
 /*!
  * @desc: Cuenta el número de apariciones de una cadena dentro de otra.
  * @params: $pajar [in] Cadena donde buscar.

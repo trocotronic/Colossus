@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.h,v 1.1 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: smsserv.h,v 1.2 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 typedef struct _ss SmsServ;
@@ -9,25 +9,23 @@ struct _ss
 	int espera;
 	char *publi;
 	unsigned restringido:1;
-	char *login;
-	char *pass;
+	char *id;
 };
 
-#define SS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
+#define SS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define SS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define SS_ERR_EMPT "\00304ERROR: %s"
 
-typedef struct _sms Sms;
-struct _sms 
+typedef struct _datasock
 {
-	u_int numero;
-	char *texto;
+	char *query;
+	int numero;
 	Cliente *cl;
 	Sock *sck;
-	time_t tiempo;
-};
+	char *post;
+}DataSock;
 
-#define MAX_SMS 16
+#define MAX_COLA 16
 
 #define SS_SQL "sms"
 #define CACHE_ULTIMO_SMS "ultimo_sms"

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.72 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: main.c,v 1.73 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -37,12 +37,19 @@ char conbuf[128];
 HANDLE hStdin;
 #endif
 char spath[PMAX];
+typedef struct _mds MDS;
+typedef struct _mds
+{
+	MDS *sig;
+	Sock *sck;
+	unsigned res:1;
+	Modulo *md;
+};
 struct Signatura
 {
 	char cpuid[64];
-	Modulo *verif;
-	char sgn[256];
-	unsigned res:1;
+	MDS *mds;
+	char sgn[2048];
 }sgn;
 
 /*!
@@ -65,6 +72,7 @@ extern void LeeSocks();
 extern void CierraSocks();
 int ActivaModulos();
 void CargaSignatura();
+void DetieneMDS();
 
 #ifdef USA_CONSOLA
 void *consola_loop_principal(void *);
@@ -76,7 +84,7 @@ void LoopPrincipal(void *);
 SOCKFUNC(MotdAbre);
 SOCKFUNC(MotdLee);
 int SigPostNick(Cliente *, char);
-
+	
 #ifndef _WIN32
 const char logo[] = {
 	32 , 32 , 95 , 95 , 95 , 95 , 95 , 32 , 32 , 32 , 32 , 32 , 32 , 95 , 10 ,
@@ -368,6 +376,8 @@ VOIDSIG Refresca()
 #endif
 	Info("Refrescando servicios...");
 	refrescando = 1;
+	DetieneMDS();
+	DescargaExtensiones(protocolo);
 	DescargaModulos();
 	DescargaProtocolo();
 	DescargaConfiguracion();
@@ -526,7 +536,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
 	if (sql && sql->servinfo)
 		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
-	fprintf(stderr, "\n\t\tTrocotronic - http://www.rallados.net\n");
+	fprintf(stderr, "\n\t\tTrocotronic - http://www.redyc.com\n");
 	fprintf(stderr, "\t\t(c)2004-2006\n");
 	fprintf(stderr, "\n");
 #endif
@@ -555,6 +565,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	*/
+	//IniciaXML();
 	margv = argv;
 	CargaCache();
 	Senyal(SIGN_STARTUP);
@@ -588,7 +599,7 @@ int main(int argc, char *argv[])
 #endif
 	CargaSignatura();
 	CpuId();
-	SockOpen("www.rallados.net", 80, MotdAbre, MotdLee, NULL, NULL, ADD);
+	SockOpen("colossus.redyc.com", 80, MotdAbre, MotdLee, NULL, NULL);
 	if (ActivaModulos())
 		CierraColossus(-1);
 #ifndef _WIN32
@@ -603,7 +614,6 @@ int main(int argc, char *argv[])
 void LoopPrincipal(void *args)
 {
 #endif
-	intentos = 0;
 	IniciaProcesos();
 #ifndef _WIN32
 	return 0;
@@ -776,40 +786,7 @@ char *AleatorioEx(char *patron)
 	return buf;
 }
 
-/*! 
- * @desc: Inserta una señal
- * Durante el transcurso del programa se generan varias señales. Cada vez que salta una señal se ejecutan las funciones que estén asociadas a ella.
- * @params: $senyal [in] Tipo de señal a seguir. Estas señales pueden pasar un número indefinido de parámetros, según sea el tipo de señal
- * 	    Sólo se aceptan las siguientes señales (entre paréntesis se detallan los parámetros que aceptan):
- 		- SIGN_SQL (): Ha terminado la carga del motor SQL
- 		- SIGN_UMODE (Cliente *cl, char *umodos): Se ha producido un cambio en los modos de usuario del cliente <i>cl</i>. La cadena <i>umodos</i> contiene los cambios.
- 		- SIGN_QUIT (Cliente *cl, char *mensaje: El cliente <i>cl</i> ha sido desconectado con el mensaje <i>mensaje</i>.
- 		- SIGN_EOS (): Se ha terminado la unión entre servidores.
- 		- SIGN_MODE (Cliente *cl, Canal *cn, char *modos): El cliente <i>cl</i> ha efectuado el cambio de modos <i>modos</i> del canal <i>cn</i>.
- 		- SIGN_JOIN (Cliente *cl, Canal *cn): El cliente <i>cl</i> se une al canal <i>cn</i>.
- 		- SIGN_SYNCH (): Se inicia la sincronización con el servidor.
- 		- SIGN_KICK (Cliente *cl, Cliente *al, Canal *cn, char *motivo): El cliente <i>cl</i> expulsa al cliente <i>al</i> del canal <i>cn</i> con el motivo <i>motivo</i>.
- 		- SIGN_TOPIC (Cliente *cl, Canal *cn, char *topic): El cliente <i>cl</i> pone el topic <i>topic</i> en el canal <i>cn</i>.
- 		- SIGN_PRE_NICK (Cliente *cl, char *nuevo): El cliente <i>cl</i> va a cambiarse el nick a <i>nuevo</i>.
- 		- SIGN_POST_NICK (Cliente *cl, int modo): El cliente <i>cl</i> ha efectuado una operación de nick. Si es una nueva conexión, <i>modo</i> vale 0.
- 		- SIGN_AWAY (Cliente *cl, char *mensaje): El cliente <i>cl</i> se pone away con el mensaje <i>mensaje</i>. Si mensaje apunta a NULL, el cliente regresa de away.
- 		- SIGN_PART (Cliente *cl, Canal *cn, char *mensaje): El cliente <i>cl</i> abandona el canal <i>cn</i> con el mensaje <i>mensaje</i>. Si no hay mensaje, apunta a NULL.
- *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
- 		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
- * @ex: 	int Umodos(Cliente *, char *);
- 	InsertaSenyal(SIGN_UMODE, Umodos);
- 	...
- 	int Umodos(Cliente *cl, char *umodos)
- 	{
- 		...
- 		printf("El usuario ha cambiado sus modos");
- 		return 0;
- 	}
- * @ver: BorraSenyal
- * @cat: Señales
- !*/
-
-void InsertaSenyal(int senyal, int (*func)())
+void InsertaSenyalEx(int senyal, int (*func)(), int donde)
 {
 	Senyal *sign, *aux;
 	for (aux = senyals[senyal]; aux; aux = aux->sig)
@@ -820,18 +797,26 @@ void InsertaSenyal(int senyal, int (*func)())
 	BMalloc(sign, Senyal);
 	sign->senyal = senyal;
 	sign->func = func;
-	if (!senyals[senyal])
-		senyals[senyal] = sign;
-	else
+	if (donde == FIN)
 	{
-		for (aux = senyals[senyal]; aux; aux = aux->sig)
+		if (!senyals[senyal])
+			senyals[senyal] = sign;
+		else
 		{
-			if (!aux->sig)
+			for (aux = senyals[senyal]; aux; aux = aux->sig)
 			{
-				aux->sig = sign;
-				break;
+				if (!aux->sig)
+				{
+					aux->sig = sign;
+					break;
+				}
 			}
 		}
+	}
+	else if (donde == INI)
+	{
+		sign->sig = senyals[senyal];
+		senyals[senyal] = sign;
 	}
 }
 
@@ -1051,11 +1036,14 @@ char *gettok(char *str, int pos, char sep)
 }
 void ProcesosAuxiliares()
 {
-	Proc *aux;
+	Proc *aux, *sig;
 	if (refrescando)
 		return;
-	for (aux = procs; aux; aux = aux->sig)
+	for (aux = procs; aux; aux = sig)
+	{
+		sig = aux->sig;
 		aux->func(aux);
+	}
 }
 
 /*!
@@ -1068,13 +1056,16 @@ void ProcesosAuxiliares()
 	Cuando se llame a esta función se le pasará como primer parámetro el proceso que la llama.
  * @ex: ProcFunc(MiProc)
  {
- 	if (proc->proc == 50) //Se ha ejecutado 50 veces
+ 	if (proctime + 3600 < time(NULL)) //Lo hacemos cada hora
  	{
- 		proc->proc = 0;
- 		proc->time = time(NULL) + 3600; //No se volverá a ejecutar hasta pasada 1 hora
+ 		if (proc->proc == 50) //Se ha ejecutado 50 veces
+ 		{
+ 			proc->proc = 0;
+ 			proc->time = time(NULL) + 3600; //No se volverá a ejecutar hasta pasada 1 hora
+ 		}
+ 		else
+ 			proc->proc++;
  	}
- 	else
- 		proc->proc++;
  	return 0;
 }
 	...
@@ -1471,9 +1462,9 @@ void parsea_comando(char *comando)
 	else if (!strcasecmp(comando, "VERSION"))
 	{
 #ifdef UDB
-		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.redyc.com\n\n", COLOSSUS_VERSION);
 #else
-		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.rallados.net\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.redyc.com\n\n", COLOSSUS_VERSION);
 #endif
 	}
 	else if (!strcasecmp(comando, "QUIT"))
@@ -1951,10 +1942,11 @@ char *Long2Char(u_long num)
 /* rutinas MOTD */
 SOCKFUNC(MotdAbre)
 {
-	SockWrite(sck, OPT_CRLF, "GET /colossus/motd.txt HTTP/1.1");
-	SockWrite(sck, OPT_CRLF, "Accept: */*");
-	SockWrite(sck, OPT_CRLF, "Host: www.rallados.net");
-	SockWrite(sck, OPT_CRLF, "");
+	SockWrite(sck, "GET /motd.txt HTTP/1.1");
+	SockWrite(sck, "Accept: */*");
+	SockWrite(sck, "Host: colossus.redyc.com");
+	SockWrite(sck, "Connection: close");
+	SockWrite(sck, "");
 	return 0;
 }
 SOCKFUNC(MotdLee)
@@ -1965,118 +1957,153 @@ SOCKFUNC(MotdLee)
 		if ((ver = atoi(data+1)))
 		{
 			if (ver < COLOSSUS_VERINT)
-				Info("Existe una versión más nueva de Colossus. Descárguela de www.rallados.net");
+				Info("Existe una versión más nueva de Colossus. Descárguela de www.redyc.com");
 		}
 		else
 			Info(data+1);
 	}
 	return 0;
 }
-SOCKFUNC(ActivoAbre);
-SOCKFUNC(ActivoLee);
-SOCKFUNC(ActivoCierra);
-void MiraActivos()
+MDS *BuscaMDS(Sock *sck)
 {
-	while (sgn.verif)
+	MDS *mds;
+	for (mds = sgn.mds; mds; mds = mds->sig)
 	{
-		if (sgn.verif->activo)
-		{
-			if (!sgn.verif->serial)
-			{
-				Modulo *tmp;
-				tmp = sgn.verif->sig;
-				Info("Introduzca la clave de acceso para el módulo %s", sgn.verif->info->nombre);
-				DescargaModulo(sgn.verif);
-				sgn.verif = tmp;
-			}
-			else
-				break;
-		}
-		else
-			sgn.verif = sgn.verif->sig;
+		if (mds->sck == sck)
+			return mds;
 	}
-	if (sgn.verif)
-	{
-		sgn.res = 1;
-		SockOpen("www.rallados.net", 80, ActivoAbre, ActivoLee, NULL, ActivoCierra, ADD);
-	}
+	return NULL;
 }
 SOCKFUNC(ActivoAbre)
 {
-	ircsprintf(buf, "serial=%s&cpuid=%s&modulo=%s", sgn.verif->serial, sgn.cpuid, sgn.verif->info->nombre);
-	if (!BadPtr(sgn.sgn))
+	MDS *mds;
+	char tmp[SOCKBUF];
+	if ((mds = BuscaMDS(sck)))
 	{
-		strcat(buf, "&sgn=");
-		strcat(buf, sgn.sgn);
+		ircsprintf(tmp, "serial=%s&cpuid=%s&modulo=%s", mds->md->serial, sgn.cpuid, mds->md->info->nombre);
+		if (!BadPtr(sgn.sgn))
+		{
+			strcat(tmp, "&sgn=");
+			strcat(tmp, sgn.sgn);
+		}
+		SockWrite(sck, "POST /validar.php HTTP/1.0");
+		SockWrite(sck, "Content-Type: application/x-www-form-urlencoded");
+		SockWrite(sck, "Content-length: %u", strlen(tmp));
+		SockWrite(sck, "Host: colossus.redyc.com");
+		SockWrite(sck, "");
+		SockWrite(sck, tmp);
 	}
-	SockWrite(sck, OPT_CRLF, "POST /colossus/validar.php HTTP/1.0");
-	SockWrite(sck, OPT_CRLF, "Content-Type: application/x-www-form-urlencoded");
-	SockWrite(sck, OPT_CRLF, "Content-length: %u", strlen(buf));
-	SockWrite(sck, OPT_CRLF, "Host: www.rallados.net");
-	SockWrite(sck, OPT_CRLF, "");
-	SockWrite(sck, OPT_CRLF, buf);
 	return 0;
 }
 SOCKFUNC(ActivoLee)
 {
-	if (*data == '$')
+	MDS *mds;
+	if ((mds = BuscaMDS(sck)))
 	{
-		FILE *fp;
-		if ((fp = fopen("colossus.sgn", "w")))
+		if (*data == '$')
 		{
-			fwrite(data+1, 1, strlen(data)-1, fp);
-			fclose(fp);
-			strncpy(sgn.sgn, data+1, sizeof(sgn.sgn));
+			FILE *fp;
+			if ((fp = fopen("colossus.sgn", "w")))
+			{
+				fwrite(data+1, 1, strlen(data)-1, fp);
+				fclose(fp);
+				strncpy(sgn.sgn, data+1, sizeof(sgn.sgn)-1);
+			}
 		}
-	}
-	else if (*data == '#')
-	{
-		switch(*(data+1))
+		else if (*data == '#')
 		{
-			case '0':
-				sgn.res = 0;
-				sgn.verif->activo = 0;
-				break;
-			case '1':
-				unlink("colossus.sgn");
-				bzero(sgn.sgn, sizeof(sgn.sgn));
-			case '2':
-				Info("El módulo %s no tiene permiso para usarse en su servidor (err:%c)", sgn.verif->info->nombre, *(data+1));
-				break;
-			case '3':
-				Info("Clave para el módulo %s desconocida", sgn.verif->info->nombre);
-				break;
-			case '4':
-				Info("Clave para el módulo %s incorrecta", sgn.verif->info->nombre);
-				break;
-			default:
-				Info("Error desconocido para el módulo %s", sgn.verif->info->nombre);
+			int err = atoi(data+1);
+			switch(err)
+			{
+				case 0:
+					mds->res = 0;
+					mds->md->activo = 0;
+					ReconectaBot(mds->md->nick);
+					break;
+				case 1:
+					unlink("colossus.sgn");
+					bzero(sgn.sgn, sizeof(sgn.sgn));
+				case 2:
+					Info("El módulo %s no tiene permiso para usarse en su servidor (err:%i)", mds->md->info->nombre, err);
+					break;
+				case 3:
+					Info("Clave para el módulo %s desconocida", mds->md->info->nombre);
+					break;
+				case 4:
+					Info("Clave para el módulo %s incorrecta", mds->md->info->nombre);
+					break;
+				case 100:
+				case 101:
+					Info("Existe un error con la conexión. Póngase en contacto con el autor (err:%i)", err);
+					break;
+				default:
+					Info("Error desconocido para el módulo %s", mds->md->info->nombre);
+			}
 		}
 	}
 	return 0;
 }
 SOCKFUNC(ActivoCierra)
 {
-	Modulo *sig = sgn.verif->sig;
-	if (sgn.res)
-		DescargaModulo(sgn.verif);
-	sgn.verif = sig;
-	MiraActivos();
+	MDS *mds;
+	if (!data && (mds = BuscaMDS(sck)))
+	{
+		if (mds->res)
+			DescargaModulo(mds->md);
+		BorraItem(mds, sgn.mds);
+		Free(mds);
+	}
 	return 0;
 }
 int ActivaModulos()
 {
-	sgn.verif = modulos;
-	MiraActivos();
+	Modulo *mod;
+	MDS *mds;
+	if (sgn.mds)
+		DetieneMDS();
+	for (mod = modulos; mod; mod = mod->sig)
+	{
+		if (mod->activo)
+		{
+			if (!mod->serial)
+			{
+				Modulo *tmp;
+				tmp = mod->sig;
+				Info("Introduzca la clave de acceso para el módulo %s", mod->info->nombre);
+				DescargaModulo(mod);
+				mod = tmp;
+			}
+			else
+			{
+				BMalloc(mds, MDS);
+				mds->md = mod;
+				mds->res = 1;
+				mds->sck = SockOpen("colossus.redyc.com", 80, ActivoAbre, ActivoLee, NULL, ActivoCierra);
+				AddItem(mds, sgn.mds);
+			}
+		}
+	}
   	return 0;
+}
+void DetieneMDS()
+{
+	MDS *mds, *tmp;
+	for (mds = sgn.mds; mds; mds = tmp)
+	{
+		tmp = mds->sig;
+		SockClose(mds->sck, LOCAL);
+		Free(mds);
+	}
+	sgn.mds = NULL;
 }
 void CargaSignatura()
 {
 	FILE *fp;
+	sgn.mds = NULL;
 	bzero(sgn.sgn, sizeof(sgn.sgn));
 	if ((fp = fopen("colossus.sgn", "r")))
 	{
-		fgets(sgn.sgn, sizeof(sgn.sgn), fp);
+		fgets(sgn.sgn, sizeof(sgn.sgn)-1, fp);
 		fclose(fp);
 	}
 }

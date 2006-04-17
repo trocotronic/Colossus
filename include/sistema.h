@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.12 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.13 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -20,7 +20,7 @@
 
 #ifdef _WIN32
 #define DLLFUNC __declspec(dllexport)
-#define irc_dlopen(x,y) LoadLibrary(x)
+#define irc_dlopen(x,y) LoadLibraryEx(x, NULL, 0)
 #define irc_dlclose FreeLibrary
 #define irc_dlsym(x,y,z) z = (void *)GetProcAddress(x,y)
 #define irc_dlerror ErrorDl
@@ -156,11 +156,9 @@
 #endif
 
 #ifdef _WIN32
-#define strtolower _strlwr
-#define strtoupper _strupr
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
-#else
+#endif
 /*!
  * @desc: Convierte una cadena a mayúsculas.
  * @params: $str [in] Cadena a convertir.
@@ -179,4 +177,3 @@ extern char *strtolower(char *);
  * @sntx: char * strtoupper(char *str)
  !*/
 extern char *strtoupper(char *);
-#endif

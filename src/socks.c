@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.17 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.18 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,6 +18,7 @@ int Desencola(DBuf *, char *, int);
 void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
+#define DEBUG
 
 /*
  * resolv
@@ -132,12 +133,16 @@ if (!(sck = SockOpen("1.2.3.4", 123, Abrir, Leer, NULL, Cerrar)))
  * @ver: SockClose SockListen
  * @cat: Conexiones
  !*/
- 
-Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), int add)
+Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
+{
+	return SockOpenEx(host, puerto, openfunc, readfunc, writefunc, closefunc, 30, 0, 0);
+}
+
+Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), u_int contout, u_int recvtout, u_int opts)
 {
 	Sock *sck;
 	struct in_addr *res;
-	if (add && ListaSocks.abiertos == MAXSOCKS)
+	if (!(opts & OPT_NADD) && ListaSocks.abiertos == MAXSOCKS)
 		return NULL;
 	BMalloc(sck, Sock);
 	SockDesc(sck);
@@ -145,7 +150,7 @@ Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 	if (puerto < 0) /* es un puerto ssl */
 	{
 		puerto = puerto * -1;
-		sck->opts |= OPT_SSL;
+		SetSSL(sck);
 	}
 #endif
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
@@ -165,17 +170,23 @@ Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) < 0 && errno != EINPROGRESS)
 #endif			
 			return NULL;
-	BMalloc(sck->recvQ, DBuf);
+	if (opts & OPT_NORECVQ)
+		SetNoRecvQ(sck);
+	else
+		BMalloc(sck->recvQ, DBuf);
 	BMalloc(sck->sendQ, DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
 	sck->closefunc = closefunc;
 	sck->puerto = puerto;
+	sck->inicio = time(NULL);
+	sck->contout = contout;
+	sck->recvtout = recvtout;
 #ifdef DEBUG
 	Debug("Abriendo conexion con %s:%i (%i) %s", host, puerto, sck->pres, EsSSL(sck) ? "[SSL]" : "");
 #endif
-	if (add)
+	if (!(opts & OPT_NADD))
 		InsertaSock(sck);
 	return sck;
 }
@@ -289,7 +300,7 @@ Sock *SockAccept(Sock *list, int pres)
 			SockClose(sck, LOCAL);
 			return NULL;
 		}
-		sck->opts |= OPT_SSL;
+		SetSSL(sck);
 		SSL_set_fd(sck->ssl, pres);
 		SSLSockNoBlock(sck->ssl);
 		if (!SSLAccept(sck, pres)) 
@@ -307,20 +318,7 @@ Sock *SockAccept(Sock *list, int pres)
 	return sck;
 }
 
-/*!
- * @desc: Escribe datos en una conexión a partir de una lista de argumentos.
- * @params: $sck [in] Conexión a la que se desean enviar datos.
- 	    $opts [in] Opciones:
- 	    	- OPT_CR: Se añade un \r al final de los datos.
- 	    	- OPT_LF: Se añade un \n al final de los datos.
- 	    	- OPT_CRLF: Se añade un \r\n al final de los datos.
- 	    $formato [in] Cadena con formato que se desea enviar.
- 	    $vl [in] Lista de argumentos.
- * @ver: SockWrite
- * @cat: Conexiones
- !*/
- 
-void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
+void SockWriteExVL(Sock *sck, int opts, char *formato, va_list vl)
 {
 	char buf[SOCKBUF], *msg;
 	int len;
@@ -328,7 +326,7 @@ void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 		return;
 	msg = buf;
 	ircvsprintf(buf, formato, vl);
-#ifndef DEBUG
+#ifdef DEBUG
 	Debug("[Enviando: %s]", buf);
 #endif
 	if (sck->writefunc && buf[0])
@@ -346,24 +344,42 @@ void SockWriteVL(Sock *sck, int opts, char *formato, va_list vl)
 	Encola(sck->sendQ, msg, len); /* de momento siempre son cadenas */
 }
 
+void SockWriteEx(Sock *sck, int opts, char *formato, ...)
+{
+	va_list vl;
+	va_start(vl, formato);
+	SockWriteExVL(sck, opts, formato, vl);
+	va_end(vl);
+}
+
+/*!
+ * @desc: Escribe datos en una conexión a partir de una lista de argumentos.
+ * @params: $sck [in] Conexión a la que se desean enviar datos.
+ 	    $formato [in] Cadena con formato que se desea enviar.
+ 	    $vl [in] Lista de argumentos.
+ * @ver: SockWrite
+ * @cat: Conexiones
+ !*/
+ 
+void SockWriteVL(Sock *sck, char *formato, va_list vl)
+{
+	SockWriteExVL(sck, OPT_CRLF, formato, vl);
+}
+
 /*!
  * @desc: Escribe datos en una conexión a partir de una cadena y argumentos variables.
  * @params: $sck [in] Conexión a la que se desean enviar datos.
- 	    $opts [in] Opciones:
- 	    	- OPT_CR: Se añade un \r al final de los datos.
- 	    	- OPT_LF: Se añade un \n al final de los datos.
- 	    	- OPT_CRLF: Se añade un \r\n al final de los datos.
  	    $formato [in] Cadena con formato que se desea enviar.
  	    $... [in] Argumentos variables según cadena con formato.
  * @ver: SockWriteVL
  * @cat: Conexiones
  !*/
  
-void SockWrite(Sock *sck, int opts, char *formato, ...)
+void SockWrite(Sock *sck, char *formato, ...)
 {
 	va_list vl;
 	va_start(vl, formato);
-	SockWriteVL(sck, opts, formato, vl);
+	SockWriteExVL(sck, OPT_CRLF, formato, vl);
 	va_end(vl);
 }
 
@@ -379,10 +395,27 @@ void SockWrite(Sock *sck, int opts, char *formato, ...)
  
 void SockClose(Sock *sck, char closef)
 {
-	if (!sck)
+	if (!sck || EsCerr(sck))
 		return;
 	if (closef == LOCAL)
 		EnviaCola(sck); /* enviamos toda su cola */
+	else if (sck->pos)
+	{
+#ifdef DEBUG
+		Debug("[Parseando: %s]", sck->buffer);
+#endif
+		if (sck->readfunc) /* nos ha quedado algo en el buffer, lo enviamos; pero solo si es remoto */
+			sck->readfunc(sck, sck->buffer);
+	}
+	SockCerr(sck);
+#ifdef DEBUG
+	Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
+#endif
+	if (sck->closefunc)
+		sck->closefunc(sck, closef ? NULL : "LOCAL");
+}
+void LiberaSock(Sock *sck)
+{
 	if (EsList(sck))
 	{
 		int i;
@@ -397,11 +430,7 @@ void SockClose(Sock *sck, char closef)
 			}
 		}
 	}
-	SockCerr(sck);
-#ifdef DEBUG
-	Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
-#endif
-	CLOSE_SOCK(sck->pres);
+		CLOSE_SOCK(sck->pres);
 #ifdef USA_SSL
 	if (EsSSL(sck) && sck->ssl) 
 	{
@@ -411,13 +440,12 @@ void SockClose(Sock *sck, char closef)
 		sck->ssl = NULL;
 	}
 #endif
-	if (sck->closefunc)
-		sck->closefunc(sck, closef ? NULL : "LOCAL");
 	BorraSock(sck);
-	ircfree(sck->recvQ);
+	if (!EsNoRecvQ(sck))
+		ircfree(sck->recvQ);
 	ircfree(sck->sendQ);
 	ircfree(sck->host);
-	Free(sck);
+	ircfree(sck);
 }
 void CierraSocks()
 {
@@ -529,7 +557,7 @@ int Desencola(DBuf *bufc, char *buf, int bytes)
 {
 	/* bytes contiene el máximo que podemos copiar */
 	DbufData *aux;
-	char *s, tmp[4296];
+	char *s;
 	int len, copiados, i;
 	inicio:
 	if (!bufc)
@@ -572,8 +600,6 @@ int Desencola(DBuf *bufc, char *buf, int bytes)
 	}
 	if (copiados <= 0)
 		return 0;
-	bzero(tmp, sizeof(tmp));
-	strncpy(tmp, bufc->rchar, MIN(copiados, bytes));
 	i = CopiaSlot(bufc, buf, MIN(copiados, bytes)+1);
 	if (copiados > i)
 		EliminaSlot(bufc, copiados - i);
@@ -646,7 +672,17 @@ int LeeMensaje(Sock *sck)
 	if (len < 0 && ERRNO == P_EWOULDBLOCK)
 		return 1;
 	if (len > 0)
-		Encola(sck->recvQ, lee, len);
+	{
+		if (EsNoRecvQ(sck))
+		{
+			strncpy(sck->buffer, lee, MIN(len, sizeof(sck->buffer)));
+			sck->buffer[len] = '\0';
+			if (sck->readfunc)
+				sck->readfunc(sck, sck->buffer);
+		}
+		else
+			Encola(sck->recvQ, lee, len);
+	}
 	return len;
 }
 int CreaMensaje(Sock *sck, char *msg, int len)
@@ -683,7 +719,7 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 	do
 	{
 #endif
-		while(--len >= 0 && !EsCerr(sck))
+		while(--len >= 0)
 		{
 			char g = (*b = *p++);
 			if (g == '\n' || g == '\r') /* asumo que terminan en \r\n o \r o \n, pero nunca \n\r */
@@ -692,11 +728,13 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 					continue;
 				*b = '\0';
 				sck->pos = 0;
-#ifndef DEBUG
+#ifdef DEBUG
 				Debug("[Parseando: %s]", sck->buffer);
 #endif
-				if (sck->readfunc && sck->buffer)
+				if (sck->readfunc)
 					sck->readfunc(sck, sck->buffer);
+				if (EsCerr(sck))
+					return -1;
 #ifdef USA_ZLIB
 				if (EsZlib(sck) && zip == 0 && len > 0)
 				{
@@ -738,6 +776,7 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 	} while(!hecho);
 #endif
 	sck->pos = b - sck->buffer;
+	sck->buffer[sck->pos] = '\0';
 	return 0;
 }
 int CompletaConexion(Sock *sck)
@@ -757,23 +796,35 @@ int LeeSocks() /* devuelve los bytes leídos */
 	fd_set read_set, write_set, excpt_set;
 	struct timeval wait;
 	Sock *sck;
+	time_t ahora;
 	FD_ZERO(&read_set);
 	FD_ZERO(&write_set);
 	FD_ZERO(&excpt_set);
+	time(&ahora);
 	for (i = ListaSocks.tope; i >= 0; i--)
 	{
 		if (!(sck = ListaSocks.socket[i]))
 			continue;
-		if (sck->pres >= 0 && !EsCerr(sck))
+		if (EsCerr(sck))
 		{
-			FD_SET(sck->pres, &read_set);
-			FD_SET(sck->pres, &excpt_set);
-			if (sck->sendQ->len || EsConn(sck)
+			LiberaSock(sck);
+			continue;
+		}
+		if (sck->pres >= 0)
+		{
+			if ((EsConn(sck) && ((time_t)(sck->inicio + sck->contout) < ahora)) || (EsOk(sck) && sck->recvtout && (time_t)(sck->recibido + sck->recvtout) < ahora))
+				SockClose(sck, LOCAL);
+			else
+			{
+				FD_SET(sck->pres, &read_set);
+				FD_SET(sck->pres, &excpt_set);
+				if (sck->sendQ->len || EsConn(sck)
 #ifdef USA_ZLIB
-			|| (EsZlib(sck) && sck->zlib->outcount > 0)
+					|| (EsZlib(sck) && sck->zlib->outcount > 0)
 #endif
-			)
-				FD_SET(sck->pres, &write_set);
+				)
+					FD_SET(sck->pres, &write_set);
+			}
 		}
 	}
 	wait.tv_sec = 1;
@@ -806,6 +857,11 @@ int LeeSocks() /* devuelve los bytes leídos */
 			break;
 		if (!(SockActual = ListaSocks.socket[i]))
 			continue;
+		if (EsCerr(SockActual))
+		{
+			LiberaSock(SockActual);
+			continue;
+		}
 		if (FD_ISSET(SockActual->pres, &write_set))
 		{
 			int err = 0;
@@ -817,6 +873,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 				else
 #endif
 					err = CompletaConexion(SockActual);
+				SockActual->recibido = ahora;
 			}
 			else
 				EnviaCola(SockActual);
@@ -831,7 +888,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 				continue;
 			}
 		}
-		if (FD_ISSET(SockActual->pres, &read_set))
+		if (FD_ISSET(SockActual->pres, &read_set) && !EsCerr(SockActual))
 		{
 			len = 1;
 #ifdef USA_SSL
@@ -854,27 +911,28 @@ int LeeSocks() /* devuelve los bytes leídos */
 			{
 				sels--;
 				FD_CLR(SockActual->pres, &read_set);
-				if (!EsCerr(SockActual))
-					SockClose(SockActual, REMOTO);
+				SockClose(SockActual, REMOTO);
 				continue;
 			}
 			lee += len;
-			while (SockActual->recvQ->len > 0)
+			SockActual->recibido = ahora;
+			if (!EsNoRecvQ(SockActual))
 			{
-				char read[SOCKBUF];
-				int cop = 0;
-				cop = CopiaSlot(SockActual->recvQ, read, sizeof(read));
-				//Debug("&&&& %i", cop);
-				//Debug("Creando mensaje %X %s", SockActual, read);
-				if (cop > 0)
+				while (SockActual->recvQ->len > 0)
 				{
-					if (CreaMensaje(SockActual, read, cop) < 0)
+					char read[SOCKBUF];
+					int cop = 0;
+					cop = CopiaSlot(SockActual->recvQ, read, sizeof(read));
+					//Debug("&&&& %i", cop);
+					//Debug("Creando mensaje %X %s", SockActual, read);
+					if (cop > 0)
+					{
+						if (CreaMensaje(SockActual, read, cop) < 0)
+							break;
+					}
+					else /* stop, por lo que sea */
 						break;
 				}
-				else /* stop, por lo que sea */
-					break;
-				if (EsCerr(SockActual))
-					break;
 			}
 			sels--;
 		}

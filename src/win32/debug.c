@@ -1,11 +1,16 @@
 /*
- * $Id: debug.c,v 1.9 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.10 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include <dbghelp.h>
 #define BUFFERSIZE   0x200
+typedef BOOL (WINAPI *MINIDUMPWRITEDUMP)(HANDLE hProcess, DWORD dwPid, HANDLE hFile, MINIDUMP_TYPE DumpType,
+										CONST PMINIDUMP_EXCEPTION_INFORMATION ExceptionParam,
+										CONST PMINIDUMP_USER_STREAM_INFORMATION UserStreamParam,
+										CONST PMINIDUMP_CALLBACK_INFORMATION CallbackParam
+										);
 
 BOOL CALLBACK SymEnumerateModulesProc64(PCSTR ModuleName, DWORD64 BaseOfDll, PVOID UserContext)
 {
@@ -147,77 +152,81 @@ int GetLogicalAddress(PVOID addr, PTSTR szModule, DWORD len, DWORD *section, DWO
 	PIMAGE_NT_HEADERS pNtHdr;
 	PIMAGE_SECTION_HEADER pSection;
 	unsigned int i;
-    	if ( !VirtualQuery( addr, &mbi, sizeof(mbi) ) )
-        	return 0;
-        hMod = (DWORD)mbi.AllocationBase;
-    	if ( !GetModuleFileName( (HMODULE)hMod, szModule, len ) )
-        	return 0;
-    	pDosHdr = (PIMAGE_DOS_HEADER)hMod;
+	if (!VirtualQuery(addr, &mbi, sizeof(mbi)))
+		return 0;
+	hMod = (DWORD)mbi.AllocationBase;
+	if (!GetModuleFileName((HMODULE)hMod, szModule, len))
+		return 0;
+	pDosHdr = (PIMAGE_DOS_HEADER)hMod;
 	pNtHdr = (PIMAGE_NT_HEADERS)(hMod + pDosHdr->e_lfanew);
-    	pSection = IMAGE_FIRST_SECTION( pNtHdr );
-    	rva = (DWORD)addr - hMod; // RVA is offset from module load address
-    	for (i = 0; i < pNtHdr->FileHeader.NumberOfSections; i++, pSection++ )
-    	{
-        	DWORD sectionStart = pSection->VirtualAddress;
-        	DWORD sectionEnd = sectionStart + max(pSection->SizeOfRawData, pSection->Misc.VirtualSize);
-		if ( (rva >= sectionStart) && (rva <= sectionEnd) )
-        	{
-            		// Yes, address is in the section.  Calculate section and offset,
-            		// and store in the "section" & "offset" params, which were
-            		// passed by reference.
-            		*section = i+1;
-            		*offset = rva - sectionStart;
-            		return 1;
-        	}
-    	}
-    	return 0;
+	pSection = IMAGE_FIRST_SECTION(pNtHdr);
+	rva = (DWORD)addr - hMod; // RVA is offset from module load address
+	for (i = 0; i < pNtHdr->FileHeader.NumberOfSections; i++, pSection++)
+	{
+		DWORD sectionStart = pSection->VirtualAddress;
+		DWORD sectionEnd = sectionStart + max(pSection->SizeOfRawData, pSection->Misc.VirtualSize);
+		if ((rva >= sectionStart) && (rva <= sectionEnd))
+		{
+			// Yes, address is in the section.  Calculate section and offset,
+			// and store in the "section" & "offset" params, which were
+			// passed by reference.
+			*section = i+1;
+			*offset = rva - sectionStart;
+			return 1;
+		}
+	}
+	return 0;
 }
 __inline char *MyStackWalk(PCONTEXT pContext)
 {
 	DWORD pc = pContext->Eip;
 	PDWORD pFrame, pPrevFrame;
 	static char buffer[5000];
-        pFrame = (PDWORD)pContext->Ebp;
-        do
-    	{
-        	TCHAR szModule[MAX_PATH];
-        	DWORD section = 0, offset = 0;
-        	if (!GetLogicalAddress((PVOID)pc, szModule,sizeof(szModule),&section,&offset ))
-        		break;
-		sprintf(buf, "\t%08X  %08X  %04X:%08X %s\n", pc, pFrame, section, offset, szModule );
+	pFrame = (PDWORD)pContext->Ebp;
+	do
+	{
+		TCHAR szModule[MAX_PATH];
+		DWORD section = 0, offset = 0;
+		if (!GetLogicalAddress((PVOID)pc, szModule, sizeof(szModule), &section, &offset))
+			break;
+		sprintf(buf, "\t%08X  %08X  %04X:%08X %s\n", pc, pFrame, section, offset, szModule);
 		strcat(buffer, buf);
-	        pc = pFrame[1];
-	        pPrevFrame = pFrame;
-	        pFrame = (PDWORD)pFrame[0]; // precede to next higher frame on stack
-	        if ( (DWORD)pFrame & 3 )    // Frame pointer must be aligned on a
-        		break;                  // DWORD boundary.  Bail if not so.
-	        if ( pFrame <= pPrevFrame )
-        		break;
-	        // Can two DWORDs be read from the supposed frame address?          
-        	if ( IsBadWritePtr(pFrame, sizeof(PVOID)*2) )
-            		break;
-    	} while ( 1 );
-    	return buffer;
+		pc = pFrame[1];
+		pPrevFrame = pFrame;
+		pFrame = (PDWORD)pFrame[0]; // precede to next higher frame on stack
+		if ((DWORD)pFrame & 3)    // Frame pointer must be aligned on a
+			break;                  // DWORD boundary.  Bail if not so.
+		if (pFrame <= pPrevFrame)
+			break;
+		// Can two DWORDs be read from the supposed frame address?          
+		if (IsBadWritePtr(pFrame, sizeof(PVOID)*2))
+			break;
+	} while (1);
+	return buffer;
 }   
 LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e) 
 {
 	MEMORYSTATUS memStats;
-	char file[512], text[1024];
+	char file[512], text[1024], minidumpf[512];
 	FILE *fd;
 	time_t timet = time(NULL);
+#ifndef NOMINIDUMP
+	HANDLE hDump;
+	HMODULE hDll = NULL;
+#endif
 	WIN32_FIND_DATA FindFileData;
  	HANDLE hFind = INVALID_HANDLE_VALUE;
  	hFind = FindFirstFile("tmp\\*", &FindFileData);
  	while (FindNextFile(hFind, &FindFileData) != 0) 
-      	{
-      		char *pdb;
-      		if ((pdb = strrchr(FindFileData.cFileName, '.')) && !strcmp(pdb+1, "pdb"))
-      		{
-      			sprintf(buf, "tmp/%s", FindFileData.cFileName);
-      			CopyFile(buf, FindFileData.cFileName, 0);
-      		}
-      	}
-      	FindClose(hFind);
+     {
+     	char *pdb;
+     	if ((pdb = strrchr(FindFileData.cFileName, '.')) && !strcmp(pdb+1, "pdb"))
+     	{
+     		sprintf(buf, "tmp/%s", FindFileData.cFileName);
+     		CopyFile(buf, FindFileData.cFileName, 0);
+     	}
+     }
+     FindClose(hFind);
 	sprintf(file, "colossus.%d.core", getpid());
 	fd = fopen(file, "w");
 	GlobalMemoryStatus(&memStats);
@@ -235,16 +244,39 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e)
 	sprintf(text, "Se ha producido un fallo grave y el programa se ha cerrado. Se ha escrito la información en"
 		" %s", file);
 	fclose(fd);
+#ifndef NOMINIDUMP
+	hDll = LoadLibrary("DBGHELP.DLL");
+	if (hDll)
+	{
+		MINIDUMPWRITEDUMP pDump = (MINIDUMPWRITEDUMP)GetProcAddress(hDll, "MiniDumpWriteDump");
+		if (pDump)
+		{
+			MINIDUMP_EXCEPTION_INFORMATION ExInfo;
+			sprintf(minidumpf, "colossus.%d.mdmp", getpid());
+			hDump = CreateFile(minidumpf, GENERIC_WRITE, FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (hDump != INVALID_HANDLE_VALUE)
+			{
+				ExInfo.ThreadId = GetCurrentThreadId();
+				ExInfo.ExceptionPointers = e;
+				ExInfo.ClientPointers = 0;
+				if (pDump(GetCurrentProcess(), GetCurrentProcessId(), hDump, MiniDumpNormal, &ExInfo, NULL, NULL))
+					sprintf(text, "Se ha producido un fallo grave y el programa se ha cerrado. Se ha escrito la información en"
+						" %s y %s", file, minidumpf);
+				CloseHandle(hDump);
+			}
+		}
+	}
+#endif
 	CleanUp();
 	hFind = FindFirstFile(".\\*", &FindFileData);
  	while (FindNextFile(hFind, &FindFileData) != 0) 
-      	{
-      		char *pdb;
-      		if ((pdb = strrchr(FindFileData.cFileName, '.')) && !strcmp(pdb+1, "pdb") && strcmp(FindFileData.cFileName, "Colossus.pdb") && strcmp(FindFileData.cFileName, "vc70.pdb"))
-      			DeleteFile(FindFileData.cFileName);
-      	}
-      	FindClose(hFind);
-      	MessageBox(hwMain, text, "Error fatal", MB_OK);
+     {
+     	char *pdb;
+     	if ((pdb = strrchr(FindFileData.cFileName, '.')) && !strcmp(pdb+1, "pdb") && strcmp(FindFileData.cFileName, "Colossus.pdb") && strcmp(FindFileData.cFileName, "vc70.pdb"))
+     		DeleteFile(FindFileData.cFileName);
+     }
+     FindClose(hFind);
+     MessageBox(hwMain, text, "Error fatal", MB_OK);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 void InitDebug(void) 

@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.14 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.15 2006-04-17 14:19:43 Trocotronic Exp $ 
  */
 
 #define MAXMODS 128
@@ -7,38 +7,35 @@
 #define MAX_COMS 256
 #define MAX_NIVS 16
 
-#define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params)
-#define BOTFUNCHELP(x) int (x)(Cliente *cl, char *param[], int params)
-typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int);
+typedef struct _funcion Funcion;
+typedef struct _bcom bCom;
+typedef int (*Mod_Func)(Cliente *, char *[], int, char *[], int, Funcion *);
 typedef int (*Mod_FuncHelp)(Cliente *, char *[], int);
+#define BOTFUNC(x) int (x)(Cliente *cl, char *parv[], int parc, char *param[], int params, Funcion *fc)
+#define BOTFUNCHELP(x) int (x)(Cliente *cl, char *param[], int params)
+
 typedef struct _mod Modulo;
 
 /*!
  * @desc: Recurso de comandos para módulos.
  * @params: $com Nombre del comando.
  	    $func Función a ejecutar con el comando asociado.
- 	    $nivel Nivel del cliente obligatorio para poder ejecutar esta función. Valores posibles:
- 	    	- TODOS: todos los usuarios pueden ejecutarlo.
- 	    	- USER: sólo usuarios registrados (+r).
- 	    	- PREO: sólo preopers.
- 	    	- OPER: sólo operadores (+h).
- 	    	- DEVEL: sólo devels.
- 	    	- IRCOP: sólo ircops (+o).
- 	    	- ADMIN: sólo admins (+a).
- 	    	- ROOT: sólo roots.
+ 	    $nivel Nivel del cliente obligatorio para poder ejecutar esta función. Valores posibles: N0, N1..., N15.
+ 	    $descrip Breve descripción del comando.
+ 	    $func_help Función a ejecutar cuando se pida un help de ese comando.
  * @cat: Modulos
  * @ver: ProcesaComsMod
  !*/
  
-typedef struct _bcom
+struct _bcom
 {
 	char *com;
 	Mod_Func func;
 	u_int nivel;
 	char *descrip;
 	Mod_FuncHelp func_help;
-}bCom;
-typedef struct _funcion
+};
+struct _funcion
 {
 	char *com;
 	Mod_Func func;
@@ -46,7 +43,7 @@ typedef struct _funcion
 	char *descrip;
 	Mod_FuncHelp func_help;
 	Recurso hmod;
-}Funcion;
+};
 typedef struct _info
 {
 	char *nombre;

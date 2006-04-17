@@ -25,6 +25,7 @@ EXTFUNC(NSLiberar_U);
 EXTFUNC(NSSwhois_U);
 EXTFUNC(NSForbid_U);
 EXTFUNC(NSSendpass_U);
+EXTFUNC(NSOptsNick_U);
 
 int NSSigEOS		();
 int NSSigDrop	(char *);
@@ -71,6 +72,7 @@ void CargaNickServ(Extension *ext)
 	InsertaSenyalExt(10, NSLiberar_U, ext);
 	InsertaSenyalExt(11, NSSwhois_U, ext);
 	InsertaSenyalExt(13, NSForbid_U, ext);
+	InsertaSenyalExt(15, NSOptsNick_U, ext);
 }
 void DescargaNickServ(Extension *ext)
 {
@@ -254,6 +256,18 @@ EXTFUNC(NSSendpass_U)
 		return 1;
 	if (IsNickUDB(param[1]) && (pass = SQLCogeRegistro(NS_SQL, param[1], "pass")))
 		PropagaRegistro("N::%s::P %s", param[1], pass);
+	return 0;
+}
+EXTFUNC(NSOptsNick_U)
+{
+	if (mod != nickserv->hmod)
+		return 1;
+	if (!strcasecmp(param[2], "PASS"))
+	{
+		char *pass;
+		if (IsNickUDB(param[1]) && (pass = SQLCogeRegistro(NS_SQL, param[1], "pass")))
+			PropagaRegistro("N::%s::P %s", param[1], pass);
+	}
 	return 0;
 }
 int NSSigDrop(char *nick)

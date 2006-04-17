@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.13 2006-02-17 19:19:03 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -11,9 +11,9 @@
 AppName=Colossus
 AppVerName=Colossus 1.3
 AppPublisher=Trocotronic
-AppPublisherURL=http://www.rallados.net
-AppSupportURL=http://www.rallados.net
-AppUpdatesURL=http://www.rallados.net
+AppPublisherURL=http://www.redyc.com
+AppSupportURL=http://www.redyc.com
+AppUpdatesURL=http://www.redyc.com
 AppMutex=ColossusMutex,Global\ColossusMutex
 DefaultDirName={pf}\Colossus
 DefaultGroupName=Colossus
@@ -76,16 +76,16 @@ function isxdl_Download(hWnd: Integer; URL, Filename: PChar): Integer;
 external 'isxdl_Download@files:isxdl.dll stdcall';
 function isxdl_SetOption(Option, Value: PChar): Integer;
 external 'isxdl_SetOption@files:isxdl.dll stdcall';
-const dbgurl = 'http://www.rallados.net/descargas/dbghelp.dll';
-const crturl = 'http://www.rallados.net/descargas/msvcr70.dll';
-const msvurl = 'http://www.rallados.net/descargas/MSVCRTD.DLL';
-var didDbgDl,didCrtDl,didMsCrtDl: Boolean;
+const dbgurl = 'http://www.redyc.com/descargas/dbghelp.dll';
+const crturl0 = 'http://www.redyc.com/descargas/msvcr70.dll';
+const crturl1 = 'http://www.redyc.com/descargas/msvcr71.dll';
+var didDbgDl,didCrtDl0,didCrtDl1: Boolean;
 
 function NextButtonClick(CurPage: Integer): Boolean;
 var
 dbghelp,tmp,output: String;
-msvcrt: String;
-msvcrtd: String;
+msvcrt0: String;
+msvcrt1: String;
 m: String;
 hWnd,answer: Integer;
 begin
@@ -93,21 +93,36 @@ begin
     if ((CurPage = wpReady)) then begin
       dbghelp := ExpandConstant('{sys}\dbghelp.dll');
       output := ExpandConstant('{app}\dbghelp.dll');
-      msvcrt := ExpandConstant('{sys}\msvcr70.Dll');
-      msvcrtd := ExpandConstant('{sys}\MSVCRTD.dll');
+      msvcrt0 := ExpandConstant('{sys}\msvcr70.Dll');
+      msvcrt1 := ExpandConstant('{sys}\msvcr71.Dll');
       GetVersionNumbersString(dbghelp,m);
-    if (NOT FileExists(msvcrt)) then begin
+      
+    if (NOT FileExists(msvcrt1)) then begin
+      answer := MsgBox('Colossus necesita la librería MS C Runtime 7.1. ¿Quiere instalarla?', mbConfirmation, MB_YESNO);
+      if answer = IDYES then begin
+        tmp := ExpandConstant('{tmp}\msvcr71.Dll');
+        isxdl_SetOption('title', 'Descargando msvcr71.dll');
+        hWnd := StrToInt(ExpandConstant('{wizardhwnd}'));
+        if isxdl_Download(hWnd, crturl1, tmp) = 0 then begin
+          MsgBox('La descarga e instalación  de msvcr71.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.redyc.com/descargas/msvcr71.dll', mbInformation, MB_OK);
+        end else
+          didCrtDl1 := true;
+      end else
+        MsgBox('Debe instalar a mano msvcr71.dll. Puede descargar el archivo de http://www.redyc.com/descargas/msvcr71.dll', mbInformation, MB_OK);
+    end;
+    
+    if (NOT FileExists(msvcrt0)) then begin
       answer := MsgBox('Colossus necesita la librería MS C Runtime 7.0. ¿Quiere instalarla?', mbConfirmation, MB_YESNO);
       if answer = IDYES then begin
         tmp := ExpandConstant('{tmp}\msvcr70.Dll');
         isxdl_SetOption('title', 'Descargando msvcr70.dll');
         hWnd := StrToInt(ExpandConstant('{wizardhwnd}'));
-        if isxdl_Download(hWnd, crturl, tmp) = 0 then begin
-          MsgBox('La descarga e instalación  de msvcr70.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.rallados.net/descargas/msvcr70.dll', mbInformation, MB_OK);
+        if isxdl_Download(hWnd, crturl0, tmp) = 0 then begin
+          MsgBox('La descarga e instalación  de msvcr70.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.redyc.com/descargas/msvcr70.dll', mbInformation, MB_OK);
         end else
-          didCrtDl := true;
+          didCrtDl0 := true;
       end else
-        MsgBox('Debe instalar a mano msvcr70.dll. Puede descargar el archivo de http://www.rallados.net/descargas/msvcr70.dll', mbInformation, MB_OK);
+        MsgBox('Debe instalar a mano msvcr70.dll. Puede descargar el archivo de http://www.redyc.com/descargas/msvcr70.dll', mbInformation, MB_OK);
     end;
 
     if (NOT FileExists(output)) then begin
@@ -120,13 +135,14 @@ begin
           isxdl_SetOption('title', 'Descargando dbghelp.dll');
           hWnd := StrToInt(ExpandConstant('{wizardhwnd}'));
           if isxdl_Download(hWnd, dbgurl, tmp) = 0 then begin
-            MsgBox('La descarga e instalación  de dbghelp.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.rallados.net/descargas/dbghelp.dll', mbInformation, MB_OK);
+            MsgBox('La descarga e instalación  de dbghelp.dll han fallado. Deben instalarse a mano. Puede descargar el archivo de http://www.redyc.com/descargas/dbghelp.dll', mbInformation, MB_OK);
           end else
             didDbgDl := true;
         end else
-        MsgBox('Debe instalar a mano dbghelp.dll. Puede descargar el archivo de http://www.rallados.net/descargas/dbghelp.dll', mbInformation, MB_OK);
+        MsgBox('Debe instalar a mano dbghelp.dll. Puede descargar el archivo de http://www.redyc.com/descargas/dbghelp.dll', mbInformation, MB_OK);
       end;
     end;
+    
   end;
   Result := true;
 end;
@@ -141,14 +157,14 @@ begin
       output := ExpandConstant('{app}\dbghelp.dll');
       FileCopy(input, output, true);
     end;
-    if (didCrtDl) then begin
-      input := ExpandConstant('{tmp}\msvcr70.dll');
-      output := ExpandConstant('{sys}\msvcr70.dll');
+    if (didCrtDl1) then begin
+      input := ExpandConstant('{tmp}\msvcr71.dll');
+      output := ExpandConstant('{sys}\msvcr71.dll');
       FileCopy(input, output, true);
     end;
-    if (didMsCrtDl) then begin
-      input := ExpandConstant('{tmp}\msvcrtd.dll');
-      output := ExpandConstant('{sys}\msvcrtd.dll');
+    if (didCrtDl0) then begin
+      input := ExpandConstant('{tmp}\msvcr70.dll');
+      output := ExpandConstant('{sys}\msvcr70.dll');
       FileCopy(input, output, true);
     end;
   end;

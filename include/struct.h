@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.56 2006-03-05 19:04:20 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.57 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -78,7 +78,7 @@ extern void strcopia(char **, const char *);
  * @sntx: void Free(void *x)
  !*/
 #ifdef DEBUG
-#define Free(x) do { free(x); Debug("Liberando %X", x) }while(0)
+#define Free(x) do { free(x); Debug("Liberando %X", x); }while(0)
 #else
 #define Free free
 #endif
@@ -136,6 +136,10 @@ typedef struct _dbufdata
  	    $slot: Posición de la lista de conexiones.
  	    $buffer: Buffer de parseo de datos.
  	    $pos: Posición de escritura en el buffer.
+ 	    $inicio: Instante en el que fue creado.
+ 	    $recibido: Momento desde el último recibo de datos.
+ 	    $contout: Timeout para conectar.
+ 	    $recvtout: Timeout para recibir datos.
  	    $zlib: Estructura del manejo de compresión de datos.
  	    $ssl: Estructura del manejo de ssl.
  * @ver: SockOpen SockClose SockListen
@@ -158,6 +162,10 @@ struct _sock
 	int slot;
 	char buffer[SOCKBUF]; /* buffer de parseo */
 	int pos; /* posicion de escritura del buffer */
+	time_t inicio;
+	time_t recibido;
+	u_int contout;
+	u_int recvtout;
 #ifdef USA_ZLIB
 	struct _zlib *zlib;
 #endif
@@ -172,8 +180,12 @@ struct Sockets
 	int tope;
 }ListaSocks;
 
-extern Sock *SockOpen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), int);
-extern void SockWrite(Sock *, int, char *, ...);
+extern Sock *SockOpen(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
+extern Sock *SockOpenEx(char *, int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), u_int, u_int, u_int);
+extern void SockWriteExVL(Sock *, int, char *, va_list);
+extern void SockWriteVL(Sock *, char *, va_list);
+extern void SockWriteEx(Sock *, int, char *, ...);
+extern void SockWrite(Sock *, char *, ...);
 extern void SockClose(Sock *, char);
 
 /*!
@@ -222,6 +234,9 @@ extern char *AleatorioEx(char *);
 extern int Aleatorio(int, int);
 extern char *Mx(char *);
 
+#define INI 1
+#define FIN 2
+
 /* senyals */
 typedef struct _senyal
 {
@@ -231,7 +246,41 @@ typedef struct _senyal
 }Senyal;
 #define MAXSIGS 256
 extern MODVAR Senyal *senyals[MAXSIGS];
-extern void InsertaSenyal(int, int (*)());
+/*! 
+ * @desc: Inserta una señal
+ * Durante el transcurso del programa se generan varias señales. Cada vez que salta una señal se ejecutan las funciones que estén asociadas a ella.
+ * @params: $senyal [in] Tipo de señal a seguir. Estas señales pueden pasar un número indefinido de parámetros, según sea el tipo de señal
+ * 	    Sólo se aceptan las siguientes señales (entre paréntesis se detallan los parámetros que aceptan):
+ 		- SIGN_SQL (): Ha terminado la carga del motor SQL
+ 		- SIGN_UMODE (Cliente *cl, char *umodos): Se ha producido un cambio en los modos de usuario del cliente <i>cl</i>. La cadena <i>umodos</i> contiene los cambios.
+ 		- SIGN_QUIT (Cliente *cl, char *mensaje: El cliente <i>cl</i> ha sido desconectado con el mensaje <i>mensaje</i>.
+ 		- SIGN_EOS (): Se ha terminado la unión entre servidores.
+ 		- SIGN_MODE (Cliente *cl, Canal *cn, char *modos): El cliente <i>cl</i> ha efectuado el cambio de modos <i>modos</i> del canal <i>cn</i>.
+ 		- SIGN_JOIN (Cliente *cl, Canal *cn): El cliente <i>cl</i> se une al canal <i>cn</i>.
+ 		- SIGN_SYNCH (): Se inicia la sincronización con el servidor.
+ 		- SIGN_KICK (Cliente *cl, Cliente *al, Canal *cn, char *motivo): El cliente <i>cl</i> expulsa al cliente <i>al</i> del canal <i>cn</i> con el motivo <i>motivo</i>.
+ 		- SIGN_TOPIC (Cliente *cl, Canal *cn, char *topic): El cliente <i>cl</i> pone el topic <i>topic</i> en el canal <i>cn</i>.
+ 		- SIGN_PRE_NICK (Cliente *cl, char *nuevo): El cliente <i>cl</i> va a cambiarse el nick a <i>nuevo</i>.
+ 		- SIGN_POST_NICK (Cliente *cl, int modo): El cliente <i>cl</i> ha efectuado una operación de nick. Si es una nueva conexión, <i>modo</i> vale 0.
+ 		- SIGN_AWAY (Cliente *cl, char *mensaje): El cliente <i>cl</i> se pone away con el mensaje <i>mensaje</i>. Si mensaje apunta a NULL, el cliente regresa de away.
+ 		- SIGN_PART (Cliente *cl, Canal *cn, char *mensaje): El cliente <i>cl</i> abandona el canal <i>cn</i> con el mensaje <i>mensaje</i>. Si no hay mensaje, apunta a NULL.
+ *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
+ 		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
+ * @ex: 	int Umodos(Cliente *, char *);
+ 	InsertaSenyal(SIGN_UMODE, Umodos);
+ 	...
+ 	int Umodos(Cliente *cl, char *umodos)
+ 	{
+ 		...
+ 		printf("El usuario ha cambiado sus modos");
+ 		return 0;
+ 	}
+ * @ver: BorraSenyal
+ * @cat: Señales
+ * @sntx: InsertaSenyal(int senyal, int (*func)())
+ !*/
+#define InsertaSenyal(x,y) InsertaSenyalEx(x,y,FIN)
+extern void InsertaSenyalEx(int, int (*)(), int);
 extern int BorraSenyal(int, int (*)());
 #define Senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
 #define Senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
@@ -350,14 +399,23 @@ extern int EsArchivo(char *);
 #define OPT_CR 0x1
 #define OPT_LF 0x2
 #define OPT_CRLF (OPT_CR | OPT_LF)
+#define OPT_NORECVQ 0x1
+#define EsNoRecvQ(x) (x->opts & OPT_NORECVQ)
+#define SetNoRecvQ(x) x->opts |= OPT_NORECVQ
+#define UnsetNoRecvQ(x) x->opts &= ~OPT_NORECVQ
 #ifdef USA_ZLIB
-#define OPT_ZLIB 0x1
+#define OPT_ZLIB 0x2
 #define EsZlib(x) (x->opts & OPT_ZLIB)
+#define SetZlib(x) do{x->opts |= OPT_ZLIB;x->opts &= ~OPT_NORECVQ;}while(0)
+#define UnsetZlib(x) x->opts &= ~OPT_ZLIB
 #endif
 #ifdef USA_SSL
-#define OPT_SSL 0x2
+#define OPT_SSL 0x4
 #define EsSSL(x) (x->opts & OPT_SSL)
+#define SetSSL(x) x->opts |= OPT_SSL
+#define UnsetSSL(x) x->opts &= ~OPT_SSL
 #endif
+#define OPT_NADD 0x8
 #ifdef _WIN32
 extern void ChkBtCon(int, int);
 extern char *PreguntaCampo(char *, char *, char *);
@@ -378,7 +436,6 @@ extern void SQLCargaTablas(void);
 #define atoul(x) strtoul(x, NULL, 10)
 extern void Error(char *, ...);
 extern int Info(char *, ...);
-extern void SockWriteVL(Sock *, int, char *, va_list);
 #define LOCAL 0
 #define REMOTO 1
 extern VOIDSIG CierraColossus(int);
@@ -417,7 +474,7 @@ extern MODVAR int refrescando;
 		"aportando su semilla, a que este programa vea la luz.");									\
 	Responde(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
 	Responde(cl, bl, " "); 															\
-	Responde(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.rallados.net", 31)
+	Responde(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.redyc.com", 31)
 extern void ResuelveHost(char **, char *);
 extern void cloak_crc(char *);
 

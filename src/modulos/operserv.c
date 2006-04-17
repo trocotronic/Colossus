@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.29 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.30 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -82,7 +82,7 @@ ModInfo MOD_INFO(OperServ) = {
 	"OperServ" ,
 	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 	
 int MOD_CARGA(OperServ)(Modulo *mod)
@@ -488,7 +488,7 @@ BOTFUNC(OSRaw)
 	char *raw;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "RAW mensaje");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "mensaje");
 		return 1;
 	}
 	raw = Unifica(param, params, 1, -1);
@@ -533,7 +533,7 @@ BOTFUNC(OSGline)
 	char *user, *host;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "GLINE {nick|user@host} [tiempo motivo]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "{nick|user@host} [tiempo motivo]");
 		return 1;
 	}
 	user = host = NULL;
@@ -580,7 +580,7 @@ BOTFUNC(OSOpers)
 	Nivel *niv = NULL;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "OPERS nick [nivel]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [nivel]");
 		return 1;
 	}
 	if (params >= 3)
@@ -621,7 +621,7 @@ BOTFUNC(OSSajoin)
 	}
 	if (params < 3)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "SAJOIN nick #canal");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick #canal");
 		return 1;
 	}
 	if (!(al = BuscaCliente(param[1], NULL)))
@@ -649,7 +649,7 @@ BOTFUNC(OSSapart)
 	}
 	if (params < 3)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "SAPART nick #canal");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick #canal");
 		return 1;
 	}
 	if (!(al = BuscaCliente(param[1], NULL)))
@@ -677,7 +677,7 @@ BOTFUNC(OSRejoin)
 	}
 	if (params < 3)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "REJOIN nick #canal");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick #canal");
 		return 1;
 	}
 	if (!(al = BuscaCliente(param[1], NULL)))
@@ -701,7 +701,7 @@ BOTFUNC(OSKill)
 	Cliente *al;
 	if (params < 3)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "KILL nick motivo");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick motivo");
 		return 1;
 	}
 	if (!(al = BuscaCliente(param[1], NULL)))
@@ -725,7 +725,7 @@ BOTFUNC(OSGlobal)
 	char *msg, t = 0; /* privmsg */
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "GLOBAL [-modos] mensaje");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[-modos] mensaje");
 		return 1;
 	}
 	if (*param[1] == '-')
@@ -799,7 +799,7 @@ BOTFUNC(OSNoticias)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS ADD|DEL|LIST parámetros");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "ADD|DEL|LIST parámetros");
 		return 1;
 	}
 	if (!strcasecmp(param[1], "ADD"))
@@ -809,7 +809,7 @@ BOTFUNC(OSNoticias)
 		char *noticia, *bot;
 		if (params < 4)
 		{
-			Responde(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS ADD botname noticia");
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "ADD botname noticia");
 			return 1;
 		}
 		noticia = Unifica(param, params, 3, -1);
@@ -826,7 +826,7 @@ BOTFUNC(OSNoticias)
 	{
 		if (params < 3)
 		{
-			Responde(cl, CLI(operserv), OS_ERR_PARA, "NOTICIAS DEL nº");
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "DEL nº");
 			return 1;
 		}
 		OSBorraNoticia(atoi(param[2]));
@@ -859,7 +859,7 @@ BOTFUNC(OSNoticias)
 	}
 	else
 	{
-		Responde(cl, CLI(operserv), OS_ERR_SNTX, "NOTICIAS ADD|DEL|LIST parámetros");
+		Responde(cl, CLI(operserv), OS_ERR_SNTX, "Opción desconcida.");
 		return 1;
 	}
 	EOI(operserv, 11);
@@ -869,7 +869,7 @@ BOTFUNC(OSAkill)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "AKILL [+|-]{mascara|patron} [motivo]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{mascara|patron} [motivo]");
 		return 1;
 	}
 	if (*param[1] == '+')
@@ -877,7 +877,7 @@ BOTFUNC(OSAkill)
 		char *c, *motivo;
 		if (params < 3)
 		{
-			Responde(cl, CLI(operserv), OS_ERR_PARA, "AKILL +mascara motivo");
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "+mascara motivo");
 			return 1;
 		}
 		param[1]++;

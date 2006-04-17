@@ -1,4 +1,4 @@
-#define UDB_VER "3.2.2"
+#define UDB_VER "3.2.3"
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #else
@@ -36,7 +36,7 @@ extern int Optimiza(Udb *);
 extern int ActualizaGMT(Udb *, time_t);
 extern time_t LeeGMT(int);
 extern u_long LeeHash(int);
-extern void CargaBloques();
+extern int CargaBloques();
 extern void BddInit();
 extern int TruncaBloque(Cliente *, Udb *, u_long);
 extern void PropagaRegistro(char *, ...);
@@ -62,3 +62,7 @@ extern void PropagaRegistro(char *, ...);
 #define C_SUS_TOK "S"
 #define C_FOR "forbid"
 #define C_FOR_TOK "B"
+#define C_OPT "opciones"
+#define C_OPT_TOK "O"
+
+#define BDD_C_OPT_PBAN 0x1

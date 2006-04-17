@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.12 2005-07-13 14:50:08 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.13 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -25,7 +25,7 @@ int ZLibInit(Sock *sck, int nivel)
 }
 void ZLibLibera(Sock *sck)
 {
-	sck->opts &= ~OPT_ZLIB;
+	UnsetZlib(sck);
 	if (sck->zlib)
 	{
 		if (sck->zlib->in)
@@ -152,7 +152,7 @@ char *ZLibDescomprime(Sock *sck, char *mensaje, int *len)
 			if (!strncmp("ERROR ", mensaje, 6))
 			{
 				sck->zlib->primero = 0;
-				sck->opts &= ~OPT_ZLIB;
+				UnsetZlib(sck);
 				return mensaje;
 			}
 			Info("inflate() error: * Quizás esté linkando a un servidor que no tiene ZLib");

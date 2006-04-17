@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.11 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.12 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -56,7 +56,7 @@ struct _cs
 #define CS_AKICKS "akicks"
 #define CACHE_FUNDADORES "fundadores"
 
-#define CS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
+#define CS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define CS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define CS_ERR_NCHR "\00304ERROR: Este canal no está registrado."
 #define CS_ERR_EMPT "\00304ERROR: %s"

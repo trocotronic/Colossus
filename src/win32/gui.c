@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.13 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.14 2006-04-17 14:19:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -359,7 +359,7 @@ LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 			if (HIWORD(wParam) == BN_DBLCLK) 
 			{
 				if (LOWORD(wParam) == IDC_WEB) 
-					ShellExecute(NULL, "open", "http://www.rallados.net", NULL, NULL, SW_MAXIMIZE);
+					ShellExecute(NULL, "open", "http://www.redyc.com", NULL, NULL, SW_MAXIMIZE);
 				EndDialog(hDlg, TRUE);
 				return 0;
 			}

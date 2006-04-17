@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.h,v 1.4 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: ipserv.h,v 1.5 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 typedef struct _is IpServ;
@@ -11,7 +11,7 @@ struct _is
 	Modulo *hmod;
 };
 
-#define IS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
+#define IS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define IS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define IS_ERR_EMPT "\00304ERROR: %s"
 

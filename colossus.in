@@ -105,7 +105,7 @@ __EOF__
 	echo "=================== FIN ======================="
 	echo ""
 	echo "Copie lo que hay entre las secciones INICIO y FIN"
-	echo "y envielo a http://bugs.rallados.net"
+	echo "y envielo a http://bugs.redyc.com"
 	echo ""
 	echo "Gracias!"
 else

@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.h,v 1.5 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: memoserv.h,v 1.6 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 typedef struct _ms MemoServ;
@@ -11,7 +11,7 @@ struct _ms
 	Modulo *hmod;
 };
 
-#define MS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
+#define MS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define MS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define MS_ERR_NOTR "\00304ERROR: Este canal no está registrado."
 #define MS_ERR_EMPT "\00304ERROR: %s"

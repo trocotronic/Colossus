@@ -50,7 +50,7 @@ ProtInfo PROT_INFO(RH) = {
 	"Protocolo P10" ,
 	0.2 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net" 
+	"trocotronic@redyc.com" 
 };
 #define MSG_PRIVATE "PRIVMSG"
 #define TOK_PRIVATE "P"

@@ -29,11 +29,15 @@ BOTFUNC(CSDemigrar);
 BOTFUNCHELP(CSHDemigrar);
 BOTFUNC(CSProteger);
 BOTFUNCHELP(CSHProteger);
+BOTFUNC(CSSetUDB);
+BOTFUNCHELP(CSHSetUDB);
+
 
 bCom chanserv_coms[] = {
 	{ "migrar" , CSMigrar ,	N1 , "Migra un canal a la base de datos de la red." , CSHMigrar } ,
 	{ "demigrar" , CSDemigrar , N1 , "Demigra un canal de la base de datos de la red." , CSHDemigrar } ,
 	{ "proteger" , CSProteger , N1 , "Protege un canal para que sólo ciertos nicks puedan entrar." , CSHProteger } ,
+	{ "setudb" , CSSetUDB , N1 , "Fija distintas opciones para canales UDB." , CSHSetUDB } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -381,5 +385,98 @@ BOTFUNC(CSMigrar)
 	Responde(cl, CLI(chanserv), "Migración realizada.");
 	opts |= CS_OPT_UDB;
 	SQLInserta(CS_SQL, param[1], "opts", "%i", opts);
+	return 0;
+}
+BOTFUNCHELP(CSHSetUDB)
+{
+	if (params < 3)
+	{
+		Responde(cl, CLI(chanserv), "Fija distintas opciones para un canal migrado a UDB.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Opciones disponibles:");
+		Responde(cl, CLI(chanserv), "\00312PROTBAN\003 Protege los bans de un canal.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+s\003.");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312SETUDB #canal opcion [parámetros]");
+		Responde(cl, CLI(chanserv), "Para más información, \00312/msg %s %s SETUDB opción", chanserv->hmod->nick, strtoupper(param[0]));
+	}
+	else if (!strcasecmp(param[2], "PROTBAN"))
+	{
+		Responde(cl, CLI(chanserv), "Protege los bans de un canal.");
+		Responde(cl, CLI(chanserv), "Con este flag activo, sólo los autores de cada ban podrán quitar sus propios bans.");
+		Responde(cl, CLI(chanserv), "Es decir, nadie podrá quitar bans que no sean suyos.");
+		Responde(cl, CLI(chanserv), "Para poder ejecutar este comando se requiere tener el acceso \00312+s\003.");
+		Responde(cl, CLI(chanserv), "Operadores de red y fundadores de canal se saltan esta protección de bans.");
+		Responde(cl, CLI(chanserv), " ");
+		Responde(cl, CLI(chanserv), "Sintaxis: \00312PROTBANS #canal ON|OFF");
+	}
+	else
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
+	return 0;
+}
+BOTFUNC(CSSetUDB)
+{
+	if (params < 3)
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, "SETUDB #canal parámetros");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		return 1;
+	}
+	if (!IsOper(cl) && IsChanSuspend(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
+		return 1;
+	}
+	if (!CSTieneNivel(parv[0], param[1], CS_LEV_SET))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
+		return 1;
+	}
+	if (!IsChanUDB(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está migrado.");
+		return 1;
+	}
+	if (!strcasecmp(param[2], "PROTBANS"))
+	{
+		Udb *bloq, *reg;
+		u_long val = 0L;
+		if (params < 4)
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SETUDB #canal PROTBANS ON|OFF");
+			return 1;
+		}
+		if (!(reg = BuscaRegistro(BDD_CHANS, param[1])))
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Error grave: no hay bloque");
+			return 1;
+		}
+		if ((bloq = BuscaBloque(C_OPT_TOK, reg)))
+			val = bloq->data_long;
+		if (!strcasecmp(param[3], "ON"))
+			PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val | BDD_C_OPT_PBAN);
+		else if (!strcasecmp(param[3], "OFF"))
+		{
+			if (val & ~BDD_C_OPT_PBAN)
+				PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val & ~BDD_C_OPT_PBAN);
+			else
+				PropagaRegistro("C::%s::O", param[1]);
+		}
+		else
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "SETUDB #canal PROTBANS ON|OFF");
+			return 1;
+		}
+		Responde(cl, CLI(chanserv), "La protección de bans está en \00312%s", param[3]);
+	}
+	else
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Opción desconocida.");
+		return 1;
+	}
 	return 0;
 }

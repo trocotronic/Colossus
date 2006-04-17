@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.8 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: nickserv.h,v 1.9 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #define NS_SID 0x1
@@ -30,7 +30,7 @@ struct _ns
 
 extern NickServ *nickserv;
 
-#define NS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
+#define NS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define NS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define NS_ERR_NURG "\00304ERROR: Este nick no está registrado."
 #define NS_ERR_EMPT "\00304ERROR: %s"

@@ -1,4 +1,4 @@
-## $Id: make,v 1.28 2006-02-17 19:19:01 Trocotronic Exp $
+## $Id: make,v 1.29 2006-04-17 14:19:43 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -68,7 +68,8 @@ EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
 	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ $(ZLIBOBJ) $(SSLOBJ) 
 MOD_DLL=SRC/MODULOS/MX.DLL SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
-	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL
+	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL \
+	SRC/MODULOS/NEWSSERV.DLL
 #	SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL
 OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/DEBUG.OBJ
 PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
@@ -136,7 +137,7 @@ CLEAN:
 SETUP: 
 	-@copy src\win32\setup.h include\setup.h >NUL
 	-@copy $(PTHREAD_LIB)\pthreadVC2.dll pthreadVC2.dll >NUL
-        -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
+     -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
 
 ./COLOSSUS.EXE: $(OBJ_FILES)
         $(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
@@ -264,6 +265,13 @@ src/modulos/smsserv.dll: src/modulos/smsserv.c $(INCLUDES) ./include/modulos/sms
 	$(CC) $(MODCFLAGS) src/modulos/smsserv.c $(MODLFLAGS)
 	-@copy src\modulos\smsserv.dll modulos\smsserv.dll >NUL
 	-@copy src\modulos\smsserv.pdb modulos\smsserv.pdb >NUL
+	
+src/modulos/newsserv.dll: src/modulos/newsserv.c $(INCLUDES) ./include/modulos/newsserv.h
+	$(CC) /I "C:\dev\Expat-2.0.0\Source\lib" /I "C:\dev\libiconv\include" $(MODCFLAGS) src/modulos/newsserv.c \
+	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:"C:\dev\Expat-2.0.0\StaticLibs" \
+	libexpatMT.lib /LIBPATH:"C:\dev\libiconv\lib" iconv.lib 
+	-@copy src\modulos\newsserv.dll modulos\newsserv.dll >NUL
+	-@copy src\modulos\newsserv.pdb modulos\newsserv.pdb >NUL
 
 src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
@@ -289,7 +297,7 @@ src/protocolos/redhispana.dll: src/protocolos/redhispana.c $(INCLUDES)
 src/sql/mysql.dll: src/sql/mysql.c $(INCLUDES)
 	$(CC) $(SQLCFLAGS) /I "C:\Archivos de Programa\MySQL\MySQL Server 5.0\include" src/sql/mysql.c \
 	$(SQLLFLAGS) /LIBPATH:"C:\Archivos de Programa\MySQL\MySQL Server 5.0\lib\opt" mysqlclient.lib \
-	user32.lib ws2_32.lib Advapi32.lib libcmt.lib  /NODEFAULTLIB:msvcrt /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
+	user32.lib ws2_32.lib Advapi32.lib libcmt.lib /NODEFAULTLIB:msvcrt /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
 	-@copy src\sql\mysql.dll sql\mysql.dll >NUL
 	-@copy src\sql\mysql.pdb sql\mysql.pdb >NUL
 

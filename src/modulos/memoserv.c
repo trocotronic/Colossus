@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.22 2006-02-17 19:19:03 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.23 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -56,7 +56,7 @@ ModInfo MOD_INFO(MemoServ) = {
 	"MemoServ" ,
 	0.8 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 	
 int MOD_CARGA(MemoServ)(Modulo *mod)
@@ -261,14 +261,14 @@ BOTFUNC(MSRead)
 	time_t tim;
 	if (params < 2)
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_PARA, "READ [#canal] nº|LAST|NEW");
+		Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "[#canal] nº|LAST|NEW");
 		return 1;
 	}
 	if (*param[1] == '#')
 	{
 		if (params < 3)
 		{
-			Responde(cl, CLI(memoserv), MS_ERR_PARA, "READ #canal nº|LAST|NEW");
+			Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "#canal nº|LAST|NEW");
 			return 1;
 		}
 		if (!IsChanReg(param[1]))
@@ -291,7 +291,7 @@ BOTFUNC(MSRead)
 	}
 	if (!atoi(no) && strcasecmp(no, "LAST") && strcasecmp(no, "NEW"))
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_SNTX, "READ [#canal] nº|LAST|NEW");
+		Responde(cl, CLI(memoserv), MS_ERR_SNTX, "Opción desconocida. Sólo nº|LAST|NEW");
 		return 1;
 	}
 	if (!strcasecmp(no, "NEW"))
@@ -376,7 +376,7 @@ BOTFUNC(MSMemo)
 	SQLRow row;
 	if (params < 3)
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_PARA, "SEND nick|#canal mensaje");
+		Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "nick|#canal mensaje");
 		return 1;
 	}
 	if (*param[1] != '#' && !IsReg(param[1]))
@@ -422,14 +422,14 @@ BOTFUNC(MSDel)
 	char *para, *no;
 	if (params < 2)
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_PARA, "DEL [#canal] nº|ALL");
+		Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "[#canal] nº|ALL");
 		return 1;
 	}
 	if (*param[1] == '#')
 	{
 		if (params < 3)
 		{
-			Responde(cl, CLI(memoserv), MS_ERR_PARA, "DEL #canal nº|ALL");
+			Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "#canal nº|ALL");
 			return 1;
 		}
 		if (!IsChanReg(param[1]))
@@ -452,7 +452,7 @@ BOTFUNC(MSDel)
 	}
 	if (!atoi(no) && strcasecmp(no, "ALL"))
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_SNTX, "DEL [#canal] nº|ALL");
+		Responde(cl, CLI(memoserv), MS_ERR_SNTX, "Opción desconocida. Sólo: nº|ALL");
 		return 1;
 	}
 	if (!strcasecmp(no, "ALL"))
@@ -525,14 +525,14 @@ BOTFUNC(MSOpts)
 	char *para, *opt, *val;
 	if (params < 3)
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_PARA, "SET [#canal] opción valor");
+		Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "[#canal] opción valor");
 		return 1;
 	}
 	if (*param[1] == '#')
 	{
 		if (params < 4)
 		{
-			Responde(cl, CLI(memoserv), MS_ERR_PARA, "SET #canal opción valor");
+			Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "#canal opción valor");
 			return 1;
 		}
 		if (!IsChanReg(param[1]))
@@ -557,17 +557,18 @@ BOTFUNC(MSOpts)
 	}
 	if (!strcasecmp(opt, "LIMITE"))
 	{
-		if (!atoi(val))
+		u_int lim;
+		if (!IsDigit(*val))
 		{
-			Responde(cl, CLI(memoserv), MS_ERR_SNTX, "SET [#canal] limite nº");
+			Responde(cl, CLI(memoserv), MS_ERR_SNTX, "El límite debe ser un número entero");
 			return 1;
 		}
-		if (abs(atoi(val)) > 30)
+		if ((lim = abs(atoi(val))) > 30)
 		{
 			Responde(cl, CLI(memoserv), MS_ERR_EMPT, "El límite no puede superar los 30 mensajes.");
 			return 1;
 		}
-		SQLInserta(MS_SET, para, "limite", val);
+		SQLInserta(MS_SET, para, "limite", "%u", lim);
 		Responde(cl, CLI(memoserv), "Límite cambiado a \00312%s\003.", val);
 	}
 	else if (!strcasecmp(opt, "NOTIFY"))
@@ -580,7 +581,7 @@ BOTFUNC(MSOpts)
 				SQLInserta(MS_SET, para, "opts", "0");
 			else
 			{
-				Responde(cl, CLI(memoserv), MS_ERR_SNTX, "SET #canal NOTIFY ON|OFF");
+				Responde(cl, CLI(memoserv), MS_ERR_SNTX, "Opción desconocida. Sólo: ON|OFF");
 				return 1;
 			}
 		}
@@ -596,7 +597,7 @@ BOTFUNC(MSOpts)
 			opts = atoi(regopts);
 			if (*val != '+' && *val != '-')
 			{
-				Responde(cl, CLI(memoserv), MS_ERR_SNTX, "SET NOTIFY +-modos");
+				Responde(cl, CLI(memoserv), MS_ERR_SNTX, "Los modos deben empezar por + o -");
 				return 1;
 			}
 			while (!BadPtr(modos))
@@ -706,7 +707,7 @@ BOTFUNC(MSCancelar)
 	char *de;
 	if (params < 2)
 	{
-		Responde(cl, CLI(memoserv), MS_ERR_PARA, "CANCELAR nick|#canal");
+		Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "nick|#canal");
 		return 1;
 	}
 	if (*param[1] == '#' && !IsChanReg(param[1]))
@@ -828,7 +829,6 @@ int MSSigSQL()
 	if (!SQLEsTabla(MS_SQL))
 	{
 		if (SQLQuery("CREATE TABLE %s%s ( "
-  			"n SERIAL, "
   			"mensaje text, "
   			"para text, "
   			"de text, "

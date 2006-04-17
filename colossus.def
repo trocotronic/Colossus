@@ -74,7 +74,7 @@ EXPORTS
 	InsertaComando
 	InsertaModoCliente
 	InsertaModoProtocolo
-	InsertaSenyal
+	InsertaSenyalEx
 	InsertaSenyalExt
 	InsertaTKL
 	IrcdEscucha
@@ -126,7 +126,10 @@ EXPORTS
 	SockIrcd
 	SockListen
 	SockOpen
+	SockOpenEx
 	SockWrite
+	SockWriteEx
+	SockWriteExVL
 	SockWriteVL
 	StrCount
 	TestComMod
@@ -184,6 +187,8 @@ EXPORTS
 	sql
 	str_replace
 	strcopia
+	strtolower
+	strtoupper
 	tea
 	timers
 	tklines

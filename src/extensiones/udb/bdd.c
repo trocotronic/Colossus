@@ -32,7 +32,7 @@ void SetDataVer(int);
 int GetDataVer();
 int ActualizaHash(Udb *);
 Udb *IdAUdb(int);
-void CargaBloques();
+int CargaBloques();
 int TruncaBloque(Cliente *, Udb *, u_long);
 
 Opts NivelesBDD[] = {
@@ -853,13 +853,14 @@ void DescargaBloque(int tipo)
 	bloq->data_long = 0L;
 	VaciaHash(tipo);
 }
-void CargaBloques()
+int CargaBloques()
 {
 	u_int i;
 	for (i = 0; i < BDD_TOTAL; i++)
 		DescargaBloque(i);
 	for (i = 0; i < BDD_TOTAL; i++)
 		CargaBloque(i);
+	return 0;
 }
 int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 {

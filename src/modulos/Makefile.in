@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.9 2006-02-17 19:19:03 Trocotronic Exp $
+## $Id: Makefile.in,v 1.10 2006-04-17 14:19:45 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -39,5 +39,13 @@ tvserv.so: tvserv.c $(INCLUDES) tvserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o tvserv.so tvserv.c
 tvserv.o: tvserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c tvserv.c
+smsserv.so: smsserv.c $(INCLUDES) smsserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o smsserv.so smsserv.c
+smsserv.o: smsserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c smsserv.c
+newsserv.so: newsserv.c $(INCLUDES) newsserv.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o newsserv.so newsserv.c
+newsserv.o: newsserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c newsserv.c
 clean:
 	$(RM) -f *.o *.so *~ core

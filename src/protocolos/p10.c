@@ -46,7 +46,7 @@ ProtInfo PROT_INFO(P10) = {
 	"Protocolo P10" ,
 	0.2 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net" 
+	"trocotronic@redyc.com" 
 };
 #define MSG_PRIVATE "PRIVMSG"
 #define TOK_PRIVATE "P"
@@ -125,6 +125,7 @@ u_long CHMODE_INVITEONLY;
 u_long CHMODE_NOPRIVMSGS;
 u_long CHMODE_KEY;
 u_long CHMODE_LIMIT;
+Hash tTab[UMAX];
 
 void EntraCliente(Cliente *, char *);
 void ProcesaModos(Canal *, char *);
@@ -135,8 +136,8 @@ int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
 /* Para no tocar la variable ->hsig, se crea otra estructura para guardar los trios y se indexa por el numeric */
 typedef struct _trio
 {
-	Cliente *cl;
 	struct _trio *hsig;
+	Cliente *cl;
 }Trio;
 DLLFUNC void int2b64(char *destino, int num, size_t tam)
 {
@@ -167,7 +168,7 @@ DLLFUNC Cliente *BuscaClienteNumerico(char *clave, Cliente *lugar)
 	int num;
 	num = b642int(clave);
 	hash = HashCliente(clave);
-	for (aux = (Trio *)uTab[hash].item; aux; aux = aux->hsig)
+	for (aux = (Trio *)tTab[hash].item; aux; aux = aux->hsig)
 	{
 		if (aux->cl && aux->cl->numeric == num)
 			return aux->cl;
@@ -303,7 +304,7 @@ int p_quit(Cliente *bl, char *motivo, ...)
 		EnviaAServidor("%s %s", bl->trio, TOK_QUIT);
 	for (lk = bl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->chan, bl);
-	BorraClienteDeNumerico(bl, bl->trio, uTab);
+	BorraClienteDeNumerico(bl, bl->trio, tTab);
 	LiberaMemoriaCliente(bl);
 	return 0;
 }
@@ -339,7 +340,7 @@ int p_nuevonick(Cliente *al)
 	al->trio[1] = me.trio[1];
 	int2b64(al->trio + 2, al->numeric, sizeof(char) * 4);
 	al->numeric = b642int(al->trio);
-	InsertaClienteEnNumerico(al, al->trio, uTab);
+	InsertaClienteEnNumerico(al, al->trio, tTab);
 	modos = ModosAFlags(al->modos, protocolo->umodos, NULL);
 	if (strchr(modos, 'r')) /* hay account */
 		EnviaAServidor("%s %s %s 1 %lu %s %s +%s %s %s %s :%s", me.trio, TOK_NICK, al->nombre, time(0), al->ident, al->host, modos, al->nombre, ipb64, al->trio, al->info);
@@ -429,6 +430,8 @@ int p_invite(Cliente *cl, Cliente *bl, Canal *cn)
 int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 {
 	char buf[BUFSIZE];
+	if (!bl)
+		return 1;
 	if (!vl)
 		strcpy(buf, formato);
 	else
@@ -745,57 +748,56 @@ SOCKFUNC(PROT_PARSEA(P10))
 				return 0;
 		}
 	}
-		s = strchr(p, ' ');
-		if (s)
-			*s++ = '\0';
-		comd = BuscaComando(p);
-		params = (comd ? comd->params : 0);
-		i = 0;
-		if (s)
+	s = strchr(p, ' ');
+	if (s)
+		*s++ = '\0';
+	comd = BuscaComando(p);
+	params = (comd ? comd->params : 0);
+	i = 0;
+	if (s)
+	{
+		for (;;)
 		{
-			for (;;)
+			while (*s == ' ')
+				*s++ = '\0';
+			if (*s == '\0')
+				break;
+			if (*s == ':')
 			{
-				while (*s == ' ')
-					*s++ = '\0';
-				if (*s == '\0')
-					break;
-				if (*s == ':')
-				{
-					para[++i] = s + 1;
-					break;
-				}
-				para[++i] = s;
-				if (i >= params)
-					break;
-				while (*s != ' ' && *s)
-					s++;
+				para[++i] = s + 1;
+				break;
+			}
+			para[++i] = s;
+			if (i >= params)
+				break;
+			while (*s != ' ' && *s)
+				s++;
+		}
+	}
+	para[++i] = NULL;
+	//for (params = 0; params < i; params++)
+	//	Debug("parv[%i] = %s", params, para[params]);
+	if (comd)
+	{
+		if (comd->cuando == INI)
+		{
+			for (j = 0; j < comd->funciones; j++)
+			{
+				if (comd->funcion[j])
+					comd->funcion[j](sck, cl, para, i);
 			}
 		}
-		para[++i] = NULL;
-		for (params = 0; params < i; params++)
-			Debug("parv[%i] = %s", params, para[params]);
-		if (comd)
+		else if (comd->cuando == FIN)
 		{
-			if (comd->cuando == INI)
+			for (j = comd->funciones - 1; j >= 0; j--)
 			{
-				for (j = 0; j < comd->funciones; j++)
-				{
-					if (comd->funcion[j])
-						comd->funcion[j](sck, cl, para, i);
-				}
-			}
-			else if (comd->cuando == FIN)
-			{
-				for (j = comd->funciones - 1; j >= 0; j--)
-				{
-					if (!cl)
-						cl = BuscaClienteNumerico(para[0], NULL);
-					if (comd->funcion[j])
-						comd->funcion[j](sck, cl, para, i);
-				}
+				if (!cl)
+					cl = BuscaClienteNumerico(para[0], NULL);
+				if (comd->funcion[j])
+					comd->funcion[j](sck, cl, para, i);
 			}
 		}
-
+	}
 	return 0;
 }
 char *militime_float(char* start)
@@ -835,7 +837,6 @@ IRCFUNC(m_eos)
 {
 	if (cl == linkado)
 	{
-		EnviaAServidor("%s %s", me.trio, TOK_EOB);
 		EnviaAServidor("%s %s", me.trio, TOK_EOB_ACK);
 		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, abs(microtime() - tburst));
 		intentos = 0;
@@ -911,7 +912,7 @@ IRCFUNC(m_msg)
 			params = k;
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
-			func->func(cl, parv, parc, param, params);
+			func->func(cl, parv, parc, param, params, func);
 		else
 		{
 			if (!ex && !EsServidor(cl))
@@ -952,7 +953,7 @@ IRCFUNC(m_nick)
 			al = NuevoCliente(parv[1], parv[4], parv[5], inet_ntoa(tmp), cl->nombre, parv[5], parc > 9 ? parv[6] : NULL, parv[parc - 1]);
 			al->numeric = b642int(parv[parc - 2]);
 			al->trio = strdup(parv[parc - 2]);
-			InsertaClienteEnNumerico(al, parv[parc - 2], uTab);
+			InsertaClienteEnNumerico(al, parv[parc - 2], tTab);
 			if (parc > 10) /* hay account */
 			{
 				char *d;
@@ -1133,7 +1134,7 @@ IRCFUNC(m_server)
 	al->numeric = b642int(numeric);
 	al->tipo = TSERVIDOR;
 	al->trio = strdup(numeric);
-	InsertaClienteEnNumerico(al, numeric, uTab);
+	InsertaClienteEnNumerico(al, numeric, tTab);
 	if (!cl) /* primer link */
 	{
 		linkado = al;
@@ -1174,6 +1175,7 @@ IRCFUNC(sincroniza)
 {
 	tburst = microtime();
 	Senyal(SIGN_SYNCH);
+	EnviaAServidor("%s %s", me.trio, TOK_EOB);
 	return 0;
 }
 IRCFUNC(m_burst)

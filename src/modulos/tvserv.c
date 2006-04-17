@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.13 2006-03-05 19:04:20 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,19 +9,13 @@
 
 TvServ *tvserv = NULL;
 
-SOCKFUNC(TSAbreProg);
-SOCKFUNC(TSLeeProg);
-SOCKFUNC(TSCierraProg);
-SOCKFUNC(TSAbreHoroscopo);
+SOCKFUNC(TSAbreDataSock);
+SOCKFUNC(TSCierraDataSock);
+SOCKFUNC(TSLeeTv);
 SOCKFUNC(TSLeeHoroscopo);
-SOCKFUNC(TSCierraHoroscopo);
-SOCKFUNC(TSAbreTiempo);
 SOCKFUNC(TSLeeTiempo);
-SOCKFUNC(TSCierraTiempo);
-SOCKFUNC(TSAbreCine);
 SOCKFUNC(TSLeeCine);
 SOCKFUNC(TSLeePeli);
-SOCKFUNC(TSAbreLiga);
 SOCKFUNC(TSLeeLiga);
 BOTFUNC(TSTv);
 BOTFUNCHELP(TSHTv);
@@ -37,11 +31,8 @@ BOTFUNCHELP(TSHPelis);
 BOTFUNC(TSLiga);
 BOTFUNCHELP(TSHLiga);
 
-int hora = 6;
-Sock *prog = NULL, *hor = NULL;
-Cadena *viendo = NULL;
-int horosc = 1;
 DataSock *cola[MAX_COLA];
+int hora = 6;
 
 static bCom tvserv_coms[] = {
 	{ "help" , TSHelp , N1 , "Muestra esta ayuda." , NULL } ,
@@ -66,7 +57,7 @@ ModInfo MOD_INFO(TvServ) = {
 	"TvServ" ,
 	0.3 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 
 Cadena cadenas[] = {
@@ -75,6 +66,7 @@ Cadena cadenas[] = {
 	{ "T5" , "Tele+5" , 'n' } ,
 	{ "Cuatro" , "Cuatro" , 'n' } ,
 	{ "A3" , "Antena+3" , 'n' } ,
+	{ "LaSexta" , "La+Sexta" , 'n' } ,
 	{ "Canal2" , "Canal+2" , 'a' } ,
 	{ "Canal9" , "Canal+9" , 'a' } ,
 	{ "TV3" , "TV3" , 'a' } ,
@@ -322,26 +314,25 @@ int BorraCola(Sock *sck)
 	}
 	return 0;
 }
-
-Cadena *TSBuscaCadena(char *nombre)
+int TSBuscaCadena(char *nombre)
 {
 	int i;
 	for (i = 0; cadenas[i].nombre; i++)
 	{
 		if (!strcasecmp(nombre, cadenas[i].nombre))
-			return &cadenas[i];
+			return i;
 	}
-	return NULL;
+	return -1;
 }
-char *TSBuscaHoroscopo(char *horo)
+int TSBuscaHoroscopo(char *horo)
 {
 	int i;
 	for (i = 0; horoscopos[i]; i++)
 	{
 		if (!strcasecmp(horoscopos[i], horo))
-			return horoscopos[i];
+			return i+1;
 	}
-	return NULL;
+	return 0;
 }
 int MOD_CARGA(TvServ)(Modulo *mod)
 {
@@ -382,10 +373,6 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 int MOD_DESCARGA(TvServ)()
 {
 	int i;
-	if (prog)
-		SockClose(prog, LOCAL);
-	if (hor)
-		SockClose(hor, LOCAL);
 	for (i = 0; i < MAX_COLA; i++)
 	{
 		if (cola[i])
@@ -409,9 +396,6 @@ int TSTest(Conf *config, int *errores)
 void TSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
-	struct tm *tmptr;
-	time_t ts;
-	int pts = 0;
 	if (!tvserv)
 		BMalloc(tvserv, TvServ);
 	if (config)
@@ -435,14 +419,6 @@ void TSSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, tvserv_coms);
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
-	ts = time(0);
-	tmptr = localtime(&ts);
-	if (tmptr->tm_hour < hora)
-		pts += ((hora - 1) - tmptr->tm_hour) * 3600;
-	else
-		pts += (23 - tmptr->tm_hour) * 3600 + 3600 * hora;
-	pts += (60 - tmptr->tm_min) * 60;
-	IniciaCrono("actualiza_tvserv", SockIrcd, 1, pts, ActualizaTvServ, NULL, 0);
 	bzero(cola, sizeof(DataSock) * MAX_COLA);
 	BotSet(tvserv);
 }
@@ -513,6 +489,11 @@ char *TSQuitaTags(char *str, char *dest)
 			*dest++ = '\'';
 			c++;
 		}
+		else if (*c == '%')
+		{
+			*dest++ = '%';
+			*dest++ = *c++;
+		}
 		else
 			*dest++ = *c++;
 	}
@@ -529,66 +510,78 @@ char *TSFecha(time_t ts)
     	//ircsprintf(TSFecha, "%.2d/%.2d/%.2d %.2d:%.2d:%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100, timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
     	return TSFecha;
 }
-void TSActualizaProg()
-{
-	static int i = 0;
-	if (prog)
-		return;
-	if (!i)
-		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_TV);
-	if (cadenas[i].nombre)
-	{
-		viendo = &cadenas[i];
-		if (!(prog = SockOpen("www.teletexto.com", 80, TSAbreProg, TSLeeProg, NULL, TSCierraProg, ADD)))
-			return;
-		i++;
-	}
-	else
-		i = 0;
-}
-void TSActualizaHoroscopo()
-{
-	static int i = 1;
-	if (hor)
-		return;
-	if (i == 1)
-		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_HO);
-	if (i <= 12)
-	{
-		horosc = i++;
-		if (!(hor = SockOpen("www.teletexto.com", 80, TSAbreHoroscopo, TSLeeHoroscopo, NULL, TSCierraHoroscopo, ADD)))
-			return;
-	}
-	else
-	{
-		hor = SockOpen("www.teletexto.com", 80, TSAbreLiga, TSLeeLiga, NULL, NULL, ADD);
-		i = 1;
-	}
-}
 BOTFUNC(TSTv)
 {
+	int cdn;
 	SQLRes res;
-	SQLRow row;
 	char *tsf = TSFecha(time(NULL));
 	if (params < 2)
 	{
-		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TV cadena");
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, fc->com, "cadena");
 		return 1;
 	}
-	if (!TSBuscaCadena(param[1]))
+	if ((cdn = TSBuscaCadena(param[1])) < 0)
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta cadena no existe");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_TV, tsf, strtolower(param[1]))))
+	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_TV, tsf, strtolower(cadenas[cdn].nombre))))
 	{
-		TSActualizaProg();
-		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
+		DataSock *dts;
+		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_TV);
+		ircsprintf(buf, "/teletexto.asp?programacion=%s&tv=%c", cadenas[cdn].texto, cadenas[cdn].tipo);
+		if ((dts = InsertaCola(buf, cdn, cl)))
+			dts->sck = SockOpen("www.teletexto.com", 80, TSAbreDataSock, TSLeeTv, NULL, TSCierraDataSock);
+		else
+		{
+			Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
+			return 1;
+		}
+	}
+	else
+	{
+		SQLRow row;
+		Responde(cl, CLI(tvserv), "\00312%s\003 (%s)", param[1], tsf);
+		while ((row = SQLFetchRow(res)))
+			Responde(cl, CLI(tvserv), row[0]);
+	}
+	return 0;
+}
+BOTFUNC(TSHoroscopo)
+{
+	SQLRes res;
+	SQLRow row;
+	char *tsf = TSFecha(time(NULL));
+	int h;
+	if (params < 2)
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, fc->com, "signo");
 		return 1;
 	}
-	Responde(cl, CLI(tvserv), "\00312%s\003 (%s)", param[1], tsf);
-	while ((row = SQLFetchRow(res)))
-		Responde(cl, CLI(tvserv), row[0]);
+	if (!(h = TSBuscaHoroscopo(param[1])))
+	{
+		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este horóscopo no existe");
+		return 1;
+	}
+	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_HO, tsf, strtolower(param[1]))))
+	{
+		DataSock *dts;
+		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_HO);
+		ircsprintf(buf, "/teletexto.asp?horoscopo=%i", h);
+		if ((dts = InsertaCola(buf, h, cl)))
+			dts->sck = SockOpen("www.teletexto.com", 80, TSAbreDataSock, TSLeeHoroscopo, NULL, TSCierraDataSock);
+		else
+		{
+			Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
+			return 1;
+		}
+	}
+	else
+	{
+		Responde(cl, CLI(tvserv), "\00312%s\003 (%s)", param[1], tsf);
+		while ((row = SQLFetchRow(res)))
+			Responde(cl, CLI(tvserv), row[0]);
+	}
 	return 0;
 }
 BOTFUNC(TSTiempo)
@@ -598,7 +591,7 @@ BOTFUNC(TSTiempo)
 	int n;
 	if (params < 2)
 	{
-		Responde(cl, CLI(tvserv), TS_ERR_PARA, "TIEMPO [nº] pueblo");
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, fc->com, "[nº] pueblo");
 		return 1;
 	}
 	if (CogeCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, tvserv->hmod->id))
@@ -670,7 +663,7 @@ BOTFUNC(TSTiempo)
 	//strncpy(provincia, str_replace(p, 'ñ', 'n'), sizeof(provincia));
 	ircsprintf(buf, "/buscar.php?criterio=%s", pueblo);
 	if ((dts = InsertaCola(buf, n, cl)))
-		dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreTiempo, TSLeeTiempo, NULL, TSCierraTiempo, ADD);
+		dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 	else
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
@@ -685,7 +678,7 @@ BOTFUNC(TSCine)
 	DataSock *dts;
 	if (params < 2)
 	{
-		Responde(cl, CLI(tvserv), TS_ERR_PARA, "CINE [nº] pueblo");
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, fc->com, "[nº] pueblo");
 		return 1;
 	}
 	if (CogeCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, tvserv->hmod->id))
@@ -723,7 +716,7 @@ BOTFUNC(TSCine)
 	strncpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
 	ircsprintf(buf, "/cartelera/?provincia=%i&buscar=&municipio=%s", i, prids[i-1][j]);
 	if ((dts = InsertaCola(buf, n, cl)))
-		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraTiempo, ADD);
+		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeeCine, NULL, TSCierraDataSock);
 	else
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
@@ -759,7 +752,7 @@ BOTFUNC(TSPelis)
 		n = -1;
 	}
 	if ((dts = InsertaCola(buf, n, cl)))
-		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeePeli, NULL, TSCierraTiempo, ADD);
+		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeePeli, NULL, TSCierraDataSock);
 	else
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está ocupado. Pruebe dentro de unos segundos");
@@ -774,7 +767,7 @@ BOTFUNC(TSLiga)
 	int i;
 	if (params < 2)
 	{
-		Responde(cl, CLI(tvserv), TS_ERR_PARA, "LIGA {1a|2a}");
+		Responde(cl, CLI(tvserv), TS_ERR_PARA, fc->com, "{1a|2a}");
 		return 1;
 	}
 	if (strcasecmp(param[1], "1a") && strcasecmp(param[1], "2a"))
@@ -782,17 +775,20 @@ BOTFUNC(TSLiga)
 		Responde(cl, CLI(tvserv), TS_ERR_SNTX, "Sólo se aceptan 1a y 2a división");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT * from %s%s where division='%c'", PREFIJO, TS_LI, *param[1])))
+	if (!(res = SQLQuery("SELECT * from %s%s where division='%c' AND fecha='%s'", PREFIJO, TS_LI, *param[1], TSFecha(time(0)))))
 	{
 		DataSock *dts;
-		if ((dts = InsertaCola("/edicion/marca/futbol/1a_division/es/index.html", 1, cl)))
-			dts->sck = SockOpen("www.marca.com", 80, TSAbreLiga, TSLeeLiga, NULL, TSCierraTiempo, ADD);
-		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
-		return 1;
+		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_LI);
+		ircsprintf(buf, "/edicion/marca/futbol/%ca_division/es/index.html", *param[1]);
+		if ((dts = InsertaCola(buf, 1, cl)))
+			dts->sck = SockOpen("www.marca.com", 80, TSAbreDataSock, TSLeeLiga, NULL, TSCierraDataSock);
 	}
-	Responde(cl, CLI(tvserv), "Clasificación de la Liga \00312%s\003 división", param[1]);
-	for (i = 1; (row = SQLFetchRow(res)); i++)
-		Responde(cl, CLI(tvserv), "\00312%i\003 %s - %s", i, row[1], row[2]);
+	else
+	{
+		Responde(cl, CLI(tvserv), "Clasificación de la Liga \00312%ca\003 división", *param[1]);
+		for (i = 1; (row = SQLFetchRow(res)); i++)
+			Responde(cl, CLI(tvserv), "\00312%i\003 %s - %s", i, row[0], row[2]);
+	}
 	return 0;
 }
 BOTFUNCHELP(TSHTv)
@@ -849,6 +845,9 @@ BOTFUNCHELP(TSHPelis)
 }
 BOTFUNCHELP(TSHLiga)
 {
+	Responde(cl, CLI(tvserv), "Muestra la clasificación de la Liga española de fútbol, de primera y segunda división.");
+	Responde(cl, CLI(tvserv), " ");
+	Responde(cl, CLI(tvserv), "Sintaxis: \00312LIGA {1a|2a}");
 	return 0;
 }
 BOTFUNC(TSHelp)
@@ -867,44 +866,29 @@ BOTFUNC(TSHelp)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
-BOTFUNC(TSHoroscopo)
+SOCKFUNC(TSAbreDataSock)
 {
-	SQLRes res;
-	SQLRow row;
-	char *h, *tsf = TSFecha(time(NULL));
-	if (params < 2)
-	{
-		Responde(cl, CLI(tvserv), TS_ERR_PARA, "HOROSCOPO signo");
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
 		return 1;
-	}
-	if (!(h = TSBuscaHoroscopo(param[1])))
-	{
-		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este horóscopo no existe");
-		return 1;
-	}
-	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_HO, tsf, strtolower(param[1]))))
-	{
-		TSActualizaHoroscopo();
-		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "El servicio está siendo actualizado. Inténtelo dentro de unos minutos");
-		return 1;
-	}
-	Responde(cl, CLI(tvserv), "\00312%s\003 (%s)", h, tsf);
-	while ((row = SQLFetchRow(res)))
-		Responde(cl, CLI(tvserv), row[0]);
+	SockWrite(sck, "GET %s HTTP/1.1", dts->query);
+	SockWrite(sck, "Accept: */*");
+	SockWrite(sck, "Host: %s", sck->host);
+	SockWrite(sck, "Connection: close");
+	SockWrite(sck, "");
 	return 0;
 }
-SOCKFUNC(TSAbreProg)
+SOCKFUNC(TSCierraDataSock)
 {
-	SockWrite(prog, OPT_CRLF, "GET /teletexto.asp?c=%s&p=%c&f=%s HTTP/1.1", viendo->texto, viendo->tipo, TSFecha(time(NULL)));
-	SockWrite(prog, OPT_CRLF, "Accept: */*");
-	SockWrite(prog, OPT_CRLF, "Host: www.teletexto.com");
-	SockWrite(prog, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(prog, OPT_CRLF, "");
+	BorraCola(sck);
 	return 0;
 }
-SOCKFUNC(TSLeeProg)
+SOCKFUNC(TSLeeTv)
 {
-	static char imp = 0, txt[BUFSIZE];
+	static char imp = 0, txt[BUFSIZE], *tsf;
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
 	if (!imp && !strncmp("<td width=12", data, 12))
 	{
 		imp = 1;
@@ -912,11 +896,17 @@ SOCKFUNC(TSLeeProg)
 	}
 	else if (imp && !strcmp(data, "\t"))
 	{
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, cadenas[dts->numero].nombre, tsf, txt[0] == ' ' ? &txt[1] : &txt[0]);
+		Responde(dts->cl, CLI(tvserv), txt[0] == ' ' ? &txt[1] : &txt[0]);
 		imp = 0;
-		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, viendo->nombre, TSFecha(time(NULL)), txt[0] == ' ' ? &txt[1] : &txt[0]);
 	}
 	else if (strstr(data, "</html>"))
-		SockClose(prog, LOCAL);
+		SockClose(sck, LOCAL);
+	else if (!strncmp(data, "HTTP/", 5))
+	{
+		tsf = TSFecha(time(0));
+		Responde(dts->cl, CLI(tvserv), "\00312%s\003 (%s)", cadenas[dts->numero].nombre, tsf);
+	}
 	if (imp)
 	{
 		if (strstr(data, "bgcolor=#C9E7F8") || strstr(data, "bgcolor=#EBF5FC"))
@@ -927,26 +917,14 @@ SOCKFUNC(TSLeeProg)
 	}
 	return 0;
 }
-SOCKFUNC(TSCierraProg)
-{
-	prog = NULL;
-	TSActualizaProg();
-	return 0;
-}
-SOCKFUNC(TSAbreHoroscopo)
-{
-	SockWrite(hor, OPT_CRLF, "GET /teletexto.asp?horoscopo=%i HTTP/1.1", horosc);
-	SockWrite(hor, OPT_CRLF, "Accept: */*");
-	SockWrite(hor, OPT_CRLF, "Host: www.teletexto.com");
-	SockWrite(hor, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(hor, OPT_CRLF, "");
-	return 0;
-}
 SOCKFUNC(TSLeeHoroscopo)
 {
-	static char txt[BUFSIZE], tmp[BUFSIZE];
-	char *c;
+	static char txt[BUFSIZE], tmp[BUFSIZE], *tsf;
 	static int salud = 0, dinero = 0, amor = 0, cat = 0;
+	DataSock *dts;
+	char *c;
+	if (!(dts = BuscaCola(sck)))
+		return 1;
 	if ((c = strstr(data, "d><f")))
 	{
 		txt[0] = '\0';
@@ -960,8 +938,9 @@ SOCKFUNC(TSLeeHoroscopo)
 		strcat(txt, tmp);
 		if (strstr(data, "</center>"))
 		{
+			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, txt);
+			Responde(dts->cl, CLI(tvserv), txt);
 			cat = 0;
-			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
 		}
 	}
 	else if (strstr(data, "dinero.gif"))
@@ -970,35 +949,22 @@ SOCKFUNC(TSLeeHoroscopo)
 		salud = StrCount(data, "salud.gif");
 	else if (strstr(data, "amor.gif"))
 		amor = StrCount(data, "amor.gif");
-	if (!strcmp(data, "</td></tr><tr><td>"))
+	else if (!strcmp(data, "</td></tr><tr><td>"))
 	{
 		ircsprintf(txt, "Salud: \00312%s\003 - Dinero: \00312", Repite('*', salud));
 		strcat(txt, Repite('*', dinero));
 		strcat(txt, "\003 - Amor: \00312");
 		strcat(txt, Repite('*', amor));
-		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[horosc-1], TSFecha(time(NULL)), txt);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, txt);
 		salud = dinero = amor = 0;
-		SockClose(hor, LOCAL);
+		SockClose(sck, LOCAL);
+		Responde(dts->cl, CLI(tvserv), txt);
 	}
-	return 0;
-}
-SOCKFUNC(TSCierraHoroscopo)
-{
-	hor = NULL;
-	TSActualizaHoroscopo();
-	return 0;
-}
-SOCKFUNC(TSAbreTiempo)
-{
-	DataSock *dts;
-	if (!(dts = BuscaCola(sck)))
-		return 1;
-	//SockWrite(sck, OPT_CRLF, "GET /prediccion_para-%s-Espana-Europa--1.html HTTP/1.1", tiempo.query);
-	SockWrite(sck, OPT_CRLF, "GET %s HTTP/1.1", dts->query);
-	SockWrite(sck, OPT_CRLF, "Accept: */*");
-	SockWrite(sck, OPT_CRLF, "Host: tiempo.meteored.com");
-	SockWrite(sck, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(sck, OPT_CRLF, "");
+	else if (!strncmp(data, "HTTP/", 5))
+	{
+		tsf = TSFecha(time(0));
+		Responde(dts->cl, CLI(tvserv), "\00312%s\003 (%s)", horoscopos[dts->numero - 1], tsf);
+	}
 	return 0;
 }
 SOCKFUNC(TSLeeTiempo)
@@ -1032,7 +998,7 @@ SOCKFUNC(TSLeeTiempo)
 				strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
 				SockClose(sck, LOCAL);	
 				if ((dts = InsertaCola(buf, 0, cl)))
-					dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreTiempo, TSLeeTiempo, NULL, TSCierraTiempo, ADD);
+					dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 			}
 		}
 		else if (regs > 1)
@@ -1075,7 +1041,7 @@ SOCKFUNC(TSLeeTiempo)
 							strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));	
 							SockClose(sck, LOCAL);	
 							if ((dts = InsertaCola(buf, 0, cl)))
-								dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreTiempo, TSLeeTiempo, NULL, TSCierraTiempo, ADD);
+								dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 						}
 						break;
 					}
@@ -1095,10 +1061,24 @@ SOCKFUNC(TSLeeTiempo)
 		sig = 1;
 	else if (sig)
 	{
-		char *tok;
-		TSQuitaTags(data, tmp);
-		for (tok = strtok(tmp, "."); tok; tok = strtok(NULL, "."))
-			Responde(cl, CLI(tvserv), "%s.", tok+1);
+		char *tok, *c;
+		for (tok = strstr(data, "<tr>"); tok; tok = strstr(tok, "<tr>"))
+		{
+			c = strstr(tok, "</tr>");
+			*c = '\0';
+			TSQuitaTags(tok, tmp);
+			Responde(cl, CLI(tvserv), tmp);
+			tok = c+1;
+			if (!strncmp(tok+12, "<font size", 10))
+			{
+				tok += 12;
+				c = strstr(tok, "</font");
+				*c = '\0';
+				TSQuitaTags(tok, tmp);
+				Responde(cl, CLI(tvserv), tmp);
+				tok = c+1;
+			}	
+		}
 		dia = sig = 0;
 		if (!IsOper(cl))
 			InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
@@ -1106,98 +1086,6 @@ SOCKFUNC(TSLeeTiempo)
 	}
 	return 0;
 }
-SOCKFUNC(TSCierraTiempo)
-{
-	BorraCola(sck);
-	return 0;
-}
-SOCKFUNC(TSAbreCine)
-{
-	DataSock *dts;
-	if (!(dts = BuscaCola(sck)))
-		return 1;
-	SockWrite(sck, OPT_CRLF, "GET %s HTTP/1.1", dts->query);
-	SockWrite(sck, OPT_CRLF, "Accept: */*");
-	SockWrite(sck, OPT_CRLF, "Host: www.elmundo.es");
-	SockWrite(sck, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(sck, OPT_CRLF, "");
-	return 0;
-}
-/*
-SOCKFUNC(TSLeeCine2)
-{
-	char tmp[SOCKBUF], *c, *d;
-	static int i = 1, m = 0;
-	Cliente *cl;
-	if (m)
-	{
-		if (!strncmp("<br><f", data, 6))
-		{
-			m = 0;
-			SockClose(sck, LOCAL);
-		}
-		else
-		{
-			TSQuitaTags(data, tmp);
-			if (tmp[0] != '\0')
-				Responde(cl, CLI(tvserv), tmp);
-		}
-	}
-	else if (!strncmp("Location:", data, 9))
-	{
-		SockClose(sck, LOCAL);
-		ircstrdup(cine.query, strchr(data, ' ')+1);
-		cine.cl = cl;
-		cin = SockOpen("www.terra.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraCine, ADD);
-	}
-	else if (!strncmp("	<b>", data, 4))
-	{
-		int regs = 0;
-		TSQuitaTags(data, tmp);
-		if (regs > 1)
-		{
-			if (!cine.numero)
-			{
-				sscanf(tmp, "Se han encontrado %i", &regs);
-				Responde(cl, CLI(tvserv), "Se han encontrado varias coincidencias. Use /msg %s CINE <nº> '%s'", CLI(tvserv)->nombre, "null");
-			}
-		}
-	}
-	else if (!strncmp("		<a", data, 4))
-	{
-		if (!cine.numero)
-		{
-			TSQuitaTags(data, tmp);
-			Responde(cl, CLI(tvserv), "\00312%i\003.- %s", i++, tmp);
-		}
-		else if (i++ == cine.numero)
-		{
-			c = strchr(data, '"')+1;
-			d = strchr(c, '"');
-			*d = '\0';
-			SockClose(sck, LOCAL);
-			ircstrdup(cine.query, c);
-			cine.cl = cl;
-			cin = SockOpen("www.terra.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraCine, ADD);
-		}
-	}
-	else if (!strncmp("              <tr", data, 17))
-		m = 1;
-	else if (!strncmp("		No", data, 4))
-	{
-		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "No se han encontrado coincidencias");
-		SockClose(sck, LOCAL);
-		return 1;
-	}
-	else if (strstr(data, "ca141x11"))
-	{
-		i = 1;
-		m = 0;
-		SockClose(sck, LOCAL);
-	}
-	return 0;
-}
-*/
 SOCKFUNC(TSLeeCine)
 {
 	static int m = 0, n = 0, i = 1;
@@ -1230,7 +1118,7 @@ SOCKFUNC(TSLeeCine)
 				*d = '\0';
 				SockClose(sck, LOCAL);
 				if ((dts = InsertaCola(c, 0, cl)))
-					dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeeCine, NULL, TSCierraTiempo, ADD);
+					dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeeCine, NULL, TSCierraDataSock);
 				m = 0;
 			}
 		}
@@ -1334,7 +1222,7 @@ SOCKFUNC(TSLeePeli)
 					*d = '\0';
 					SockClose(sck, LOCAL);
 					if ((dts = InsertaCola(c, 0, cl)))
-						dts->sck = SockOpen("www.elmundo.es", 80, TSAbreCine, TSLeePeli, NULL, TSCierraTiempo, ADD);
+						dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeePeli, NULL, TSCierraDataSock);
 					m = 0;
 					i = 1;
 				}
@@ -1387,23 +1275,11 @@ SOCKFUNC(TSLeePeli)
 	}
 	return 0;
 }
-SOCKFUNC(TSAbreLiga)
-{
-	DataSock *dts;
-	if (!(dts = BuscaCola(sck)))
-		return 1;
-	SockWrite(sck, OPT_CRLF, "GET %s HTTP/1.1", dts->query);
-	SockWrite(sck, OPT_CRLF, "Accept: */*");
-	SockWrite(sck, OPT_CRLF, "Host: www.marca.com");
-	SockWrite(sck, OPT_CRLF, "Connection: Keep-alive");
-	SockWrite(sck, OPT_CRLF, "");
-	return 0;
-}
 SOCKFUNC(TSLeeLiga)
 {
-	static int m = 0;
+	static int m = 0, j = 1;
 	int i;
-	static char tmp2[BUFSIZE], *c, *d, *e;
+	static char tmp2[BUFSIZE], *c, *d, *e, f, *tsf;
 	char tmp[SOCKBUF];
 	DataSock *dts;
 	if (!(dts = BuscaCola(sck)))
@@ -1420,17 +1296,13 @@ SOCKFUNC(TSLeeLiga)
 			*d++ = '\0';
 			e = strchr(d, '\t');
 			*e = '\0';
-			SQLInserta(TS_LI, c, "puntos", d);
-			SQLInserta(TS_LI, c, "division", "%i", dts->numero);
+			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s', %i)", PREFIJO, TS_LI, c, tsf, d, dts->numero);
+			Responde(dts->cl, CLI(tvserv), "\00312%i\003 %s - %s", j++, c, d);
 		}
 		else if (!strncmp(data, "<!-- ^", 6))
 		{
-			if (dts->numero++ < 2)
-			{
-				ircsprintf(buf, "/edicion/marca/futbol/%ia_division/es/index.html", dts->numero);
-				if ((dts = InsertaCola(buf, dts->numero, dts->cl)))
-					dts->sck = SockOpen("www.marca.com", 80, TSAbreLiga, TSLeeLiga, NULL, TSCierraTiempo, ADD);
-			}
+			m = 0;
+			j = 1;
 			SockClose(sck, LOCAL);
 		}
 		else
@@ -1448,6 +1320,11 @@ SOCKFUNC(TSLeeLiga)
 	{
 		tmp2[0] = '\0';
 		m = 1;
+	}
+	else if (!strncmp(data, "HTTP/", 5))
+	{
+		tsf = TSFecha(time(0));
+		Responde(dts->cl, CLI(tvserv), "Clasificación de la Liga \00312%ia\003 división", dts->numero);
 	}
 	return 0;
 }
@@ -1474,8 +1351,8 @@ int TSSigSQL()
 	if (!SQLEsTabla(TS_LI))
 	{
 		if (SQLQuery("CREATE TABLE %s%s ( "
-  			"n SERIAL, "
   			"item varchar(255) default NULL, "
+  			"fecha varchar(255) default NULL, "
   			"puntos int2 default '0', "
   			"division int2 default '0' "
 			");", PREFIJO, TS_LI))
@@ -1483,10 +1360,4 @@ int TSSigSQL()
 	}
 	SQLCargaTablas();
 	return 1;
-}
-int ActualizaTvServ()
-{
-	TSActualizaHoroscopo();
-	TSActualizaProg();
-	return 0;
 }

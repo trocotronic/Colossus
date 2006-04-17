@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.35 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.36 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -42,6 +42,8 @@ BOTFUNC(NSForbid);
 BOTFUNCHELP(NSHForbid);
 BOTFUNC(NSMarcas);
 BOTFUNCHELP(NSHMarcas);
+BOTFUNC(NSOptsNick);
+BOTFUNCHELP(NSHOptsNick);
 
 int NSSigSQL		();
 int NSCmdPreNick 	(Cliente *, char *);
@@ -55,6 +57,7 @@ int NSKillea		(char *);
 int NSDropanicks	(Proc *);
 
 int NSBaja(char *, char);
+int NickOpts(Cliente *, char *, char **, int, Funcion *);
 DLLFUNC void NSCambiaInv(Cliente *);
 
 void NSSet(Conf *, Modulo *);
@@ -78,13 +81,14 @@ static bCom nickserv_coms[] = {
 	{ "rename" , NSRename , N3 , "Cambia el nick a un usuario." , NSHRename } ,
 	{ "forbid" , NSForbid , N4 , "Prohibe o permite un determinado nick." , NSHForbid } ,
 	{ "marca" , NSMarcas , N3 , "Lista o inserta una entrada en el historial de un nick." , NSHMarcas } ,
+	{ "setnick" , NSOptsNick , N3 , "Cambia las opciones de un nick." , NSHOptsNick } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 ModInfo MOD_INFO(NickServ) = {
 	"NickServ" ,
 	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 	
 int MOD_CARGA(NickServ)(Modulo *mod)
@@ -450,6 +454,14 @@ BOTFUNCHELP(NSHMarcas)
 	Responde(cl, CLI(nickserv), "Sintaxis: \00312MARCA [nick]");
 	return 0;
 }
+BOTFUNCHELP(NSHOptsNick)
+{
+	Responde(cl, CLI(nickserv), "Cambia las opciones de un nick.");
+	Responde(cl, CLI(nickserv), "Son las mismas opciones que puedes cambiarte tú pero lo haces a otro nick.");
+	Responde(cl, CLI(nickserv), " ");
+	Responde(cl, CLI(nickserv), "Sintaxis: \00312SETNICK nick opcion valor");
+	return 0;
+}
 BOTFUNC(NSHelp)
 {
 	if (params < 2)
@@ -483,9 +495,9 @@ BOTFUNC(NSRegister)
 	if (params < ((nickserv->opts & NS_SMAIL) ? 2 : 3))
 	{
 		if (nickserv->opts & NS_SMAIL)
-			Responde(cl, CLI(nickserv), NS_ERR_PARA, "REGISTER tu@email");
+			Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tu@email");
 		else
-			Responde(cl, CLI(nickserv), NS_ERR_PARA, "REGISTER tupass tu@email");
+			Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tupass tu@email");
 		return 1;
 	}
 	if (CogeCache(CACHE_ULTIMO_REG, usermask, nickserv->hmod->id))
@@ -559,7 +571,7 @@ BOTFUNC(NSIdentify)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "IDENTIFY tupass");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tupass");
 		return 1;
 	}
 	if (!IsReg(cl->nombre))
@@ -609,129 +621,21 @@ BOTFUNC(NSIdentify)
 }
 BOTFUNC(NSOpts)
 {
+	int ret;
 	if (params < 3)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "SET opción valor");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "opción valor");
 		return 1;
 	}
-	if (!strcasecmp(param[1], "EMAIL"))
-	{
-		SQLInserta(NS_SQL, cl->nombre, "email", param[2]);
-		ircsprintf(buf, "Nuevo email: %s", param[2]);
-		NSMarca(cl, param[1], buf);
-		Responde(cl, CLI(nickserv), "Tu email se ha cambiado a \00312%s\003.", param[2]);
-	}
-	else if (!strcasecmp(param[1], "URL"))
-	{
-		SQLInserta(NS_SQL, cl->nombre, "url", param[2]);
-		Responde(cl, CLI(nickserv), "Tu url se ha cambiado a \00312%s\003.", param[2]);
-	}
-	else if (!strcasecmp(param[1], "KILL"))
-	{
-		if (atoi(param[2]) < 10 && strcasecmp(param[2], "OFF"))
-		{
-			Responde(cl, CLI(nickserv), NS_ERR_SNTX, "El valor kill debe ser un número mayor que 10.");
-			return 1;
-		}
-		SQLInserta(NS_SQL, cl->nombre, "killtime", param[2]);
-		Responde(cl, CLI(nickserv), "Tu kill se ha cambiado a \00312%s\003.", param[2]);
-	}
-	else if (!strcasecmp(param[1], "NODROP"))
-	{
-		if (IsOper(cl))
-		{
-			int opts = atoi(SQLCogeRegistro(NS_SQL, cl->nombre, "opts"));
-			if (!strcasecmp(param[2], "ON"))
-				opts |= NS_OPT_NODROP;
-			else
-				opts &= ~NS_OPT_NODROP;
-			SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
-			Responde(cl, CLI(nickserv), "El DROP de tu nick se ha cambiado a \00312%s\003.", param[2]);
-		}
-		else
-		{
-			Responde(cl, CLI(nickserv), NS_ERR_FORB);
-			return 1;
-		}
-	}
-	else if (!strcasecmp(param[1], "PASS"))
-	{
-		char *passmd5 = MDString(param[2]);
-		SQLInserta(NS_SQL, cl->nombre, "pass", passmd5);
-		NSMarca(cl, param[1], "Contraseña cambiada.");
-		Responde(cl, CLI(nickserv), "Tu contraseña se ha cambiado con éxito.");
-	}
-	else if (!strcasecmp(param[1], "HIDE"))
-	{
-		int opts = atoi(SQLCogeRegistro(NS_SQL, cl->nombre, "opts"));
-		if (params < 4)
-		{
-			Responde(cl, CLI(nickserv), NS_ERR_PARA, "SET HIDE valor on|off");
-			return 1;
-		}
-		if (!strcasecmp(param[2], "EMAIL"))
-		{
-			if (!strcasecmp(param[3], "ON"))
-				opts |= NS_OPT_MAIL;
-			else
-				opts &= ~NS_OPT_MAIL;
-		}
-		else if (!strcasecmp(param[2], "URL"))
-		{
-			if (!strcasecmp(param[3], "ON"))
-				opts |= NS_OPT_WEB;
-			else
-				opts &= ~NS_OPT_WEB;
-		}
-		else if (!strcasecmp(param[2], "MASK"))
-		{
-			if (!strcasecmp(param[3], "ON"))
-				opts |= NS_OPT_MASK;
-			else
-				opts &= ~NS_OPT_MASK;
-		}
-		else if (!strcasecmp(param[2], "TIME"))
-		{
-			if (!strcasecmp(param[3], "ON"))
-				opts |= NS_OPT_TIME;
-			else
-				opts &= ~NS_OPT_TIME;
-		}
-		else if (!strcasecmp(param[2], "QUIT"))
-		{
-			if (!strcasecmp(param[3], "ON"))
-				opts |= NS_OPT_QUIT;
-			else
-				opts &= ~NS_OPT_QUIT;
-		}
-		else if (!strcasecmp(param[2], "LIST"))
-		{
-			if (!strcasecmp(param[3], "ON"))
-				opts |= NS_OPT_LIST;
-			else
-				opts &= ~NS_OPT_LIST;
-		}
-		else
-		{
-			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
-			return 1;
-		}
-		SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
-		Responde(cl, CLI(nickserv), "Hide %s cambiado a \00312%s\003.", param[2], param[3]);
-	}
-	else
-	{
-		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
-		return 1;
-	}
+	ret = NickOpts(cl, cl->nombre, param, params, fc);
 	EOI(nickserv, 3);
-	return 0;
+	return ret;
 }
 BOTFUNC(NSDrop)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "DROP nick");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -768,7 +672,7 @@ BOTFUNC(NSSendpass)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "SENDPASS nick");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -791,7 +695,7 @@ BOTFUNC(NSInfo)
 	int opts;
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "INFO nick");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -831,6 +735,8 @@ BOTFUNC(NSInfo)
 		Responde(cl, CLI(nickserv), "Url: \00312%s", row[8]);
 	if (atoi(row[9]))
 		Responde(cl, CLI(nickserv), "Protección kill a \00312%i\003 segundos.", atoi(row[9]));
+	if (opts & NS_OPT_NODROP)
+		Responde(cl, CLI(nickserv), "Este nick no caduca.");
 	EOI(nickserv, 6);
 	SQLFreeRes(res);
 	if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
@@ -872,7 +778,7 @@ BOTFUNC(NSList)
 	u_int i;
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "LIST patrón");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "patrón");
 		return 1;
 	}
 	rep = str_replace(param[1], '*', '%');
@@ -899,7 +805,7 @@ BOTFUNC(NSGhost)
 	Cliente *al;
 	if (params < 3)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "GHOST nick pass");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick pass");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -935,7 +841,7 @@ BOTFUNC(NSSuspender)
 	char *motivo;
 	if (params < 3)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "SUSPENDER nick motivo");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick motivo");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -955,7 +861,7 @@ BOTFUNC(NSLiberar)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "LIBERAR nick");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -983,7 +889,7 @@ BOTFUNC(NSSwhois)
 	}
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "SWHOIS nick [swhois]");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [swhois]");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -1019,7 +925,7 @@ BOTFUNC(NSRename)
 	}
 	if (params < 3)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "RENAME nick nuevonick");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick nuevonick");
 		return 1;
 	}
 	if ((al = BuscaCliente(param[2], NULL)))
@@ -1041,7 +947,7 @@ BOTFUNC(NSForbid)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "FORBID nick [motivo]");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [motivo]");
 		return 1;
 	}
 	if (params >= 3)
@@ -1075,7 +981,7 @@ BOTFUNC(NSMarcas)
 	char *marcas;
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "MARCA nick [comentario]");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [comentario]");
 		return 1;
 	}
 	if (!IsReg(param[1]))
@@ -1105,7 +1011,28 @@ BOTFUNC(NSMarcas)
 	}
 	EOI(nickserv, 14);
 	return 0;
-}		
+}
+BOTFUNC(NSOptsNick)
+{
+	char *aparam[256];
+	int i, ret;
+	if (params < 3)
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick opción valor");
+		return 1;
+	}
+	if (!IsReg(param[1]))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_NURG);
+		return 1;
+	}
+	aparam[0] = param[0];
+	for (i = 1; i < params; i++)
+		aparam[i] = param[i+1];
+	ret = NickOpts(cl, param[1], aparam, params-1, fc);
+	EOI(nickserv, 15);
+	return ret;
+}	
 int NSCmdUmode(Cliente *cl, char *modos)
 {
 	//if (conf_set->modos && conf_set->modos->usuarios)
@@ -1279,5 +1206,138 @@ int NSDropanicks(Proc *proc)
 int NSSigStartUp()
 {
 	modreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
+	return 0;
+}
+int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
+{
+	int dif = strcasecmp(nick, cl->nombre);
+	Cliente *al;
+	if (!strcasecmp(param[1], "EMAIL"))
+	{
+		SQLInserta(NS_SQL, nick, "email", param[2]);
+		ircsprintf(buf, "Nuevo email: %s", param[2]);
+		NSMarca(cl, nick, buf);
+		if (dif)
+			Responde(cl, CLI(nickserv), "El email de %s se ha cambiado a \00312%s\003.", nick, param[2]);
+		else
+			Responde(cl, CLI(nickserv), "Tu email se ha cambiado a \00312%s\003.", param[2]);
+	}
+	else if (!strcasecmp(param[1], "URL"))
+	{
+		SQLInserta(NS_SQL, nick, "url", param[2]);
+		if (dif)
+			Responde(cl, CLI(nickserv), "La url de %s se ha cambiado a \00312%s\003.", nick, param[2]);
+		else
+			Responde(cl, CLI(nickserv), "Tu url se ha cambiado a \00312%s\003.", param[2]);
+	}
+	else if (!strcasecmp(param[1], "KILL"))
+	{
+		if (atoi(param[2]) < 10 && strcasecmp(param[2], "OFF"))
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_SNTX, "El valor kill debe ser un número mayor que 10.");
+			return 1;
+		}
+		SQLInserta(NS_SQL, nick, "killtime", param[2]);
+		if (dif)
+			Responde(cl, CLI(nickserv), "El kill de %s se ha cambiado a \00312%s\003.", nick, param[2]);
+		else
+			Responde(cl, CLI(nickserv), "Tu kill se ha cambiado a \00312%s\003.", param[2]);
+	}
+	else if (!strcasecmp(param[1], "NODROP"))
+	{
+		if (IsOper(cl))
+		{
+			int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
+			if (!strcasecmp(param[2], "ON"))
+				opts |= NS_OPT_NODROP;
+			else
+				opts &= ~NS_OPT_NODROP;
+			SQLInserta(NS_SQL, nick, "opts", "%i", opts);
+			if (dif)
+				Responde(cl, CLI(nickserv), "El DROP de %s se ha cambiado a \00312%s\003.", nick, param[2]);
+			else
+				Responde(cl, CLI(nickserv), "El DROP de tu nick se ha cambiado a \00312%s\003.", param[2]);
+		}
+		else
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_FORB);
+			return 1;
+		}
+	}
+	else if (!strcasecmp(param[1], "PASS"))
+	{
+		char *passmd5 = MDString(param[2]);
+		SQLInserta(NS_SQL, nick, "pass", passmd5);
+		NSMarca(cl, nick, "Contraseña cambiada.");
+		if (nick)
+			Responde(cl, CLI(nickserv), "La contraseña de %s se ha cambiado con éxito.", nick);
+		else
+			Responde(cl, CLI(nickserv), "Tu contraseña se ha cambiado con éxito.");
+	}
+	else if (!strcasecmp(param[1], "HIDE"))
+	{
+		int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
+		if (params < 4)
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "HIDE valor on|off");
+			return 1;
+		}
+		if (!strcasecmp(param[2], "EMAIL"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_MAIL;
+			else
+				opts &= ~NS_OPT_MAIL;
+		}
+		else if (!strcasecmp(param[2], "URL"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_WEB;
+			else
+				opts &= ~NS_OPT_WEB;
+		}
+		else if (!strcasecmp(param[2], "MASK"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_MASK;
+			else
+				opts &= ~NS_OPT_MASK;
+		}
+		else if (!strcasecmp(param[2], "TIME"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_TIME;
+			else
+				opts &= ~NS_OPT_TIME;
+		}
+		else if (!strcasecmp(param[2], "QUIT"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_QUIT;
+			else
+				opts &= ~NS_OPT_QUIT;
+		}
+		else if (!strcasecmp(param[2], "LIST"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_LIST;
+			else
+				opts &= ~NS_OPT_LIST;
+		}
+		else
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
+			return 1;
+		}
+		SQLInserta(NS_SQL, nick, "opts", "%i", opts);
+		Responde(cl, CLI(nickserv), "Hide %s cambiado a \00312%s\003.", param[2], param[3]);
+	}
+	else
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
+		return 1;
+	}
+	if ((al = BuscaCliente(nick, NULL)))
+		Responde(al, CLI(nickserv), "%s ha ejecutado \"\00312%s\003\" sobre ti.", cl->nombre, strtoupper(Unifica(param, params, 0, -1)));
 	return 0;
 }

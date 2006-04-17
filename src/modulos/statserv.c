@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.16 2005-09-14 14:45:07 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.17 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -52,7 +52,7 @@ ModInfo info = {
 	"StatServ" ,
 	0.2 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net" ,
+	"trocotronic@redyc.com" ,
 	"statserv.inc"
 };
 int carga(Modulo *mod)

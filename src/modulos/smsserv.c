@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.3 2006-03-05 19:04:20 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.4 2006-04-17 14:19:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,30 +12,80 @@ SmsServ *smsserv = NULL;
 
 SOCKFUNC(SmsAbre);
 SOCKFUNC(SmsLee);
+SOCKFUNC(SmsCierra);
+BOTFUNC(SSHelp);
 BOTFUNC(SSSend);
+BOTFUNCHELP(SSHSend);
 BOTFUNC(SSOpts);
+BOTFUNCHELP(SSHOpts);
 BOTFUNC(SSLista);
+BOTFUNCHELP(SSHLista);
+BOTFUNC(SSSaldo);
+BOTFUNCHELP(SSHSaldo);
 
 int SSSigSQL	();
 
 static bCom smsserv_coms[] = {
-	//{ "help" , TSHelp , N1 , "Muestra esta ayuda." , NULL } ,
-	{ "send" , SSSend , N1 , "Envía un SMS." , NULL } ,
-	{ "set" , SSOpts , N1 , "Fija distintas opciones." , NULL } ,
-	{ "lista" , SSLista , N1 , "Muestra tu lista VIP." , NULL } ,
+	{ "help" , SSHelp , N1 , "Muestra esta ayuda." , NULL } ,
+	{ "send" , SSSend , N1 , "Envía un SMS." , SSHSend } ,
+	{ "set" , SSOpts , N1 , "Fija distintas opciones." , SSHOpts } ,
+	{ "lista" , SSLista , N1 , "Muestra tu lista VIP." , SSHLista } ,
+	{ "saldo" , SSSaldo , N4 , "Informa de los créditos restantes." , SSHSaldo } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
 void SSSet(Conf *, Modulo *);
 int SSTest(Conf *, int *);
 
-Sms *cola[MAX_SMS];
+DataSock *cola[MAX_COLA];
+
+DataSock *BuscaCola(Sock *sck)
+{
+	int i;
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i] && cola[i]->sck == sck)
+			return cola[i];
+	}
+	return NULL;
+}
+DataSock *InsertaCola(char *query, int numero, Cliente *cl)
+{
+	int i;
+	for (i = 0; i < MAX_COLA && cola[i]; i++);
+	if (i < MAX_COLA)
+	{
+		DataSock *dts;
+		BMalloc(dts, DataSock);
+		if (query)
+			ircstrdup(dts->query, query);
+		dts->numero = numero;
+		dts->cl = cl;
+		cola[i] = dts;
+		return dts;
+	}
+	return NULL;
+}
+int BorraCola(Sock *sck)
+{
+	int i;
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i] && cola[i]->sck == sck)
+		{
+			ircfree(cola[i]->query);
+			ircfree(cola[i]);
+			return 1;
+		}
+	}
+	return 0;
+}
 
 ModInfo MOD_INFO(SmsServ) = {
 	"SmsServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 
 int MOD_CARGA(SmsServ)(Modulo *mod)
@@ -72,7 +122,6 @@ int MOD_CARGA(SmsServ)(Modulo *mod)
 	}
 	else
 		SSSet(NULL, mod);
-	bzero(cola, sizeof(Sms) * MAX_SMS);
 	return errores;
 }
 int MOD_DESCARGA(SmsServ)()
@@ -95,29 +144,16 @@ int SSTest(Conf *config, int *errores)
 			error_parcial++;
 		}
 	}
-	if (!(eval = BuscaEntrada(config, "login")))
+	if (!(eval = BuscaEntrada(config, "id")))
 	{
-		Error("[%s:%s] No se encuentra la directriz login.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz id.", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
 		if (BadPtr(eval->data))
 		{
-			Error("[%s:%s::%s::%i] La directriz login esta vacia.", config->archivo, config->item, eval->item, eval->linea);
-			error_parcial++;
-		}
-	}
-	if (!(eval = BuscaEntrada(config, "pass")))
-	{
-		Error("[%s:%s] No se encuentra la directriz pass.", config->archivo, config->item);
-		error_parcial++;
-	}
-	else
-	{
-		if (BadPtr(eval->data))
-		{
-			Error("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%s::%i] La directriz id esta vacia.", config->archivo, config->item, eval->item, eval->linea);
 			error_parcial++;
 		}
 	}
@@ -154,99 +190,155 @@ void SSSet(Conf *config, Modulo *mod)
 				smsserv->espera = atoi(config->seccion[i]->data) * 60;
 			else if (!strcmp(config->seccion[i]->item, "restringido"))
 				smsserv->restringido = 1;
-			else if (!strcmp(config->seccion[i]->item, "login"))
-				ircstrdup(smsserv->login, config->seccion[i]->data);
-			else if (!strcmp(config->seccion[i]->item, "pass"))
-				ircstrdup(smsserv->pass, config->seccion[i]->data);
+			else if (!strcmp(config->seccion[i]->item, "id"))
+				ircstrdup(smsserv->id, config->seccion[i]->data);
 		}
 	}
 	else
 		ProcesaComsMod(NULL, mod, smsserv_coms);
 	InsertaSenyal(SIGN_SQL, SSSigSQL);
+	bzero(cola, sizeof(DataSock) * MAX_COLA);
 	BotSet(smsserv);
 }
 SOCKFUNC(SmsAbre)
 {
-	int i;
-	for (i = 0; i < MAX_SMS; i++)
-	{
-		if (cola[i] && cola[i]->sck == sck)
-			break;
-	}
-	if (i == MAX_SMS) /* algo pasa */
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
 		return 1;
-	SockWrite(sck, OPT_CRLF, "GET /7.0/sms.php?login=%s&pass=%s&destino=%u&mensaje=%s HTTP/1.0", smsserv->login, smsserv->pass, cola[i]->numero, cola[i]->texto);
-	SockWrite(sck, OPT_CRLF, "Accept: */*");
-	SockWrite(sck, OPT_CRLF, "Host: intranet.rallados.net");
-	SockWrite(sck, OPT_CRLF, "");
+	SockWrite(sck, "POST /%s HTTP/1.1", dts->query);
+	SockWrite(sck, "Accept: */*");
+	SockWrite(sck, "Host: %s", sck->host);
+	SockWrite(sck, "Content-type: application/x-www-form-urlencoded");
+	SockWrite(sck, "Content-length: %u", strlen(dts->post));
+	SockWrite(sck, "Connection: close");
+	SockWrite(sck, "");
+	SockWrite(sck, dts->post);
+	return 0;
+}
+SOCKFUNC(SmsCierra)
+{
+	if (!data) /* remoto */
+		BorraCola(sck);
 	return 0;
 }
 SOCKFUNC(SmsLee)
 {
-	int i;
-	for (i = 0; i < MAX_SMS; i++)
-	{
-		if (cola[i] && cola[i]->sck == sck)
-			break;
-	}
-	if (i == MAX_SMS) /* algo pasa */
+	DataSock *dts;
+	if (!(dts = BuscaCola(sck)))
 		return 1;
 	if (*data == '#')
 	{
-		switch(atoi(data+1))
+		data++;
+		if (IsDigit(*data))
 		{
-			case -100:
-			case -101:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Falla configuración servidor SMS. Consulte con la administración (err: 1)");
-				break;
-			case -1:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Faltan datos");
-				break;
-			case -2:
-			case -3:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Esta red no permite enviar SMS");
-				break;
-			case -4:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Esta red se ha quedado sin créditos. Consulte con la administración (err: 4)");
-				break;
-			case -5:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Falla autentificación con el servidor SMS. Consulte con la administración (err: 5)");
-				break;
-			case -6:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Fallan créditos con el servidor SMS. Consulte con la administración (err: 6)");
-				break;
-			case -7:
-				Responde(cola[i]->cl, CLI(smsserv), SS_ERR_EMPT, "Falla la llamada. Consulte con la administración (err: 7)");
-				break;
-			default:
-				Responde(cola[i]->cl, CLI(smsserv), "Su mensaje se ha entregado con éxito");
+			switch(atoi(data))
+			{
+				case 100:
+				case 101:
+					Responde(dts->cl, CLI(smsserv), SS_ERR_EMPT, "Falla configuración servidor SMS. Consulte con la administración (err: 1)");
+					break;
+				case 1:
+					Responde(dts->cl, CLI(smsserv), SS_ERR_EMPT, "Faltan datos");
+					break;
+				case 2:
+					Responde(dts->cl, CLI(smsserv), SS_ERR_EMPT, "Esta red no permite enviar SMS");
+					break;
+				case 3:
+					Responde(dts->cl, CLI(smsserv), SS_ERR_EMPT, "Esta red se ha quedado sin créditos. Consulte con la administración (err: 3)");
+					break;
+				case 0:
+					Responde(dts->cl, CLI(smsserv), "Su mensaje se ha entregado con éxito");
+					break;
+				default:
+					ircsprintf(buf, "Error desconocido. Consulte con la administración (err: %i)", atoi(data));
+					Responde(dts->cl, CLI(smsserv), SS_ERR_EMPT, buf);
+			}
 		}
+		else if (!strncmp("Creds:", data, 6))
+			Responde(dts->cl, CLI(smsserv), "Esta red dispone de \00312%s\003 créditos restantes.", data+6);
+	}
+	else if (!strncmp(data, "Location:", 9))
+	{
+		char *c;
+		SockClose(sck, LOCAL);
+		if ((c = strchr(data+17, '/')))
+		{
+			*c = '\0';
+			ircstrdup(dts->query, c+1);
+		}
+		dts->sck = SockOpen(data+17, 80, SmsAbre, SmsLee, NULL, SmsCierra);
 	}
 	return 0;
 }
-Sms *CreaSms(int numero, char *texto, Cliente *cl)
+BOTFUNC(SSHelp)
 {
-	Sms *aux;
-	int i;
-	for (i = 0; i < MAX_SMS && cola[i]; i++);
-	if (i == MAX_SMS)
-		return NULL;
-	BMalloc(aux, Sms);
-	aux->numero = numero;
-	aux->texto = strdup(texto);
-	aux->cl = cl;
-	aux->sck = SockOpen("intranet.rallados.net", 80, SmsAbre, SmsLee, NULL, NULL, ADD);
-	cola[i] = aux;
-	return aux;
+	if (params < 2)
+	{
+		Responde(cl, CLI(smsserv), "\00312%s\003 permite enviar mensajes SMS a móviles.", smsserv->hmod->nick);
+		Responde(cl, CLI(smsserv), "También podrán enviarte mensajes sin que tú tengas que dar tu número de teléfono.");
+		Responde(cl, CLI(smsserv), "Tendrás a tu disposición una lista de accesos para que sólo los que tú decidas puedan escribirte o bien para "
+								"que ciertas personas no te molesten.");
+		Responde(cl, CLI(smsserv), " ");
+		Responde(cl, CLI(smsserv), "Servicios prestados:");
+		ListaDescrips(smsserv->hmod, cl);
+		Responde(cl, CLI(smsserv), " ");
+		Responde(cl, CLI(smsserv), "Para más información, \00312/msg %s %s comando", smsserv->hmod->nick, strtoupper(param[0]));
+	}
+	else if (!MuestraAyudaComando(cl, param[1], smsserv->hmod, param, params))
+		Responde(cl, CLI(smsserv), SS_ERR_EMPT, "Opción desconocida.");
+	return 0;
+}
+BOTFUNCHELP(SSHSend)
+{
+	Responde(cl, CLI(smsserv), "Te permite enviar un SMS a un móvil o usuario.");
+	Responde(cl, CLI(smsserv), "Si envías un mensaje a un usuario, éste tendrá que tener su número en esta base de datos y tú deberás figurar en "
+							"su lista de acceso.");
+	if (smsserv->restringido && !IsOper(cl))
+		Responde(cl, CLI(smsserv), "\002NOTA:\002 Esta red no permite el envío de mensajes directamente a números de teléfono, sólo a usuarios de la red.");
+	Responde(cl, CLI(smsserv), " ");
+	Responde(cl, CLI(smsserv), "Sintaxis: \00312SEND nº|nick mensaje");
+	return 0;
+}
+BOTFUNCHELP(SSHOpts)
+{
+	Responde(cl, CLI(smsserv), "Fija distintas opciones de configuración.");
+	Responde(cl, CLI(smsserv), " ");
+	Responde(cl, CLI(smsserv), "\00312NUMERO\003 Especifica tu número de móvil para que puedan enviarte SMS sin que tú tengas que dar tu número.");
+	Responde(cl, CLI(smsserv), "\00312LISTA\003 Fija la lista como excluyente o incluyente. Si está en IN sólo los nicks que figuren en tu lista podrán "
+							"enviarte mensajes. Si está en OUT, los nicks que figuren en tu lista no podrán escribirte.");
+	Responde(cl, CLI(smsserv), " ");
+	Responde(cl, CLI(smsserv), "Sintaxis: \00312SET numero|lista [valor]");
+	return 0;
+}
+BOTFUNCHELP(SSHLista)
+{
+	Responde(cl, CLI(smsserv), "Gestiona tu lista de acceso.");
+	Responde(cl, CLI(smsserv), "Esta lista sólo puede contener nicks registrados en la red.");
+	Responde(cl, CLI(smsserv), "Si tienes el parámetro SET LISTA en IN, sólo los usuarios que figuren en esta lista podrán enviarte SMS.");
+	Responde(cl, CLI(smsserv), "Si lo tienes en OUT, los usuarios que tengas en esta lista no podrán enviarte SMS.");
+	Responde(cl, CLI(smsserv), "Para listar los usuarios que tienes ingresados, ejecuta este comando sin parámetros.");
+	Responde(cl, CLI(smsserv), " ");
+	Responde(cl, CLI(smsserv), " ");
+	Responde(cl, CLI(smsserv), "Sintaxis: \00312LISTA");
+	Responde(cl, CLI(smsserv), "Sintaxis: \00312LISTA +nick");
+	Responde(cl, CLI(smsserv), "Sintaxis: \00312LISTA -nick");
+	return 0;
+}
+BOTFUNCHELP(SSHSaldo)
+{
+	Responde(cl, CLI(smsserv), "Te muestra los créditos restantes que le quedan a tu red.");
+	Responde(cl, CLI(smsserv), " ");
+	Responde(cl, CLI(smsserv), "Sintaxis: \00312SALDO");
+	return 0;
 }
 BOTFUNC(SSSend)
 {
-	int num;
-	u_int max;
+	u_int max, num;
 	char *texto, *usermask = strchr(cl->mask, '!') + 1;
+	DataSock *dts;
 	if (params < 3)
 	{
-		Responde(cl, CLI(smsserv), SS_ERR_PARA, "SEND nº|nick mensaje");
+		Responde(cl, CLI(smsserv), SS_ERR_PARA, fc->com, "nº|nick mensaje");
 		return 1;
 	}
 	if (CogeCache(CACHE_ULTIMO_SMS, usermask, smsserv->hmod->id))
@@ -298,12 +390,18 @@ BOTFUNC(SSSend)
 		strcat(texto, "+");
 		strcat(texto, smsserv->publi);
 	}
-	if (!CreaSms(num, texto, cl))
+	ircsprintf(buf, "userid=%s&destinos=%u&mensaje=%s", smsserv->id, num, texto);
+	if ((dts = InsertaCola("", 0, cl)))
+	{
+		ircstrdup(dts->post, buf);
+		dts->sck = SockOpen("sms.redyc.com", 80, SmsAbre, SmsLee, NULL, SmsCierra);
+	}
+	else
 	{
 		Responde(cl, CLI(smsserv), SS_ERR_EMPT, "No se puede enviar el sms. Pruebe más tarde.");
 		return 1;
 	}
-	Responde(cl, CLI(smsserv), "Tu mensaje ha sido puesto en cola");
+	Responde(cl, CLI(smsserv), "Tu mensaje ha sido puesto en cola.");
 	if (!IsOper(cl))
 		InsertaCache(CACHE_ULTIMO_SMS, usermask, 300, smsserv->hmod->id, "%lu", time(0));
 	return 0;
@@ -312,7 +410,7 @@ BOTFUNC(SSOpts)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(smsserv), SS_ERR_PARA, "SET opcion [valor]");
+		Responde(cl, CLI(smsserv), SS_ERR_PARA, fc->com, "opcion [valor]");
 		return 1;
 	}
 	if (!strcasecmp(param[1], "numero"))
@@ -339,7 +437,7 @@ BOTFUNC(SSOpts)
 		char *val;
 		if (params < 3 || (strcasecmp(param[2], "IN") && strcasecmp(param[2], "OUT")))
 		{
-			Responde(cl, CLI(smsserv), SS_ERR_SNTX, "SET lista IN|OUT");
+			Responde(cl, CLI(smsserv), SS_ERR_SNTX, "Opción desconocida. Sólo: IN|OUT");
 			return 1;
 		}
 		val = SQLCogeRegistro(SS_SQL, cl->nombre, "lista");
@@ -428,6 +526,23 @@ BOTFUNC(SSLista)
 			return 1;
 		}
 	}
+	return 0;
+}
+BOTFUNC(SSSaldo)
+{
+	DataSock *dts;
+	ircsprintf(buf, "userid=%s&cmd=_creditos", smsserv->id);
+	if ((dts = InsertaCola("", 0, cl)))
+	{
+		ircstrdup(dts->post, buf);
+		dts->sck = SockOpen("sms.redyc.com", 80, SmsAbre, SmsLee, NULL, SmsCierra);
+	}
+	else
+	{
+		Responde(cl, CLI(smsserv), SS_ERR_EMPT, "No se puede conectar con el servidor. Pruebe más tarde.");
+		return 1;
+	}
+	Responde(cl, CLI(smsserv), "Consultando petición. Aguarde...");
 	return 0;
 }
 int SSSigSQL()

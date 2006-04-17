@@ -113,10 +113,10 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 		BorraComando("SJOIN", sjoin);
 	}
 	InsertaComando("SJOIN", "~", m_sjoin_U, INI, MAXPARA);
-	InsertaSenyal(SIGN_SQL, (int(*)())CargaBloques);
+	InsertaSenyal(SIGN_SQL, CargaBloques);
 	InsertaSenyal(SIGN_EOS, SigEOS);
 	InsertaSenyal(SIGN_PRE_NICK, SigPreNick);
-	InsertaSenyal(SIGN_POST_NICK, SigPostNick_U);
+	InsertaSenyalEx(SIGN_POST_NICK, SigPostNick_U, INI);
 	InsertaSenyal(SIGN_SYNCH, SigSynch);
 	InsertaSenyal(SIGN_SOCKOPEN, SigSockOpen);
 	InsertaModoProtocolo('S', &UMODE_SUSPEND, protocolo->umodos);
@@ -154,6 +154,8 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 	BorraComando(MSG_EOS, m_eos_U);
 	BorraComando("SJOIN", m_sjoin_U);
 	InsertaComando("SJOIN", "~", sjoin, INI, MAXPARA);
+	BorraSenyal(SIGN_SQL, CargaBloques);
+	BorraSenyal(SIGN_EOS, SigEOS);
 	BorraSenyal(SIGN_PRE_NICK, SigPreNick);
 	BorraSenyal(SIGN_POST_NICK, SigPostNick_U);
 	BorraSenyal(SIGN_SYNCH, SigSynch);
@@ -366,10 +368,13 @@ IRCFUNC(m_dbq)
 	char *cur, *pos, *ds;
 	Udb *bloq;
 	pos = cur = strdup(parv[2]);
+	if (match(parv[1], me.nombre))
+		return 0;
 	if (!(bloq = IdAUdb(*pos)))
 	{
 		EnviaAServidor(":%s 339 %s :La base de datos %c no existe.", me.nombre, cl->nombre, *pos);
-		return 0;
+		Free(pos);
+		return 1;
 	}
 	if (parc == 3)
 		parv[1] = parv[2];
@@ -378,6 +383,7 @@ IRCFUNC(m_dbq)
 		if (*cur++ != ':' || *cur++ != ':' || *cur == '\0')
 		{
 			EnviaAServidor(":%s 339 %s :Formato de bloque incorrecto.", me.nombre, cl->nombre);
+			Free(pos);
 			return 1;
 		}
 		

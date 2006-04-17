@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.34 2006-03-05 18:44:28 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.35 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -31,7 +31,7 @@ Modulo *modulos;
 Cliente *linkado = NULL;
 int intentos = 0;
 Cliente *clientes = NULL;
-Canal *canales;
+Canal *canales = NULL;
 char **margv;
 Sock *SockIrcd = NULL, *IrcdEscucha = NULL;
 char reset = 0;
@@ -121,9 +121,9 @@ int BorraComando(char *cmd, IRCFUNC(*func))
 int AbreSockIrcd()
 {
 #ifdef USA_SSL
-	if (!(SockIrcd = SockOpen(conf_server->addr, (conf_ssl ? -1 : 1) * conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, ADD)))
+	if (!(SockIrcd = SockOpen(conf_server->addr, (conf_ssl ? -1 : 1) * conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd)))
 #else
-	if (!(SockIrcd = SockOpen(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, ADD)))
+	if (!(SockIrcd = SockOpen(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd)))
 #endif
 	{
 		Info("No puede conectar");
@@ -145,7 +145,7 @@ void EscuchaIrcd()
 		IrcdEscucha = SockListen(conf_server->escucha, EscuchaAbre, NULL, NULL, NULL);
 #ifdef USA_SSL
 		if (IrcdEscucha && conf_ssl)
-			IrcdEscucha->opts |= OPT_SSL;
+			SetSSL(IrcdEscucha);
 #endif
 	}
 }
@@ -181,8 +181,8 @@ SOCKFUNC(CierraIrcd)
 	for (al = clientes; al; al = aux)
 	{
 		aux = al->sig;
-		if (!aux) /* ultimo slot, cliente servicios. es una variable, no un puntero: no hay que liberarlo */
-			break;
+		if (al == &me)
+			continue;
 		LiberaMemoriaCliente(al);
 	}
 	for (cn = canales; cn; cn = caux)
@@ -261,7 +261,7 @@ void EnviaAServidor(char *formato, ...)
 	va_list vl;
 	va_start(vl, formato);
 	if (SockIrcd)
-		SockWriteVL(SockIrcd, OPT_CRLF, formato, vl);
+		SockWriteVL(SockIrcd, formato, vl);
 	va_end(vl);
 }
 
@@ -824,7 +824,7 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 {
 	Cliente *al;
 	static int num = 0;
-	if (!SockIrcd)
+	if (!EsOk(SockIrcd))
 		return NULL;
 	if ((al = BuscaCliente(nick, NULL)) && !EsBot(al))
 		ProtFunc(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
@@ -860,7 +860,7 @@ void ReconectaBot(char *nick)
 {
 	Modulo *ex;
 	char *canal;
-	if (!(ex = BuscaModulo(nick, modulos)))
+	if (!EsOk(SockIrcd) || BuscaCliente(nick, NULL) || !(ex = BuscaModulo(nick, modulos)) || ex->activo)
 		return;
 	ex->cl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
@@ -978,10 +978,10 @@ void Responde(Cliente *cl, Cliente *bot, char *formato, ...)
 	va_list vl;
 	if (!cl) /* algo pasa */
 		return;
-	if (EsBot(cl))
-		return;
+	//if (EsBot(cl))
+	//	return;
 	va_start(vl, formato);
-	if (RESP_PRIVMSG)
+	if (conf_set->opts & RESP_PRIVMSG)
 		ProtFunc(P_MSG_VL)(cl, bot, 1, formato, &vl);
 	else
 		ProtFunc(P_MSG_VL)(cl, bot, 0, formato, &vl);
@@ -993,7 +993,7 @@ int EntraResidentes()
 	Modulo *aux;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
-		if (aux->residente)
+		if (aux->residente && !aux->activo)
 		{
 			strcpy(tokbuf, aux->residente);
 			for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
@@ -1006,7 +1006,10 @@ int EntraBots()
 {
 	Modulo *aux;
 	for (aux = modulos; aux; aux = aux->sig)
-		aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
+	{
+		if (!aux->activo && !BuscaCliente(aux->nick, NULL))
+			aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
+	}
 	return 0;
 }
 char *MascaraTKL(char *user, char *host)

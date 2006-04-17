@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.h,v 1.7 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.8 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #define OS_OPTS_AOP 0x1
@@ -14,7 +14,7 @@ struct _os
 
 extern OperServ *operserv;
 
-#define OS_ERR_PARA "\00304ERROR: Faltan parámetros: %s "
+#define OS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define OS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define OS_ERR_EMPT "\00304ERROR: %s"
 #define OS_ERR_FORB ERR_FORB

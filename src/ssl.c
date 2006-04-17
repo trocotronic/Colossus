@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.9 2005-07-13 14:50:08 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.10 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -325,7 +325,7 @@ int SSLClienteConexion(Sock *sck)
 		if (SSL_set_cipher_list((SSL *)sck->ssl, conf_ssl->cifrados) == 0)
 			return -2;
 	}
-	sck->opts |= OPT_SSL;
+	SetSSL(sck);
 	switch (SSLConnect(sck))
 	{
 		case -1: 

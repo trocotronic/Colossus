@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.6 2006-02-17 19:47:34 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.7 2006-04-17 14:19:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -26,7 +26,6 @@ void DescargaProtocolo()
 {
 	if (protocolo) 
 	{ 
-		DescargaExtensiones(protocolo);
 		LiberaMemoriaProtocolo(protocolo); 
 		protocolo = NULL;
 	}
@@ -89,7 +88,7 @@ int CargaProtocolo(Conf *config)
 		//protocolo->sincroniza = sincro;
 		protocolo->inicia = ini;
 		protocolo->parsea = parsea;
-		//protocolo->especiales = comandos_especiales;
+		//protocolo->especiales = comandos_especiales;z
 		if (mod_carga(config))
 		{
 			Alerta(FADV, "Ha sido imposible cargar %s (Prot_Carga())", archivo);
@@ -169,9 +168,10 @@ int DescargaExtensiones(Protocolo *mod)
 }
 int CargaExtensiones(Protocolo *mod)
 {
-	Extension *ext;
-	for (ext = mod->extensiones; ext; ext = ext->sig)
+	Extension *ext, *sig;
+	for (ext = mod->extensiones; ext; ext = sig)
 	{
+		sig = ext->sig;
 		if (ext->carga && ext->carga(ext, mod))
 			DescargaExtension(ext, mod);
 	}

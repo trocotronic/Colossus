@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.22 2006-03-05 18:44:27 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.23 2006-04-17 14:19:43 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -52,7 +52,7 @@ struct _cliente
 	char *nombre;
 	char *ident;
 	char *host; /* siempre apunta al host del cliente que conecta (puede ser ip o host) */
-	char *rvhost; /* *SIEMPRE* apunta al host resuelto: a host si ya es host o a un strdup del host resuelto si no resuelve, apunta a su ip */
+	char *rvhost; /* *SIEMPRE* apunta al host resuelto: a host si ya es host o a un strdup del host resuelto. si no resuelve, apunta a su ip */
 	char *ip; /* *SIEMPRE* apunta a la ip */
 	Cliente *server;
 	char *vhost;
@@ -206,8 +206,6 @@ extern void InsertaClienteEnCanal(Canal *, Cliente *);
 extern void InsertaCanalEnCliente(Cliente *, Canal *);
 extern int BorraCanalDeCliente(Cliente *, Canal *);
 extern int BorraClienteDeCanal(Canal *, Cliente *);
-#define INI 1
-#define FIN 2
 extern void InsertaMascara(Cliente *, Mascara **, char *);
 extern int BorraMascaraDeCanal(Mascara **, char *);
 extern void InsertaModoCliente(LinkCliente **, Cliente *);
@@ -319,6 +317,7 @@ extern void LiberaMemoriaCanal(Canal *);
 extern char backupbuf[BUFSIZE];
 extern Cliente *CreaBot(char *, char *, char *, char *, char *);
 extern MODVAR Cliente *clientes;
+extern MODVAR Canal *canales;
 extern Sock *SockIrcd, *IrcdEscucha;
 extern SOCKFUNC(EscuchaAbre);
 extern char *crc_bdd(char *);
