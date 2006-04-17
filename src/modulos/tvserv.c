@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.15 2006-04-17 14:30:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1279,7 +1279,7 @@ SOCKFUNC(TSLeeLiga)
 {
 	static int m = 0, j = 1;
 	int i;
-	static char tmp2[BUFSIZE], *c, *d, *e, f, *tsf;
+	static char tmp2[BUFSIZE], *c, *d, *e, *tsf;
 	char tmp[SOCKBUF];
 	DataSock *dts;
 	if (!(dts = BuscaCola(sck)))

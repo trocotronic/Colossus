@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.30 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.31 2006-04-17 14:30:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.22 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.23 2006-04-17 14:30:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -571,11 +571,11 @@ SOCKFUNC(PSAbre)
 				(((u_short)proxyserv->scan_puerto)>>8) & 0xFF,
 				((u_short)proxyserv->scan_puerto) & 0xFF,
 				(char) (laddr >> 24) & 0xFF, (char) (laddr >> 16) & 0xFF,
-              		(char) (laddr >> 8) & 0xFF, (char) laddr & 0xFF, 0);
-              	send(sck->pres, buf, 9, 0);
-              }
-              else if (ppt->tipo & XS_T_SOCKS5)
-              {
+				(char) (laddr >> 8) & 0xFF, (char) laddr & 0xFF, 0);
+			send(sck->pres, buf, 9, 0);
+		}
+		else if (ppt->tipo & XS_T_SOCKS5)
+		{
 			u_long laddr;
 			laddr = htonl(inet_addr(proxyserv->scan_ip));
 			send(sck->pres, "\5\1\0", 3, 0);
@@ -585,7 +585,7 @@ SOCKFUNC(PSAbre)
               		(char) (laddr >> 8) & 0xFF, (char) laddr & 0xFF,
               		(((u_short) proxyserv->puerto) >> 8) & 0xFF,
               		(((u_short) proxyserv->puerto) & 0xFF));
-				send(sck->pres, buf, 10, 0);
+			send(sck->pres, buf, 10, 0);
 		}
 		else if (ppt->tipo & XS_T_ROUTER)
 		{

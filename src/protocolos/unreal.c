@@ -412,7 +412,7 @@ int p_swhois(Cliente *cl, char *swhois)
 }
 int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *motivo)
 {
-	Tkl *tkl;
+	Tkl *tkl = NULL;
 	ircsprintf(buf, "%s@%s", ident, host);
 	if (!bl || (tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])))
 	{
