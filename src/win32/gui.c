@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.16 2006-04-30 18:48:13 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.17 2006-04-30 19:49:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -53,10 +53,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	InitCommonControls();
 	WM_TASKBARCREATED = RegisterWindowMessage("TaskbarCreated");
 	if (FindWindow(NULL, COLOSSUS_VERSION))
-	{
-		Loguea(LOG_FORCE, "Ya existe una sesión del programa abierta.");
 		return 1;
-	}
 	hWnd = CreateDialog(hInstance, "COLOSSUS", 0, (DLGPROC)MainDLG);
 	hwMain = hWnd;
 	hInst = hInstance; 

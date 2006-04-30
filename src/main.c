@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.81 2006-04-30 19:38:12 Trocotronic Exp $ 
+ * $Id: main.c,v 1.82 2006-04-30 19:49:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -469,10 +469,7 @@ int main(int argc, char *argv[])
 	iniciado = time(0);
 #ifndef _WIN32
 	if (getpgid(LeePid()) != -1)
-	{
-		Loguea(LOG_FORCE, "Ya existe una sesión del programa abierta.");
 		return 1;
-	}
 #endif
 	ListaSocks.abiertos = ListaSocks.tope = 0;
 	for (i = 0; i < MAXSOCKS; i++)
@@ -1563,7 +1560,7 @@ void Loguea(int opt, char *formato, ...)
 	va_list vl;
 	time_t tm;
 	struct stat inode;
-	if (!conf_log || (!(conf_log->opts & opt) && opt != LOG_FORCE))
+	if (!conf_log || !(conf_log->opts & opt))
 		return;
 	tm = time(0);
 	va_start(vl, formato);

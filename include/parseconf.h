@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.14 2006-04-30 18:48:13 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.15 2006-04-30 19:49:29 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -102,7 +102,6 @@ struct Conf_ssl
 #define LOG_ERROR 0x1
 #define LOG_SERVER 0x2
 #define LOG_CONN 0x4
-#define LOG_FORCE 0x8
 
 typedef struct _conf_com
 {
