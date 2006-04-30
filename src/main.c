@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.79 2006-04-30 18:48:43 Trocotronic Exp $ 
+ * $Id: main.c,v 1.80 2006-04-30 18:52:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -38,7 +38,7 @@ HANDLE hStdin;
 #endif
 char spath[PMAX];
 typedef struct _mds MDS;
-typedef struct _mds
+struct _mds
 {
 	MDS *sig;
 	Sock *sck;
