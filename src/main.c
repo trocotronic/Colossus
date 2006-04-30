@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.77 2006-04-30 18:28:30 Trocotronic Exp $ 
+ * $Id: main.c,v 1.78 2006-04-30 18:48:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -182,7 +182,7 @@ int LeePid()
 {
 	int  fd;
 	char buff[20];
-	if ((fd = open("./colossus.pid", O_RDONLY, 0600)) >= 0)
+	if ((fd = open("colossus.pid.bak", O_RDONLY, 0600)) >= 0)
 	{
 		bzero(buff, sizeof(buff));
 		if (read(fd, buff, sizeof(buff)) == -1)
@@ -193,8 +193,10 @@ int LeePid()
 		close(fd);
 		return atoi(buff);
 	}
+#ifdef DEBUG
 	else
-		Debug("No se puede abrir el archivo pid %s", PID);
+		Debug("No se puede abrir el archivo pid %s (%i)", PID, errno);
+#endif
 	return -1;
 }
 #endif
@@ -467,7 +469,10 @@ int main(int argc, char *argv[])
 	iniciado = time(0);
 #ifndef _WIN32
 	if (getpgid(LeePid()) != -1)
+	{
+		Loguea(LOG_FORCE, "Ya existe una sesión del programa abierta.");
 		return 1;
+	}
 #endif
 	ListaSocks.abiertos = ListaSocks.tope = 0;
 	for (i = 0; i < MAXSOCKS; i++)
