@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.76 2006-04-30 18:25:24 Trocotronic Exp $ 
+ * $Id: main.c,v 1.77 2006-04-30 18:28:30 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -182,7 +182,7 @@ int LeePid()
 {
 	int  fd;
 	char buff[20];
-	if ((fd = open("../" PID, O_RDONLY, 0600)) >= 0)
+	if ((fd = open("./colossus.pid", O_RDONLY, 0600)) >= 0)
 	{
 		bzero(buff, sizeof(buff));
 		if (read(fd, buff, sizeof(buff)) == -1)
