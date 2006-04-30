@@ -320,6 +320,8 @@ int p_svspart(Cliente *cl, Canal *cn, char *motivo, ...)
 int p_quit(Cliente *bl, char *motivo, ...)
 {
 	LinkCanal *lk;
+	if (!SockIrcd)
+		return 1;
 	if (motivo)
 	{
 		char buf[BUFSIZE];
@@ -413,23 +415,21 @@ int p_swhois(Cliente *cl, char *swhois)
 int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *motivo)
 {
 	Tkl *tkl = NULL;
+	char *emisor = (bl ? bl->mask : me.nombre);
 	ircsprintf(buf, "%s@%s", ident, host);
-	if (!bl || (tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])))
-	{
-		if (!tkl->fin || !strcmp(motivo, tkl->motivo))
-			return 1;
-	}
+	if ((tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])) && (!tkl->fin || !strcmp(motivo, tkl->motivo)))
+		return 1;
 	if (modo == ADD)
 	{
 		time_t ini, fin;
 		ini = time(0);
 		fin = (!tiempo ? 0 : time(0) + tiempo);
-		EnviaAServidor(":%s BD + G %s %s %s %lu %lu :%s", me.nombre, ident, host, bl->mask, fin, ini, motivo ? motivo : "");
-		InsertaTKL('G', ident, host, bl->mask, motivo, ini, fin);
+		EnviaAServidor(":%s BD + G %s %s %s %lu %lu :%s", me.nombre, ident, host, emisor, fin, ini, motivo ? motivo : "");
+		InsertaTKL('G', ident, host, emisor, motivo, ini, fin);
 	}
 	else if (modo == DEL)
 	{
-		EnviaAServidor(":%s BD - G %s %s %s", me.nombre, ident, host, bl->mask);
+		EnviaAServidor(":%s BD - G %s %s %s", me.nombre, ident, host, emisor);
 		BorraTKL(&tklines[TKL_GLINE], ident, host);
 	}
 	return 0;
@@ -1218,6 +1218,7 @@ IRCFUNC(m_sjoin)
 	strcpy(tmp, parv[parc-1]);
 	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
+		al = NULL;
 		q = strchr(p, ' ');
 		if (q)
 			*q++ = '\0';
@@ -1264,7 +1265,8 @@ IRCFUNC(m_sjoin)
 				arr[i++] = p;
 			arr[i] = NULL;
 			ProcesaModo(cl, cn, arr, i);
-			Senyal4(SIGN_MODE, al, cn, arr, i);
+			if (al)
+				Senyal4(SIGN_MODE, al, cn, arr, i);
 		}
 	}
 	if (parc > 4) /* hay modos */

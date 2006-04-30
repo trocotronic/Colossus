@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.23 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.24 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -228,7 +228,7 @@ BOTFUNCHELP(MSHSet)
 	Responde(cl, CLI(memoserv), "Fija distintos métodos de notificación de tus memos:");
 	Responde(cl, CLI(memoserv), "-\00312l\003 Te notifica de mensajes nuevos al identificarte como propietario de tu nick.");
 	Responde(cl, CLI(memoserv), "-\00312n\003 Te notifica de mensajes nuevos cuando te son enviados al instante.");
-	Responde(cl, CLI(memoserv), "-\00312w\003 Te notifica de mensajes nuevos cuando vuevles del estado de away.");
+	Responde(cl, CLI(memoserv), "-\00312w\003 Te notifica de mensajes nuevos cuando vuelves del estado de away.");
 	Responde(cl, CLI(memoserv), "NOTA: El tener el modo +w deshabilita los demás. Esto es así porque sólo se quiere ser informado cuando no se está away.");
 	return 0;
 }
@@ -374,6 +374,8 @@ BOTFUNC(MSMemo)
 {
 	SQLRes res;
 	SQLRow row;
+	int memos = 0;
+	char *limite;
 	if (params < 3)
 	{
 		Responde(cl, CLI(memoserv), MS_ERR_PARA, fc->com, "nick|#canal mensaje");
@@ -405,6 +407,21 @@ BOTFUNC(MSMemo)
 			if (row[0] && (atol(row[0]) + memoserv->cada) > time(0))
 			{
 				ircsprintf(buf, "Sólo puedes enviar mensajes cada %i segundos.", memoserv->cada);
+				Responde(cl, CLI(memoserv), MS_ERR_EMPT, buf);
+				return 1;
+			}
+			SQLFreeRes(res);
+		}
+		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(param[1]))))
+		{
+			memos = SQLNumRows(res);
+			SQLFreeRes(res);
+		}
+		if ((limite = SQLCogeRegistro(MS_SET, param[1], "limite")))
+		{
+			if (memos >= atoi(limite))
+			{
+				ircsprintf(buf, "No puedes mandar más emails a \00312%s\003. Tiene la cuenta llena.", param[1]);
 				Responde(cl, CLI(memoserv), MS_ERR_EMPT, buf);
 				return 1;
 			}
@@ -830,8 +847,8 @@ int MSSigSQL()
 	{
 		if (SQLQuery("CREATE TABLE %s%s ( "
   			"mensaje text, "
-  			"para text, "
-  			"de text, "
+  			"para varchar(255), "
+  			"de varchar(255), "
   			"fecha int4 default '0', "
   			"leido int4 default '0' "
 			");", PREFIJO, MS_SQL))

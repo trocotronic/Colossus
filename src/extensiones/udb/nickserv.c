@@ -111,7 +111,7 @@ BOTFUNC(NSMigrar)
 	int opts;
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "MIGRAR tupass");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tupass");
 		return 1;
 	}
 	if (!IsReg(cl->nombre))
@@ -142,7 +142,7 @@ BOTFUNC(NSDemigrar)
 	int opts;
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, "DEMIGRAR tupass");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tupass");
 		return 1;
 	}
 	if (!IsReg(cl->nombre))

@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.8 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.9 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -274,7 +274,13 @@ char *str_replace(char *str, char orig, char rep)
 	}
 	return rem;
 }
-
+/*!
+ * @desc: Convierte una cadena a mayúsculas.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve la cadena convertida a mayúsculas.
+ * @cat: Programa
+ * @ver: strtoupper
+ !*/
 char *strtolower(char *str)
 {
 	static char tol[BUFSIZE];
@@ -293,6 +299,13 @@ char *strtolower(char *str)
 	return tol;
 #endif
 }
+/*!
+ * @desc: Convierte una cadena a mayúsculas.
+ * @params: $str [in] Cadena a convertir.
+ * @ret: Devuelve la cadena convertida a mayúsculas.
+ * @cat: Programa
+ * @ver: strtolower
+ !*/
 char *strtoupper(char *str)
 {
 	static char tou[BUFSIZE];

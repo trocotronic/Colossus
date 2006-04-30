@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.18 2006-02-18 14:46:18 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.19 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -79,7 +79,7 @@ void DescargaModulo(Modulo *ex)
 {
 	DesconectaBot(ex->nick, "Refrescando");
 	if (ex->descarga)
-		(*ex->descarga)(ex);
+		ex->descarga(ex);
 	ircfree(ex->archivo);
 	ircfree(ex->tmparchivo);
 	BorraItem(ex, modulos);

@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.15 2006-04-17 14:30:48 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.16 2006-04-30 18:08:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -52,6 +52,7 @@ char *TSFecha(time_t);
 void TSActualizaHoroscopo();
 void TSActualizaProg();
 int TSSigSQL();
+int TSSigQuit(Cliente *, char *);
 
 ModInfo MOD_INFO(TvServ) = {
 	"TvServ" ,
@@ -379,6 +380,7 @@ int MOD_DESCARGA(TvServ)()
 			SockClose(cola[i]->sck, LOCAL);
 	}
 	BorraSenyal(SIGN_SQL, TSSigSQL);
+	BorraSenyal(SIGN_QUIT, TSSigQuit);
 	BotUnset(tvserv);
 	return 0;
 }
@@ -419,6 +421,7 @@ void TSSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, tvserv_coms);
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
+	InsertaSenyal(SIGN_QUIT, TSSigQuit);
 	bzero(cola, sizeof(DataSock) * MAX_COLA);
 	BotSet(tvserv);
 }
@@ -1360,4 +1363,17 @@ int TSSigSQL()
 	}
 	SQLCargaTablas();
 	return 1;
+}
+int TSSigQuit(Cliente *cl, char *mensaje)
+{
+	int i;
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i] && cola[i]->cl == cl)
+		{
+			SockClose(cola[i]->sck, LOCAL);
+			break;
+		}
+	}
+	return 0;
 }

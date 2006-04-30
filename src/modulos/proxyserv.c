@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.23 2006-04-17 14:30:48 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.24 2006-04-30 18:08:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -48,7 +48,7 @@ ModInfo MOD_INFO(ProxyServ) = {
 	"ProxyServ" ,
 	0.9 ,
 	"Trocotronic" ,
-	"trocotronic@rallados.net"
+	"trocotronic@redyc.com"
 };
 	
 int MOD_CARGA(ProxyServ)(Modulo *mod)
@@ -216,7 +216,7 @@ void PSSet(Conf *config, Modulo *mod)
 				SetComMod(config->seccion[i], mod, proxyserv_coms);
 			else if (!strcmp(config->seccion[i]->item, "puertos"))
 			{
-				for (p = 0; p < config->seccion[i]->secciones; p++)
+				for (p = 0; p < config->seccion[i]->secciones && p < XS_MAX_PORTS; p++)
 				{
 					proxyserv->puerto[proxyserv->puertos].puerto = atoi(config->seccion[i]->seccion[p]->item);
 					proxyserv->puerto[proxyserv->puertos].tipo = XS_T_ABIERTO;
@@ -604,7 +604,7 @@ SOCKFUNC(PSAbre)
 		}
 		else if (ppt->tipo & XS_T_GET)
 		{
-			SockWrite(sck, "GET http://www.rallados.net/chkproxy.txt HTTP/1.0");
+			SockWrite(sck, "GET http://www.redyc.com/colossus/chkproxy.txt HTTP/1.0");
 			SockWrite(sck, "");
 		}
 	}	

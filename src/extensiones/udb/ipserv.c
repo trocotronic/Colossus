@@ -28,8 +28,8 @@ int ISCompruebaCifrado_U();
 int (*issigumode)();
 int (*issigidok)();
 int (*issignick)();
+#define NS_OPT_UDB 0x80
 #define IsNickUDB(x) (IsReg(x) && atoi(SQLCogeRegistro(NS_SQL, x, "opts")) & NS_OPT_UDB)
-#define NS_OPT_UDB 0x1000
 
 bCom ipserv_coms[] = {
 	{ "set" , ISOpts , N4 , "Fija algunos parámetros de la red." } ,
@@ -126,7 +126,7 @@ BOTFUNC(ISOpts)
 {
 	if (params < 3)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "SET quit_ips|quit_clones|clones valor");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "quit_ips|quit_clones|clones valor");
 		return 1;
 	}
 	if (!strcasecmp(param[1], "QUIT_IPS"))
@@ -161,7 +161,7 @@ BOTFUNC(ISDns)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "DNS ip [host]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "ip [host]");
 		return 1;
 	}
 	if (!EsIp(param[1]))
@@ -185,7 +185,7 @@ BOTFUNC(ISNolines)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, "NOLINES ip [G|Z|Q|S|T]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "ip [G|Z|Q|S|T]");
 		return 1;
 	}
 	if (params == 3)

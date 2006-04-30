@@ -449,6 +449,7 @@ IRCFUNC(m_sjoin_U)
 	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
 		q = strchr(p, ' ');
+		al = NULL;
 		if (q)
 			*q++ = '\0';
 		mod[0] = '\0';
@@ -494,7 +495,8 @@ IRCFUNC(m_sjoin_U)
 				arr[i++] = p;
 			arr[i] = NULL;
 			ProcesaModo(cl, cn, arr, i);
-			Senyal4(SIGN_MODE, al, cn, arr, i);
+			if (al)
+				Senyal4(SIGN_MODE, al, cn, arr, i);
 		}
 	}
 	if (parc > 4) /* hay modos */

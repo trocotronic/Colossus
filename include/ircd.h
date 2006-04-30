@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.23 2006-04-17 14:19:43 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.24 2006-04-30 18:08:30 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -318,7 +318,8 @@ extern char backupbuf[BUFSIZE];
 extern Cliente *CreaBot(char *, char *, char *, char *, char *);
 extern MODVAR Cliente *clientes;
 extern MODVAR Canal *canales;
-extern Sock *SockIrcd, *IrcdEscucha;
+extern MODVAR Sock *SockIrcd;
+extern MODVAR Sock *IrcdEscucha;
 extern SOCKFUNC(EscuchaAbre);
 extern char *crc_bdd(char *);
 extern MODVAR Cliente *linkado;

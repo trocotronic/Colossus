@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.31 2006-04-17 14:30:48 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.32 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -120,7 +120,7 @@ int MOD_CARGA(OperServ)(Modulo *mod)
 		OSSet(NULL, mod);
 	return errores;
 }
-int MOD_DESCARGA(OperServ)()
+int MOD_DESCARGA(OperServ)(Modulo *mod)
 {
 	BorraSenyal(SIGN_JOIN, OSCmdJoin);
 	BorraSenyal(SIGN_POST_NICK, OSCmdNick);

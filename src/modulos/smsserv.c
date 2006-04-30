@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.4 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.5 2006-04-30 18:08:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,6 +24,7 @@ BOTFUNC(SSSaldo);
 BOTFUNCHELP(SSHSaldo);
 
 int SSSigSQL	();
+int SSSigQuit	();
 
 static bCom smsserv_coms[] = {
 	{ "help" , SSHelp , N1 , "Muestra esta ayuda." , NULL } ,
@@ -127,6 +128,7 @@ int MOD_CARGA(SmsServ)(Modulo *mod)
 int MOD_DESCARGA(SmsServ)()
 {
 	BorraSenyal(SIGN_SQL, SSSigSQL);
+	BorraSenyal(SIGN_QUIT, SSSigQuit);
 	BotUnset(smsserv);
 	return 0;
 }
@@ -197,6 +199,7 @@ void SSSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, smsserv_coms);
 	InsertaSenyal(SIGN_SQL, SSSigSQL);
+	InsertaSenyal(SIGN_QUIT, SSSigQuit);
 	bzero(cola, sizeof(DataSock) * MAX_COLA);
 	BotSet(smsserv);
 }
@@ -558,4 +561,17 @@ int SSSigSQL()
 	}
 	SQLCargaTablas();
 	return 1;
+}
+int SSSigQuit(Cliente *cl, char *mensaje)
+{
+	int i;
+	for (i = 0; i < MAX_COLA; i++)
+	{
+		if (cola[i] && cola[i]->cl == cl)
+		{
+			SockClose(cola[i]->sck, LOCAL);
+			break;
+		}
+	}
+	return 0;
 }

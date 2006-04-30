@@ -86,7 +86,7 @@ BOTFUNC(OSModos)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "MODOS nick [modos]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [modos]");
 		return 1;
 	}
 	if (!IsNickUDB(param[1]))
@@ -120,7 +120,7 @@ BOTFUNC(OSSnomask)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, "SNOMASK nick [máscaras]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [máscaras]");
 		return 1;
 	}
 	if (!IsNickUDB(param[1]))

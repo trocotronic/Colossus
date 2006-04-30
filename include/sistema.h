@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.13 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.14 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -159,21 +159,6 @@
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #endif
-/*!
- * @desc: Convierte una cadena a mayúsculas.
- * @params: $str [in] Cadena a convertir.
- * @ret: Devuelve la cadena convertida a mayúsculas.
- * @cat: Programa
- * @ver: strtolower
- * @sntx: char *strtolower(char *str)
- !*/
+
 extern char *strtolower(char *);
-/*!
- * @desc: Convierte una cadena a mayúsculas.
- * @params: $str [in] Cadena a convertir.
- * @ret: Devuelve la cadena convertida a mayúsculas.
- * @cat: Programa
- * @ver: strtolower
- * @sntx: char * strtoupper(char *str)
- !*/
 extern char *strtoupper(char *);

@@ -240,7 +240,7 @@ BOTFUNC(CSProteger)
 {
 	if (params < 3)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, "PROTEGER #canal {+|-}nick");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal {+|-}nick");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -299,7 +299,7 @@ BOTFUNC(CSDemigrar)
 	int opts;
 	if (params < 3)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, "DEMIGRAR #canal pass");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal pass");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -352,7 +352,7 @@ BOTFUNC(CSMigrar)
 	int opts;
 	if (params < 3)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, "MIGRAR #canal pass");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal pass");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -418,7 +418,7 @@ BOTFUNC(CSSetUDB)
 {
 	if (params < 3)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, "SETUDB #canal parámetros");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal parámetros");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -447,7 +447,7 @@ BOTFUNC(CSSetUDB)
 		u_long val = 0L;
 		if (params < 4)
 		{
-			Responde(cl, CLI(chanserv), CS_ERR_PARA, "SETUDB #canal PROTBANS ON|OFF");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal PROTBANS ON|OFF");
 			return 1;
 		}
 		if (!(reg = BuscaRegistro(BDD_CHANS, param[1])))

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.73 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: main.c,v 1.74 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -171,12 +171,31 @@ void EscribePid()
 		close(fd);
 		return;
 	}
-#ifdef	DEBUG
+#ifdef DEBUG
 	else
 		Debug("No se puede abrir el archivo pid %s", PID);
 #endif
 #endif
 }
+#ifndef _WIN32
+int LeePid()
+{
+	int  fd;
+	char buff[20];
+	if ((fd = open(PID, O_RDONLY, 0600)) >= 0)
+	{
+		bzero(buff, sizeof(buff));
+		if (read(fd, buff, sizeof(buff)) == -1)
+		{
+			Debug("No se puede leer el archivo pid %s", PID);
+			return -1;
+		}
+		close(fd);
+		return atoi(buff);
+	}
+	return -1;
+}
+#endif
 int SigPostNick(Cliente *cl, char nuevo)
 {
 	Nivel *niv;
@@ -444,6 +463,10 @@ int main(int argc, char *argv[])
 #endif
 	char nofork = 0;
 	iniciado = time(0);
+#ifndef _WIN32
+	if (getpgid(LeePid()) != -1)
+		return 1;
+#endif
 	ListaSocks.abiertos = ListaSocks.tope = 0;
 	for (i = 0; i < MAXSOCKS; i++)
 		ListaSocks.socket[i] = NULL;
@@ -606,7 +629,6 @@ int main(int argc, char *argv[])
 	if (!nofork && fork())
 		exit(0);
 	EscribePid();
-	AbreSockIrcd();
 #else
 	EscuchaIrcd();
 	return 0;
@@ -2053,12 +2075,22 @@ SOCKFUNC(ActivoCierra)
 		BorraItem(mds, sgn.mds);
 		Free(mds);
 	}
+	if (!sgn.mds)
+	{
+		Info("Ok.");
+#ifdef _WIN32
+		ChkBtCon(SockIrcd ? 1 : 0, 0);
+#else
+		AbreSockIrcd();
+#endif
+	}
 	return 0;
 }
 int ActivaModulos()
 {
 	Modulo *mod;
 	MDS *mds;
+	int inf = 1;
 	if (sgn.mds)
 		DetieneMDS();
 	for (mod = modulos; mod; mod = mod->sig)
@@ -2075,6 +2107,14 @@ int ActivaModulos()
 			}
 			else
 			{
+				if (inf)
+				{
+					Info("Verificando servicios...");
+#ifdef _WIN32
+					ChkBtCon(SockIrcd ? 1 : 0, 1);
+#endif
+					inf = 0;
+				}
 				BMalloc(mds, MDS);
 				mds->md = mod;
 				mds->res = 1;
@@ -2083,6 +2123,10 @@ int ActivaModulos()
 			}
 		}
 	}
+#ifndef _WIN32
+	if (inf)
+		AbreSockIrcd();
+#endif
   	return 0;
 }
 void DetieneMDS()

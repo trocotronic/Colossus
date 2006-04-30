@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.57 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.58 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -253,7 +253,7 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  * 	    Sólo se aceptan las siguientes señales (entre paréntesis se detallan los parámetros que aceptan):
  		- SIGN_SQL (): Ha terminado la carga del motor SQL
  		- SIGN_UMODE (Cliente *cl, char *umodos): Se ha producido un cambio en los modos de usuario del cliente <i>cl</i>. La cadena <i>umodos</i> contiene los cambios.
- 		- SIGN_QUIT (Cliente *cl, char *mensaje: El cliente <i>cl</i> ha sido desconectado con el mensaje <i>mensaje</i>.
+ 		- SIGN_QUIT (Cliente *cl, char *mensaje): El cliente <i>cl</i> ha sido desconectado con el mensaje <i>mensaje</i>.
  		- SIGN_EOS (): Se ha terminado la unión entre servidores.
  		- SIGN_MODE (Cliente *cl, Canal *cn, char *modos): El cliente <i>cl</i> ha efectuado el cambio de modos <i>modos</i> del canal <i>cn</i>.
  		- SIGN_JOIN (Cliente *cl, Canal *cn): El cliente <i>cl</i> se une al canal <i>cn</i>.
@@ -277,7 +277,7 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  	}
  * @ver: BorraSenyal
  * @cat: Señales
- * @sntx: InsertaSenyal(int senyal, int (*func)())
+ * @sntx: void InsertaSenyal(int senyal, int (*func)())
  !*/
 #define InsertaSenyal(x,y) InsertaSenyalEx(x,y,FIN)
 extern void InsertaSenyalEx(int, int (*)(), int);

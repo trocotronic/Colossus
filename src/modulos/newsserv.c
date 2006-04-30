@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.1 2006-04-17 14:30:48 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.2 2006-04-30 18:08:31 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -20,6 +20,7 @@ int WSTest(Conf *, int *);
 int DescargaRSS();
 int WSSigSQL		();
 int WSEmiteRSS (Proc *);
+char *WSEntities(char *, int *);
 
 SOCKFUNC(WSAbre);
 SOCKFUNC(WSLee);
@@ -261,7 +262,7 @@ void XMLCALL xmlFin(Rss *rs, const char *nombre)
 			if (!rs->ids[i])
 			{
 				char tmp[BUFSIZE], *c2;
-				const char *c1;
+				char *c1;
 				size_t t1, t2;
 				*(rs->not.t) = *(rs->not.d) = '\0';
 				t1 = strlen(rs->not.titular);
@@ -322,15 +323,18 @@ void XMLCALL xmlData(Rss *rs, const char *s, int len)
 {
 	if (len > 1 && *s != 9 && rs->not.id)
 	{
+		int min;
 		switch(rs->tipo)
 		{
 			case 1:
-				strncpy(rs->not.t, s, MIN(len, rs->not.titular + sizeof(rs->not.titular) - rs->not.t));
-				rs->not.t += MIN(len, rs->not.titular + sizeof(rs->not.titular) - rs->not.t);
+				min = MIN(len, rs->not.titular + sizeof(rs->not.titular) - rs->not.t);
+				strncpy(rs->not.t, s, min);
+				rs->not.t += min;
 				break;
 			case 2:
-				strncpy(rs->not.d, s, MIN(len, rs->not.descripcion + sizeof(rs->not.descripcion) - rs->not.d));
-				rs->not.d += MIN(len, rs->not.descripcion + sizeof(rs->not.descripcion) - rs->not.d);
+				min = MIN(len, rs->not.descripcion + sizeof(rs->not.descripcion) - rs->not.d);
+				strncpy(rs->not.d, s, min);
+				rs->not.d += min;
 				break;
 		}
 	}
@@ -729,8 +733,8 @@ int WSEmiteRSS(Proc *proc)
 				Responde((Cliente *)cl, CLI(newsserv), "\x02%s\x02:", trads[i]);
 				Responde((Cliente *)cl, CLI(newsserv), "\x1F%s", not->titular);
 				if (!BadPtr(not->descripcion))
-					Responde((Cliente *)cl, CLI(newsserv), not->descripcion);
-				Responde((Cliente *)cl, CLI(newsserv), "\x1F\00312http://noticias.rallados.net/?%u", not->id);
+					Responde((Cliente *)cl, CLI(newsserv), "%s", not->descripcion);
+				Responde((Cliente *)cl, CLI(newsserv), "\x1F\00312http://noticias.redyc.com/?%u", not->id);
 			}
 		}
 	}

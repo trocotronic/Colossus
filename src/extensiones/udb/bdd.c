@@ -917,7 +917,7 @@ int Optimiza(Udb *bloq)
 	return 0;
 }
 /*!
- * @desc: Propaga un registro UDB por la red.
+ * @desc: Propaga un registro UDB por la red. Debe estar cargada la extensión UDB.
  * @params: $item [in] Cadena con formato a propagar.
  	    $... [in] Argumentos variables según cadena con formato.
  * @cat: IRCd
