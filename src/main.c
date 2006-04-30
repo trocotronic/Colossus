@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.78 2006-04-30 18:48:13 Trocotronic Exp $ 
+ * $Id: main.c,v 1.79 2006-04-30 18:48:43 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -187,7 +187,7 @@ int LeePid()
 		bzero(buff, sizeof(buff));
 		if (read(fd, buff, sizeof(buff)) == -1)
 		{
-			Debug("No se puede leer el archivo pid %s", PID);
+			Debug("No se puede leer el archivo pid %s (%i)", "colossus.pid.bak", errno);
 			return -1;
 		}
 		close(fd);
@@ -195,7 +195,7 @@ int LeePid()
 	}
 #ifdef DEBUG
 	else
-		Debug("No se puede abrir el archivo pid %s (%i)", PID, errno);
+		Debug("No se puede abrir el archivo pid %s (%i)", "colossus.pid.bak", errno);
 #endif
 	return -1;
 }
