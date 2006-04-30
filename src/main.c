@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.74 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: main.c,v 1.75 2006-04-30 18:22:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -193,6 +193,8 @@ int LeePid()
 		close(fd);
 		return atoi(buff);
 	}
+	else
+		Debug("No se puede abrir el archivo pid %s", PID);
 	return -1;
 }
 #endif
