@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.80 2006-04-30 18:52:21 Trocotronic Exp $ 
+ * $Id: main.c,v 1.81 2006-04-30 19:38:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1563,7 +1563,7 @@ void Loguea(int opt, char *formato, ...)
 	va_list vl;
 	time_t tm;
 	struct stat inode;
-	if (!conf_log || !(conf_log->opts & opt))
+	if (!conf_log || (!(conf_log->opts & opt) && opt != LOG_FORCE))
 		return;
 	tm = time(0);
 	va_start(vl, formato);
