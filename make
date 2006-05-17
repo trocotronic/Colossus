@@ -1,9 +1,14 @@
-## $Id: make,v 1.29 2006-04-17 14:19:43 Trocotronic Exp $
+## $Id: make,v 1.30 2006-05-17 14:27:44 Trocotronic Exp $
 
 CC=cl
 LINK=link
 RC=rc
 DEBUG=1
+
+### DEBUG POR CORE ###
+#Esto debe comentarse cuando es una release
+NOCORE=1
+#endif
 
 #### SOPORTE ZLIB ####
 ZLIB=1
@@ -34,6 +39,9 @@ MODDBGCFLAG=/LD $(DBGCFLAG)
 DBGCFLAG=/MD /O2 /G5
 MODDBGCFLAG=/LD /MD
 !ENDIF 
+!IFDEF NOCORE
+DBGCFLAG=$(DBGCFLAG) /D NOCORE
+!ENDIF
 
 !IFDEF ZLIB
 ZLIBCFLAGS=/D USA_ZLIB
@@ -60,7 +68,7 @@ OPENSSL_LIB=/LIBPATH:$(OPENSSL_LIB_DIR)
 !ENDIF
 
 INC_FILES = /I ./INCLUDE /J $(ZLIB_INC) $(OPENSSL_INC) /I $(PTHREAD_INC) /nologo /D _WIN32
-CFLAGS=$(DBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c 
+CFLAGS=$(DBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c
 LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib $(ZLIBLIB) \
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt

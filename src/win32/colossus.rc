@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $
+// $Id: colossus.rc,v 1.15 2006-05-17 14:27:45 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -91,16 +91,16 @@ BEGIN
         BLOCK "0c0a04b0"
         BEGIN
             VALUE "Comments", "\0"
-            VALUE "CompanyName", "Rallados\0"
+            VALUE "CompanyName", "Redyc\0"
             VALUE "FileDescription", "Colossus - Servicios de red\0"
-            VALUE "FileVersion", "1.3\0"
+            VALUE "FileVersion", "1.4\0"
             VALUE "InternalName", "Colossus\0"
             VALUE "LegalCopyright", "Copyright © 2004-2006\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Colossus\0"
-            VALUE "ProductVersion", "1.3\0"
+            VALUE "ProductVersion", "1.4\0"
             VALUE "SpecialBuild", "\0"
         END
     END

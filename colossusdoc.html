@@ -8,14 +8,14 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
 </style>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.23 2006-04-17 14:19:43 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.24 2006-05-17 14:27:44 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.redyc.com" target="_blank"><font size="3">http://www.redyc.com</font></a><font size="3"><br>
-    <b>Versi&oacute;n actual:</b> 1.3<br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 16/04/2006</font><br>
+    <b>Versi&oacute;n actual:</b> 1.4<br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 16/05/2006</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
    &nbsp;<br>
@@ -230,7 +230,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	host localhost;
 	login milogin;
 	pass mipass;
-	nombre rallados;
+	nombre redyc;
 	prefijo colossus_;
 };</pre>
   <p>&nbsp;</p>
@@ -321,7 +321,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
 	host Servicios.Colossus;
 	realname "Servicio de gesti&oacute;n de canales";
 	modos owhraAkNCqBvd;
-	residente "#rallados";
+	residente "#redyc";
 	config chanserv.inc;
 };</pre>
   <p>&nbsp;</p>
@@ -874,7 +874,7 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 <pre>protocolo protocolos/unreal.dll {
 	no_server_deop;
 	autojoin {
-		usuarios "#rallados";
+		usuarios "#redyc";
 		opers "#opers";
 	};
 	modos {
@@ -917,7 +917,7 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 <p><b>extension</b><br> Bloque que añade una extensión al protocolo.</p>
 <p>Ejemplo:</p>
 <pre>protocolo protocolos/p10.dll {
-	red Rallados;
+	red Redyc;
 	nicklen 12;
 	modos {
 		canales +S;

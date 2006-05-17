@@ -1,5 +1,5 @@
 /*
- * $Id: hash.c,v 1.4 2005-06-29 21:13:50 Trocotronic Exp $ 
+ * $Id: hash.c,v 1.5 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include <stdio.h>
@@ -82,7 +82,7 @@ int BorraCanalDeHash(Canal *ca, char *clave, Hash *tabla)
 	}
 	return 0;
 }
-Cliente *BuscaClienteEnHash(char *clave, Cliente *lugar, Hash *tabla)
+Cliente *BuscaClienteEnHash(char *clave, Hash *tabla)
 {
 	Cliente *aux;
 	u_int hash;
@@ -92,9 +92,9 @@ Cliente *BuscaClienteEnHash(char *clave, Cliente *lugar, Hash *tabla)
 		if (!strcasecmp(aux->nombre, clave))
 			return aux;
 	}
-	return lugar;
+	return NULL;
 }
-Canal *BuscaCanalEnHash(char *clave, Canal *lugar, Hash *tabla)
+Canal *BuscaCanalEnHash(char *clave, Hash *tabla)
 {
 	Canal *aux;
 	u_int hash;
@@ -104,5 +104,5 @@ Canal *BuscaCanalEnHash(char *clave, Canal *lugar, Hash *tabla)
 		if (!strcasecmp(aux->nombre, clave))
 			return aux;
 	}
-	return lugar;
+	return NULL;
 }

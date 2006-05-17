@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.32 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.33 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -540,7 +540,7 @@ BOTFUNC(OSGline)
 	if (!strchr(param[1], '@'))
 	{
 		Cliente *al;
-		if ((al = BuscaCliente(param[1] + 1, NULL)))
+		if ((al = BuscaCliente(param[1] + 1)))
 		{
 			user = al->ident;
 			host = al->host;
@@ -624,7 +624,7 @@ BOTFUNC(OSSajoin)
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick #canal");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
@@ -652,7 +652,7 @@ BOTFUNC(OSSapart)
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick #canal");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
@@ -662,7 +662,7 @@ BOTFUNC(OSSapart)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
+	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2]), NULL);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir de \00312%s\003.", param[1], param[2]);
 	EOI(operserv, 7);
 	return 0;
@@ -680,7 +680,7 @@ BOTFUNC(OSRejoin)
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick #canal");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
@@ -690,7 +690,7 @@ BOTFUNC(OSRejoin)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
 		return 1;
 	}
-	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2], NULL), NULL);
+	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2]), NULL);
 	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir y a entrar en \00312%s\003.", param[1], param[2]);
 	EOI(operserv, 8);
@@ -704,7 +704,7 @@ BOTFUNC(OSKill)
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick motivo");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;

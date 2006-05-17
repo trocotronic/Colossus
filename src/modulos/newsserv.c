@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.2 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.3 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -367,7 +367,9 @@ int DescargaRSS()
 	{
 		if (!XML_Parse(pxml, buf, len, feof(fp)))
 		{
+#ifdef DEBUG
 			Debug("error %s en %i %i", XML_ErrorString(XML_GetErrorCode(pxml)), XML_GetCurrentLineNumber(pxml), XML_GetCurrentColumnNumber(pxml));
+#endif
 			break;
 		}
 	}
@@ -708,13 +710,13 @@ int WSEmiteRSS(Proc *proc)
 	{
 		if (*row[0] == '#')
 		{
-			if (!(cn = BuscaCanal(row[0], NULL)))
+			if (!(cn = BuscaCanal(row[0])))
 				continue;
 			cl = (Cliente *)cn;
 		}
 		else
 		{
-			if (!(cl = BuscaCliente(row[0], NULL)))
+			if (!(cl = BuscaCliente(row[0])))
 				continue;
 		}
 		servicios = (u_int)atoul(row[1]);

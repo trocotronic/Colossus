@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.24 2006-04-30 18:08:30 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.25 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -195,8 +195,8 @@ extern Comando *comandos;
 extern void InsertaComando(char *, char *, IRCFUNC(*), int, u_char);
 extern int BorraComando(char *, IRCFUNC(*));
 extern Comando *BuscaComando(char *);
-extern Cliente *BuscaCliente(char *, Cliente *);
-extern Canal *BuscaCanal(char *, Canal *);
+extern Cliente *BuscaCliente(char *);
+extern Canal *BuscaCanal(char *);
 extern Canal *InfoCanal(char *, int);
 extern void EnviaAServidor(char *, ...);
 extern void Responde(Cliente *, Cliente *, char *, ...);

@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.17 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.18 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -475,7 +475,7 @@ IRCFUNC(statserv_nick)
 {
 	if (parc > 4)
 	{
-		cl = BuscaCliente(parv[1], NULL);
+		cl = BuscaCliente(parv[1]);
 		actualiza_stats(STSUSERS);
 		statserv_umode(cl, parv[7]);
 		statserv->servidor[cl->server->numeric].usuarios++;
@@ -525,7 +525,7 @@ IRCFUNC(statserv_server)
 	else if (parc == 4)
 		serv = parv[1];
 	/* aprovechando que el numeric es unico, lo utilizo como indice */
-	al = BuscaCliente(serv, NULL);
+	al = BuscaCliente(serv);
 	statserv->servidor[al->numeric].serv = al;
 	statserv->servidor[al->numeric].usuarios = statserv->servidor[al->numeric].operadores = 
 		statserv->servidor[al->numeric].max_users = statserv->servidor[al->numeric].lag = 

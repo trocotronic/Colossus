@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.18 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.19 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,7 +18,7 @@ int Desencola(DBuf *, char *, int);
 void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
-#define DEBUG
+//#define DEBUG
 
 /*
  * resolv

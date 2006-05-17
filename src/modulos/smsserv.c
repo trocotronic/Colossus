@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.5 2006-04-30 18:08:32 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.6 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -555,7 +555,7 @@ int SSSigSQL()
 		if (SQLQuery("CREATE TABLE %s%s ( "
   			"item varchar(255) default NULL, "
   			"numero varchar(16) default NULL, "
-  			"lista text NOT NULL "
+  			"lista text"
 			");", PREFIJO, SS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
 	}

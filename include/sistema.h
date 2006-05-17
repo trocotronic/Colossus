@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.14 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.15 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -24,7 +24,6 @@
 #define irc_dlclose FreeLibrary
 #define irc_dlsym(x,y,z) z = (void *)GetProcAddress(x,y)
 #define irc_dlerror ErrorDl
-#define Recurso HMODULE
 #define Recurso HMODULE
 #else
 #define irc_dlopen dlopen
@@ -158,6 +157,13 @@
 #ifdef _WIN32
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
+#define strdup _strdup
+#define execv _execv
+#define open _open
+#define write _write
+#define close _close
+#define unlink _unlink
+#define mkdir _mkdir
 #endif
 
 extern char *strtolower(char *);

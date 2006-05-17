@@ -870,7 +870,7 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 			else
 			{
 				para[0] = sender;
-				if (!(cl = BuscaCliente(para[0], NULL)) && !strchr(para[0], '.'))
+				if (!(cl = BuscaCliente(para[0])) && !strchr(para[0], '.'))
 					Info("PANIC!! %s %s %X", data, para[0], cl);
 			}
 		}
@@ -923,7 +923,7 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 			for (j = comd->funciones - 1; j >= 0; j--)
 			{
 				if (!cl)
-					cl = BuscaCliente(para[0], NULL);
+					cl = BuscaCliente(para[0]);
 				if (comd->funcion[j])
 					comd->funcion[j](sck, cl, para, i);
 			}
@@ -945,7 +945,7 @@ IRCFUNC(m_msg)
 	strcpy(par, parv[2]);
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
-	bl = BuscaCliente(parv[1], NULL);
+	bl = BuscaCliente(parv[1]);
 	if (!bl)
 		return 1; /* algo passa! */
 	if (!strcasecmp(param[0], "\1PING"))
@@ -1106,9 +1106,7 @@ IRCFUNC(m_quit)
 IRCFUNC(m_kill)
 {
 	Cliente *al;
-	if (EsServidor(cl))
-		return 0;
-	if ((al = BuscaCliente(parv[1], NULL)))
+	if ((al = BuscaCliente(parv[1])))
 	{
 		LinkCanal *lk;
 		Senyal2(SIGN_QUIT, al, parv[1]);
@@ -1148,7 +1146,7 @@ IRCFUNC(m_join)
 IRCFUNC(m_part)
 {
 	Canal *cn;
-	cn = BuscaCanal(parv[1], NULL);
+	cn = BuscaCanal(parv[1]);
 	Senyal3(SIGN_PART, cl, cn, parv[2]);
 	BorraCanalDeCliente(cl, cn);
 	BorraClienteDeCanal(cn, cl);
@@ -1166,7 +1164,7 @@ IRCFUNC(m_mode)
 		int i = 3, j = 1, f = ADD;
 		char *modos = parv[2];
 		Canal *cn;
-		if (!(cn = BuscaCanal(parv[1], NULL)))
+		if (!(cn = BuscaCanal(parv[1])))
 			return 1;
 		while (!BadPtr(modos))
 		{
@@ -1253,7 +1251,7 @@ IRCFUNC(m_sjoin)
 		}
 		if (mod[0] != 'b' && mod[0] != 'e') /* es un usuario */
 		{
-			al = BuscaCliente(p, NULL);
+			al = BuscaCliente(p);
 			EntraCliente(al, parv[2]);
 		}
 		if (mod[0])
@@ -1280,7 +1278,7 @@ IRCFUNC(m_kick)
 {
 	Canal *cn;
 	Cliente *al;
-	if (!(al = BuscaCliente(parv[2], NULL)))
+	if (!(al = BuscaCliente(parv[2])))
 		return 1;
 	cn = InfoCanal(parv[1], 0);
 	Senyal4(SIGN_KICK, cl, al, cn, parv[3]);
@@ -1377,7 +1375,7 @@ IRCFUNC(m_squit)
 {
 	Cliente *al;
 	LinkCliente *aux, *prev = NULL;
-	al = BuscaCliente(parv[1], NULL);
+	al = BuscaCliente(parv[1]);
 	LiberaMemoriaCliente(al);
 	for (aux = servidores; aux; aux = aux->sig)
 	{
@@ -1478,14 +1476,14 @@ IRCFUNC(m_netinfo)
 IRCFUNC(m_sajoin)
 {
 	Cliente *bl;
-	if ((bl = BuscaCliente(parv[1], NULL)))
+	if ((bl = BuscaCliente(parv[1])))
 		EntraBot(bl, parv[2]);
 	return 0;
 }
 IRCFUNC(m_sapart)
 {
 	Cliente *al;
-	if ((al = BuscaCliente(parv[1], NULL)))
+	if ((al = BuscaCliente(parv[1])))
 		SacaBot(al, parv[2], parv[3]);
 	return 0;
 }
@@ -1676,45 +1674,45 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->owner, BuscaCliente(parv[param], NULL));
+					InsertaModoCliente(&cn->owner, BuscaCliente(parv[param]));
 				else
-					BorraModoCliente(&cn->owner, BuscaCliente(parv[param], NULL));
+					BorraModoCliente(&cn->owner, BuscaCliente(parv[param]));
 				param++;
 				break;
 			case 'a':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->admin, BuscaCliente(parv[param], NULL));
+					InsertaModoCliente(&cn->admin, BuscaCliente(parv[param]));
 				else
-					BorraModoCliente(&cn->admin, BuscaCliente(parv[param], NULL));
+					BorraModoCliente(&cn->admin, BuscaCliente(parv[param]));
 				param++;
 				break;
 			case 'o':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->op, BuscaCliente(parv[param], NULL));
+					InsertaModoCliente(&cn->op, BuscaCliente(parv[param]));
 				else
-					BorraModoCliente(&cn->op, BuscaCliente(parv[param], NULL));
+					BorraModoCliente(&cn->op, BuscaCliente(parv[param]));
 				param++;
 				break;
 			case 'h':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->half, BuscaCliente(parv[param], NULL));
+					InsertaModoCliente(&cn->half, BuscaCliente(parv[param]));
 				else
-					BorraModoCliente(&cn->half, BuscaCliente(parv[param], NULL));
+					BorraModoCliente(&cn->half, BuscaCliente(parv[param]));
 				param++;
 				break;
 			case 'v':
 				if (!parv[param])
 					break;
 				if (modo == ADD)
-					InsertaModoCliente(&cn->voz, BuscaCliente(parv[param], NULL));
+					InsertaModoCliente(&cn->voz, BuscaCliente(parv[param]));
 				else
-					BorraModoCliente(&cn->voz, BuscaCliente(parv[param], NULL));
+					BorraModoCliente(&cn->voz, BuscaCliente(parv[param]));
 				param++;
 				break;*/
 			default:
@@ -1725,7 +1723,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				if (modo == ADD)
 				{
 					if ((mcl = BuscaMallaCliente(cn, *mods)))
-						InsertaModoCliente(&mcl->malla, BuscaCliente(parv[param], NULL));
+						InsertaModoCliente(&mcl->malla, BuscaCliente(parv[param]));
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						InsertaMascara(cl, &mmk->malla, parv[param]);
 					else if ((mpm = BuscaMallaParam(cn, *mods)))
@@ -1746,7 +1744,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 				else
 				{
 					if ((mcl = BuscaMallaCliente(cn, *mods)))
-						BorraModoCliente(&mcl->malla, BuscaCliente(parv[param], NULL));
+						BorraModoCliente(&mcl->malla, BuscaCliente(parv[param]));
 					else if ((mmk = BuscaMallaMascara(cn, *mods)))
 						BorraMascaraDeCanal(&mmk->malla, parv[param]);
 					else if ((mpm = BuscaMallaParam(cn, *mods)))

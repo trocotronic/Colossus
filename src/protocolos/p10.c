@@ -696,7 +696,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 			if (!(p = strchr(p, ' ')))
 				return -1;
 			*p++ = '\0';
-			cl = BuscaCliente(para[0], NULL);
+			cl = BuscaCliente(para[0]);
 			if (!cl)
 			{
 				while (*p == ' ')
@@ -1007,9 +1007,7 @@ IRCFUNC(m_quit)
 IRCFUNC(m_kill)
 {
 	Cliente *al;
-	if (EsServidor(cl))
-		return 0;
-	if ((al = BuscaCliente(parv[1], NULL)))
+	if ((al = BuscaCliente(parv[1])))
 	{
 		LinkCanal *lk;
 		for (lk = al->canal; lk; lk = lk->sig)
@@ -1054,7 +1052,7 @@ IRCFUNC(m_join)
 IRCFUNC(m_part)
 {
 	Canal *cn;
-	cn = BuscaCanal(parv[1], NULL);
+	cn = BuscaCanal(parv[1]);
 	Senyal3(SIGN_PART, cl, cn, parv[2]);
 	BorraCanalDeCliente(cl, cn);
 	BorraClienteDeCanal(cn, cl);
@@ -1063,7 +1061,7 @@ IRCFUNC(m_part)
 IRCFUNC(m_mode)
 {
 	Cliente *bl;
-	if ((bl = BuscaCliente(parv[1], NULL)))
+	if ((bl = BuscaCliente(parv[1])))
 	{
 		ProcesaModosCliente(bl, parv[2]);
 		Senyal2(SIGN_UMODE, bl, parv[2]);
@@ -1081,7 +1079,7 @@ IRCFUNC(m_kick)
 {
 	Canal *cn;
 	Cliente *al;
-	if (!(al = BuscaCliente(parv[2], NULL)))
+	if (!(al = BuscaCliente(parv[2])))
 		return 1;
 	cn = InfoCanal(parv[1], 0);
 	Senyal4(SIGN_KICK, cl, al, cn, parv[3]);
@@ -1147,7 +1145,7 @@ IRCFUNC(m_server)
 IRCFUNC(m_squit)
 {
 	Cliente *al;
-	al = BuscaCliente(parv[1], NULL);
+	al = BuscaCliente(parv[1]);
 	LiberaMemoriaCliente(al);
 	return 0;
 }

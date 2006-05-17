@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.58 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.59 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -209,8 +209,8 @@ typedef struct _hash {
 extern const char NTL_tolower_tab[];
 extern MODVAR char buf[BUFSIZE];
 extern Sock *SockActual;
-extern struct _cliente *BuscaClienteEnHash(char *, struct _cliente *, Hash *);
-extern struct _canal *BuscaCanalEnHash(char *, struct _canal *, Hash *);
+extern struct _cliente *BuscaClienteEnHash(char *, Hash *);
+extern struct _canal *BuscaCanalEnHash(char *, Hash *);
 extern void InsertaClienteEnHash(struct _cliente*, char *, Hash *);
 extern void InsertaCanalEnHash(struct _canal *, char *, Hash *);
 extern int BorraClienteDeHash(struct _cliente *, char *, Hash *);
@@ -338,9 +338,9 @@ extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
-#define COLOSSUS_VERNUM "1.3"
+#define COLOSSUS_VERNUM "1.4"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
-#define COLOSSUS_VERINT 10300
+#define COLOSSUS_VERINT 10400
 extern char **margv;
 #define Malloc(x) ExMalloc(x, __FILE__, __LINE__)
 /*!

@@ -20,7 +20,7 @@ stateOrProvinceName_default     = Barcelona
 localityName                    = Nombre ciudad
 
 0.organizationName              = Nombre organizacion
-0.organizationName_default      = Rallados
+0.organizationName_default      = Redyc
 
 organizationalUnitName          = Departamento
 organizationalUnitName_default  = IRCd  

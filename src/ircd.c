@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.36 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.37 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -168,7 +168,7 @@ SOCKFUNC(ProcesaIrcd)
 #endif
 	strcpy(backupbuf, data);
 	if (!canal_debug)
-		canal_debug = BuscaCanal(conf_set->debug, NULL);
+		canal_debug = BuscaCanal(conf_set->debug);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
 		ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
 	return protocolo->parsea(sck, data);
@@ -268,31 +268,31 @@ void EnviaAServidor(char *formato, ...)
 /*!
  * @desc: Busca un cliente por su nick.
  * @params: $nick [in] Nickname del cliente.
- 	    $lugar [in] En desuso. Usar NULL.
  * @ret: Devuelve la estructura del cliente en caso de encontrarlo. Devuelve NULL si el cliente no existe.
  * @cat: IRCd
  !*/
  
-Cliente *BuscaCliente(char *nick, Cliente *lugar)
+Cliente *BuscaCliente(char *nick)
 {
+	Cliente *al = NULL;
 	if (nick)
-		lugar = BuscaClienteEnHash(nick, lugar, uTab);
-	return lugar;
+		al = BuscaClienteEnHash(nick, uTab);
+	return al;
 }
 
 /*!
  * @desc: Busca un canal por su nombre.
  * @params: $canal [in] Nombre del canal.
- 	    $lugar [in] En desuso. Usar NULL.
  * @ret: Devuelve la estructura del canal en caso de encontrarlo. Devuelve NULL si el canal no existe.
  * @cat: IRCd
  !*/
  
-Canal *BuscaCanal(char *canal, Canal *lugar)
+Canal *BuscaCanal(char *canal)
 {
+	Canal *an = NULL;
 	if (canal)
-		lugar = BuscaCanalEnHash(canal, lugar, cTab);
-	return lugar;
+		an = BuscaCanalEnHash(canal, cTab);
+	return an;
 }
 Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *server, char *vhost, char *umodos, char *info)
 {
@@ -310,7 +310,7 @@ Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *ser
 	if (ip)
 		cl->ip = strdup(ip);	
 	if (server)
-		cl->server = BuscaCliente(server, NULL);
+		cl->server = BuscaCliente(server);
 	if (vhost)
 		cl->vhost = strdup(vhost);
 	if (umodos)
@@ -389,7 +389,7 @@ MallaParam *BuscaMallaParam(Canal *cn, char flag)
 Canal *InfoCanal(char *canal, int crea)
 {
 	Canal *cn;
-	if ((cn = BuscaCanal(canal, NULL)))
+	if ((cn = BuscaCanal(canal)))
 		return cn;
 	if (crea)
 	{
@@ -826,7 +826,7 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 	static int num = 0;
 	if (!EsOk(SockIrcd))
 		return NULL;
-	if ((al = BuscaCliente(nick, NULL)) && !EsBot(al))
+	if ((al = BuscaCliente(nick)) && !EsBot(al))
 		ProtFunc(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
 #ifdef DEBUG
 	Debug("Creando %s", nick);
@@ -851,7 +851,7 @@ void DesconectaBot(char *nick, char *motivo)
 {
 	Cliente *bl;
 	Modulo *ex;
-	if ((bl = BuscaCliente(nick, NULL)) && EsBot(bl))
+	if ((bl = BuscaCliente(nick)) && EsBot(bl))
 		ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, motivo);
 	if ((ex = BuscaModulo(nick, modulos)))
 		ex->cl = NULL;
@@ -860,7 +860,7 @@ void ReconectaBot(char *nick)
 {
 	Modulo *ex;
 	char *canal;
-	if (!EsOk(SockIrcd) || BuscaCliente(nick, NULL) || !(ex = BuscaModulo(nick, modulos)) || ex->activo)
+	if (!EsOk(SockIrcd) || BuscaCliente(nick) || !(ex = BuscaModulo(nick, modulos)) || ex->activo)
 		return;
 	ex->cl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
@@ -1007,7 +1007,7 @@ int EntraBots()
 	Modulo *aux;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
-		if (!aux->activo && !BuscaCliente(aux->nick, NULL))
+		if (!aux->activo && !BuscaCliente(aux->nick))
 			aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
 	}
 	return 0;

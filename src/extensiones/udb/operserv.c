@@ -99,7 +99,7 @@ BOTFUNC(OSModos)
 		char *modos;
 		for (modos = param[2]; !BadPtr(modos); modos++)
 		{
-			if (!strchr("+ohaAOkNCWqHX", *modos))
+			if (!strchr("ohaAOkNCWqHX", *modos))
 			{
 				ircsprintf(buf, "El modo %c está prohibido. Sólo se permiten los modos ohaAOkNCWqHX.", *modos);
 				Responde(cl, CLI(operserv), OS_ERR_EMPT, buf);

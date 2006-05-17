@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.24 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.25 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -811,13 +811,13 @@ int MSSend(char *para, char *de, char *mensaje)
 		if (*para == '#')
 		{
 			if (opts & MS_OPT_CNO)
-				ProtFunc(P_NOTICE)((Cliente *)BuscaCanal(para, NULL), CLI(memoserv), "Hay un mensaje nuevo en el canal");
+				ProtFunc(P_NOTICE)((Cliente *)BuscaCanal(para), CLI(memoserv), "Hay un mensaje nuevo en el canal");
 		}
 		else
 		{
 			if (opts & MS_OPT_NEW)
 			{
-				al = BuscaCliente(para, NULL);
+				al = BuscaCliente(para);
 				if (al && IsId(al))
 				{
 					if (!al->away || !(opts & MS_OPT_AWY))

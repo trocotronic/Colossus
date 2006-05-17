@@ -483,7 +483,7 @@ IRCFUNC(m_sjoin_U)
 		}
 		if (mod[0] != 'b' && mod[0] != 'e') /* es un usuario */
 		{
-			al = BuscaCliente(p, NULL);
+			al = BuscaCliente(p);
 			EntraCliente(al, parv[2]);
 		}
 		if (mod[0])

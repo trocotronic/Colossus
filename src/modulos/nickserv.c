@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.37 2006-04-17 14:30:48 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.38 2006-05-17 14:27:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -661,7 +661,7 @@ int NSBaja(char *nick, char opt)
 	int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
 	if (!opt && (opts & NS_OPT_NODROP))
 		return 1;
-	al = BuscaCliente(nick, NULL);
+	al = BuscaCliente(nick);
 	Senyal1(NS_SIGN_DROP, nick);
 	if (al)
 		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
@@ -718,7 +718,7 @@ BOTFUNC(NSInfo)
 	if (!(opts & NS_OPT_TIME) || (!comp && IsId(cl)) || IsOper(cl))
 	{
 		Cliente *al;
-		al = BuscaCliente(param[1], NULL);
+		al = BuscaCliente(param[1]);
 		if (al && IsId(al))
 			Responde(cl, CLI(nickserv), "Este usuario está conectado. Utiliza /WHOIS %s para más información.", param[1]);
 		else
@@ -813,7 +813,7 @@ BOTFUNC(NSGhost)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
@@ -838,7 +838,8 @@ BOTFUNC(NSGhost)
 }
 BOTFUNC(NSSuspender)
 {
-	char *motivo;
+	char *motivo = NULL;
+	Cliente *al = NULL;
 	if (params < 3)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick motivo");
@@ -855,10 +856,13 @@ BOTFUNC(NSSuspender)
 	NSMarca(cl, param[1], buf);
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido suspendido.", param[1]);
 	EOI(nickserv, 9);
+	if ((al = BuscaCliente(param[1])))
+		NSCambiaInv(al);
 	return 0;
 }
 BOTFUNC(NSLiberar)
 {
+	Cliente *al = NULL;
 	if (params < 2)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
@@ -878,6 +882,8 @@ BOTFUNC(NSLiberar)
 	NSMarca(cl, param[1], "Suspenso levantado.");
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);			
 	EOI(nickserv, 10);
+	if ((al = BuscaCliente(param[1])))
+		NSCambiaInv(al);
 	return 0;
 }
 BOTFUNC(NSSwhois)
@@ -903,7 +909,7 @@ BOTFUNC(NSSwhois)
 		Cliente *al;
 		swhois = Unifica(param, params, 2, -1);
 		SQLInserta(NS_SQL, param[1], "swhois", swhois);
-		if ((al = (BuscaCliente(param[1], NULL))))
+		if ((al = (BuscaCliente(param[1]))))
 			ProtFunc(P_WHOIS_ESPECIAL)(al, swhois);
 		Responde(cl, CLI(nickserv), "El swhois de \00312%s\003 ha sido cambiado.", param[1]);
 	}
@@ -928,12 +934,12 @@ BOTFUNC(NSRename)
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick nuevonick");
 		return 1;
 	}
-	if ((al = BuscaCliente(param[2], NULL)))
+	if ((al = BuscaCliente(param[2])))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "El nuevo nick ya está en uso.");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está conectado.");
 		return 1;
@@ -1167,7 +1173,7 @@ int NSSigIdOk(Cliente *cl)
 int NSKillea(char *quien)
 {
 	Cliente *al;
-	if ((al = BuscaCliente(quien, NULL)) && !IsId(al))
+	if ((al = BuscaCliente(quien)) && !IsId(al))
 	{
 		if (nickserv->opts & NS_PROT_KILL)
 			ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Protección de NICK.");
@@ -1337,7 +1343,7 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
 		return 1;
 	}
-	if ((al = BuscaCliente(nick, NULL)))
+	if ((al = BuscaCliente(nick)))
 		Responde(al, CLI(nickserv), "%s ha ejecutado \"\00312%s\003\" sobre ti.", cl->nombre, strtoupper(Unifica(param, params, 0, -1)));
 	return 0;
 }

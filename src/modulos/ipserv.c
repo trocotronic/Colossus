@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.24 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.25 2006-05-17 14:27:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -263,7 +263,7 @@ BOTFUNC(ISTemphost)
 		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "nick nuevohost");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[1], NULL)))
+	if (!(al = BuscaCliente(param[1])))
 	{
 		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
