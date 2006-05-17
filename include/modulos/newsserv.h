@@ -9,7 +9,7 @@ struct _ws
 #define WS_ERR_EMPT "\00304ERROR: %s"
 
 typedef struct _noticia Noticia;
-typedef struct _noticia
+struct _noticia
 {
 	Noticia *sig;
 	char titular[BUFSIZE];

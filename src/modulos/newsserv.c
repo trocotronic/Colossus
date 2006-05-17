@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.3 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.4 2006-05-17 15:31:16 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -307,7 +307,7 @@ void XMLCALL xmlFin(Rss *rs, const char *nombre)
 	{
 		if (rs->ids)
 			Free(rs->ids);
-		rs->ids = (int *)Malloc(sizeof(int) * (rs->items+1));
+		rs->ids = (u_int *)Malloc(sizeof(u_int) * (rs->items+1));
 		for (rs->q = 0; rs->q < rs->items; rs->q++)
 			rs->ids[rs->q] = rs->tmp[rs->q];
 		rs->ids[rs->q] = 0;
@@ -317,7 +317,7 @@ void XMLCALL xmlFin(Rss *rs, const char *nombre)
 	else if (!strcmp(nombre, "rdf:li"))
 		rs->items++;
 	else if (!strcmp(nombre, "rdf:Seq"))
-		rs->tmp = (int *)Malloc(sizeof(int) * rs->items);
+		rs->tmp = (u_int *)Malloc(sizeof(u_int) * rs->items);
 }
 void XMLCALL xmlData(Rss *rs, const char *s, int len)
 {
