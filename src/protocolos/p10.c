@@ -442,6 +442,10 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_NOTICE, cl->trio, buf);
 	return 0;
 }
+int p_ping()
+{
+	return 0;
+}
 int test(Conf *config, int *errores)
 {
 	Conf *eval, *aux;
@@ -592,6 +596,7 @@ int PROT_CARGA(P10)(Conf *config)
 	protocolo->comandos[P_NOTICE] = p_notice;
 	protocolo->comandos[P_INVITE] = p_invite;
 	protocolo->comandos[P_MSG_VL] = p_msg_vl;
+	protocolo->comandos[P_PING] = p_ping;
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
 	InsertaComando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
 	InsertaComando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);

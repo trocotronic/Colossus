@@ -9,6 +9,7 @@ EXPORTS
 	BorraCanalDeCliente
 	BorraClienteDeCanal
 	BorraComando
+	BorraHDir
 	BorraModoCliente
 	BorraSenyal
 	BorraSenyalExt
@@ -40,6 +41,7 @@ EXPORTS
 	CreaAlias
 	CreaBot
 	CreaExtension
+	CreaHDir
 	Debug
 	DescargaAliases
 	DescargaExtensiones
@@ -152,6 +154,7 @@ EXPORTS
 	clientes
 	comandos
 	conf_db
+	conf_httpd
 	conf_log
 	conf_server
 	conf_set

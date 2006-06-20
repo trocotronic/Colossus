@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.15 2006-05-17 14:27:45 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.16 2006-06-20 13:19:41 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.4
+AppVerName=Colossus 1.5
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.redyc.com
 AppSupportURL=http://www.redyc.com
@@ -50,12 +50,14 @@ Source: "..\..\modulos\memoserv.pdb"; DestDir: "{app}\modulos"; Flags: ignorever
 Source: "..\..\modulos\ipserv.pdb"; DestDir: "{app}\modulos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.dll"; DestDir: "{app}\protocolos"; Flags: ignoreversion
 Source: "..\..\protocolos\*.pdb"; DestDir: "{app}\protocolos"; Flags: ignoreversion
+Source: "..\..\protocolos\extensiones\udb.dll"; DestDir: "{app}\protocolos\extensiones"; Flags: ignoreversion
+Source: "..\..\protocolos\extensiones\udb.pdb"; DestDir: "{app}\protocolos\extensiones"; Flags: ignoreversion
 Source: "..\..\sql\*.dll"; DestDir: "{app}\sql"; Flags: ignoreversion
 Source: "..\..\sql\*.pdb"; DestDir: "{app}\sql"; Flags: ignoreversion
 #ifdef USA_SSL
-Source: "c:\dev\openssl\out32dll\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "c:\dev\openssl\out32dll\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "c:\dev\openssl\out32dll\libeay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\dev\openssl\bin\openssl.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\dev\openssl\bin\ssleay32.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "c:\dev\openssl\bin\libeay32.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\makecert.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: ".\encpem.bat"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\ssl.cnf"; DestDir: "{app}"; Flags: ignoreversion

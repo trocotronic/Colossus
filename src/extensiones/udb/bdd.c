@@ -10,30 +10,22 @@
 #define O_BINARY 0x0
 #endif
 
-Udb *nicks = NULL;
-Udb *chans = NULL;
-Udb *ips = NULL;
-Udb *sets = NULL;
-u_int BDD_NICKS;
-u_int BDD_CHANS;
-u_int BDD_IPS;
-u_int BDD_SET;
+Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL;
 Udb ***hash;
-Udb *ultimo = NULL;
+UDBloq *ultimo = NULL;
+UDBloq *N = NULL, *C= NULL, *S = NULL, *I = NULL;
 #define DaUdb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
-char bloques[DBMAX];
-time_t gmts[DBMAX];
-int regs[DBMAX];
 u_int BDD_TOTAL = 0;
 int dataver = 0;
 FILE *fcrc = NULL;
+#define MAX_HASH 2048
 
-void SetDataVer(int);
-int GetDataVer();
-int ActualizaHash(Udb *);
-Udb *IdAUdb(int);
+void SetDataVer(u_int);
+int CogeDataVer();
+int ActualizaHash(UDBloq *);
+UDBloq *CogeDeId(u_int);
 int CargaBloques();
-int TruncaBloque(Cliente *, Udb *, u_long);
+int TruncaBloque(Cliente *, UDBloq *, u_long);
 
 Opts NivelesBDD[] = {
 	{ 0x1 , "OPER" } ,
@@ -41,41 +33,52 @@ Opts NivelesBDD[] = {
 	{ 0x4 , "ROOT" } ,
 	{ 0x0 , 0x0 }
 };
-Udb *AltaBloque(char letra, char *ruta, u_int *id)
+UDBloq *AltaBloque(char letra, char *ruta, Udb **dest)
 {
-	int ids = 0;
-	Udb *reg;
+	int id = 0;
+	UDBloq *reg;
 	if (ultimo)
-		ids = ultimo->id + 1;
-	reg = (Udb *)Malloc(sizeof(Udb));
-	reg->data_char = (char *)NULL;
-	reg->data_long = 0L;
-	reg->id = ids;
-	reg->item = ruta;
-	reg->mid = ultimo;
-	reg->hsig = reg->up = reg->down = (Udb *)NULL;
-	*id = ids;
+		id = ultimo->id + 1;
+	reg = (UDBloq *)Malloc(sizeof(UDBloq));
+	reg->arbol = (Udb *)Malloc(sizeof(Udb));
+	reg->arbol->id = id;
+	reg->arbol->up = NULL;
+	reg->arbol->down = NULL;
+	reg->arbol->mid = NULL;
+	reg->arbol->hsig = NULL;
+	reg->arbol->item = NULL;
+	reg->arbol->data_char = NULL;
+	reg->arbol->data_long = 0L;
+	reg->crc32 = 0L;
+	reg->id = id;
+	reg->lof = 0L;
+	reg->letra = letra;
+	reg->path = ruta;
+	reg->regs = 0;
+	reg->gmt = 0L;
+	reg->res = NULL;
+	*dest = reg->arbol;
+	reg->sig = ultimo;
 	ultimo = reg;
-	bloques[BDD_TOTAL++] = letra;
+	BDD_TOTAL++;
 	return reg;
 }
 void VaciaHash(int id)
 {
 	int i;
-	for (i = 0; i < 2048; i++)
+	for (i = 0; i < MAX_HASH; i++)
 		hash[id][i] = NULL;
 }
 void AltaHash()
 {
-	Udb *reg;
+	UDBloq *reg;
 	int id;
 	hash = (Udb ***)Malloc(sizeof(Udb **) * BDD_TOTAL);
-	for (reg = ultimo; reg; reg = reg->mid)
+	for (reg = ultimo; reg; reg = reg->sig)
 	{
 		id = reg->id;
-		hash[id] = (Udb **)Malloc(sizeof(Udb *) * 2048);
+		hash[id] = (Udb **)Malloc(sizeof(Udb *) * MAX_HASH);
 		VaciaHash(id);
-		gmts[id] = 0L;
 	}
 }
 void printea(Udb *bloq, int escapes)
@@ -85,8 +88,8 @@ void printea(Udb *bloq, int escapes)
 	tabs[0] = '\0';
 	for (i = 0; i < escapes; i++)
 		strcat(tabs, "\t");
-	if (bloq->id)
-		tabs[escapes] = bloq->id;
+//	if (bloq->id)
+//		tabs[escapes] = bloq->id;
 	if (bloq->data_char)
 		Debug("%s%s \"%s\"%s", tabs, bloq->item,  bloq->data_char, bloq->down ? " {" : ";");
 	else if (bloq->data_long)
@@ -233,7 +236,7 @@ int ActualizaDataVer2()
 		unlink(p1);
 		rename(p2, p1);
 		unlink(p2);
-		ActualizaHash(IdAUdb(i));
+		ActualizaHash(CogeDeId(i));
 	}
 	return 0;
 }
@@ -284,44 +287,53 @@ int ActualizaDataVer3()
 	unlink(DB_DIR "nicks.udb");
 	rename(DB_DIR "temporal", DB_DIR "nicks.udb");
 	unlink(DB_DIR "temporal");
-	ActualizaHash(nicks);
+	ActualizaHash(N);
 	return 0;
 }
-void BddInit()
+int ActualizaDataVer4()
+{
+	ActualizaHash(N);
+	ActualizaHash(C);
+	ActualizaHash(I);
+	ActualizaHash(S);
+	return 0;
+}
+void IniciaUDB()
 {
 	FILE *fh;
 	int ver;
 #ifdef _WIN32
 	mkdir(DB_DIR);
+	mkdir(DB_DIR_BCK);
 #else
 	mkdir(DB_DIR, 0744);
+	mkdir(DB_DIR_BCK, 0744);
 #endif
-	bzero(bloques, sizeof(bloques));
-	bzero(regs, sizeof(regs));
-	if (!sets)
-		sets = AltaBloque('S', DB_DIR "set.udb", &BDD_SET);
-	if (!nicks)
-		nicks = AltaBloque('N', DB_DIR "nicks.udb", &BDD_NICKS);
-	if (!chans)
-		chans = AltaBloque('C', DB_DIR "canales.udb", &BDD_CHANS);
-	if (!ips)
-		ips = AltaBloque('I', DB_DIR "ips.udb", &BDD_IPS);
+	if (!S)
+		S = AltaBloque('S', DB_DIR "set.udb", &UDB_SET);
+	if (!N)
+		N = AltaBloque('N', DB_DIR "nicks.udb", &UDB_NICKS);
+	if (!C)
+		C = AltaBloque('C', DB_DIR "canales.udb", &UDB_CANALES);
+	if (!I)
+		I = AltaBloque('I', DB_DIR "ips.udb", &UDB_IPS);
 	AltaHash();
 	if ((fh = fopen(DB_DIR "crcs", "ab")))
 	{
 		fclose(fh);
 		fcrc = fopen(DB_DIR "crcs", "r+b");
 	}
-	switch ((ver = GetDataVer()))
+	switch ((ver = CogeDataVer()))
 	{
 		case 0:
 		case 1:
 			ActualizaDataVer2();
 		case 2:
 			ActualizaDataVer3();
+		case 3:
+			ActualizaDataVer4();
 	}
-	SetDataVer(3);
-	//printea(ips, 0);
+	SetDataVer(4);
 }
 void CifraCadenaAHex(char *origen, char *destino, int len)
 {
@@ -334,34 +346,32 @@ void CifraCadenaAHex(char *origen, char *destino, int len)
 		strcat(destino, tmp);
 	}
 }
-u_long ObtieneHash(Udb *bloq)
+u_long ObtieneHash(UDBloq *bloq)
 {
 	int fp;
 	char *par;
-	u_long hashl = 0L;
 	struct stat inode;
-	if ((fp = open(bloq->item, O_RDONLY|O_BINARY|O_CREAT, S_IREAD|S_IWRITE)) == -1)
+	if ((fp = open(bloq->path, O_RDONLY|O_BINARY|O_CREAT, S_IREAD|S_IWRITE)) == -1)
 		return 0L;
 	if (fstat(fp, &inode) == -1)
 	{
 		close(fp);
 		return 0L;
 	}
-	par = (char *)malloc(inode.st_size + 1);
-	par[inode.st_size] = '\0';
+	par = Malloc(inode.st_size + 1);
+	*(par + inode.st_size) = '\0';
 	if (read(fp, par, inode.st_size) == inode.st_size)
 	{
-		ircstrdup(bloq->data_char, MDString(par));
-		bloq->data_long = inode.st_size;
-		hashl = Crc32(par, inode.st_size);
+		bloq->lof = inode.st_size;
+		bloq->crc32 = Crc32(par, inode.st_size);
 	}
 	close(fp);
 	Free(par);
-	return hashl;
+	return bloq->crc32;
 }
-u_long LeeHash(int id)
+u_long CogeHash(u_int id)
 {
-	u_long hash = 0L;
+	u_long hash = 0;
 	char lee[9];
 	if (fseek(fcrc, 8 * id, SEEK_SET))
 		return 0L;
@@ -371,16 +381,7 @@ u_long LeeHash(int id)
 		return 0L;
 	return hash;
 }
-time_t LeeGMT(int id)
-{
-	char lee[11];
-	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * id, SEEK_SET))
-		return 0L;
-	bzero(lee, 11);
-	fread(lee, 1, 10, fcrc);
-	return (time_t)atoul(lee);
-}
-int GetDataVer()
+int CogeDataVer()
 {
 	if (!dataver)
 	{
@@ -395,7 +396,7 @@ int GetDataVer()
 	}
 	return dataver;
 }
-void SetDataVer(int v)
+void SetDataVer(u_int v)
 {
 	char ver[3];
 	bzero(ver, 3);
@@ -405,39 +406,48 @@ void SetDataVer(int v)
 	fwrite(ver, 1, 2, fcrc);
 	fflush(fcrc);
 }
-int ActualizaGMT(Udb *bloque, time_t gm)
-{
-	char lee[11];
-	time_t hora = gm ? gm : time(0);
-	bzero(lee, 11);
-	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * bloque->id, SEEK_SET))
-		return -1;
-	ircsprintf(lee, "%lu", hora);
-	fwrite(lee, 1, 10, fcrc);
-	fflush(fcrc);
-	gmts[bloque->id] = hora;
-	return 0;
-}
-int ActualizaHash(Udb *bloque)
+int ActualizaHash(UDBloq *bloq)
 {
 	char lee[9];
 	u_long lo;
 	bzero(lee, 9);
-	if (fseek(fcrc, 8 * bloque->id, SEEK_SET))
+	if (fseek(fcrc, 8 * bloq->id, SEEK_SET))
 		return -1;
-	lo = ObtieneHash(bloque);
+	lo = ObtieneHash(bloq);
 	ircsprintf(lee, "%lX", lo);
 	fwrite(lee, 1, 8, fcrc);
 	fflush(fcrc);
 	return 0;
 }
-/* devuelve el puntero a todo el bloque a partir de su id o letra */
-Udb *IdAUdb(int id)
+time_t LeeGMT(u_int id)
 {
-	Udb *reg;
-	for (reg = ultimo; reg; reg = reg->mid)
+	char lee[11];
+	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * id, SEEK_SET))
+		return 0L;
+	bzero(lee, 11);
+	fread(lee, 1, 10, fcrc);
+	return atoul(lee);
+}
+int ActualizaGMT(UDBloq *bloq, time_t gm)
+{
+	char lee[11];
+	time_t hora = gm ? gm : time(0);
+	bzero(lee, 11);
+	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * bloq->id, SEEK_SET))
+		return -1;
+	ircsprintf(lee, "%lu", hora);
+	fwrite(lee, 1, 10, fcrc);
+	fflush(fcrc);
+	bloq->gmt = gm;
+	return 0;
+}
+/* devuelve el puntero a todo el bloque a partir de su id o letra */
+UDBloq *CogeDeId(u_int id)
+{
+	UDBloq *reg;
+	for (reg = ultimo; reg; reg = reg->sig)
 	{
-		if (bloques[reg->id] == id || reg->id == id)
+		if (reg->letra == id || reg->id == id)
 			return reg;
 	}
 	return NULL;
@@ -445,7 +455,7 @@ Udb *IdAUdb(int id)
 void InsertaRegistroEnHash(Udb *registro, int donde, char *clave)
 {
 	u_int hashv;
-	hashv = HashCliente(clave) % 2048;
+	hashv = HashCliente(clave) % MAX_HASH;
 	registro->hsig = hash[donde][hashv];
 	hash[donde][hashv] = registro;
 }
@@ -453,7 +463,7 @@ int BorraRegistroDeHash(Udb *registro, int donde, char *clave)
 {
 	Udb *aux, *prev = NULL;
 	u_int hashv;
-	hashv = HashCliente(clave) % 2048;
+	hashv = HashCliente(clave) % MAX_HASH;
 	for (aux = hash[donde][hashv]; aux; aux = aux->hsig)
 	{
 		if (aux == registro)
@@ -468,32 +478,17 @@ int BorraRegistroDeHash(Udb *registro, int donde, char *clave)
 	}
 	return 0;
 }
-Udb *BuscaUdbEnHash(char *clave, int donde, Udb *lugar)
+Udb *BuscaBloque(char *clave, Udb *sup)
 {
 	u_int hashv;
 	Udb *aux;
-	hashv = HashCliente(clave) % 2048;
-	for (aux = hash[donde][hashv]; aux; aux = aux->hsig)
-	{
-		if ((*(clave+1) == '\0' && aux->id == *clave) || !strcasecmp(clave, aux->item))
-			return aux;
-	}
-	return lugar;
-}
-Udb *BuscaRegistro(int tipo, char *clave)
-{
 	if (!clave)
 		return NULL;
-	return BuscaUdbEnHash(clave, tipo, NULL);
-}
-Udb *BuscaBloque(char *clave, Udb *bloque)
-{
-	Udb *aux;
-	if (!clave)
-		return NULL;
-	for (aux = bloque->down; aux; aux = aux->mid)
+	hashv = HashCliente(clave) % MAX_HASH;
+	for (aux = hash[sup->id][hashv]; aux; aux = aux->hsig)
 	{
-		if ((*(clave+1) == '\0' && aux->id == *clave) || !strcasecmp(clave, aux->item))
+		//if ((*(clave+1) == '\0' && !complow(aux->id, *clave)) || !compara(clave, aux->item))
+		if (aux->up == sup && !strcasecmp(clave, aux->item))
 			return aux;
 	}
 	return NULL;
@@ -501,7 +496,12 @@ Udb *BuscaBloque(char *clave, Udb *bloque)
 Udb *CreaRegistro(Udb *bloque)
 {
 	Udb *reg;
-	DaUdb(reg);
+	reg = (Udb *)Malloc(sizeof(Udb));
+	reg->hsig = (Udb *)NULL;
+	reg->data_char = reg->item = (char *)NULL;
+	reg->data_long = 0L;
+	reg->id = 0;
+	reg->down = NULL;
 	reg->up = bloque;
 	reg->mid = bloque->down;
 	bloque->down = reg;
@@ -511,15 +511,11 @@ Udb *DaFormato(char *form, Udb *reg)
 {
 	Udb *root = NULL;
 	form[0] = '\0';
-	if (!reg)
-		return reg;
 	if (reg->up)
 		root = DaFormato(form, reg->up);
 	else
 		return reg;
-	if (reg->id)
-		chrcat(form, reg->id);
-	else
+	if (!BadPtr(reg->item))
 		strcat(form, reg->item);
 	if (reg->down)
 		strcat(form, "::");
@@ -533,30 +529,30 @@ Udb *DaFormato(char *form, Udb *reg)
 		else if (reg->data_long)
 		{
 			char tmp[32];
-			sprintf(tmp, "%c%lu", CHAR_NUM, reg->data_long);
-			strcat(form, " ");
+			sprintf(tmp, " %c%lu", CHAR_NUM, reg->data_long);
 			strcat(form, tmp);
 		}
 	}
 	return root ? root : reg;
 }
-int GuardaEnArchivo(Udb *reg, int tipo)
+int GuardaEnArchivo(Udb *reg, u_int tipo)
 {
 	char form[BUFSIZE];
-	Udb *root;
+	UDBloq *bloq;
 	FILE *fp;
+	bloq = CogeDeId(tipo);
 	form[0] = '\0';
-	root = DaFormato(form, reg);
+	DaFormato(form, reg);
 	strcat(form, "\n");
-	if (!(fp = fopen(root->item, "ab")))
+	if (!(fp = fopen(bloq->path, "ab")))
 		return -1;
 	fputs(form, fp);
 	fclose(fp);
-	ActualizaHash(IdAUdb(tipo));
+	ActualizaHash(bloq);
 	return 0;
 }
 /* guarda en un archivo un registro pero hacia abajo */
-int GuardaEnArchivoInv(Udb *reg, int tipo)
+int GuardaEnArchivoInv(Udb *reg, u_int tipo)
 {
 	if (!reg)
 		return 0;
@@ -568,7 +564,7 @@ int GuardaEnArchivoInv(Udb *reg, int tipo)
 		GuardaEnArchivo(reg, tipo);
 	return 0;
 }
-void LiberaMemoriaUdb(int tipo, Udb *reg)
+void LiberaMemoriaUdb(u_int tipo, Udb *reg)
 {
 	if (reg->down)
 	{
@@ -580,18 +576,18 @@ void LiberaMemoriaUdb(int tipo, Udb *reg)
 		BorraRegistroDeHash(reg->mid, tipo, reg->mid->item);
 		LiberaMemoriaUdb(tipo, reg->mid);
 	}
+	//BorraRegistroDeHash(reg, tipo, reg->item);
 	if (reg->data_char)
 		Free(reg->data_char);
 	if (reg->item)
 		Free(reg->item);
 	Free(reg);
 }
-void BorraRegistro(int tipo, Udb *reg, int archivo)
+Udb *BorraRegistro(u_int tipo, Udb *reg, int archivo)
 {
 	Udb *aux, *down, *prev = NULL, *up;
 	if (!(up = reg->up)) /* estamos arriba de todo */
-		return;
-	aux = IdAUdb(tipo);
+		return NULL;
 	BorraRegistroDeHash(reg, tipo, reg->item);
 	if (reg->data_char)
 		Free(reg->data_char);
@@ -616,34 +612,41 @@ void BorraRegistro(int tipo, Udb *reg, int archivo)
 	reg->mid = NULL;
 	reg->down = down;
 	if (!reg->up->up)
-		regs[tipo]--;
+	{
+		UDBloq *root = CogeDeId(tipo);
+		root->regs--;
+	}
 	LiberaMemoriaUdb(tipo, reg);
 	if (!up->down)
-		BorraRegistro(tipo, up, archivo);
-}
-Udb *InsertaRegistro(int tipo, Udb *bloque, char *item, char *data_char, u_long data_long, int archivo)
+		up = BorraRegistro(tipo, up, archivo);
+	return up;
+}	
+Udb *InsertaRegistro(u_int tipo, Udb *bloque, char *item, char *data_char, u_long data_long, int archivo)
 {
-	Udb *reg, *root;
+	Udb *reg;
 	if (!bloque || !item)
 		return NULL;
-	root = IdAUdb(tipo);
 	if (!(reg = BuscaBloque(item, bloque)))
 	{
 		reg = CreaRegistro(bloque);
 		if (!bloque->up)
-			regs[tipo]++;
-		if (*(item+1) == '\0')
+		{
+			UDBloq *root = CogeDeId(tipo);
+			root->regs++;
+		}
+		reg->id = bloque->id;
+		/*if (*(item+1) == '\0')
 		{
 			reg->id = *item;
 			reg->item = strdup("");
 		}
-		else
+		else*/
 			reg->item = strdup(item);
 		InsertaRegistroEnHash(reg, tipo, item);
 	}
 	else
 	{
-		if (data_char && reg->data_char && !strcmp(reg->data_char, data_char))
+		if ((!BadPtr(data_char) && !BadPtr(reg->data_char) && !strcmp(reg->data_char, data_char)) || (data_long == reg->data_long && data_long))
 			return NULL;
 	}
 	if (reg->data_char)
@@ -656,31 +659,32 @@ Udb *InsertaRegistro(int tipo, Udb *bloque, char *item, char *data_char, u_long 
 		GuardaEnArchivo(reg, tipo);
 	return reg;
 }
-int NivelOperBdd(char *oper)
+u_int LevelOperUdb(char *oper)
 {
 	Udb *reg;
-	if ((reg = BuscaRegistro(BDD_NICKS, oper)))
+	if ((reg = BuscaBloque(oper, UDB_NICKS)))
 	{
 		Udb *aux;
 		if ((aux = BuscaBloque(N_OPE_TOK, reg)))
-			return aux->data_long;
+			return (u_int)aux->data_long;
 	}
 	return 0;
 }
 char *CifraIpTEA_U(char *ipreal)
 {
-	static char cifrada[512], clave[13];
-	char *p, *clavec;
+	static char cifrada[512];
+	char *p, *clavec = NULL, clave[13];
 	int ts = 0;
 	Udb *bloq;
 	unsigned int ourcrc, v[2], k[2], x[2];
+	bzero(clave, sizeof(clave));
+	bzero(cifrada, sizeof(cifrada));
 	ourcrc = Crc32(ipreal, strlen(ipreal));
-	if ((bloq = BuscaRegistro(BDD_SET, S_CLA_TOK)))
+	if ((bloq = BuscaBloque(S_CLA_TOK, UDB_SET)) && !BadPtr(bloq->data_char))
 		clavec = bloq->data_char;
 	else
 		clavec = conf_set->clave_cifrado;
 	strncpy(clave, clavec, 12);
-	clave[12] = '\0';
 	p = cifrada;
 	while (1)
   	{
@@ -699,28 +703,30 @@ char *CifraIpTEA_U(char *ipreal)
 		{
 			if (++ts == 65536)
 			{
-				strcpy(p, ipreal);
+				strncpy(p, ipreal, sizeof(cifrada));
 				break;
 			}
 		}
 	}
 	return cifrada;
 }	
-int ParseaLinea(int tipo, char *cur, int archivo)
+int ParseaLinea(u_int tipo, char *cur, int archivo)
 {
 	char *ds, *cop, *sp;
 	Udb *bloq;
-	int ins = 0;
-	bloq = IdAUdb(tipo);
+	UDBloq *root;
+	root = CogeDeId(tipo);
 	cop = cur = strdup(cur);
+	bloq = root->arbol;
 	while ((ds = strchr(cur, ':')))
 	{
 		if (*(ds + 1) == ':')
 		{
 			*ds++ = '\0';
 			if ((sp = strchr(cur, ' ')))
-				*sp = '\0';
-			bloq = InsertaRegistro(tipo, bloq, cur, sp, 0, archivo);
+				*sp++ = '\0';
+			if (*cur)
+				bloq = InsertaRegistro(tipo, bloq, cur, sp, 0, archivo);
 		}
 		else /* ya no son :: */
 			break;
@@ -731,52 +737,45 @@ int ParseaLinea(int tipo, char *cur, int archivo)
 		*ds++ = '\0';
 		if (BadPtr(ds))
 			goto borra;
-		if (*ds == CHAR_NUM) /* son todo dígitos */
-		{
-			if (InsertaRegistro(tipo, bloq, cur, NULL, atoul(++ds), archivo))
-				ins = 1;
-		}
+		if (*ds == CHAR_NUM)
+			bloq = InsertaRegistro(tipo, bloq, cur, NULL, atoul(++ds), archivo);
 		else
-		{
-			if (InsertaRegistro(tipo, bloq, cur, ds, 0, archivo))
-				ins = 1;
-		}
+			bloq = InsertaRegistro(tipo, bloq, cur, ds, 0, archivo);
 	}
 	else
 	{
 		borra:
 		if ((bloq = BuscaBloque(cur, bloq)))
-		{
-			BorraRegistro(tipo, bloq, archivo);
-			ins = -1;
-		}
+			bloq = BorraRegistro(tipo, bloq, archivo);
 	}
 	Free(cop);
-	return ins;
+	if (bloq)
+		return 0;
+	return 1;
 }
-void CargaBloque(int tipo)
+void CargaBloque(u_int tipo)
 {
-	Udb *root;
+	UDBloq *root;
 	u_long lee, obtiene, trunca = 0L, bytes = 0L;
 	char linea[BUFSIZE], *c;
 	FILE *fp;
-	root = IdAUdb(tipo);
-	lee = LeeHash(tipo);
+	root = CogeDeId(tipo);
+	lee = CogeHash(tipo);
 	obtiene = ObtieneHash(root);
 	if (lee != obtiene)
 	{
-		Info("El bloque %c está corrupto (%lu != %lu)", bloques[root->id], lee, obtiene);
-		if ((fp = fopen(root->item, "wb")))
+		Info("El bloque %c está corrupto (%lu != %lu)", root->letra, lee, obtiene);
+		if ((fp = fopen(root->path, "wb")))
 		{
 			fclose(fp);
 			ActualizaHash(root);
 		}
 		if (linkado)
-			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloques[root->id]);
+			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, linkado->nombre, root->letra);
 		return;
 	}
-	gmts[tipo] = LeeGMT(tipo);
-	if ((fp = fopen(root->item, "rb")))
+	root->gmt = LeeGMT(tipo);
+	if ((fp = fopen(root->path, "rb")))
 	{
 		while (fgets(linea, sizeof(linea), fp))
 		{
@@ -795,6 +794,7 @@ void CargaBloque(int tipo)
 		}
 		fclose(fp);
 	}
+	
 /*
 #ifdef _WIN32
 	if ((archivo = CreateFile(root->item, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
@@ -841,16 +841,18 @@ void CargaBloque(int tipo)
 	if (trunca)
 		TruncaBloque(&me, root, trunca);
 }
-void DescargaBloque(int tipo)
+void DescargaBloque(u_int tipo)
 {
-	Udb *aux, *sig, *bloq;
-	bloq = IdAUdb(tipo);
-	for (aux = bloq->down; aux; aux = sig)
+	Udb *aux, *sig;
+	UDBloq *root;
+	root = CogeDeId(tipo);
+	for (aux = root->arbol->down; aux; aux = sig)
 	{
 		sig = aux->mid;
 		BorraRegistro(tipo, aux, 0);
 	}
-	bloq->data_long = 0L;
+	root->lof = 0L;
+	root->regs = 0;
 	VaciaHash(tipo);
 }
 int CargaBloques()
@@ -862,27 +864,31 @@ int CargaBloques()
 		CargaBloque(i);
 	return 0;
 }
-int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
+int TruncaBloque(Cliente *cl, UDBloq *bloq, u_long bytes)
 {
 	FILE *fp;
-	char *contenido = NULL, bdd;
-	bdd = bloq->id & 0xFF;
-	if ((fp = fopen(bloq->item, "rb")))
+	char *contenido = NULL;
+	if ((fp = fopen(bloq->path, "rb")))
 	{
-		contenido = Malloc(bytes);
-		if (fread(contenido, 1, bytes, fp) != bytes)
+		if (bytes)
 		{
-			fclose(fp);
-			EnviaAServidor(":%s DB %s ERR DRP %i %c fread", me.nombre, cl->nombre, E_UDB_FATAL, bdd);
-			return 1;
-		}
-		fclose(fp);
-		if ((fp = fopen(bloq->item, "wb")))
-		{
-			if (fwrite(contenido, 1, bytes, fp) != bytes)
+			contenido = Malloc(bytes);
+			if (fread(contenido, 1, bytes, fp) != bytes)
 			{
 				fclose(fp);
-				EnviaAServidor(":%s DB %s ERR DRP %i %c fwrite", me.nombre, cl->nombre, E_UDB_FATAL, bdd);
+				EnviaAServidor(":%s DB %s ERR DRP %i %c fread", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
+				ircfree(contenido);
+				return 1;
+			}
+		}
+		fclose(fp);
+		if ((fp = fopen(bloq->path, "wb")))
+		{
+			if (bytes && fwrite(contenido, 1, bytes, fp) != bytes)
+			{
+				fclose(fp);
+				ircfree(contenido);
+				EnviaAServidor(":%s DB %s ERR DRP %i %c fwrite", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
 				return 1;
 			}
 			fflush(fp);
@@ -893,27 +899,30 @@ int TruncaBloque(Cliente *cl, Udb *bloq, u_long bytes)
 		}
 		else
 		{
-			EnviaAServidor(":%s DB %s ERR DRP %i %c fopen(wb)", me.nombre, cl->nombre, E_UDB_FATAL, bdd);
+			ircfree(contenido);
+			EnviaAServidor(":%s DB %s ERR DRP %i %c fopen(wb)", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
 			return 1;
 		}
-		if (contenido)
-			Free(contenido);
+		ircfree(contenido);
 	}
 	else
 	{
-		EnviaAServidor(":%s DB %s ERR DRP %i %c fopen(rb)", me.nombre, cl->nombre, E_UDB_FATAL, bdd);
+		EnviaAServidor(":%s DB %s ERR DRP %i %c fopen(rb)", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
 		return 1;
 	}
 	return 0;
 }
-int Optimiza(Udb *bloq)
+int OptimizaBloque(UDBloq *bloq)
 {
 	FILE *fp;
-	if ((fp = fopen(bloq->item, "wb")))
-		fclose(fp);
-	GuardaEnArchivoInv(bloq->down, bloq->id);
-	DescargaBloque(bloq->id);
-	CargaBloque(bloq->id);
+	if (!(fp = fopen(bloq->path, "wb")))
+		return 1;
+	fclose(fp);
+	GuardaEnArchivoInv(bloq->arbol->down, bloq->id);
+	ActualizaHash(bloq);
+	/* De momento, lo comento porque no creo que sea necesario remapear toda el bloque. En memoria, no hay registros superfluos */
+	//descarga_bloque(id);
+	//carga_bloque(id);
 	return 0;
 }
 /*!
@@ -927,24 +936,19 @@ void PropagaRegistro(char *item, ...)
 {
 	va_list vl;
 	char r, buf[1024];
-	int ins;
-	Udb *bloq;
+	UDBloq *bloq;
 	u_long pos;
 	va_start(vl, item);
 	ircvsprintf(buf, item, vl);
 	va_end(vl);
 	r = buf[0];
-	bloq = IdAUdb(r);
-	pos = bloq->data_long;
-	ins = ParseaLinea(bloq->id, &buf[3], 1);
-	if (strchr(buf, ' '))
+	bloq = CogeDeId(r);
+	pos = bloq->lof;
+	if (!ParseaLinea(bloq->id, &buf[3], 1))
 	{
-		if (ins == 1)
+		if (strchr(buf, ' '))
 			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, buf);
-	}
-	else
-	{
-		if (ins == -1)
+		else
 			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
 	}
 }

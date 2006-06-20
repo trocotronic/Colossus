@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.38 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.39 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -63,7 +63,7 @@ DLLFUNC void NSCambiaInv(Cliente *);
 void NSSet(Conf *, Modulo *);
 int NSTest(Conf *, int *);
 extern MODVAR mTab cFlags[];
-mTab *modreg;
+mTab *modreg = NULL;
 
 static bCom nickserv_coms[] = {
 	{ "help" , NSHelp , N0 , "Muestra esta ayuda." , NULL } ,
@@ -134,7 +134,7 @@ int MOD_DESCARGA(NickServ)()
 	BorraSenyal(SIGN_SQL, NSSigSQL);
 	BorraSenyal(SIGN_QUIT, NSSigQuit);
 	BorraSenyal(NS_SIGN_IDOK, NSSigIdOk);
-	BorraSenyal(SIGN_STARTUP, NSSigStartUp);
+	//BorraSenyal(SIGN_STARTUP, NSSigStartUp);
 	DetieneProceso(NSDropanicks);
 	BotUnset(nickserv);
 	return 0;
@@ -226,7 +226,7 @@ void NSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SQL, NSSigSQL);
 	InsertaSenyal(SIGN_QUIT, NSSigQuit);
 	InsertaSenyal(NS_SIGN_IDOK, NSSigIdOk);
-	InsertaSenyal(SIGN_STARTUP, NSSigStartUp);
+	//InsertaSenyal(SIGN_STARTUP, NSSigStartUp);
 	IniciaProceso(NSDropanicks);
 	BotSet(nickserv);
 }
@@ -525,7 +525,7 @@ BOTFUNC(NSRegister)
 	}
 	/* comprobamos su email */
 	dominio = strchr(mail, '@');
-	if (!dominio || !gethostbyname(dominio+1))
+	if ((nickserv->opts & NS_SMAIL) && (!dominio || !gethostbyname(dominio+1)))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una cuenta de email válida.");
 		return 1;
@@ -534,7 +534,7 @@ BOTFUNC(NSRegister)
 	{
 		if (!strcasecmp(nickserv->forbmail[i], dominio))
 		{
-			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes utilizar una cuenta de correo gratuíta.");
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes utilizar una cuenta de correo prohibida.");
 			return 1;
 		}
 	}
@@ -1020,8 +1020,7 @@ BOTFUNC(NSMarcas)
 }
 BOTFUNC(NSOptsNick)
 {
-	char *aparam[256];
-	int i, ret;
+	int ret;
 	if (params < 3)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick opción valor");
@@ -1032,10 +1031,7 @@ BOTFUNC(NSOptsNick)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	aparam[0] = param[0];
-	for (i = 1; i < params; i++)
-		aparam[i] = param[i+1];
-	ret = NickOpts(cl, param[1], aparam, params-1, fc);
+	ret = NickOpts(cl, param[1], &param[1], params-1, fc);
 	EOI(nickserv, 15);
 	return ret;
 }	
@@ -1144,6 +1140,7 @@ int NSSigSQL()
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}
 	SQLCargaTablas();
+	modreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
 	return 1;
 }
 int NSSigQuit(Cliente *cl, char *msg)
@@ -1211,7 +1208,7 @@ int NSDropanicks(Proc *proc)
 }
 int NSSigStartUp()
 {
-	modreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
+	
 	return 0;
 }
 int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
@@ -1343,7 +1340,7 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
 		return 1;
 	}
-	if ((al = BuscaCliente(nick)))
+	if ((al = BuscaCliente(nick)) != cl)
 		Responde(al, CLI(nickserv), "%s ha ejecutado \"\00312%s\003\" sobre ti.", cl->nombre, strtoupper(Unifica(param, params, 0, -1)));
 	return 0;
 }

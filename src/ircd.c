@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.37 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.38 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -41,6 +41,7 @@ Protocolo *protocolo = NULL;
 Comando *comandos = NULL;
 char modebuf[BUFSIZE], parabuf[BUFSIZE];
 Tkl *tklines[TKL_MAX];
+time_t tping;
 
 Comando *BuscaComando(char *accion)
 {
@@ -118,6 +119,20 @@ int BorraComando(char *cmd, IRCFUNC(*func))
 	}
 	return 0;
 }
+int MiraPings()
+{
+	time_t ahora = time(0);
+	if (!tping && (SockIrcd->recibido + 120) < ahora)
+	{
+		protocolo->comandos[P_PING]();
+		tping = ahora;
+	}
+	else if (tping && (SockIrcd->recibido + 120 + 30) < ahora) /* 30 segs para responder el ping */
+		SockClose(SockIrcd, REMOTO);
+	else if (tping <= SockIrcd->recibido)
+		tping = 0;
+	return 0;
+}
 int AbreSockIrcd()
 {
 #ifdef USA_SSL
@@ -135,6 +150,7 @@ int AbreSockIrcd()
 		SockClose(IrcdEscucha, LOCAL);
 		IrcdEscucha = NULL;
 	}
+	tping = 0;
 	return 1;
 }
 void EscuchaIrcd()
@@ -157,6 +173,8 @@ SOCKFUNC(IniciaIrcd)
 #endif
 	ApagaCrono("rircd", NULL);
 	canales = NULL;
+	if (protocolo->comandos[P_PING])
+		IniciaCrono("pingpong", sck, 0, 1, MiraPings, NULL, 0);
 	protocolo->inicia();
 	return 0;
 }
@@ -194,6 +212,8 @@ SOCKFUNC(CierraIrcd)
 	linkado = NULL;
 	for (mod = modulos; mod; mod = mod->sig)
 		mod->cl = NULL;
+	if (protocolo->comandos[P_PING])
+		ApagaCrono("pingpong", sck);
 	if (reset)
 	{
 		(void)execv(margv[0], margv);
@@ -760,6 +780,7 @@ void LiberaMemoriaCanal(Canal *cn)
 	MallaParam *paux, *ptmp;
 	LinkCliente *aux, *tmp;
 	Mascara *kaux, *ktmp;
+	Senyal1(SIGN_CDESTROY, cn);
 	BorraCanalDeHash(cn, cn->nombre, cTab);
 	if (cn->prev)
 		cn->prev->sig = cn->sig;
@@ -800,8 +821,6 @@ void LiberaMemoriaCanal(Canal *cn)
 		tmp = aux->sig;
 		Free(aux);
 	}
-	if (canal_debug && !strcasecmp(cn->nombre, canal_debug->nombre))
-		canal_debug = NULL;
 	ircfree(cn->nombre);
 	Free(cn);
 }

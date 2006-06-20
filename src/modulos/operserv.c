@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.33 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.34 2006-06-20 13:19:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -842,7 +842,7 @@ BOTFUNC(OSNoticias)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No hay noticias.");
 			return 1;
 		}
-		Responde(cl, CLI(operserv), "Noticias de la red");
+		Responde(cl, CLI(operserv), "Noticias de la red:");
 		while ((row = SQLFetchRow(res)))
 		{
 			if (strlen(row[2]) > 35)

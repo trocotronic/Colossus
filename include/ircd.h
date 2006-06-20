@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.25 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.26 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 extern SOCKFUNC(IniciaIrcd);
@@ -284,6 +284,7 @@ extern char *TipoMascara(char *, int);
 #define SIGN_PART 12
 #define SIGN_STARTUP 13
 #define SIGN_SOCKOPEN 14
+#define SIGN_CDESTROY 15
 /*!
  * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.
  * @params: $sck [in] Recurso de conexión.

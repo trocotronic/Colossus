@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.36 2006-05-17 14:27:44 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.37 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -78,7 +78,7 @@ void CSSet(Conf *, Modulo *);
 SQLRow CSEsAkick(char *, char *);
 int CSTieneAuto(char *, char *, char);
 SQLRes CSEsAccess(char *, char *);
-mTab *modreg;
+mTab *modreg = NULL;
 
 static bCom chanserv_coms[] = {
 	{ "help" , CSHelp , N0 , "Muestra esta ayuda." , NULL } ,
@@ -175,7 +175,7 @@ int MOD_DESCARGA(ChanServ)()
 	BorraSenyal(SIGN_SYNCH, CSSigSynch);
 	BorraSenyal(SIGN_PRE_NICK, CSSigPreNick);
 	BorraSenyal(SIGN_QUIT, CSSigPreNick);
-	BorraSenyal(SIGN_STARTUP, CSSigStartUp);
+	//BorraSenyal(SIGN_STARTUP, CSSigStartUp);
 	DetieneProceso(CSDropachans);
 	BotUnset(chanserv);
 	return 0;
@@ -260,7 +260,7 @@ void CSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SYNCH, CSSigSynch);
 	InsertaSenyal(SIGN_PRE_NICK, CSSigPreNick);
 	InsertaSenyal(SIGN_QUIT, CSSigPreNick);
-	InsertaSenyal(SIGN_STARTUP, CSSigStartUp);
+	//InsertaSenyal(SIGN_STARTUP, CSSigStartUp);
 	IniciaProceso(CSDropachans);
 	BotSet(chanserv);
 	//CargaExtensiones(mod);
@@ -2473,6 +2473,7 @@ int CSSigSQL()
 		}
 	}
 	SQLCargaTablas();
+	modreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
 	return 1;
 }
 int CSSigEOS()
@@ -2675,6 +2676,6 @@ int CSSigSynch()
 }
 int CSSigStartUp()
 {
-	modreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
+	
 	return 0;
 }

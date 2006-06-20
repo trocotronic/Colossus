@@ -282,7 +282,7 @@ int NSSigEOS()
 	{
 		Udb *reg, *sig;
 		PropagaRegistro("S::N %s", nickserv->hmod->mascara);
-		for (reg = nicks->down; reg; reg = sig)
+		for (reg = N->arbol->down; reg; reg = sig)
 		{
 			sig = reg->mid;
 			if (!IsReg(reg->item) || !IsNickUDB(reg->item))

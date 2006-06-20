@@ -105,7 +105,7 @@ int CSSigEOS_U()
 	{
 		Udb *bloq, *reg, *sig;
 		PropagaRegistro("S::C %s", chanserv->hmod->mascara);
-		for (reg = chans->down; reg; reg = sig)
+		for (reg = C->arbol->down; reg; reg = sig)
 		{
 			sig = reg->mid;
 			if ((bloq = BuscaBloque(C_FOR_TOK, reg)) && !SQLCogeRegistro(CS_FORBIDS, reg->item, "motivo"))
@@ -450,7 +450,7 @@ BOTFUNC(CSSetUDB)
 			Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal PROTBANS ON|OFF");
 			return 1;
 		}
-		if (!(reg = BuscaRegistro(BDD_CHANS, param[1])))
+		if (!(reg = BuscaBloque(param[1], UDB_CANALES)))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Error grave: no hay bloque");
 			return 1;

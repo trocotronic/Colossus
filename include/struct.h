@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.59 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.60 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -187,6 +187,9 @@ extern void SockWriteVL(Sock *, char *, va_list);
 extern void SockWriteEx(Sock *, int, char *, ...);
 extern void SockWrite(Sock *, char *, ...);
 extern void SockClose(Sock *, char);
+extern Sock *SockListen(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
+extern Sock *SockListenEx(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), u_int);
+extern void SockWriteBin(Sock *, u_long, char *);
 
 /*!
  * @desc: Estructura de datos Hash. Se utiliza para definir una lista de entradas enlazadas.
@@ -264,6 +267,9 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  		- SIGN_POST_NICK (Cliente *cl, int modo): El cliente <i>cl</i> ha efectuado una operación de nick. Si es una nueva conexión, <i>modo</i> vale 0.
  		- SIGN_AWAY (Cliente *cl, char *mensaje): El cliente <i>cl</i> se pone away con el mensaje <i>mensaje</i>. Si mensaje apunta a NULL, el cliente regresa de away.
  		- SIGN_PART (Cliente *cl, Canal *cn, char *mensaje): El cliente <i>cl</i> abandona el canal <i>cn</i> con el mensaje <i>mensaje</i>. Si no hay mensaje, apunta a NULL.
+ 		- SIGN_STARTUP (): Se ha cargado el programa. Sólo se ejecuta una vez.
+ 		- SIGN_SOCKOPEN (): Se ha establecido la conexión con el ircd. Todavía no se han mandado datos.
+ 		- SIGN_CDESTROY (Canal *cn): Se borra este canal de la memoria. Se ha vaciado el canal.
  *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
  		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
  * @ex: 	int Umodos(Cliente *, char *);
@@ -338,7 +344,7 @@ extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
 extern MODVAR Hash uTab[UMAX];
 extern MODVAR Hash cTab[CHMAX];
-#define COLOSSUS_VERNUM "1.4"
+#define COLOSSUS_VERNUM "1.5"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 #define COLOSSUS_VERINT 10400
 extern char **margv;
@@ -393,7 +399,6 @@ extern struct in_addr *Resuelve(char *);
 #define SQL_CACHE "cache"
 extern MODVAR char tokbuf[BUFSIZE];
 #define MAX_LISTN 256
-extern Sock *SockListen(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
 extern int EsIp(char *);
 extern int EsArchivo(char *);
 #define OPT_CR 0x1
@@ -476,8 +481,6 @@ extern MODVAR int refrescando;
 	Responde(cl, bl, " "); 															\
 	Responde(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.redyc.com", 31)
 extern void ResuelveHost(char **, char *);
-extern void cloak_crc(char *);
-
 extern u_int base64toint(const char *);
 extern const char *inttobase64(char *, u_int, u_int);
 extern void tea(u_int *, u_int *, u_int *);
@@ -518,6 +521,7 @@ typedef struct _opts
 	char *item;
 }Opts;
 extern int BuscaOpt(char *, Opts *);
+extern char *BuscaOptItem(int, Opts *);
 
 extern int b64_encode(char const *, size_t, char *, size_t);
 extern int b64_decode(char const *, char *, size_t);
@@ -528,3 +532,6 @@ extern char *Encripta(char *, char *);
 extern char *Desencripta(char *, char *);
 extern char *Long2Char(u_long);
 extern time_t GMTime();
+typedef int (*ECmdFunc)(u_long, char *, void *);
+extern int EjecutaComandoSinc(char *, char *, u_long *, char **);
+extern int EjecutaComandoASinc(char *, char *, int (*)(u_long, char *, void *), void *);

@@ -14,7 +14,7 @@
 #define TKL_SPAMF 3
 #define TKL_QLINE 4
 
-#define PROTOCOL 2305
+#define PROTOCOL 2308
 
 double tburst;
 char *modcanales = NULL;
@@ -230,7 +230,6 @@ char *EncodeIP(char *ip)
 	return buf;
 }
 int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
-
 char *p_trio(Cliente *cl)
 {
 	return cl->nombre;
@@ -494,6 +493,11 @@ int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
 		EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_NOTICE, cl->nombre, buf);
 	return 0;
 }
+int p_ping()
+{
+	EnviaAServidor("%s :%s", TOK_PING, me.nombre);
+	return 0;
+}
 int test(Conf *config, int *errores)
 {
 	Conf *eval, *aux;
@@ -603,6 +607,8 @@ void set(Conf *config)
 	char *modcl = "qaohv", *modmk = "beI", *modpm1 = "kfL", *modpm2 = "lj";
 	if (!conf_set)
 		BMalloc(conf_set, struct Conf_set);
+	autousers = autoopers = NULL;
+	modusers = modcanales = NULL;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "no_server_deop"))
@@ -614,7 +620,7 @@ void set(Conf *config)
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
 					ircstrdup(autousers, config->seccion[i]->seccion[p]->data);
 				else if (!strcmp(config->seccion[i]->seccion[p]->item, "opers"))
-					ircstrdup(autousers, config->seccion[i]->seccion[p]->data);
+					ircstrdup(autoopers, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "modos"))
@@ -687,6 +693,7 @@ int PROT_CARGA(Unreal)(Conf *config)
 	protocolo->comandos[P_NOTICE] = p_notice;
 	protocolo->comandos[P_INVITE] = p_invite;
 	protocolo->comandos[P_MSG_VL] = p_msg_vl;
+	protocolo->comandos[P_PING] = p_ping;
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
 	InsertaComando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
 	InsertaComando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);
@@ -1045,7 +1052,7 @@ IRCFUNC(m_nick)
 			CierraColossus(-1);
 		}
 		if (modusers)
-			p_svsmode(cl, &me, modusers);
+			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, &me, modusers);
 		if (autousers)
 			EnviaAServidor(":%s %s %s %s", me.nombre, TOK_SVSJOIN, parv[1], autousers);
 		if (parc >= 11)
@@ -1055,7 +1062,7 @@ IRCFUNC(m_nick)
 		}
 		if (BuscaModulo(parv[1], modulos))
 		{
-			p_kill(cl, &me, "Nick protegido.");
+			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, &me, "Nick protegido.");
 			ReconectaBot(parv[1]);
 		}
 		Senyal2(SIGN_POST_NICK, cl, 0);
@@ -1123,7 +1130,7 @@ IRCFUNC(m_kill)
 }
 IRCFUNC(m_ping)
 {
-	EnviaAServidor("%s :%s", TOK_PONG, parv[1]);
+	EnviaAServidor(":%s %s %s :%s", me.nombre, TOK_PONG, me.nombre, parv[1]);
 	return 0;
 }
 IRCFUNC(m_pass)
@@ -1203,7 +1210,7 @@ IRCFUNC(m_mode)
 	if (modcanales)
 		strcat(modebuf, modcanales);
 	if (modebuf[0] != '\0')
-		p_mode(&me, cn, "%s %s", modebuf, parabuf);
+		ProtFunc(P_MODO_CANAL)(&me, cn, "%s %s", modebuf, parabuf);
 	Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	return 0;
 }
@@ -1790,10 +1797,10 @@ void EntraCliente(Cliente *cl, char *canal)
 				EnviaAServidor(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
 				return;
 			}
-			p_mode(&me, cn, "+sAm");
+			ProtFunc(P_MODO_CANAL)(&me, cn, "+sAm");
 		}
 		if (modcanales)
-			p_mode(&me, cn, modcanales);
+			ProtFunc(P_MODO_CANAL)(&me, cn, modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);

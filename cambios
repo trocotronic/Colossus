@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.42 2006-05-17 14:27:44 Trocotronic Exp $
+ * $Id: cambios,v 1.43 2006-06-20 13:19:39 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -386,3 +386,13 @@
 300406442 - Ahora el programa sólo se puede abrir una vez.
 010506443 - Arreglado un fallo con los ghosts de nicks.
 160506444 - *** Duodécima release pública: 1.4 ***
+190506445 - Se añade un sistema de comprobación de estado de la conexión a base de pings cada 2 minutos y con respuesta de 30 segs.
+270506446 - Se adapta al nuevo sistema UDB.
+270506447 - La verificación de una cuenta email sólo se realiza si está activa la opción SECURE, en NickServ.
+010606448 - Arreglado un fallo al dar +r cuando los usuarios se identifican previo refresco.
+070606449 - Arreglado un fallo al parsear la configuración, aviso de suye (#0000185).
+070606450 - Arreglado un fallo al no poder cargar el motor SQL, aviso de ReCoRD (#0000187).
+090606451 - Arreglado un fallo al solicitar modos en OperServ con el nick migrado, aviso de ArthaS- (#0000188).
+130606452 - Arreglado un fallo con el autojoin de operadores.
+160606453 - Arreglado un fallo con el svsmode.
+200606454 - *** Trigésima release pública: 1.5 ***

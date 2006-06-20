@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.19 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.20 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,6 +18,7 @@ int Desencola(DBuf *, char *, int);
 void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
+void LiberaSock(Sock *);
 //#define DEBUG
 
 /*
@@ -220,6 +221,11 @@ if (!(escucha = SockListen(123, Abre, NULL, NULL, NULL)))
  
 Sock *SockListen(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
 {
+	return SockListenEx(puerto, openfunc, readfunc, writefunc, closefunc, 0);
+}
+ 
+Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), u_int opts)
+{
 	Sock *sck;
 	int i;
 	int ad[4];
@@ -251,7 +257,10 @@ Sock *SockListen(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(
 #ifdef DEBUG
 	Debug("Escuchando puerto %i (%i)", puerto, sck->pres);
 #endif
-	BMalloc(sck->recvQ, DBuf);
+	if (opts & OPT_NORECVQ)
+		SetNoRecvQ(sck);
+	else
+		BMalloc(sck->recvQ, DBuf);
 	BMalloc(sck->sendQ, DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
@@ -284,7 +293,10 @@ Sock *SockAccept(Sock *list, int pres)
 		Free(sck);
 		return NULL;
 	}
-	BMalloc(sck->recvQ, DBuf);
+	if (list->opts & OPT_NORECVQ)
+		SetNoRecvQ(sck);
+	else
+		BMalloc(sck->recvQ, DBuf);
 	BMalloc(sck->sendQ, DBuf);
 	sck->openfunc = list->openfunc;
 	sck->readfunc = list->readfunc;
@@ -341,7 +353,7 @@ void SockWriteExVL(Sock *sck, int opts, char *formato, va_list vl)
 		msg = ZLibComprime(sck, msg, &len, 0);
 	if (len)
 #endif
-	Encola(sck->sendQ, msg, len); /* de momento siempre son cadenas */
+	Encola(sck->sendQ, msg, len);
 }
 
 void SockWriteEx(Sock *sck, int opts, char *formato, ...)
@@ -349,7 +361,14 @@ void SockWriteEx(Sock *sck, int opts, char *formato, ...)
 	va_list vl;
 	va_start(vl, formato);
 	SockWriteExVL(sck, opts, formato, vl);
-	va_end(vl);
+	va_end(vl);	
+}
+void SockWriteBin(Sock *sck, u_long len, char *data)
+{
+	Encola(sck->sendQ, data, len);
+#ifdef DEBUG
+	Debug("[Enviando: %s]", data);
+#endif
 }
 
 /*!
@@ -397,22 +416,34 @@ void SockClose(Sock *sck, char closef)
 {
 	if (!sck || EsCerr(sck))
 		return;
-	if (closef == LOCAL)
-		EnviaCola(sck); /* enviamos toda su cola */
-	else if (sck->pos)
+	if (EsList(sck))
 	{
 #ifdef DEBUG
-		Debug("[Parseando: %s]", sck->buffer);
+		Debug("Cerrando conexion de escucha en puerto %i (%i)", sck->puerto, sck->pres);
 #endif
-		if (sck->readfunc) /* nos ha quedado algo en el buffer, lo enviamos; pero solo si es remoto */
-			sck->readfunc(sck, sck->buffer);
+		if (sck->closefunc)
+			sck->closefunc(sck, closef ? NULL : "LOCAL");
+		LiberaSock(sck);
 	}
-	SockCerr(sck);
+	else
+	{
+		if (closef == LOCAL)
+			EnviaCola(sck); /* enviamos toda su cola */
+		else if (sck->pos)
+		{
 #ifdef DEBUG
-	Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
+			Debug("[Parseando: %s]", sck->buffer);
 #endif
-	if (sck->closefunc)
-		sck->closefunc(sck, closef ? NULL : "LOCAL");
+			if (sck->readfunc) /* nos ha quedado algo en el buffer, lo enviamos; pero solo si es remoto */
+				sck->readfunc(sck, sck->buffer);
+		}
+		SockCerr(sck);
+#ifdef DEBUG
+		Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
+#endif
+		if (sck->closefunc)
+			sck->closefunc(sck, closef ? NULL : "LOCAL");
+	}
 }
 void LiberaSock(Sock *sck)
 {
@@ -430,7 +461,7 @@ void LiberaSock(Sock *sck)
 			}
 		}
 	}
-		CLOSE_SOCK(sck->pres);
+	CLOSE_SOCK(sck->pres);
 #ifdef USA_SSL
 	if (EsSSL(sck) && sck->ssl) 
 	{
@@ -492,13 +523,14 @@ void Encola(DBuf *bufc, char *str, int bytes)
 			bufc->wslot->sig = aux;
 			bufc->wslot = aux;
 			bufc->wchar = &bufc->wslot->data[0];
-			//Debug("Abriendo slot %i", bufc->slots);
+			//Debug("Abriendo slot %i %i", bufc->slots,len);
 			bufc->slots++;
 			/* se copiará todo en la siguiente iteración */
 			continue;
 		}
 		//Debug("%% %X %X",((Cliente *)uTab[280].item) ? ((Cliente *)uTab[280].item)->nombre: "nul",bufc->wchar);
 		memcpy(bufc->wchar, str, copiados);
+		//Debug("%i %s", copiados, str);
 		//Debug("%% %X %X",((Cliente *)uTab[280].item) ? ((Cliente *)uTab[280].item)->nombre: "nul",bufc->wchar);
 		str += copiados;
 		bufc->wchar += copiados;

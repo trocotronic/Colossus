@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.10 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.11 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -136,17 +136,18 @@ int  SSLPemPasswd(char *buf, int size, int rwflag, void *password)
 static int SSLComprueba(int preverify_ok, X509_STORE_CTX *ctx)
 {
 	int verify_err = 0;
-
 	verify_err = X509_STORE_CTX_get_error(ctx);
 	if (preverify_ok)
 		return 1;
 	if (conf_ssl->opts & SSLFLAG_VERIFYCERT)
 	{
 		if (verify_err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT)
+		{
 			if (!(conf_ssl->opts & SSLFLAG_DONOTACCEPTSELFSIGNED))
 			{
 				return 1;
 			}
+		}
 		return preverify_ok;
 	}
 	else
@@ -162,8 +163,7 @@ void CTXInitServer()
 	}
 	SSL_CTX_set_default_passwd_cb(ctx_server, SSLPemPasswd);
 	SSL_CTX_set_options(ctx_server, SSL_OP_NO_SSLv2);
-	SSL_CTX_set_verify(ctx_server, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE
-			| (conf_ssl->opts & SSLFLAG_FAILIFNOCERT ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), SSLComprueba);
+	SSL_CTX_set_verify(ctx_server, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE	| (conf_ssl->opts & SSLFLAG_FAILIFNOCERT ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), SSLComprueba);
 	SSL_CTX_set_session_cache_mode(ctx_server, SSL_SESS_CACHE_OFF);
 	if (SSL_CTX_use_certificate_file(ctx_server, SSL_SERVER_CERT_PEM, SSL_FILETYPE_PEM) <= 0)
 	{

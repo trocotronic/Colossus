@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.21 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.22 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -23,6 +23,7 @@ struct Conf_log *conf_log = NULL;
 #ifdef USA_SSL
 struct Conf_ssl *conf_ssl = NULL;
 #endif
+struct Conf_httpd *conf_httpd = NULL;
 
 static int TestServer		(Conf *, int *);
 static int TestDb 			(Conf *, int *);
@@ -34,6 +35,7 @@ static int TestLog		(Conf *, int *);
 static int TestSSL		(Conf *, int *);
 #endif
 static int TestProtocolo	(Conf *, int *);
+static int TestHttpd (Conf *, int *);
 
 static void ConfServer	(Conf *);
 static void ConfDb 		(Conf *);
@@ -44,6 +46,9 @@ static void ConfLog		(Conf *);
 static void ConfSSL		(Conf *);
 #endif
 static void ConfModulos	(Conf *);
+static void ConfHttpd	(Conf *);
+extern int IniciaHTTPD();
+extern int DetieneHTTPD();
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
@@ -64,6 +69,7 @@ static cComConf cComs[] = {
 	{ "ssl" , TestSSL , ConfSSL , OPC , 1 } ,
 #endif
 	{ "protocolo" , TestProtocolo , NULL , OBL , 1 } ,
+	{ "httpd" , TestHttpd , ConfHttpd , OPC , 1 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
 struct bArchivos
@@ -140,7 +146,7 @@ void LiberaMemoriaSmtp()
 	ircfree(conf_smtp->host);
 	ircfree(conf_smtp->login);
 	ircfree(conf_smtp->pass);
-	bzero(conf_smtp, sizeof(struct Conf_smtp));
+	ircfree(conf_smtp);
 }
 void LiberaMemoriaSet()
 {
@@ -164,7 +170,7 @@ void LiberaMemoriaLog()
 	if (!conf_log)
 		return;
 	ircfree(conf_log->archivo);
-	bzero(conf_log, sizeof(struct Conf_log));
+	ircfree(conf_log);
 }
 #ifdef USA_SSL
 void LiberaMemoriaSSL()
@@ -176,9 +182,17 @@ void LiberaMemoriaSSL()
 	ircfree(conf_ssl->x_server_key_pem);
 	ircfree(conf_ssl->trusted_ca_file);
 	ircfree(conf_ssl->cifrados);
-	bzero(conf_ssl, sizeof(struct Conf_ssl));
+	ircfree(conf_ssl);
 }
 #endif
+void LiberaMemoriaHttpd()
+{
+	if (!conf_httpd)
+		return;
+	DetieneHTTPD();
+	ircfree(conf_httpd->url);
+	ircfree(conf_httpd);
+}
 void DescargaConfiguracion()
 {
 	LiberaMemoriaServer();
@@ -189,6 +203,7 @@ void DescargaConfiguracion()
 #ifdef USA_SSL
 	LiberaMemoriaSSL();
 #endif
+	LiberaMemoriaHttpd();
 }
 #define pce(x) Error("[%s:%i] " x, archivo, linea)
 /* parseconf
@@ -435,29 +450,60 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 	}
 	return error;
 }
+void Printea(Conf *conf, int escapes)
+{
+	int i;
+	char tabs[32];
+	Conf *c;
+	tabs[0] = '\0';
+	for (i = 0; i < escapes; i++)
+		strcat(tabs, "\t");
+//	if (bloq->id)
+//		tabs[escapes] = bloq->id;
+	for (i = 0; i < conf->secciones; i++)
+	{
+		c = conf->seccion[i];
+		if (c->data)
+			Debug("%s%s \"%s\"%s", tabs, c->item, c->data, c->secciones ? " {" : ";");
+		else
+			Debug("%s%s%s", tabs, c->item, c->secciones ? " {" : ";");
+		if (c->secciones)
+		{
+			Printea(c, ++escapes);
+			escapes--;
+			Debug("%s};", tabs);
+		}
+	}
+}	
 /* 
  * distribuye_conf
  * Distribuye por bloques la configuración parseada
  */
 void DistribuyeConfiguracion(Conf *config)
 {
-	int i, errores = 0;
+	int i, errores = 0, cont = 0;
 	cComConf *com;
 	Conf *prot = NULL;
 	for (i = 0; i < config->secciones; i++)
 	{
-		arriba:
 		com = &cComs[0];
 		while (com->nombre != 0x0)
 		{
+			
 			if (!strcasecmp(config->seccion[i]->item, "protocolo"))
 			{
-				prot = config->seccion[i++];
-				goto arriba;
+				prot = config->seccion[i];
+				cont = 1;
+				break;
 			}
 			else if (!strcasecmp(config->seccion[i]->item, com->nombre))
 				break;
 			com++;
+		}
+		if (cont)
+		{
+			cont = 0;
+			continue;
 		}
 		if (com->testfunc != 0x0)
 		{
@@ -486,6 +532,8 @@ void DistribuyeConfiguracion(Conf *config)
 	}
 	if (prot)
 		TestProtocolo(prot, &errores);
+	if (!sql)
+		errores++;
 	if (errores)
 	{
 		Alerta(FERR, "Hay %i error%s en la configuracion. No se puede cargar", errores, errores > 1 ? "es" : "");
@@ -1259,6 +1307,63 @@ int TestProtocolo(Conf *config, int *errores)
 	}
 	*errores += error_parcial;
 	return error_parcial;
+}
+int TestHttpd(Conf *config, int *errores)
+{
+	short error_parcial = 0;
+	int puerto;
+	Conf *eval;
+	if (!(eval = BuscaEntrada(config, "url")))
+	{
+		Error("[%s:%s] No se encuentra la directriz url.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz url esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if ((eval = BuscaEntrada(config, "puerto")))
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+		else
+		{
+			puerto = atoi(eval->data);
+			if (puerto < 0 || puerto > 65535)
+			{
+				Error("[%s:%s::%s::%i] El puerto debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
+				error_parcial++;
+			}
+		}
+	}
+	*errores += error_parcial;
+	return error_parcial;
+}
+void ConfHttpd(Conf *config)
+{
+	int i;
+	if (!conf_httpd)
+		BMalloc(conf_httpd, struct Conf_httpd);
+	conf_httpd->puerto = 80;
+	conf_httpd->max_age = -1;
+	ircfree(conf_httpd->url);
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "url"))
+			ircstrdup(conf_httpd->url, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "puerto"))
+			conf_httpd->puerto = atoi(config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "edad_maxima"))
+			conf_httpd->max_age = atoi(config->seccion[i]->data);
+	}
+	IniciaHTTPD();
 }
 #ifndef _WIN32
 void Error(char *formato, ...)

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.15 2006-04-30 19:49:29 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.16 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -98,6 +98,12 @@ struct Conf_ssl
 	char *cifrados;
 };
 #endif
+struct Conf_httpd
+{
+	int puerto;
+	char *url;
+	int max_age;
+};
 
 #define LOG_ERROR 0x1
 #define LOG_SERVER 0x2
@@ -126,6 +132,7 @@ extern MODVAR struct Conf_log *conf_log;
 #ifdef USA_SSL
 extern MODVAR struct Conf_ssl *conf_ssl;
 #endif
+extern MODVAR struct Conf_httpd *conf_httpd;
 #define PREFIJO conf_db->prefijo
 #define OPC 1
 #define OBL 2

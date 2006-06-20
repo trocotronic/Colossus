@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.16 2006-04-30 18:08:32 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.17 2006-06-20 13:19:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -480,6 +480,29 @@ char *TSQuitaTags(char *str, char *dest)
 				tmp[i] = '\0';
 				*dest++ = atoi(tmp);
 				c++;
+			}
+			else if (!strncmp("uml;", c+2, 4))
+			{
+				switch (*(c+1))
+				{
+					case 'a':
+					case 'A':
+						*dest++ = *(c+1)+131;
+						break;
+					case 'e':
+					case 'E':
+					case 'i':
+					case 'I':
+						*dest++ = *(c+1)+134;
+						break;
+					case 'o':
+					case 'O':
+					case 'u':
+					case 'U':
+						*dest++ = *(c+1)+135;
+						break;
+				}
+				c += 6;
 			}
 			else
 				*dest++ = *c++;

@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.17 2006-04-30 19:49:28 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.18 2006-06-20 13:19:41 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -324,9 +324,9 @@ LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 #ifdef USA_ZLIB
 			SetDlgItemText(hDlg, IDC_ZLIBV, zlibVersion());
 #endif
-			if (sql->clientinfo[0])
+			if (!BadPtr(sql->clientinfo))
 				SetDlgItemText(hDlg, IDC_SQLCV, sql->clientinfo);
-			if (sql->servinfo[0])
+			if (!BadPtr(sql->servinfo))
 				SetDlgItemText(hDlg, IDC_SQLSV, sql->servinfo);
 			ircsprintf(pth, "%i.%i.%i", PTW32_VERSION);
 			SetDlgItemText(hDlg, IDC_PTHV, pth);

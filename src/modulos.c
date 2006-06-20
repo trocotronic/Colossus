@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.19 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.20 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -279,10 +279,10 @@ int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
  * @cat: Modulos
  * @ver: ParseaConfiguracion SetComMod
  !*/
-int TestComMod(Conf *config, bCom *coms, char avisa)
+int TestComMod(Conf *config, bCom *coms, int avisa)
 {
 	int errores = 0;
-	FILE *fp;
+	FILE *fp = NULL;
 	if (!config->data)
 	{
 		if (avisa)
@@ -313,7 +313,8 @@ int TestComMod(Conf *config, bCom *coms, char avisa)
 				}
 			}
 		}
-		fclose(fp);
+		if (fp)
+			fclose(fp);
 	}
 	else
 	{

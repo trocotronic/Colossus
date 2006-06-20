@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.4 2006-05-17 15:31:16 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.5 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -10,6 +10,7 @@
 #include "modulos.h"
 #include "modulos/newsserv.h"
 #include "modulos/chanserv.h"
+#include "modulos/nickserv.h"
 
 NewsServ *newsserv = NULL;
 iconv_t icv;
@@ -21,6 +22,7 @@ int DescargaRSS();
 int WSSigSQL		();
 int WSEmiteRSS (Proc *);
 char *WSEntities(char *, int *);
+int WSSigDrop(char *);
 
 SOCKFUNC(WSAbre);
 SOCKFUNC(WSLee);
@@ -144,6 +146,8 @@ int MOD_DESCARGA(NewsServ)()
 	BotUnset(newsserv);
 	ApagaCrono("ultima_hora", SockIrcd);
 	BorraSenyal(SIGN_SQL, WSSigSQL);
+	BorraSenyal(CS_SIGN_DROP, WSSigDrop);
+	BorraSenyal(NS_SIGN_DROP, WSSigDrop);
 	return 0;
 }
 int WSTest(Conf *config, int *errores)
@@ -182,6 +186,8 @@ void WSSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, newsserv_coms);
 	InsertaSenyal(SIGN_SQL, WSSigSQL);
+	InsertaSenyal(CS_SIGN_DROP, WSSigDrop);
+	InsertaSenyal(NS_SIGN_DROP, WSSigDrop);
 	BotSet(newsserv);
 }
 Noticia *BuscaNoticia(u_int id, Noticia *lugar)
@@ -777,5 +783,10 @@ BOTFUNC(Prueba)
 		if (noticias)
 			IniciaProceso(WSEmiteRSS);
 		
+	return 0;
+}
+int WSSigDrop(char *dropado)
+{
+	SQLBorra(WS_SQL, dropado);
 	return 0;
 }

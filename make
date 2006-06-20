@@ -1,4 +1,4 @@
-## $Id: make,v 1.30 2006-05-17 14:27:44 Trocotronic Exp $
+## $Id: make,v 1.31 2006-06-20 13:19:40 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -7,7 +7,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-NOCORE=1
+#NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -22,7 +22,7 @@ ZLIB_LIB_DIR="c:\dev\zlib\dll32"
 SSL=1
 #
 OPENSSL_INC_DIR="c:\dev\openssl\include"
-OPENSSL_LIB_DIR="C:\dev\openssl\out32dll"
+OPENSSL_LIB_DIR="C:\dev\openssl\lib"
 #
 ###### FIN SSL ######
 
@@ -51,7 +51,7 @@ ZLIBLIB=zlibwapi.lib
 ZLIB_INC=/I $(ZLIB_INC_DIR)
 !ENDIF
 !IFDEF ZLIB_LIB_DIR
-ZLIB_LIB=/LIBPATH:$(ZLIB_LIB_DIR)
+ZLIB_LIB=/LIBPATH:$(ZLIB_LIB_DIR) $(ZLIBLIB)
 !ENDIF
 !ENDIF
 
@@ -69,15 +69,15 @@ OPENSSL_LIB=/LIBPATH:$(OPENSSL_LIB_DIR)
 
 INC_FILES = /I ./INCLUDE /J $(ZLIB_INC) $(OPENSSL_INC) /I $(PTHREAD_INC) /nologo /D _WIN32
 CFLAGS=$(DBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c
-LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib $(ZLIBLIB) \
+LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt
-EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
+EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
 	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ $(ZLIBOBJ) $(SSLOBJ) 
 MOD_DLL=SRC/MODULOS/MX.DLL SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL \
-	SRC/MODULOS/NEWSSERV.DLL
+	SRC/MODULOS/NEWSSERV.DLL SRC/MODULOS/HELPSERV.DLL
 #	SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL
 OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/DEBUG.OBJ
 PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
@@ -87,7 +87,7 @@ EXT_DLL=SRC/EXTENSIONES/UDB/UDB.DLL SRC/EXTENSIONES/HISPANO/HISPANO.DLL
 INCLUDES = ./include/ircd.h ./include/md5.h ./include/modulos.h ./include/parseconf.h ./include/protocolos.h \
 	./include/ircsprintf.h ./include/sql.h ./include/struct.h ./include/ssl.h ./include/zip.h ./include/sistema.h 
 MODCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
-MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ws2_32.lib
+MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ws2_32.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS)
 PROTCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) ws2_32.lib
 SQLCFLAGS=$(MODDBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/sql/ /Fosrc/sql/ /D ENLACE_DINAMICO /D MODULE_COMPILE
@@ -161,6 +161,9 @@ src/debug.obj: src/win32/debug.c $(INCLUDES)
   
 src/hash.obj: src/hash.c $(INCLUDES)
         $(CC) $(CFLAGS) src/hash.c        
+      
+src/httpd.obj: src/httpd.c $(INCLUDES)
+        $(CC) $(CFLAGS) src/httpd.c       
         
 src/ircd.obj: src/ircd.c $(INCLUDES)
         $(CC) $(CFLAGS) src/ircd.c        
@@ -275,11 +278,16 @@ src/modulos/smsserv.dll: src/modulos/smsserv.c $(INCLUDES) ./include/modulos/sms
 	-@copy src\modulos\smsserv.pdb modulos\smsserv.pdb >NUL
 	
 src/modulos/newsserv.dll: src/modulos/newsserv.c $(INCLUDES) ./include/modulos/newsserv.h
-	$(CC) /I "C:\dev\Expat-2.0.0\Source\lib" /I "C:\dev\libiconv\include" $(MODCFLAGS) src/modulos/newsserv.c \
-	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:"C:\dev\Expat-2.0.0\StaticLibs" \
-	libexpatMT.lib /LIBPATH:"C:\dev\libiconv\lib" iconv.lib 
+	$(CC) /I "C:\dev\expat\lib" /I "C:\dev\libiconv\include" $(MODCFLAGS) src/modulos/newsserv.c \
+	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:"C:\dev\expat\lib\Release_static" \
+	libexpatMD.lib /LIBPATH:"C:\dev\libiconv\lib" iconv.lib 
 	-@copy src\modulos\newsserv.dll modulos\newsserv.dll >NUL
 	-@copy src\modulos\newsserv.pdb modulos\newsserv.pdb >NUL
+	
+src/modulos/helpserv.dll: src/modulos/helpserv.c $(INCLUDES) ./include/modulos/helpserv.h
+	$(CC) $(MODCFLAGS) src/modulos/helpserv.c $(MODLFLAGS)
+	-@copy src\modulos\helpserv.dll modulos\helpserv.dll >NUL
+	-@copy src\modulos\helpserv.pdb modulos\helpserv.pdb >NUL
 
 src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
@@ -305,49 +313,27 @@ src/protocolos/redhispana.dll: src/protocolos/redhispana.c $(INCLUDES)
 src/sql/mysql.dll: src/sql/mysql.c $(INCLUDES)
 	$(CC) $(SQLCFLAGS) /I "C:\Archivos de Programa\MySQL\MySQL Server 5.0\include" src/sql/mysql.c \
 	$(SQLLFLAGS) /LIBPATH:"C:\Archivos de Programa\MySQL\MySQL Server 5.0\lib\opt" mysqlclient.lib \
-	user32.lib ws2_32.lib Advapi32.lib libcmt.lib /NODEFAULTLIB:msvcrt /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
+	user32.lib ws2_32.lib Advapi32.lib /NODEFAULTLIB:libcmt /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
 	-@copy src\sql\mysql.dll sql\mysql.dll >NUL
 	-@copy src\sql\mysql.pdb sql\mysql.pdb >NUL
 
 src/sql/postgresql.dll: src/sql/postgresql.c $(INCLUDES)
-	$(CC) $(SQLCFLAGS) /I "C:\Archivos de programa\PostgreSQL\8.1\include" src/sql/postgresql.c \
-	$(SQLLFLAGS) /LIBPATH:"C:\Archivos de programa\PostgreSQL\8.1\lib\ms" libpq.lib \
-	user32.lib /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
+	$(CC) $(SQLCFLAGS) /I "C:\dev\postgresql\src\interfaces\libpq" /I "C:\dev\postgresql\src\include" src/sql/postgresql.c \
+	$(SQLLFLAGS) /LIBPATH:"C:\dev\postgresql\src\interfaces\libpq\Release" libpq.lib \
+	user32.lib ws2_32.lib Advapi32.lib shell32.lib /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
 	-@copy src\sql\postgresql.dll sql\postgresql.dll >NUL
 	-@copy src\sql\postgresql.pdb sql\postgresql.pdb >NUL
 
-UDB_OBJ=SRC/EXTENSIONES/UDB/BDD.OBJ \
-	SRC/EXTENSIONES/UDB/UDB.OBJ \
-	SRC/EXTENSIONES/UDB/CHANSERV.OBJ \
-	SRC/EXTENSIONES/UDB/NICKSERV.OBJ \
-	SRC/EXTENSIONES/UDB/OPERSERV.OBJ \
-	SRC/EXTENSIONES/UDB/IPSERV.OBJ
-src/extensiones/udb/udb.obj: src/extensiones/udb/udb.c
-	$(CC) $(DBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE /c src/extensiones/udb/udb.c
-src/extensiones/udb/bdd.obj: src/extensiones/udb/bdd.c $(INCLUDES)
-	$(CC) $(DBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE /c src/extensiones/udb/bdd.c
-src/extensiones/udb/chanserv.obj: src/extensiones/udb/chanserv.c $(INCLUDES) ./include/modulos/chanserv.h
-	$(CC) $(DBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE /c src/extensiones/udb/chanserv.c
-src/extensiones/udb/ipserv.obj: src/extensiones/udb/ipserv.c $(INCLUDES) ./include/modulos/ipserv.h
-	$(CC) $(DBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE /c src/extensiones/udb/ipserv.c
-src/extensiones/udb/nickserv.obj: src/extensiones/udb/nickserv.c $(INCLUDES) ./include/modulos/nickserv.h
-	$(CC) $(DBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE /c src/extensiones/udb/nickserv.c
-src/extensiones/udb/operserv.obj: src/extensiones/udb/operserv.c $(INCLUDES) ./include/modulos/operserv.h
-	$(CC) $(DBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE /c src/extensiones/udb/operserv.c
-src/extensiones/udb/udb.dll: $(UDB_OBJ)
-	$(LINK) colossus.lib /NODEFAULTLIB:libcmt /dll /debug $(UDB_OBJ) \
-	/out:src/extensiones/udb/udb.dll /def:src/modulos/modulos.def /implib:src/extensiones/udb/udb.lib \
-	src/protocolos/unreal.lib \
-	src/modulos/chanserv.lib \
-	src/modulos/nickserv.lib \
-	src/modulos/operserv.lib \
-	src/modulos/ipserv.lib
+UDB_FILES=src/extensiones/udb/udb.c \
+	src/extensiones/udb/bdd.c \
+	src/extensiones/udb/chanserv.c \
+	src/extensiones/udb/ipserv.c \
+	src/extensiones/udb/nickserv.c \
+	src/extensiones/udb/operserv.c
+UDB_LIBS=src/protocolos/unreal.lib src/modulos/nickserv.lib src/modulos/ipserv.lib src/modulos/chanserv.lib src/modulos/operserv.lib
+src/extensiones/udb/udb.dll: $(UDB_FILES) $(INCLUDES)
+	$(CC) $(MODDBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
+	/D ENLACE_DINAMICO /D MODULE_COMPILE $(UDB_FILES) $(MODLFLAGS) $(UDB_LIBS) /out:src/extensiones/udb/udb.dll
 	-@copy src\extensiones\udb\udb.dll protocolos\extensiones\udb.dll >NUL
 	-@copy src\extensiones\udb\udb.pdb protocolos\extensiones\udb.pdb >NUL
 

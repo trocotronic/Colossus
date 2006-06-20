@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.82 2006-04-30 19:49:28 Trocotronic Exp $ 
+ * $Id: main.c,v 1.83 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -32,6 +32,7 @@ Senyal *senyals[MAXSIGS];
 Timer *timers = NULL;
 Proc *procs = NULL;
 char tokbuf[BUFSIZE];
+extern Canal *canal_debug;
 #ifdef USA_CONSOLA
 char conbuf[128];
 HANDLE hStdin;
@@ -84,6 +85,7 @@ void LoopPrincipal(void *);
 SOCKFUNC(MotdAbre);
 SOCKFUNC(MotdLee);
 int SigPostNick(Cliente *, char);
+int SigCDestroy(Canal *);
 	
 #ifndef _WIN32
 const char logo[] = {
@@ -205,6 +207,12 @@ int SigPostNick(Cliente *cl, char nuevo)
 	Nivel *niv;
 	if (IsId(cl) && (niv = BuscaNivel("ROOT")) && !strcasecmp(conf_set->root, cl->nombre))
 		cl->nivel |= niv->nivel;
+	return 0;
+}
+int SigCDestroy(Canal *cn)
+{
+	if (canal_debug && !strcasecmp(cn->nombre, canal_debug->nombre))
+		canal_debug = NULL;
 	return 0;
 }
 #ifdef _WIN32
@@ -336,42 +344,42 @@ void CpuId()
 	bzero(sgn.cpuid, sizeof(sgn.cpuid));
 	hPhysicalDriveIOCTL = CreateFile("\\\\.\\PhysicalDrive0", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (hPhysicalDriveIOCTL != INVALID_HANDLE_VALUE)
-      	{
+	{
 		STORAGE_PROPERTY_QUERY query;
          	DWORD cbBytesReturned = 0;
 		char buffer[10000];
-	        memset ((void *)&query, 0, sizeof (query));
+		memset ((void *)&query, 0, sizeof (query));
 		query.PropertyId = StorageDeviceProperty;
 		query.QueryType = PropertyStandardQuery;
-	 	memset(buffer, 0, sizeof(buffer));
-	        if (DeviceIoControl(hPhysicalDriveIOCTL, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &buffer, sizeof(buffer), &cbBytesReturned, NULL))
-         	{         
-         		STORAGE_DEVICE_DESCRIPTOR *descrip = (STORAGE_DEVICE_DESCRIPTOR *)&buffer;
+		memset(buffer, 0, sizeof(buffer));
+		if (DeviceIoControl(hPhysicalDriveIOCTL, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &buffer, sizeof(buffer), &cbBytesReturned, NULL))
+		{         
+			STORAGE_DEVICE_DESCRIPTOR *descrip = (STORAGE_DEVICE_DESCRIPTOR *)&buffer;
 			char serialNumber[1000], modelNumber[1000];
 			strcpy(serialNumber, flipAndCodeBytes(&buffer[descrip->SerialNumberOffset]));
 			strcpy(modelNumber, &buffer[descrip->ProductIdOffset]);
 			if (isalnum(serialNumber[0]) || isalnum(serialNumber[19]))
 				strncpy(sgn.cpuid, serialNumber, sizeof(sgn.cpuid)-1);
          	}
-        }
+	}
 #else
 	int r, s;
 	struct ifreq ifr;
 	char *hwaddr;
 	strcpy(ifr.ifr_name, "eth0");
 	bzero(sgn.cpuid, sizeof(sgn.cpuid));
- 	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) > 0)
+	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) > 0)
 	{
-	    	if ((r = ioctl( s, SIOCGIFHWADDR, &ifr )) >= 0)
-	    	{
+		if ((r = ioctl( s, SIOCGIFHWADDR, &ifr )) >= 0)
+		{
 			hwaddr = ifr.ifr_hwaddr.sa_data;
-    			snprintf(sgn.cpuid, 13, "%02X%02X%02X%02X%02X%02X", 
+			snprintf(sgn.cpuid, 13, "%02X%02X%02X%02X%02X%02X", 
 				hwaddr[5] & 0xFF, hwaddr[3] & 0xFF,
 				hwaddr[1] & 0xFF, hwaddr[4] & 0xFF,
 				hwaddr[6] & 0xFF, hwaddr[2] & 0xFF);
 		}
-    		close(s);
-    	}
+		close(s);
+	}
 #endif
 }
 void BorraTemporales()
@@ -491,8 +499,9 @@ int main(int argc, char *argv[])
 	while (--argc > 0 && (*++argv)[0] == '-') 
 	{
 		char *p = argv[0] + 1;
-		int  flag = *p++;
-		if (flag == '\0' || *p == '\0') {
+		int flag = *p++;
+		if (flag == '\0' || *p == '\0') 
+		{
 			if (argc > 1 && argv[1][0] != '-') 
 			{
 				p = *++argv;
@@ -554,6 +563,7 @@ int main(int argc, char *argv[])
 	InsertaSenyal(SIGN_SYNCH, EntraBots);
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
 	InsertaSenyal(SIGN_POST_NICK, SigPostNick);
+	InsertaSenyal(SIGN_CDESTROY, SigCDestroy);
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);
@@ -949,7 +959,8 @@ int ApagaCrono(char *nombre, Sock *sck)
 		if (!strcasecmp(nombre, aux->nombre) && aux->sck == sck)
 		{
 			Free(aux->nombre);
-			Free(aux->args);
+			if (aux->args)
+				Free(aux->args);
 			if (prev)
 				prev->sig = aux->sig;
 			else
@@ -1645,9 +1656,10 @@ static u_long crc32_tab[] = {
 u_long Crc32(const char *s, u_int len)
 {
 	u_int i;
-	u_long crc32val = 0L;
+	u_long crc32val = 0xffffffffL;
 	for (i = 0;  i < len;  i ++)
 		crc32val = crc32_tab[(crc32val ^ s[i]) & 0xff] ^ (crc32val >> 8);
+	crc32val ^= 0xffffffffL;
 	return crc32val;
 }
 #define NUMNICKLOG 6
@@ -1854,8 +1866,8 @@ char *Repite(char car, int veces)
 }
 
 /*!
- * @desc: Busca una opción en una lista de opciones.
- * @params: $item [in] Opción a buscar.
+ * @desc: Busca una opción en una lista de opciones a partir de su ítem.
+ * @params: $item [in] Ítem a buscar.
  	    $lista [in] Lista donde buscar.
  * @ret: Devuelve el valor de esa opción.
  * @cat: Programa
@@ -1870,6 +1882,25 @@ int BuscaOpt(char *item, Opts *lista)
 			return ofl->opt;
 	}
 	return 0;
+}
+
+/*!
+ * @desc: Busca un ítem en una lista de opciones a partir de su opción.
+ * @params: $opt [in] Opción a buscar.
+ 		$lista [in] Lista donde buscar.
+ * @ret: Devuelve el ítem de esa opción. NULL si no lo encuentra.
+ * @cat: Programa
+ !*/
+ 
+char *BuscaOptItem(int opt, Opts *lista)
+{
+	Opts *ofl;
+	for (ofl = lista; ofl->item; ofl++)
+	{
+		if (ofl->opt == opt)
+			return ofl->item;
+	}
+	return NULL;
 }
 
 int CreaClave(char *clave)
@@ -2208,3 +2239,110 @@ time_t GMTime()
 	t = time(0);
 	return mktime(gmtime(&t));
 }
+#ifdef _WIN32
+typedef struct _ecmd
+{
+	char *cmd;
+	char *params;
+	u_long *len;
+	char **res;
+	ECmdFunc func;
+	void *v;
+}ECmd;
+BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
+{ 
+	PROCESS_INFORMATION piProcInfo; 
+	STARTUPINFO siStartInfo;
+	BOOL bFuncRetn = FALSE; 
+	ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION) );
+	ZeroMemory( &siStartInfo, sizeof(STARTUPINFO) );
+	siStartInfo.cb = sizeof(STARTUPINFO); 
+	siStartInfo.hStdError = hChildStdoutWr;
+	siStartInfo.hStdOutput = hChildStdoutWr;
+	siStartInfo.hStdInput = hChildStdinRd;
+	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+   	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE,  0, NULL, NULL, &siStartInfo, &piProcInfo)))
+   		return 0;
+	CloseHandle(piProcInfo.hProcess);
+	CloseHandle(piProcInfo.hThread);
+	return bFuncRetn;
+}
+#define TBLOQ 4096
+int EjecutaCmd(ECmd *ecmd)
+{
+	HANDLE hChildStdinRd, hChildStdinWr, hChildStdoutRd, hChildStdoutWr;
+	SECURITY_ATTRIBUTES saAttr; 
+   	DWORD dwRead;
+   	int i, libres = TBLOQ;
+   	u_long len = 0L;
+   	char chBuf[TBLOQ], *res; 
+   	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+	saAttr.bInheritHandle = TRUE; 
+	saAttr.lpSecurityDescriptor = NULL;
+	if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &saAttr, 0))
+		return 1;
+	SetHandleInformation(hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
+	if (!CreatePipe(&hChildStdinRd, &hChildStdinWr, &saAttr, 0))
+		return 2;
+	SetHandleInformation(hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
+	ircsprintf(chBuf, "%s %s", ecmd->cmd, ecmd->params);
+	if (!CreateChildProcess(chBuf, hChildStdinRd, hChildStdoutWr))
+		return 3;
+	//WriteFile(hChildStdinWr, params, strlen(params), &dwWritten, NULL);
+	if (!CloseHandle(hChildStdinWr))
+		return 4;
+	if (!CloseHandle(hChildStdoutWr))
+		return 5;
+	res = (char *)Malloc(sizeof(char) * TBLOQ);
+	*res = '\0';
+	for (i = 1;;) 
+	{ 
+		if(!ReadFile(hChildStdoutRd, chBuf, sizeof(chBuf)-1, &dwRead, NULL) || dwRead == 0) 
+			break;
+		chBuf[dwRead] = '\0';
+		libres -= dwRead;
+		len += dwRead;
+		if (libres <= 1)
+		{
+			i++;
+			libres = TBLOQ;
+			res = (char *)realloc(res, sizeof(char) * TBLOQ * i);
+			
+		}
+		strcat(res, chBuf);
+     }
+     if (ecmd->func)
+     	ecmd->func(len, res, ecmd->v);
+     else
+     {
+     	if (ecmd->len)
+     		*ecmd->len = len;
+     	if (ecmd->res)
+     		*ecmd->res = res;
+     }
+     Free(ecmd);
+     return 0;
+}
+int EjecutaComandoSinc(char *cmd, char *params, u_long *len, char **res)
+{
+	ECmd *ecmd;
+	BMalloc(ecmd, ECmd);
+	ecmd->cmd = cmd;
+	ecmd->params = params;
+	ecmd->len = len;
+	ecmd->res = res;
+	return EjecutaCmd(ecmd);
+}
+int EjecutaComandoASinc(char *cmd, char *params, ECmdFunc func, void *v)
+{
+	ECmd *ecmd;
+	pthread_t id;
+	BMalloc(ecmd, ECmd);
+	ecmd->cmd = cmd;
+	ecmd->params = params;
+	ecmd->func = func;
+	ecmd->v = v;
+	pthread_create(&id, NULL, (void *)EjecutaCmd, (void *)ecmd);
+	return 0;
+}
+#endif

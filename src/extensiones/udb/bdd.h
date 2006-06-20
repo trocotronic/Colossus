@@ -1,8 +1,10 @@
-#define UDB_VER "3.2.3"
+#define UDB_VER "3.3"
 #ifdef _WIN32
 #define DB_DIR "database\\"
+#define DB_DIR_BCK DB_DIR "backup\\"
 #else
 #define DB_DIR "database/"
+#define DB_DIR_BCK DB_DIR "backup/"
 #endif
 typedef struct _udb
 {
@@ -12,33 +14,42 @@ typedef struct _udb
 	u_long data_long;
 	struct _udb *hsig, *up, *mid, *down;
 }Udb;
-
-#define DBMAX 128
+typedef struct _bloque
+{
+	Udb *arbol;
+	struct _bloque *sig;
+	u_long crc32;
+	char *path;
+	u_int id;
+	u_long lof;
+	time_t gmt;
+	Cliente *res;
+	u_int regs;
+	char letra;
+}UDBloq;
+#define DBMAX 64
 #define CHAR_NUM '*'
-extern Udb *nicks, *chans, *ips, *sets;
-extern u_int BDD_NICKS, BDD_CHANS, BDD_IPS, BDD_SET;
-extern time_t gmts[DBMAX];
-extern int regs[DBMAX];
+extern UDBloq *N, *C, *I, *S;
+extern Udb *UDB_NICKS, *UDB_CANALES, *UDB_IPS, *UDB_SET;
 
-extern Udb *BuscaRegistro(int, char *);
 extern Udb *BuscaBloque(char *, Udb *);
-int NivelOperBdd(char *);
+u_int LevelOperUdb(char *);
 extern char bloques[];
 extern u_int BDD_TOTAL;
-extern Udb *ultimo;
+extern UDBloq *ultimo;
 extern Opts NivelesBDD[];
-extern Udb *IdAUdb(int);
-extern void CargaBloque(int);
-extern void DescargaBloque(int);
-extern int ParseaLinea(int, char *, int);
-extern int ActualizaHash(Udb *);
-extern int Optimiza(Udb *);
-extern int ActualizaGMT(Udb *, time_t);
-extern time_t LeeGMT(int);
-extern u_long LeeHash(int);
+extern UDBloq *CogeDeId(u_int);
+extern void CargaBloque(u_int);
+extern void DescargaBloque(u_int);
+extern int ParseaLinea(u_int, char *, int);
+extern int ActualizaHash(UDBloq *);
+extern int OptimizaBloque(UDBloq *);
+extern int ActualizaGMT(UDBloq *, time_t);
+extern time_t LeeGMT(u_int);
+extern u_long LeeHash(u_int);
 extern int CargaBloques();
-extern void BddInit();
-extern int TruncaBloque(Cliente *, Udb *, u_long);
+extern void IniciaUDB();
+extern int TruncaBloque(Cliente *, UDBloq *, u_long);
 extern void PropagaRegistro(char *, ...);
 
 #define E_UDB_NODB 1
@@ -49,6 +60,9 @@ extern void PropagaRegistro(char *, ...);
 #define E_UDB_FATAL 6
 #define E_UDB_RPROG 7 
 #define E_UDB_NORES 8 
+#define E_UDB_FBSRV 9
+#define E_UDB_REP 10
+
 
 #define N_SUS "suspendido"
 #define N_SUS_TOK "S"

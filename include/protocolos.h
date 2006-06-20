@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.8 2006-02-17 19:54:42 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.9 2006-06-20 13:19:40 Trocotronic Exp $ 
  */
 typedef struct _extension Extension;
 typedef struct _proto Protocolo;
@@ -43,7 +43,7 @@ struct _proto
 	SOCKFUNC(*parsea);
 	mTab umodos[MAXMOD];
 	mTab cmodos[MAXMOD];
-	int (*comandos[25])();
+	int (*comandos[26])();
 	char *modcl;
 	char *modmk;
 	char *modpm1;
@@ -83,6 +83,7 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #define P_NOTICE 22
 #define P_INVITE 23
 #define P_MSG_VL 24
+#define P_PING 25
 
 #define ProtUmodo(x) (protocolo->umodos + x)->mode
 #define ProtCmodo(x) (protocolo->cmodos + x)->mode

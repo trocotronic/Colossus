@@ -17,8 +17,8 @@ BOTFUNC(OSOpt);
 BOTFUNCHELP(OSHOptimiza);
 EXTFUNC(OSOpers);
 
+#define NS_OPT_UDB 0x80
 #define IsNickUDB(x) (IsReg(x) && atoi(SQLCogeRegistro(NS_SQL, x, "opts")) & NS_OPT_UDB)
-#define NS_OPT_UDB 0x1000
 
 bCom operserv_coms[] = {
 	{ "modos" , OSModos , N4 , "Fija los modos de operador que se obtiene automáticamente (BDD)." , OSHModos } ,
@@ -154,12 +154,12 @@ BOTFUNC(OSOpt)
 {
 	u_int i;
 	time_t hora = time(0);
-	Udb *aux;
+	UDBloq *aux;
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		aux = IdAUdb(i);
-		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, bloques[i], hora);
-		Optimiza(aux);
+		aux = CogeDeId(i);
+		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
+		OptimizaBloque(aux);
 		ActualizaGMT(aux, hora);
 	}
 	Responde(cl, CLI(operserv), "Se han optimizado todos los bloques");
@@ -177,7 +177,7 @@ EXTFUNC(OSOpers)
 	}
 	else
 	{
-		if ((nivel = NivelOperBdd(param[1])))
+		if ((nivel = LevelOperUdb(param[1])))
 			PropagaRegistro("N::%s::O", param[1]);
 	}
 	return 0;
