@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.2 2006-06-20 13:30:07 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.3 2006-06-20 13:31:08 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -7,6 +7,7 @@
 #ifndef _WIN32
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #endif
 
 Sock *listen_httpd;
@@ -318,7 +319,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 					}
 					if (sb.st_mtime <= hh->lmod)
 					{
-						closee(fd);
+						close(fd);
 						EnviaRespuesta(hh, 304, -1, NULL, 0, NULL);
 						break;
 					}
