@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.15 2006-04-17 14:19:43 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.16 2006-06-20 13:23:56 Trocotronic Exp $ 
  */
 
 #define MAXMODS 128
@@ -170,7 +170,7 @@ extern int MuestraAyudaComando(Cliente *, char *, Modulo *, char **m, int);
 extern int ProcesaComsMod(Conf *, Modulo *, bCom *);
 extern void LiberaComs(Modulo *);
 extern void SetComMod(Conf *, Modulo *, bCom *);
-extern int TestComMod(Conf *, bCom *, char);
+extern int TestComMod(Conf *, bCom *, int);
 
 typedef struct _nivel
 {

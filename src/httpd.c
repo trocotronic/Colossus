@@ -1,9 +1,13 @@
 /*
- * $Id: httpd.c,v 1.1 2006-06-20 13:21:33 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.2 2006-06-20 13:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "httpd.h"
+#ifndef _WIN32
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 
 Sock *listen_httpd;
 HHead *httpcons[MAX_CON];
@@ -258,8 +262,6 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 				{
 					hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
 					EjecutaComandoASinc("php", buf, EPhp, hh);
-					
-					//Free(p);
 				}
 				else
 				{

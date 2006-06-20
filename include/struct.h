@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.60 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.61 2006-06-20 13:30:07 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -534,4 +534,4 @@ extern char *Long2Char(u_long);
 extern time_t GMTime();
 typedef int (*ECmdFunc)(u_long, char *, void *);
 extern int EjecutaComandoSinc(char *, char *, u_long *, char **);
-extern int EjecutaComandoASinc(char *, char *, int (*)(u_long, char *, void *), void *);
+extern int EjecutaComandoASinc(char *, char *, ECmdFunc, void *);

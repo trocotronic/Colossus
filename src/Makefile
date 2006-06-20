@@ -1,6 +1,6 @@
-## $Id: Makefile,v 1.29 2006-02-17 23:17:58 Trocotronic Exp $
+## $Id: Makefile,v 1.30 2006-06-20 13:26:45 Trocotronic Exp $
 
-OBJS=hash.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
+OBJS=hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
 	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
@@ -74,6 +74,8 @@ sql.o: sql.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c sql.c
 zlib.o: zlib.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c zlib.c
+httpd.o: httpd.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c httpd.c
 clean:
 	$(RM) -f *.o *.so *~ core colossus; \
 	cd modulos; make clean; cd ..; \
