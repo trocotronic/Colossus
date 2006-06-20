@@ -1,15 +1,15 @@
 /*
- * $Id: mysql.c,v 1.4 2006-06-20 13:19:41 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.5 2006-06-20 13:49:43 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #ifdef _WIN32
 #include <mysql.h>
+#include <winerror.h>
 #else
 #include <mysql/mysql.h>
 #endif
 #include "ircd.h"
-#include <winerror.h>
 
 MYSQL *mysql = NULL;
 SQLRes Query(const char *);

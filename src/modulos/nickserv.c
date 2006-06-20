@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.39 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.40 2006-06-20 13:48:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -63,7 +63,7 @@ DLLFUNC void NSCambiaInv(Cliente *);
 void NSSet(Conf *, Modulo *);
 int NSTest(Conf *, int *);
 extern MODVAR mTab cFlags[];
-mTab *modreg = NULL;
+mTab *umodreg = NULL;
 
 static bCom nickserv_coms[] = {
 	{ "help" , NSHelp , N0 , "Muestra esta ayuda." , NULL } ,
@@ -558,8 +558,8 @@ BOTFUNC(NSRegister)
 	if (nickserv->opts & NS_SMAIL)
 		Email(mail, "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(cl->nombre), nickserv->hmod->nick, conf_set->red);
-	else if (modreg)
-		ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", modreg->flag);
+	else if (umodreg)
+		ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", umodreg->flag);
 	if (!IsOper(cl))
 		InsertaCache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv->min_reg, nickserv->hmod->id, "%lu", time(0));
 	Responde(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
@@ -593,8 +593,8 @@ BOTFUNC(NSIdentify)
 	}
 	if (!strcmp(MDString(param[1]), SQLCogeRegistro(NS_SQL, cl->nombre, "pass")))
 	{
-		if (modreg)
-			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", modreg->flag);
+		if (umodreg)
+			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", umodreg->flag);
 		Responde(cl, CLI(nickserv), "Ok \00312%s\003, bienvenid@ a casa :)", cl->nombre);
 		Senyal1(NS_SIGN_IDOK, cl);
 	}
@@ -1039,7 +1039,7 @@ int NSCmdUmode(Cliente *cl, char *modos)
 {
 	//if (conf_set->modos && conf_set->modos->usuarios)
 	//	ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), conf_set->modos->usuarios);
-	if (modreg && strchr(modos, modreg->flag) && (cl->modos & UMODE_REGNICK))
+	if (umodreg && strchr(modos, umodreg->flag) && (cl->modos & UMODE_REGNICK))
 		Senyal1(NS_SIGN_IDOK, cl);
 	return 0;
 }
@@ -1140,7 +1140,7 @@ int NSSigSQL()
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}
 	SQLCargaTablas();
-	modreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
+	umodreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
 	return 1;
 }
 int NSSigQuit(Cliente *cl, char *msg)

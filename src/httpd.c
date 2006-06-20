@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.4 2006-06-20 13:46:10 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.5 2006-06-20 13:46:47 Trocotronic Exp $ 
  */
 #ifdef _WIN32
 #include "struct.h"
@@ -458,6 +458,15 @@ int DetieneHTTPD()
 	}
 	if (listen_httpd)
 		SockClose(listen_httpd, LOCAL);
+	return 0;
+}
+#else
+int DetieneHTTPD()
+{
+	return 0;
+}
+int IniciaHTTPD()
+{
 	return 0;
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.37 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.38 2006-06-20 13:48:44 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -78,7 +78,7 @@ void CSSet(Conf *, Modulo *);
 SQLRow CSEsAkick(char *, char *);
 int CSTieneAuto(char *, char *, char);
 SQLRes CSEsAccess(char *, char *);
-mTab *modreg = NULL;
+mTab *cmodreg = NULL;
 
 static bCom chanserv_coms[] = {
 	{ "help" , CSHelp , N0 , "Muestra esta ayuda." , NULL } ,
@@ -1146,7 +1146,7 @@ BOTFUNC(CSClear)
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
 		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "-%s", ModosAFlags(cn->modos, protocolo->cmodos, cn));
-		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%c", IsChanReg(param[1]) && modreg ? modreg->flag : 0);
+		ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+nt%c", IsChanReg(param[1]) && cmodreg ? cmodreg->flag : 0);
 		Responde(cl, CLI(chanserv), "Modos resetados a +nt.");
 	}
 	/*else if (!strcasecmp(param[2], "BANS"))
@@ -2036,8 +2036,8 @@ BOTFUNC(CSRegister)
 			{
 				if (RedOverride)
 					EntraBot(CLI(chanserv), cn->nombre);
-				if (modreg)
-					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", modreg->flag);
+				if (cmodreg)
+					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", cmodreg->flag);
 				ProtFunc(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
 			}
 			Senyal1(CS_SIGN_REG, param[1]);
@@ -2293,8 +2293,8 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 			SQLInserta(CS_SQL, cn->nombre, "ultimo", "%lu", time(0));
 		if (cn->miembros == 1)
 		{
-			if (modreg)
-				chrcat(buf, modreg->flag);
+			if (cmodreg)
+				chrcat(buf, cmodreg->flag);
 			if (opts & CS_OPT_RMOD)
 			{
 				char *mod;
@@ -2473,7 +2473,7 @@ int CSSigSQL()
 		}
 	}
 	SQLCargaTablas();
-	modreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
+	cmodreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
 	return 1;
 }
 int CSSigEOS()
