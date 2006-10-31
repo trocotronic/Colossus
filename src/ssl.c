@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.11 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.12 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -252,14 +252,14 @@ char *SSLCifrado(SSL *ssl)
 	int bits;
 	SSL_CIPHER *c; 
 	buf[0] = '\0';
-	strcpy(buf, SSL_get_version(ssl));
-	strcat(buf, "-");
-	strcat(buf, SSL_get_cipher(ssl));
+	strlcpy(buf, SSL_get_version(ssl), sizeof(buf));
+	strlcat(buf, "-", sizeof(buf));
+	strlcat(buf, SSL_get_cipher(ssl), sizeof(buf));
 	c = SSL_get_current_cipher(ssl);
 	SSL_CIPHER_get_bits(c, &bits);
-	strcat(buf, "-");
-	strcat(buf, (char *)my_itoa(bits));
-	strcat(buf, "bits");
+	strlcat(buf, "-", sizeof(buf));
+	strlcat(buf, (char *)my_itoa(bits), sizeof(buf));
+	strlcat(buf, "bits", sizeof(buf));
 	return (buf);
 }
 int SSLSockRead(Sock *sck, void *buf, int sz)

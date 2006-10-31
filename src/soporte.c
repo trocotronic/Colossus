@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.9 2006-04-30 18:08:31 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.10 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -113,6 +113,41 @@ int strncasecmp(const char *a, const char *b, int len)
 	return (*ra - *rb);
 }
 #endif
+#ifdef NEED_STRLCPY
+size_t strlcpy(char *dst, const char *src, size_t size)
+{
+	size_t len = strlen(src);
+	size_t ret = len;
+	if (size <= 0)
+		return 0;
+	if (len >= size)
+		len = size - 1;
+	memcpy(dst, src, len);
+	dst[len] = 0;
+	return ret;
+}
+#endif
+#ifdef NEED_STRLCAT
+size_t strlcat(char *dst, const char *src, size_t size)
+{
+	size_t len1 = strlen(dst);
+	size_t len2 = strlen(src);
+	size_t ret = len1 + len2;
+
+	if (size <= len1)
+		return size;
+	if (len1 + len2 >= size)
+		len2 = size - (len1 + 1);
+
+	if (len2 > 0) {
+		memcpy(dst + len1, src, len2);
+		dst[len1 + len2] = 0;
+	}
+	
+	return ret;
+}
+#endif
+
 void strcopia(char **dest, const char *orig)
 {
 	ircfree(*dest);
@@ -265,7 +300,7 @@ char *str_replace(char *str, char orig, char rep)
 	static char rem[BUFSIZE];
 	char *remp;
 	remp = &rem[0];
-	strcpy(remp, str);
+	strlcpy(remp, str, sizeof(rem));
 	while (*remp)
 	{
 		if (*remp == orig)
@@ -290,7 +325,7 @@ char *strtolower(char *str)
 #else
 	char *tolo;
 	tolo = &tol[0];
-	strcpy(tolo, str);
+	strlcpy(tolo, str, sizeof(tol));
 	while (*tolo)
 	{
 		*tolo = ToLower(*tolo);
@@ -315,7 +350,7 @@ char *strtoupper(char *str)
 #else
 	char *toup;
 	toup = &tou[0];
-	strcpy(toup, str);
+	strlcpy(toup, str, sizeof(tou));
 	while (*toup)
 	{
 		*toup = ToUpper(*toup);

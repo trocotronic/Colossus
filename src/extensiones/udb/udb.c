@@ -45,7 +45,8 @@ IRCFUNC(m_eos_U);
 #define MSG_EOS "EOS"
 #define TOK_EOS "ES"
 void UdbDaleCosas(Cliente *);
-int UdbCompruebaOpts(Proc *);
+int UdbOptimiza();
+int UdbBackup();
 int SigPreNick(Cliente *, char *);
 int SigPostNick_U(Cliente *, int);
 int SigSynch();
@@ -59,7 +60,9 @@ extern void EntraCliente(Cliente *, char *);
 IRCFUNC(*sjoin);
 IRCFUNC(m_sjoin_U);
 int opts = 0;
+Timer *timeropt = NULL, *timerbck = NULL;
 #define UDB_AUTOOPT 0x1
+#define UDB_AUTOBCK 0x2
 
 ModInfo MOD_INFO(UDB) = {
 	"UDB" ,
@@ -103,11 +106,15 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 		{
 			if (!strcmp(ext->config->seccion[j]->item, "autooptimizar"))
 				opts |= UDB_AUTOOPT;
+			else if (!strcmp(ext->config->seccion[j]->item, "autobackup"))
+				opts |= UDB_AUTOBCK;
 		}
 	}
 	IniciaUDB();
 	if (opts & UDB_AUTOOPT)
-		IniciaProceso(UdbCompruebaOpts);
+		timeropt = IniciaCrono(0, 86400, UdbOptimiza, NULL);
+	if (opts & UDB_AUTOBCK)
+		timerbck = IniciaCrono(0, 86400, UdbBackup, NULL);
 	protocolo->comandos[P_MODO_USUARIO_REMOTO] = p_svsmode_U;
 	InsertaComando(MSG_DB, TOK_DB, m_db, INI, 5);
 	InsertaComando(MSG_DBQ, TOK_DBQ, m_dbq, INI, 2);
@@ -153,7 +160,9 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 	if (ipserv)
 		DescargaIpServ(ext);
 	if (opts & UDB_AUTOOPT)
-		DetieneProceso(UdbCompruebaOpts);
+		ApagaCrono(timeropt);
+	if (opts & UDB_AUTOBCK)
+		ApagaCrono(timerbck);
 	BorraComando(MSG_DB, m_db);
 	BorraComando(MSG_DBQ, m_dbq);
 	BorraComando(MSG_EOS, m_eos_U);
@@ -190,8 +199,7 @@ int SigPreNick(Cliente *cl, char *nuevo)
 }
 int SigPostNick_U(Cliente *cl, int nuevo)
 {
-	if (nuevo == 1)
-		UdbDaleCosas(cl);
+	UdbDaleCosas(cl);
 	return 0;
 }
 int SigSockOpen()
@@ -290,6 +298,7 @@ IRCFUNC(m_db)
 				else
 					EnviaAServidor(":%s DB %s ERR RES %i %c", me.nombre, cl->nombre, E_UDB_NOOPEN, *parv[3]);
 				EnviaAServidor(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
+				bloq->res = NULL; /* OJO! ya hemos terminado, si no se queda esperando */
 			}
 			//else
 			//	bloq->res = cl; /* esperamos su res */
@@ -459,66 +468,42 @@ IRCFUNC(m_db)
 	else if (!strcmp(parv[2], "BCK"))
 	{
 		UDBloq *bloq;
-		FILE *fp1, *fp2;
-		char tmp[BUFSIZE];
 		if (!(bloq = CogeDeId(*parv[3])))
 		{
 			EnviaAServidor(":%s DB %s ERR BCK %i %c", me.nombre, cl->nombre, E_UDB_NODB, *parv[3]);
 			return 1;
 		}
-		ircsprintf(tmp, DB_DIR_BCK "%c%s.bck.udb", *parv[3], parv[4]);
-		if ((fp1 = fopen(bloq->path, "rb")) && (fp2 = fopen(tmp, "wb")))
+		switch (CopiaSeguridad(bloq, parv[4]))
 		{
-#ifdef USA_ZLIB
-			if (zDeflate(fp1, fp2, Z_DEFAULT_COMPRESSION) != Z_OK)
+			case -1:
+			case -2:
+				EnviaAServidor(":%s DB %s ERR BCK %i %c", me.nombre, cl->nombre, E_UDB_NOOPEN, *parv[3]);
+				break;
+			case -3:
 				EnviaAServidor(":%s DB %s ERR BCK %i %c zDeflate", me.nombre, cl->nombre, E_UDB_FATAL, *parv[3]);
-#else
-			size_t leidos;
-			while ((leidos = fread(tmp, 1, BUFSIZE, fp1)))
-				fwrite(tmp, 1, leidos, fp2);
-#endif
-			fclose(fp1);
-			fclose(fp2);
+				break;
 		}
-		else
-			EnviaAServidor(":%s DB %s ERR BCK %i %c", me.nombre, cl->nombre, E_UDB_NOOPEN, *parv[3]);
 	}
 	else if (!strcmp(parv[2], "RST"))
 	{
 		UDBloq *bloq;
-		FILE *fp1, *fp2;
-		char tmp[BUFSIZE];
 		if (!(bloq = CogeDeId(*parv[3])))
 		{
 			EnviaAServidor(":%s DB %s ERR RST %i %c", me.nombre, cl->nombre, E_UDB_NODB, *parv[3]);
 			return 1;
 		}
 		ActualizaGMT(bloq, atoul(parv[5]));
-		ircsprintf(tmp, DB_DIR_BCK "%c%s.bck.udb", *parv[3], parv[4]);
-		if ((fp1 = fopen(tmp, "rb")))
+		switch (RestauraSeguridad(bloq, parv[4]))
 		{
-			if ((fp2 = fopen(bloq->path, "wb")))
-			{
-#ifdef USA_ZLIB
-				if (zInflate(fp1, fp2) != Z_OK)
-					EnviaAServidor(":%s DB %s ERR RST %i %c zInflate", me.nombre, cl->nombre, E_UDB_FATAL, *parv[3]);
-#else
-				size_t leidos;
-				while ((leidos = fread(tmp, 1, BUFSIZE, fp1)))
-					fwrite(tmp, 1, leidos, fp2);
-#endif
-				fclose(fp2);
-			}
-			fclose(fp1);
-			ActualizaHash(bloq);
-			DescargaBloque(bloq->id);
-			CargaBloque(bloq->id);
-		}
-		else
-		{
-			TruncaBloque(cl, bloq, 0);
-			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
-			bloq->res = cl;
+			case -1:
+			case -2:
+				TruncaBloque(cl, bloq, 0);
+				EnviaAServidor(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
+				bloq->res = cl;
+				break;
+			case -3:
+				EnviaAServidor(":%s DB %s ERR RST %i %c zInflate", me.nombre, cl->nombre, E_UDB_FATAL, *parv[3]);
+				break;
 		}
 	}
 	else if (!strcmp(parv[2], "FHO"))
@@ -598,23 +583,23 @@ IRCFUNC(m_dbq)
 		}
 	}
 	else
-		EnviaAServidor(":%s 339 %s :%i %i %lu %lu %lX", me.nombre, cl->nombre, root->id, root->regs, root->lof, root->gmt, root->crc32);
+		EnviaAServidor(":%s 339 %s :%i %i %lu %lu %lX %s", me.nombre, cl->nombre, root->id, root->regs, root->lof, root->gmt, root->crc32, root->res ? "*" : "");
 	Free(pos);
 	return 0;
 }
 IRCFUNC(m_eos_U)
 {
 	if (cl == linkado)
-		UdbCompruebaOpts(NULL);
+		UdbOptimiza();
 	return 0;
 }
 IRCFUNC(m_sjoin_U)
 {
 	Cliente *al = NULL;
 	Canal *cn = NULL;
-	char *q, *p, tmp[BUFSIZE], mod[6];
+	char *q, *p, tmp[BUFSIZE], mod[8];
 	cn = InfoCanal(parv[2], !0);
-	strcpy(tmp, parv[parc-1]);
+	strlcpy(tmp, parv[parc-1], sizeof(tmp));
 	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
 		q = strchr(p, ' ');
@@ -625,25 +610,25 @@ IRCFUNC(m_sjoin_U)
 		while (*p)
 		{
 			if (*p == '.')
-				strcat(mod, "q");
+				strlcat(mod, "q", sizeof(mod));
 			else if (*p == '$')
-				strcat(mod, "a");
+				strlcat(mod, "a", sizeof(mod));
 			else if (*p == '@')
-				strcat(mod, "o");
+				strlcat(mod, "o", sizeof(mod));
 			else if (*p == '%')
-				strcat(mod, "h");
+				strlcat(mod, "h", sizeof(mod));
 			else if (*p == '+')
-				strcat(mod, "v");
+				strlcat(mod, "v", sizeof(mod));
 			else if (*p == '&')
 			{
 				p++;
-				strcat(mod, "b");
+				strlcat(mod, "b", sizeof(mod));
 				break;
 			}
 			else if (*p == '"')
 			{
 				p++;
-				strcat(mod, "e");
+				strlcat(mod, "e", sizeof(mod));
 				break;
 			}
 			else
@@ -704,30 +689,35 @@ void UdbDaleCosas(Cliente *cl)
 	else
 		ProcesaModosCliente(cl, "+S");
 }
-int UdbCompruebaOpts(Proc *proc)
+int UdbOptimiza()
 {
-	time_t hora = time(0);
 	u_int i;
 	UDBloq *aux;
+	time_t hora = time(0);
 	if (!SockIrcd)
 		return 1;
-	if (!proc || proc->time + 1800 < hora)
+	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		for (i = 0; i < BDD_TOTAL; i++)
-		{
-			aux = CogeDeId(i);
-			if (aux->gmt && aux->gmt + 86400 < hora)
-			{
-				EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
-				OptimizaBloque(aux);
-				ActualizaGMT(aux, hora);
-			}
-		}
-		if (proc)
-		{
-			proc->proc = 0;
-			proc->time = hora;
-		}
+		aux = CogeDeId(i);
+		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
+		OptimizaBloque(aux);
+		ActualizaGMT(aux, hora);
+	}
+	return 0;
+}
+int UdbBackup()
+{
+	u_int i;
+	UDBloq *aux;
+	time_t hora = time(0);
+	if (!SockIrcd)
+		return 1;
+	for (i = 0; i < BDD_TOTAL; i++)
+	{
+		aux = CogeDeId(i);
+		strftime(buf, sizeof(buf), "%d%m%y-%H%M", gmtime(&hora));
+		EnviaAServidor(":%s DB * BCK %c %s", me.nombre, aux->letra, buf);
+		CopiaSeguridad(aux,	buf);
 	}
 	return 0;
 }
@@ -835,5 +825,76 @@ int zInflate(FILE *source, FILE *dest)
     /* clean up and return */
     (void)inflateEnd(&strm);
     return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
+}
+int CopiaSeguridad(UDBloq *bloq, char *nombre)
+{
+	FILE *fp1, *fp2;
+	char tmp[BUFSIZE];
+	ircsprintf(tmp, DB_DIR_BCK "%c%s.bck.udb", bloq->letra, nombre);
+	if ((fp1 = fopen(bloq->path, "rb")))
+	{
+		if ((fp2 = fopen(tmp, "wb")))
+		{
+#ifdef USA_ZLIB
+			if (zDeflate(fp1, fp2, Z_DEFAULT_COMPRESSION) != Z_OK)
+			{
+				fclose(fp2);
+				fclose(fp1);
+				return -3;
+			}
+#else
+			size_t leidos;
+			while ((leidos = fread(tmp, 1, BUFSIZE, fp1)))
+				fwrite(tmp, 1, leidos, fp2);
+#endif
+			fclose(fp2);
+		}
+		else
+		{
+			fclose(fp1);
+			return -1;
+		}
+		fclose(fp1);
+	}
+	else
+		return -2;
+	return 0;
+}
+int RestauraSeguridad(UDBloq *bloq, char *nombre)
+{
+	FILE *fp1, *fp2;
+	char tmp[BUFSIZE];
+	ircsprintf(tmp, DB_DIR_BCK "%c%s.bck.udb", bloq->letra, nombre);
+	if ((fp1 = fopen(tmp, "rb")))
+	{
+		if ((fp2 = fopen(bloq->path, "wb")))
+		{
+#ifdef USA_ZLIB
+			if (zInflate(fp1, fp2) != Z_OK)
+			{
+				fclose(fp2);
+				fclose(fp1);
+				return -3;
+			}
+#else
+			size_t leidos;
+			while ((leidos = fread(tmp, 1, BUFSIZE, fp1)))
+				fwrite(tmp, 1, leidos, fp2);
+#endif
+			fclose(fp2);
+		}
+		else
+		{
+			fclose(fp1);
+			return -2;
+		}
+		fclose(fp1);
+		ActualizaHash(bloq);
+		DescargaBloque(bloq->id);
+		CargaBloque(bloq->id);
+	}
+	else
+		return -1;
+	return 0;
 }
 #endif

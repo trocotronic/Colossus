@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.6 2005-09-16 14:04:33 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.7 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -186,7 +186,7 @@ void CargaTablas()
 	pthread_mutex_lock(&mutex);
 	resultado = PQexec(postgres, "select relname from pg_stat_user_tables order by relname");
 	max = PQntuples(resultado);
-	for (i = 0; i < max; i++)
+	for (i = 0; i < max;)
 	{
 		tabla = PQgetvalue(resultado, i, 0);
 		if (strncmp(PREFIJO, tabla, strlen(PREFIJO)))
@@ -199,6 +199,7 @@ void CargaTablas()
 			ircstrdup(sql->tablas[i][j+1], PQfname(cp, j));
 		sql->tablas[i][j+1] = NULL;
 		PQclear(cp);
+		i++;
 	}
 	sql->tablas[i][0] = NULL;
 	PQclear(resultado);

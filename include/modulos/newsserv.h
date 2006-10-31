@@ -16,7 +16,7 @@ struct _noticia
 	char *t;
 	char descripcion[BUFSIZE];
 	char *d;
-	u_int id;
+	int id;
 	u_int servicio;
 };
 typedef struct _rss 
@@ -28,7 +28,7 @@ typedef struct _rss
 	u_int *tmp;
 	u_int q;
 	XML_Parser pxml;
-	FILE *fp;
+	int fp;
 	Noticia not;
 	Sock *sck;
 	u_int servicio;

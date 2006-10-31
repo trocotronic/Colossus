@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.18 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.19 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -157,7 +157,7 @@ void set(Conf *config, Modulo *mod)
 	int i, p;
 	bCom *ss;
 	if (!statserv)
-		BMalloc(statserv, StatServ);
+		statserv = BMalloc(StatServ);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "nick"))
@@ -487,7 +487,7 @@ IRCFUNC(statserv_nick)
 IRCFUNC(statserv_local_uptime)
 {
 	int d, h, m , s;
-	strcpy(tokbuf, parv[2]);
+	strlcpy(tokbuf, parv[2], sizeof(tokbuf));
 	strtok(tokbuf, " ");
 	strtok(NULL, " ");
 	d = atoi(strtok(NULL, " "));
@@ -565,7 +565,7 @@ IRCFUNC(statserv_notice)
 {
 	if (cl && EsServidor(cl))
 	{
-		strcpy(tokbuf, parv[2]);
+		strlcpy(tokbuf, parv[2], sizeof(tokbuf));
 		if (!strcmp(strtok(tokbuf, " "), "Lag"))
 		{
 			char *lag;
@@ -619,7 +619,7 @@ int statserv_mysql()
 {
 	if (!SQLEsTabla(SS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
   			"valor varchar(255) NOT NULL default '0', "
 			"KEY item (item) "
@@ -892,7 +892,7 @@ int statserv_sig_eos()
 	char *canal;
 	if (statserv->residente)
 	{
-		strcpy(tokbuf, statserv->residente);
+		strlcpy(tokbuf, statserv->residente, sizeof(tokbuf));
 		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 			EntraBot(statserv->cl, canal);
 	}

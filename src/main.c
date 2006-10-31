@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.83 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: main.c,v 1.84 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,6 +23,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <dlfcn.h>
+#include <dirent.h>
 #endif
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -38,13 +39,17 @@ char conbuf[128];
 HANDLE hStdin;
 #endif
 char spath[PMAX];
+#define MAX_MDS 8
 typedef struct _mds MDS;
 struct _mds
 {
 	MDS *sig;
 	Sock *sck;
-	unsigned res:1;
-	Modulo *md;
+	struct MD
+	{
+		Modulo *hmod;
+		unsigned res:1;
+	}md[MAX_MDS];
 };
 struct Signatura
 {
@@ -81,10 +86,11 @@ void parsea_comando(char *);
 #endif
 #ifdef _WIN32
 void LoopPrincipal(void *);
+WIN32_FIND_DATA FindFileData;
 #endif
 SOCKFUNC(MotdAbre);
 SOCKFUNC(MotdLee);
-int SigPostNick(Cliente *, char);
+int SigPostNick(Cliente *, int);
 int SigCDestroy(Canal *);
 	
 #ifndef _WIN32
@@ -98,7 +104,7 @@ const char logo[] = {
 	0 
 };
 #endif
-char *ExMalloc(size_t size, char *file, long line)
+char *ExMalloc(size_t size, int bz, char *file, long line)
 {
 	void *x;
 	x = malloc(size);
@@ -110,6 +116,8 @@ char *ExMalloc(size_t size, char *file, long line)
 		Alerta(FERR,  "[%s:%i] Te has quedado sin memoria", file, line);
 		exit(-1);
 	}
+	if (bz)
+		memset(x, 0, size);
 	return x;
 }
 
@@ -123,7 +131,7 @@ void print_r(Conf *conf, int escapes)
 	char tabs[32];
 	tabs[0] = '\0';
 	for (i = 0; i < escapes; i++)
-		strcat(tabs, "\t");
+		strlcat(tabs, "\t", sizeof(tabs));
 	Error("%s%s%s%s%s%s", tabs, conf->item, conf->data ? " \"" : "", conf->data ? conf->data : "", conf->data ? "\"" : "", conf->secciones ? " {" : ";");
 	if (conf->secciones)
 		escapes++;
@@ -134,7 +142,7 @@ void print_r(Conf *conf, int escapes)
 		escapes--;
 		tabs[0] = '\0';
 		for (i = 0; i < escapes; i++)
-			strcat(tabs, "\t");
+			strlcat(tabs, "\t", sizeof(tabs));
 		Error("%s};", tabs);
 	}
 }
@@ -202,7 +210,7 @@ int LeePid()
 	return -1;
 }
 #endif
-int SigPostNick(Cliente *cl, char nuevo)
+int SigPostNick(Cliente *cl, int nuevo)
 {
 	Nivel *niv;
 	if (IsId(cl) && (niv = BuscaNivel("ROOT")) && !strcasecmp(conf_set->root, cl->nombre))
@@ -257,7 +265,7 @@ char *flipAndCodeBytes (char *str)
 	int j = 0;
 	int k = 0;
 	int num = strlen (str);
-	strcpy(flipped, "");
+	strlcpy(flipped, "", sizeof(flipped));
 	for (i = 0; i < num; i += 4)
 	{
 		for (j = 1; j >= 0; j--)
@@ -329,7 +337,7 @@ char *flipAndCodeBytes (char *str)
 				char sub[2];
 				sub[0] = (char) sum;
 				sub[1] = 0;
-				strcat(flipped, sub);
+				strlcat(flipped, sub, sizeof(flipped));
 			}
 		}
 	}
@@ -356,8 +364,8 @@ void CpuId()
 		{         
 			STORAGE_DEVICE_DESCRIPTOR *descrip = (STORAGE_DEVICE_DESCRIPTOR *)&buffer;
 			char serialNumber[1000], modelNumber[1000];
-			strcpy(serialNumber, flipAndCodeBytes(&buffer[descrip->SerialNumberOffset]));
-			strcpy(modelNumber, &buffer[descrip->ProductIdOffset]);
+			strlcpy(serialNumber, flipAndCodeBytes(&buffer[descrip->SerialNumberOffset]), sizeof(serialNumber));
+			strlcpy(modelNumber, &buffer[descrip->ProductIdOffset], sizeof(modelNumber));
 			if (isalnum(serialNumber[0]) || isalnum(serialNumber[19]))
 				strncpy(sgn.cpuid, serialNumber, sizeof(sgn.cpuid)-1);
          	}
@@ -366,7 +374,7 @@ void CpuId()
 	int r, s;
 	struct ifreq ifr;
 	char *hwaddr;
-	strcpy(ifr.ifr_name, "eth0");
+	strlcpy(ifr.ifr_name, "eth0", sizeof(ifr.ifr_name));
 	bzero(sgn.cpuid, sizeof(sgn.cpuid));
 	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) > 0)
 	{
@@ -414,6 +422,8 @@ VOIDSIG Refresca()
 	DescargaConfiguracion();
 	ParseaConfiguracion(CPATH, &config, 1);
 	DistribuyeConfiguracion(&config);
+	if (!SockIrcd)
+		DistribuyeMe(&me, &SockIrcd);
 	Senyal(SIGN_SQL);
 	if (ActivaModulos())
 		CierraColossus(-1);
@@ -433,8 +443,6 @@ VOIDSIG Refresca()
 		Senyal(SIGN_SYNCH);
 		Senyal(SIGN_EOS);
 	}
-	else
-		DistribuyeMe(&me, &SockIrcd);
 	refrescando = 0;
 }
 VOIDSIG Reinicia()
@@ -483,13 +491,8 @@ int main(int argc, char *argv[])
 	for (i = 0; i < MAXSOCKS; i++)
 		ListaSocks.socket[i] = NULL;
 	memset(senyals, (int)NULL, sizeof(senyals));
-#ifdef _WIN32	
-	mkdir("tmp");
-	_getcwd(spath, sizeof(spath));
-#else
-	mkdir("tmp", 0744);
+	mkdir("tmp", 0700);
 	getcwd(spath, sizeof(spath));
-#endif	
 #ifdef FORCE_CORE
 	corelim.rlim_cur = corelim.rlim_max = RLIM_INFINITY;
 	if (setrlimit(RLIMIT_CORE, &corelim))
@@ -512,6 +515,7 @@ int main(int argc, char *argv[])
 		}
 		switch (flag) 
 		{
+#ifndef _WIN32
 		  case 'F':
 			  nofork = 1;
 			  break;
@@ -524,7 +528,6 @@ int main(int argc, char *argv[])
 			  (void)printf("sizeof(Protocolo) == %li\n", (long)sizeof(Protocolo));
 			  exit(0);
 			  break;
-#ifndef _WIN32
 		  case 'v':
 			  (void)printf("%s\n", COLOSSUS_VERNUM);
 #else
@@ -568,6 +571,7 @@ int main(int argc, char *argv[])
 		return 1;
 	DistribuyeConfiguracion(&config);
 	DistribuyeMe(&me, &SockIrcd);	
+	EscribePid();
 #ifndef _WIN32
 	if (sql && sql->clientinfo)
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
@@ -642,7 +646,6 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 	if (!nofork && fork())
 		exit(0);
-	EscribePid();
 #else
 	EscuchaIrcd();
 	return 0;
@@ -681,14 +684,11 @@ int EsArchivo(char *archivo)
 
 int EsIp(char *ip)
 {
-	char *oct;
+	u_int oct[4];
 	if (!ip)
 		return 0;
-	if ((oct = strrchr(ip, '.')))
-	{
-		if (*(++oct) < 65) /* es ip */
-			return 1;
-	}
+	if (sscanf(ip, "%u.%u.%u.%u", &oct[0], &oct[1], &oct[2], &oct[3]) == 4)
+		return 1;
 	return 0;
 }
 typedef struct
@@ -730,7 +730,7 @@ void ResuelveHost(char **destino, char *ip)
 		{
 			pthread_t id;
 			Host *aux;
-			BMalloc(aux, Host);
+			aux = BMalloc(Host);
 			aux->destino = destino;
 			aux->ip = strdup(ip);
 			pthread_create(&id, NULL, (void *)Dominio, (void *)aux);
@@ -739,38 +739,34 @@ void ResuelveHost(char **destino, char *ip)
 	else
 		*destino = strdup(ip);
 }
+static u_int seed = 1;
+void rstart(u_int _seed) {
+    seed = _seed;
+}
 
+u_int rrand(void) {
+    seed = seed * 214013 + 2531011;
+    return (seed >> 16) & 0x7fff;
+}
 /*!
  * @desc: Genera un número aleatorio entre márgenes
- * @params: $ini [in] Margen inferior
- 	    $fin [in] Margen superior
+ * @params: $min [in] Margen inferior
+ 	    $max [in] Margen superior
  * @ret: Devuelve el número generado
  * @cat: Programa
  !*/
-
-int Aleatorio(int ini, int fin)
+u_int Aleatorio(u_int min, u_int max)
 {
-	int r, i;
-#ifdef _WIN32
-	struct _timeb aburst;
-	_ftime(&aburst);
-#else
-	struct timeval aburst;
-	gettimeofday(&aburst, NULL);
-#endif
-	i = (int)&aburst;
-	srand(i ^ (time(NULL) + rand()));
-	r = rand() % (fin + 1);
-#ifdef _WIN32
-	srand(i ^ (aburst.millitm + rand()));
-#else
-	srand(i ^ (aburst.tv_usec + rand()));
-#endif
-	if (r < ini)
-		return fin - r;
+	static int i = 0;
+	u_int r;
+	if (!i)
+	{
+		rstart(time(0));
+		i = 1;
+	}
+	r = (rrand() % (max-min+1))+min;
 	return r;
 }
-
 /*!
  * @desc: Genera una cadena aleatoria siguiendo un patrón
  * @params: $patron [in] Patrón a seguir.
@@ -830,7 +826,7 @@ void InsertaSenyalEx(int senyal, int (*func)(), int donde)
 		if (aux->func == func)
 			return;
 	}
-	BMalloc(sign, Senyal);
+	sign = BMalloc(Senyal);
 	sign->senyal = senyal;
 	sign->func = func;
 	if (donde == FIN)
@@ -912,55 +908,44 @@ double microtime()
 /*!
  * @desc: Inicia un cronométro.
  * Estos cronómetros permiten ejecutar funciones varias veces en un intervalo de tiempo.
- * @params: $nombre [in] Cadena que indica el nombre del crono.
- 	    $sck [in] Socket relacionado. Si es un cronómetro independiente, dejarlo en NULL.
- 	    Esto permite tener varios cronómetros con el mismo nombre siempre que tengan conexiones distintas.
- 	    $veces [in] Entero que indica el número de veces que se ejecutará la función. Si es 0, la función se ejecuta indefinidamente.
+ * @params: $veces [in] Entero que indica el número de veces que se ejecutará la función. Si es 0, la función se ejecuta indefinidamente.
  	    $cada [in] Entero que indica los segundos entre veces que se ejecuta la función.
  	    $func [in] Puntero a la función a ejecutar. Debe ser de tipo int.
  	    $args [in] Puntero genérico que apunta a un tipo de datos que se le pasaran a la función cada vez que sea ejecutada.
  	    $sizearg [in] Tamaño del tipo de datos que se pasa a la función.
+ * @ret: Devuelve un recurso tipo Timer que identifica a este cronómetro.
  * @ver: ApagaCrono
  * @cat: Cronometros
  !*/
 
-void IniciaCrono(char *nombre, Sock *sck, int veces, int cada, int (*func)(), void *args, size_t sizearg)
+Timer *IniciaCrono(u_int veces, u_int cada, int (*func)(), void *args)
 {
 	Timer *aux;
-	BMalloc(aux, Timer);
-	aux->nombre = strdup(nombre);
-	aux->sck = sck;
+	aux = BMalloc(Timer);
 	aux->cuando = microtime() + cada;
 	aux->veces = veces;
 	aux->cada = cada;
 	aux->func = func;
-	if (args)
-	{
-		aux->args = Malloc(sizearg);
-		memcpy(aux->args, args, sizearg);
-	}
+	aux->args = args;
 	AddItem(aux, timers);
+	return aux;
 }
 
 /*!
  * @desc: Detiene un cronómetro
- * @params: $nombre [in] Nombre del cronómetro.
- 	    $sck [in] Conexión a la que pertenece.
+ * @params: $timer [in] Recurso del cronómetro devuelto por IniciaCrono 
  * @ret: Devuelve 1 si se detiene; 0, si no.
  * @ver: IniciaCrono
  * @cat: Cronometros
  !*/
 
-int ApagaCrono(char *nombre, Sock *sck)
+int ApagaCrono(Timer *timer)
 {
 	Timer *aux, *prev = NULL;
 	for (aux = timers; aux; aux = aux->sig)
 	{
-		if (!strcasecmp(nombre, aux->nombre) && aux->sck == sck)
+		if (aux == timer)
 		{
-			Free(aux->nombre);
-			if (aux->args)
-				Free(aux->args);
 			if (prev)
 				prev->sig = aux->sig;
 			else
@@ -988,10 +973,12 @@ void CompruebaCronos()
 				aux->func(aux->args);
 			else
 				aux->func();
-			aux->lleva++;
 			aux->cuando = ms + aux->cada;
-			if (aux->lleva == aux->veces)
-				ApagaCrono(aux->nombre, aux->sck);
+			if (aux->veces)
+			{
+				if (++aux->lleva == aux->veces)
+					ApagaCrono(aux);
+			}
 		}
 	}
 }
@@ -1028,7 +1015,7 @@ char *Unifica(char *array[], int total, int parte, int hasta)
 			strncat(imp, array[i], MIN(j, len));
 			len -= MIN(j, len);
 			if (i != total - 1)
-				strcat(imp, " ");
+				strlcat(imp, " ", sizeof(imp));
 			if (i == hasta)
 				break;
 		}
@@ -1314,12 +1301,13 @@ int CargaCache()
 {
 	if (!SQLEsTabla(SQL_CACHE))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"valor varchar(255) default NULL, "
   			"hora int4 default '0', "
   			"owner int4 default '0', "
-  			"tipo text default NULL "
+  			"tipo text default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, SQL_CACHE))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CACHE);
 	}
@@ -1479,7 +1467,7 @@ void *consola_loop_principal(void *args)
             		cop[0] = '\0';
             	}
             	else
-            		strcat(cop, irInBuf);
+            		strlcat(cop, irInBuf, sizeof(cop));
         }
 }
 void parsea_comando(char *comando)
@@ -1531,10 +1519,10 @@ void Debug(char *formato, ...)
 	va_list vl;
 #ifdef _WIN32
 	static HANDLE *conh = NULL;
-	LPDWORD len = 0;
+	DWORD len = 0;
 #endif
 	va_start(vl, formato);
-	ircvsprintf(debugbuf, formato, vl);
+	vsnprintf(debugbuf, sizeof(debugbuf)-3, formato, vl);
 	va_end(vl);
 	strncat(debugbuf, "\r\n", sizeof(debugbuf));
 #ifdef _WIN32
@@ -1546,7 +1534,7 @@ void Debug(char *formato, ...)
 			*conh = GetStdHandle(STD_OUTPUT_HANDLE);
 		}
 	}
-	WriteFile(*conh, debugbuf, strlen(debugbuf), len, NULL);
+	WriteFile(*conh, debugbuf, strlen(debugbuf), &len, NULL);
 #else
 	fprintf(stderr, debugbuf);
 #endif
@@ -1752,7 +1740,7 @@ char *CifraNick(char *nickname, char *pass)
 		return "\0";
 	tmpnick = (char *)Malloc(sizeof(char) * ((8 * (conf_set->nicklen + 8) / 8) + 1));
 	nick = (char *)Malloc(sizeof(char) * (conf_set->nicklen + 1));
-	strcpy(nick, nickname);
+	strlcpy(nick, nickname, sizeof(char) * (conf_set->nicklen + 1));
 	while (nick[i] != 0)
 	{
 		nick[i] = ToLower(nick[i]);
@@ -1824,7 +1812,7 @@ void add_item(Item *item, Item **lista)
 	item->sig = *lista;
 	*lista = item;
 }
-Item *del_item(Item *item, Item **lista, char borra)
+Item *del_item(Item *item, Item **lista, int borra)
 {
 	Item *aux, *prev = NULL;
 	for (aux = *lista; aux; aux = aux->sig)
@@ -1999,7 +1987,7 @@ char *Long2Char(u_long num)
 /* rutinas MOTD */
 SOCKFUNC(MotdAbre)
 {
-	SockWrite(sck, "GET /motd.txt HTTP/1.1");
+	SockWrite(sck, "GET /inicio.php HTTP/1.1");
 	SockWrite(sck, "Accept: */*");
 	SockWrite(sck, "Host: colossus.redyc.com");
 	SockWrite(sck, "Connection: close");
@@ -2011,13 +1999,16 @@ SOCKFUNC(MotdLee)
 	if (*data == '#')
 	{
 		int ver;
-		if ((ver = atoi(data+1)))
+		data++;
+		if (EsIp(data))
+			ircstrdup(me.ip, data);
+		else if ((ver = atoi(data)))
 		{
-			if (ver < COLOSSUS_VERINT)
+			if (COLOSSUS_VERINT < ver)
 				Info("Existe una versión más nueva de Colossus. Descárguela de www.redyc.com");
 		}
 		else
-			Info(data+1);
+			Info(data);
 	}
 	return 0;
 }
@@ -2035,13 +2026,19 @@ SOCKFUNC(ActivoAbre)
 {
 	MDS *mds;
 	char tmp[SOCKBUF];
+	int i;
 	if ((mds = BuscaMDS(sck)))
 	{
-		ircsprintf(tmp, "serial=%s&cpuid=%s&modulo=%s", mds->md->serial, sgn.cpuid, mds->md->info->nombre);
+		ircsprintf(tmp, "ver=2&cpuid=%s", sgn.cpuid);
 		if (!BadPtr(sgn.sgn))
 		{
-			strcat(tmp, "&sgn=");
-			strcat(tmp, sgn.sgn);
+			strlcat(tmp, "&sgn=", sizeof(tmp));
+			strlcat(tmp, sgn.sgn, sizeof(tmp));
+		}
+		for (i = 0; i < MAX_MDS && mds->md[i].hmod; i++)
+		{
+			ircsprintf(buf, "&serial[%i]=%s&modulo[%i]=%s", i, mds->md[i].hmod->serial, i, mds->md[i].hmod->info->nombre);
+			strlcat(tmp, buf, sizeof(tmp));
 		}
 		SockWrite(sck, "POST /validar.php HTTP/1.0");
 		SockWrite(sck, "Content-Type: application/x-www-form-urlencoded");
@@ -2069,32 +2066,43 @@ SOCKFUNC(ActivoLee)
 		}
 		else if (*data == '#')
 		{
-			int err = atoi(data+1);
-			switch(err)
+			int i = 0;
+			char *c, *d, tmp[BUFSIZE];
+			strlcpy(tmp, data, sizeof(tmp));
+			c = tmp;
+			while (!BadPtr(c) && (d = strchr(c, ' ')))
 			{
-				case 0:
-					mds->res = 0;
-					mds->md->activo = 0;
-					ReconectaBot(mds->md->nick);
-					break;
-				case 1:
-					unlink("colossus.sgn");
-					bzero(sgn.sgn, sizeof(sgn.sgn));
-				case 2:
-					Info("El módulo %s no tiene permiso para usarse en su servidor (err:%i)", mds->md->info->nombre, err);
-					break;
-				case 3:
-					Info("Clave para el módulo %s desconocida", mds->md->info->nombre);
-					break;
-				case 4:
-					Info("Clave para el módulo %s incorrecta", mds->md->info->nombre);
-					break;
-				case 100:
-				case 101:
-					Info("Existe un error con la conexión. Póngase en contacto con el autor (err:%i)", err);
-					break;
-				default:
-					Info("Error desconocido para el módulo %s", mds->md->info->nombre);
+				int err;
+				*d = '\0';
+				err = atoi(c+1);
+				switch(err)
+				{
+					case 0:
+						mds->md[i].res = 0;
+						mds->md[i].hmod->activo = 0;
+						ReconectaBot(mds->md[i].hmod->nick);
+						break;
+					case 1:
+						unlink("colossus.sgn");
+						bzero(sgn.sgn, sizeof(sgn.sgn));
+					case 2:
+						Info("El módulo %s no tiene permiso para usarse en su servidor (err:%i)", mds->md[i].hmod->info->nombre, err);
+						break;
+					case 3:
+						Info("Clave para el módulo %s desconocida", mds->md[i].hmod->info->nombre);
+						break;
+					case 4:
+						Info("Clave para el módulo %s incorrecta", mds->md[i].hmod->info->nombre);
+						break;
+					case 100:
+					case 101:
+						Info("Existe un error con la conexión. Póngase en contacto con el autor (err:%i)", err);
+						break;
+					default:
+						Info("Error desconocido para el módulo %s", mds->md[i].hmod->info->nombre);
+				}
+				c = d+1;
+				i++;
 			}
 		}
 	}
@@ -2105,8 +2113,12 @@ SOCKFUNC(ActivoCierra)
 	MDS *mds;
 	if (!data && (mds = BuscaMDS(sck)))
 	{
-		if (mds->res)
-			DescargaModulo(mds->md);
+		int i;
+		for (i = 0; i < MAX_MDS && mds->md[i].hmod; i++)
+		{
+			if (mds->md[i].res)
+				DescargaModulo(mds->md[i].hmod);
+		}
 		BorraItem(mds, sgn.mds);
 		Free(mds);
 	}
@@ -2124,7 +2136,7 @@ SOCKFUNC(ActivoCierra)
 int ActivaModulos()
 {
 	Modulo *mod;
-	MDS *mds;
+	MDS *mds = NULL;
 	int inf = 1;
 	if (sgn.mds)
 		DetieneMDS();
@@ -2142,6 +2154,7 @@ int ActivaModulos()
 			}
 			else
 			{
+				int i;
 				if (inf)
 				{
 					Info("Verificando servicios...");
@@ -2150,11 +2163,21 @@ int ActivaModulos()
 #endif
 					inf = 0;
 				}
-				BMalloc(mds, MDS);
-				mds->md = mod;
-				mds->res = 1;
-				mds->sck = SockOpen("colossus.redyc.com", 80, ActivoAbre, ActivoLee, NULL, ActivoCierra);
-				AddItem(mds, sgn.mds);
+				empieza:
+				if (!mds)
+				{
+					mds = BMalloc(MDS);
+					mds->sck = SockOpen("colossus.redyc.com", 80, ActivoAbre, ActivoLee, NULL, ActivoCierra);
+					AddItem(mds, sgn.mds);
+				}
+				for (i = 0; i < MAX_MDS && mds->md[i].hmod; i++);
+				if (i == MAX_MDS)
+				{
+					mds = NULL;
+					goto empieza;
+				}
+				mds->md[i].hmod = mod;
+				mds->md[i].res = 1;
 			}
 		}
 	}
@@ -2191,23 +2214,23 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 	Recurso hmod;
 	char *c;
 #ifdef _WIN32
-	char tmppdb[128], pdb[128];
+	char tmppdb[MAX_FNAME], pdb[MAX_FNAME];
 #endif
 	if (!(c = strrchr(dll, '/')))
 	{
 		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", dll);
 		return NULL;
 	}
-	strcpy(archivo, ++c);
+	strlcpy(archivo, ++c, MAX_FNAME);
 	ircsprintf(tmppath, "./tmp/%s", archivo);
 #ifdef _WIN32
-	strcpy(pdb, dll);
+	strlcpy(pdb, dll, sizeof(pdb));
 	if (!(c = strrchr(pdb, '.')))
 	{
 		Alerta(FADV, "Ha sido imposible cargar %s (falla pdb)", dll);
 		return NULL;
 	}
-	strcpy(c, ".pdb");
+	strlcpy(c, ".pdb", sizeof(pdb) - (c-pdb));
 	if (!(c = strrchr(pdb, '/')))
 	{
 		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta pdb)", pdb);
@@ -2261,7 +2284,7 @@ BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr)
 	siStartInfo.hStdOutput = hChildStdoutWr;
 	siStartInfo.hStdInput = hChildStdinRd;
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
-   	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE,  0, NULL, NULL, &siStartInfo, &piProcInfo)))
+   	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo)))
    		return 0;
 	CloseHandle(piProcInfo.hProcess);
 	CloseHandle(piProcInfo.hThread);
@@ -2276,6 +2299,7 @@ int EjecutaCmd(ECmd *ecmd)
    	int i, libres = TBLOQ;
    	u_long len = 0L;
    	char chBuf[TBLOQ], *res; 
+   	size_t t;
    	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL;
@@ -2293,7 +2317,8 @@ int EjecutaCmd(ECmd *ecmd)
 		return 4;
 	if (!CloseHandle(hChildStdoutWr))
 		return 5;
-	res = (char *)Malloc(sizeof(char) * TBLOQ);
+	t = sizeof(char) * TBLOQ;
+	res = (char *)Malloc(t);
 	*res = '\0';
 	for (i = 1;;) 
 	{ 
@@ -2306,10 +2331,11 @@ int EjecutaCmd(ECmd *ecmd)
 		{
 			i++;
 			libres = TBLOQ;
-			res = (char *)realloc(res, sizeof(char) * TBLOQ * i);
+			t = sizeof(char) * TBLOQ * i;
+			res = (char *)realloc(res, t);
 			
 		}
-		strcat(res, chBuf);
+		strlcat(res, chBuf, t);
      }
      if (ecmd->func)
      	ecmd->func(len, res, ecmd->v);
@@ -2326,7 +2352,7 @@ int EjecutaCmd(ECmd *ecmd)
 int EjecutaComandoSinc(char *cmd, char *params, u_long *len, char **res)
 {
 	ECmd *ecmd;
-	BMalloc(ecmd, ECmd);
+	ecmd = BMalloc(ECmd);
 	ecmd->cmd = cmd;
 	ecmd->params = params;
 	ecmd->len = len;
@@ -2337,7 +2363,7 @@ int EjecutaComandoASinc(char *cmd, char *params, ECmdFunc func, void *v)
 {
 	ECmd *ecmd;
 	pthread_t id;
-	BMalloc(ecmd, ECmd);
+	ecmd = BMalloc(ECmd);
 	ecmd->cmd = cmd;
 	ecmd->params = params;
 	ecmd->func = func;
@@ -2346,3 +2372,107 @@ int EjecutaComandoASinc(char *cmd, char *params, ECmdFunc func, void *v)
 	return 0;
 }
 #endif
+/*!
+ * @desc: Abre un recurso de tipo Directorio para obtener los nombres de los archivos que hay dentro.
+ * @params: $dirname [in] Nombre del directorio a abrir.
+ * @ret: Devuelve un recurso de tipo Directorio. NULL si no se ha abierto.
+ * @cat: Programa
+ * @ver: LeeDirectorio CierraDirectorio
+ !*/
+Directorio AbreDirectorio(char *dirname)
+{
+	Directorio dir;
+#ifdef _WIN32
+	char DirSpec[MAX_PATH + 1], *c, *d; 
+	for (c = dirname, d = DirSpec; !BadPtr(c); c++)
+	{
+		if (*c == '/')
+		{
+			*d++ = '\\';
+			*d++ = '\\';
+		}
+		else
+			*d++ = *c;
+	}
+	*d++ = '\\';
+	*d++ = '\\';
+	*d++ = '*';
+	*d++ = '\0';
+	if ((dir = FindFirstFile(DirSpec, &FindFileData)) == INVALID_HANDLE_VALUE)
+		return NULL;
+	return dir;
+#else
+	if ((dir = opendir(dirname)) == NULL)
+		return NULL;
+	chdir(dirname);
+	return dir;
+#endif
+}
+/*!
+ * @desc: Obtiene los nombres de los archivos que se haya dentro del directorio 'dir', previamente abierto con <b>AbreDirectorio</b>. Recuerde que una vez haya usado este recurso, <b>debe</b> cerrarlo.
+ * @param: $dir [in] Recurso de tipo Directorio devuelto por <b>AbreDirectorio</b>.
+ * @ret: Durante cada llamada a esta función irá devolviendo los nombres de los archivos. NULL cuando no hay más archivos por listar.
+ * @cat: Programa
+ * @ver: AbreDirectorio CierraDirectorio
+ * @ex: 	Directorio dir;
+ 	if ((dir = AbreDirectorio("database")))
+ 	{
+ 		char *nombre;
+ 		while ((nombre = LeeDirectorio(dir)))
+ 		{
+ 			// nombre irá tomando los nombres de los archivos en "database" 
+ 		}
+ 		CierraDirectorio(dir);
+ 	}
+ 	// no se ha podido abrir el directorio, posiblemente no exista
+ !*/
+char *LeeDirectorio(Directorio dir)
+{
+#ifdef _WIN32
+	static char archivo[256];
+	char *c;
+	if (BadPtr(FindFileData.cFileName))
+		return NULL;
+	while (!strcmp(FindFileData.cFileName, ".") || !strcmp(FindFileData.cFileName, ".."))
+	{
+		if (!FindNextFile(dir, &FindFileData))
+		{
+			*FindFileData.cFileName = '\0';
+			return NULL;
+		}
+	}
+	if ((c = strrchr(FindFileData.cFileName, '\\')))
+		strncpy(archivo, c+1, sizeof(archivo)-1);
+	else
+		strncpy(archivo, FindFileData.cFileName, sizeof(archivo)-1);
+	if (!FindNextFile(dir, &FindFileData))
+		*FindFileData.cFileName = '\0';
+	return archivo;
+#else
+	struct dirent *dir_entry;
+	struct stat stat_info;
+	if ((dir_entry = readdir(dir)) != NULL)
+	{
+		lstat(dir_entry->d_name, &stat_info);
+		if (S_ISDIR(stat_info.st_mode)) 
+			continue;
+		return dir_entry->d_name;
+	}
+	return NULL;
+#endif
+}
+/*!
+ * @desc: Cierra un recurso de tipo directorio. Recuerde que una vez haya usado este recurso, <b>debe</b> cerrarlo.
+ * @param: $dir [in] Recurso de tipo directorio a cerrar.
+ * @ver: AbreDirectorio LeeDirectorio
+ * @cat: Programa
+ !*/
+void CierraDirectorio(Directorio dir)
+{
+#ifdef _WIN32
+	FindClose(dir);
+#else
+	chdir("..");
+	closedir(dir);
+#endif
+}

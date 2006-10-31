@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.40 2006-06-20 13:48:44 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.41 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -56,7 +56,7 @@ int NSKillea		(char *);
 
 int NSDropanicks	(Proc *);
 
-int NSBaja(char *, char);
+int NSBaja(char *, int);
 int NickOpts(Cliente *, char *, char **, int, Funcion *);
 DLLFUNC void NSCambiaInv(Cliente *);
 
@@ -64,6 +64,15 @@ void NSSet(Conf *, Modulo *);
 int NSTest(Conf *, int *);
 extern MODVAR mTab cFlags[];
 mTab *umodreg = NULL;
+
+typedef struct _killuser KillUser;
+struct _killuser
+{
+	struct _killuser *sig;
+	Cliente *cl;
+	Timer *timer;
+};
+KillUser *killusers = NULL;
 
 static bCom nickserv_coms[] = {
 	{ "help" , NSHelp , N0 , "Muestra esta ayuda." , NULL } ,
@@ -154,7 +163,7 @@ void NSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!nickserv)
-		BMalloc(nickserv, NickServ);
+		nickserv = BMalloc(NickServ);
 	nickserv->opts = NS_PROT_KILL;
 	ircstrdup(nickserv->recovernick, "inv-%s-????");
 	ircstrdup(nickserv->securepass, "******");
@@ -196,8 +205,8 @@ void NSSet(Conf *config, Modulo *mod)
 				nickserv->maxlist = atoi(config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "forbmails"))
 			{
-				for (p = 0; p < config->seccion[i]->secciones; p++, nickserv->forbmails++)
-					ircstrdup(nickserv->forbmail[nickserv->forbmails], config->seccion[i]->seccion[p]->item);
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+					ircstrdup(nickserv->forbmail[nickserv->forbmails++], config->seccion[i]->seccion[p]->item);
 			}
 			else if (!strcmp(config->seccion[i]->item, "funciones"))
 				ProcesaComsMod(config->seccion[i], mod, nickserv_coms);
@@ -230,12 +239,42 @@ void NSSet(Conf *config, Modulo *mod)
 	IniciaProceso(NSDropanicks);
 	BotSet(nickserv);
 }
+KillUser *InsertaKillUser(Cliente *cl, int kill)
+{
+	KillUser *ku;
+	ku = BMalloc(KillUser);
+	ku->cl = cl;
+	ku->timer = IniciaCrono(1, kill, NSKillea, strdup(cl->nombre));
+	AddItem(ku, killusers);
+	return ku;
+}
+KillUser *BuscaKillUser(Cliente *cl)
+{
+	KillUser *aux;
+	for (aux = killusers; aux; aux = aux->sig)
+	{
+		if (aux->cl == cl)
+			return aux;
+	}
+	return NULL;
+}
+int BorraKillUser(Cliente *cl)
+{
+	KillUser *ku;
+	if ((ku = BuscaKillUser(cl)))
+	{
+		Free(ku->timer->args);
+		ApagaCrono(ku->timer);
+		LiberaItem(ku, killusers);
+	}
+	return 0;
+}
 /* establece una nueva clave para el nick en cuestión */
 char *NSRegeneraClave(char *nick)
 {
 	char *pass, *passmd5;
 	pass = AleatorioEx(nickserv->securepass);
-	passmd5 = MDString(pass);
+	passmd5 = MDString(pass, 0);
 	SQLInserta(NS_SQL, nick, "pass", passmd5);
 	return pass;
 }
@@ -247,15 +286,17 @@ void NSCambiaInv(Cliente *cl)
 	ircsprintf(buf, nickserv->recovernick, cl->nombre);
 	ProtFunc(P_CAMBIO_USUARIO_REMOTO)(cl, AleatorioEx(buf));
 }
-
 void NSMarca(Cliente *cl, char *nombre, char *marca)
 {
-	time_t fecha = time(NULL);
 	char *marcas;
-	if ((marcas = SQLCogeRegistro(NS_SQL, nombre, "marcas")))
-		SQLInserta(NS_SQL, nombre, "marcas", "%s\t\00312%s\003 - \00312%s\003 - %s", marcas, Fecha(&fecha), cl->nombre, marca);
-	else
-		SQLInserta(NS_SQL, nombre, "marcas", "\00312%s\003 - \00312%s\003 - %s", Fecha(&fecha), cl->nombre, marca);
+	if (IsReg(nombre))
+	{
+		time_t fecha = time(NULL);
+		if ((marcas = SQLCogeRegistro(NS_SQL, nombre, "marcas")))
+			SQLInserta(NS_SQL, nombre, "marcas", "%s\t\00312%s\003 - \00312%s\003 - %s", marcas, Fecha(&fecha), cl->nombre, marca);
+		else
+			SQLInserta(NS_SQL, nombre, "marcas", "\00312%s\003 - \00312%s\003 - %s", Fecha(&fecha), cl->nombre, marca);
+	}
 }
 BOTFUNCHELP(NSHIdentify)
 {
@@ -524,17 +565,17 @@ BOTFUNC(NSRegister)
 		pass = param[1];
 	}
 	/* comprobamos su email */
-	dominio = strchr(mail, '@');
-	if ((nickserv->opts & NS_SMAIL) && (!dominio || !gethostbyname(dominio+1)))
+	if (!(dominio = strchr(mail, '@')) || !gethostbyname(dominio+1))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una cuenta de email válida.");
 		return 1;
 	}
+	dominio++;
 	for (i = 0; i < nickserv->forbmails; i++)
 	{
 		if (!strcasecmp(nickserv->forbmail[i], dominio))
 		{
-			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes utilizar una cuenta de correo prohibida.");
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Esta cuenta de correo está prohibida. Usa otra.");
 			return 1;
 		}
 	}
@@ -546,15 +587,22 @@ BOTFUNC(NSRegister)
 	}
 	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
-	if (pass)
-		SQLInserta(NS_SQL, cl->nombre, "pass", MDString(pass));
+	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
+			PREFIJO, NS_SQL,
+			cl->nombre, pass ? MDString(pass, 0) : "null",
+			mail, cl->info,
+			cl->ident, cl->host,
+			opts, nickserv->opts & NS_SMAIL ? 0 : time(0),
+			time(0), time(0));
+	/*if (pass)
+		SQLInserta(NS_SQL, cl->nombre, "pass", MDString(pass, 0));
 	SQLInserta(NS_SQL, cl->nombre, "email", mail);
 	SQLInserta(NS_SQL, cl->nombre, "gecos", cl->info);
 	SQLInserta(NS_SQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
 	SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
 	SQLInserta(NS_SQL, cl->nombre, "id", "%i", nickserv->opts & NS_SMAIL ? 0 : time(0));
 	SQLInserta(NS_SQL, cl->nombre, "reg", "%i", time(0));
-	SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
+	SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));*/
 	if (nickserv->opts & NS_SMAIL)
 		Email(mail, "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(cl->nombre), nickserv->hmod->nick, conf_set->red);
@@ -591,7 +639,7 @@ BOTFUNC(NSIdentify)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, buf);
 		return 1;
 	}
-	if (!strcmp(MDString(param[1]), SQLCogeRegistro(NS_SQL, cl->nombre, "pass")))
+	if (!strcmp(MDString(param[1], 0), SQLCogeRegistro(NS_SQL, cl->nombre, "pass")))
 	{
 		if (umodreg)
 			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", umodreg->flag);
@@ -655,7 +703,7 @@ BOTFUNC(NSDrop)
 	EOI(nickserv, 4);
 	return 0;
 }
-int NSBaja(char *nick, char opt)
+int NSBaja(char *nick, int opt)
 {
 	Cliente *al;
 	int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
@@ -775,7 +823,7 @@ BOTFUNC(NSList)
 	char *rep;
 	SQLRes res;
 	SQLRow row;
-	u_int i;
+	int i;
 	if (params < 2)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "patrón");
@@ -788,12 +836,13 @@ BOTFUNC(NSList)
 		return 1;
 	}
 	Responde(cl, CLI(nickserv), "*** Nicks que coinciden con el patrón \00312%s\003 ***", param[1]);
-	for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res)); i++)
+	for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 	{
 		if (IsOper(cl) || !(atoi(SQLCogeRegistro(NS_SQL, row[0], "opts")) & NS_OPT_LIST))
+		{
 			Responde(cl, CLI(nickserv), "\00312%s", row[0]);
-		else
-			i--;
+			i++;
+		}
 	}
 	Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 	SQLFreeRes(res);
@@ -823,7 +872,7 @@ BOTFUNC(NSGhost)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes ejecutar este comando sobre ti mismo.");
 		return 1;
 	}
-	if (strcmp(SQLCogeRegistro(NS_SQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(NS_SQL, param[1], "pass"), MDString(param[2], 0)))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
@@ -959,14 +1008,10 @@ BOTFUNC(NSForbid)
 	if (params >= 3)
 	{
 		char *motivo;
-		motivo = Unifica(param, params, 1, -1);
-		if (!ProtFunc(P_FORB_NICK))
-		{
-			Responde(cl, CLI(nickserv), ERR_NSUP);
-			return 1;
-		}
+		motivo = Unifica(param, params, 2, -1);
 		SQLInserta(NS_FORBIDS, param[1], "motivo", motivo);
-		ProtFunc(P_FORB_NICK)(param[1], ADD,  motivo);
+		if (ProtFunc(P_FORB_NICK))
+			ProtFunc(P_FORB_NICK)(param[1], ADD,  motivo);
 		ircsprintf(buf, "Prohibido: %s", motivo);
 		NSMarca(cl, param[1], buf);
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1]);
@@ -974,7 +1019,7 @@ BOTFUNC(NSForbid)
 	else
 	{
 		SQLBorra(NS_FORBIDS, param[1]);
-		if (!ProtFunc(P_FORB_NICK))
+		if (ProtFunc(P_FORB_NICK))
 			ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
 		NSMarca(cl, param[1], "Prohibición levantada.");
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
@@ -1053,7 +1098,7 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 			if (IsId(cl))
 				SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
 			else
-				ApagaCrono(cl->nombre, cl->sck); /* es posible que tenga kill */
+				BorraKillUser(cl);
 		}
 	}
 	return 0;
@@ -1081,7 +1126,7 @@ int NSCmdPostNick(Cliente *cl, int nuevo)
 			if (kill && atoi(kill))
 			{
 				Responde(cl, CLI(nickserv), "De no hacerlo, serás desconectado en \00312%s\003 segundos.", kill);
-				IniciaCrono(cl->nombre, cl->sck, 1, atoi(kill), NSKillea, cl->nombre, sizeof(char) * (strlen(cl->nombre) + 1));
+				InsertaKillUser(cl, atoi(kill));
 			}
 		}
 		else
@@ -1093,7 +1138,7 @@ int NSSigSQL()
 {
 	if (!SQLEsTabla(NS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"n SERIAL, "
   			"item varchar(255), "
   			"pass varchar(255), "
@@ -1109,7 +1154,8 @@ int NSSigSQL()
   			"suspend text, "
   			"killtime int2 default '0', "
   			"swhois text, "
-  			"marcas text "
+  			"marcas text, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, NS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
 	}
@@ -1133,9 +1179,10 @@ int NSSigSQL()
 	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, NS_SQL);
 	if (!SQLEsTabla(NS_FORBIDS))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
-  			"motivo varchar(255) default NULL "
+  			"motivo varchar(255) default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, NS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}
@@ -1160,7 +1207,7 @@ int NSSigIdOk(Cliente *cl)
 		SQLInserta(NS_SQL, cl->nombre, "id", "%i", time(0));
 		SQLInserta(NS_SQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
 		SQLInserta(NS_SQL, cl->nombre, "gecos", cl->info);
-		ApagaCrono(cl->nombre, cl->sck);
+		BorraKillUser(cl);
 		if ((swhois = SQLCogeRegistro(NS_SQL, cl->nombre, "swhois")))
 			ProtFunc(P_WHOIS_ESPECIAL)(cl, swhois);
 		cl->nivel |= N1;
@@ -1177,6 +1224,7 @@ int NSKillea(char *quien)
 		else
 			NSCambiaInv(al);
 	}
+	Free(quien);
 	return 0;
 }
 int NSDropanicks(Proc *proc)
@@ -1198,7 +1246,7 @@ int NSDropanicks(Proc *proc)
 				if (atoi(row[1]) + 86400 < time(0)) /* 24 horas */
 					NSBaja(row[0], 0);
 			}
-			else if (nickserv->autodrop && (atoi(row[2]) + 86400 * nickserv->autodrop < (u_long)time(0)))
+			else if (nickserv->autodrop && (atoi(row[2]) + 86400 * nickserv->autodrop < time(0)))
 				NSBaja(row[0], 0);
 		}
 		proc->proc += 30;
@@ -1269,7 +1317,7 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 	}
 	else if (!strcasecmp(param[1], "PASS"))
 	{
-		char *passmd5 = MDString(param[2]);
+		char *passmd5 = MDString(param[2], 0);
 		SQLInserta(NS_SQL, nick, "pass", passmd5);
 		NSMarca(cl, nick, "Contraseña cambiada.");
 		if (nick)

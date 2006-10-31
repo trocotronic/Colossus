@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.7 2005-10-27 19:16:14 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.8 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "md5.h"
@@ -316,26 +316,27 @@ unsigned int len;
 /*!
  * @desc: Genera una cadena MD5.
  * @params: $string [in] Cadena a cifrar.
+ 		$len [in] Longitud de la cadena. Si es 0, se utilizará strlen() para calcular.a
  * @ret: Devuelve la cadena cifrada en MD5.
  * @cat: Programa
  !*/
  
-char *MDString(char *string)
+char *MDString(char *string, u_int len)
 {
-  MD5_CTX context;
-  unsigned char digest[16];
-  char tmp[2];
-  unsigned int len = strlen (string);
-  static char ptr[33];
-  int i;
-  ptr[0] = '\0';
-  MDInit (&context);
-  MDUpdate (&context, string, len);
-  MDFinal (digest, &context);
-  for (i = 0; i < 16; i++)
-  {
-  	ircsprintf(tmp, "%02x", digest[i]);
-  	strcat(ptr, tmp);
-  }
-  return ptr;
+	MD5_CTX context;
+	char digest[16], tmp[3];
+	static char ptr[33];
+	int i;
+	if (!len)
+		len = strlen(string);
+	ptr[0] = '\0';
+	MDInit (&context);
+	MDUpdate (&context, string, len);
+	MDFinal (digest, &context);
+	for (i = 0; i < 16; i++)
+	{
+		ircsprintf(tmp, "%02x", digest[i]);
+		strlcat(ptr, tmp, sizeof(ptr));
+	}
+	return ptr;
 }

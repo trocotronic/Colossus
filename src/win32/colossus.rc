@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.16 2006-06-20 13:19:41 Trocotronic Exp $
+// $Id: colossus.rc,v 1.17 2006-10-31 23:49:12 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -169,7 +169,7 @@ BEGIN
     LTEXT           "Cliente SQL: ",IDC_STATIC,14,76,60,8
     LTEXT           "Desconocido",IDC_SQLCV,75,76,78,8
     LTEXT           "Servidor SQL: ",IDC_STATIC,14,86,60,8
-    LTEXT           "Desconocido",IDC_SQLSV,75,86,98,8
+    LTEXT           "Desconocido",IDC_SQLSV,75,86,78,8
     LTEXT           "PThread: ",IDC_STATIC,14,96,30,8
     LTEXT           "Desconocido",IDC_PTHV,75,96,78,8
 END

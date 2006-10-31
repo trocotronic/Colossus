@@ -229,7 +229,7 @@ char *EncodeIP(char *ip)
 	b64_encode((char *)&cp, sizeof(struct in_addr), buf, 25);
 	return buf;
 }
-int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
+int p_msg_vl(Cliente *, Cliente *, u_int, char *, va_list *);
 char *p_trio(Cliente *cl)
 {
 	return cl->nombre;
@@ -480,11 +480,11 @@ int p_invite(Cliente *cl, Cliente *bl, Canal *cn)
 	EnviaAServidor(":%s %s %s %s", bl->nombre, TOK_INVITE, cl->nombre, cn->nombre);
 	return 0;
 }
-int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
+int p_msg_vl(Cliente *cl, Cliente *bl, u_int tipo, char *formato, va_list *vl)
 {
 	char buf[BUFSIZE];
 	if (!vl)
-		strcpy(buf, formato);
+		strlcpy(buf, formato, sizeof(buf));
 	else
 		ircvsprintf(buf, formato, *vl);
 	if (tipo == 1) 
@@ -606,7 +606,7 @@ void set(Conf *config)
 	int i, p;
 	char *modcl = "qaohv", *modmk = "beI", *modpm1 = "kfL", *modpm2 = "lj";
 	if (!conf_set)
-		BMalloc(conf_set, struct Conf_set);
+		conf_set = BMalloc(struct Conf_set);
 	autousers = autoopers = NULL;
 	modusers = modcanales = NULL;
 	for (i = 0; i < config->secciones; i++)
@@ -921,6 +921,8 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 		{
 			for (j = 0; j < comd->funciones; j++)
 			{
+				if (!cl)
+					cl = BuscaCliente(para[0]);
 				if (comd->funcion[j])
 					comd->funcion[j](sck, cl, para, i);
 			}
@@ -941,7 +943,7 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 IRCFUNC(m_msg)
 {
 	char *param[256], par[BUFSIZE];
-	int params, i;
+	int params, i, resp = -1;
 	Modulo *mod;
 	Cliente *bl;
 	strtok(parv[1], "@");
@@ -949,7 +951,12 @@ IRCFUNC(m_msg)
 	parv[parc+1] = NULL;
 	while (*parv[2] == ':')
 		parv[2]++;
-	strcpy(par, parv[2]);
+	if (*parv[1] == '#')
+	{
+		Senyal3(SIGN_CMSG, cl, BuscaCanal(parv[1]), parv[2]);
+		return 1;
+	}
+	strlcpy(par, parv[2], sizeof(par));
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
 	bl = BuscaCliente(parv[1]);
@@ -989,7 +996,7 @@ IRCFUNC(m_msg)
 					if ((c = strchr(aux->sintaxis[i], '-')))
 						strncpy(tmp, aux->sintaxis[i]+1, c-aux->sintaxis[i]-1);
 					else
-						strcpy(tmp, aux->sintaxis[i]+1);
+						strlcpy(tmp, aux->sintaxis[i]+1, sizeof(tmp));
 					j = atoi(tmp);
 					top = (c ? params : j+1);
 					while (j < top)
@@ -1003,7 +1010,7 @@ IRCFUNC(m_msg)
 			params = k;
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
-			func->func(cl, parv, parc, param, params, func);
+			resp = func->func(cl, parv, parc, param, params, func);
 		else
 		{
 			if (!ex && !EsServidor(cl))
@@ -1012,8 +1019,10 @@ IRCFUNC(m_msg)
 				Responde(cl, bl, ERR_FORB);
 			else
 				Responde(cl, bl, ERR_NOID);
+			resp = 1;
 		}
 	}
+	Senyal4(SIGN_PMSG, cl, bl, parv[2], resp);
 	return 0;
 }
 IRCFUNC(m_whois)
@@ -1145,7 +1154,7 @@ IRCFUNC(m_pass)
 IRCFUNC(m_join)
 {
 	char *canal;
-	strcpy(tokbuf, parv[1]);
+	strlcpy(tokbuf, parv[1], sizeof(tokbuf));
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 		EntraCliente(cl, canal);
 	return 0;
@@ -1191,8 +1200,8 @@ IRCFUNC(m_mode)
 					if (f == DEL)
 					{
 						modebuf[j++] = *modos;
-						strcat(parabuf, parv[i]);
-						strcat(parabuf, " ");
+						strlcat(parabuf, parv[i], sizeof(parabuf));
+						strlcat(parabuf, " ", sizeof(parabuf));
 					}
 				case 'b':
 				case 'e':
@@ -1208,7 +1217,7 @@ IRCFUNC(m_mode)
 		modebuf[j] = '\0';
 	}
 	if (modcanales)
-		strcat(modebuf, modcanales);
+		strlcat(modebuf, modcanales, sizeof(modcanales));
 	if (modebuf[0] != '\0')
 		ProtFunc(P_MODO_CANAL)(&me, cn, "%s %s", modebuf, parabuf);
 	Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
@@ -1218,9 +1227,9 @@ IRCFUNC(m_sjoin)
 {
 	Cliente *al = NULL;
 	Canal *cn = NULL;
-	char *q, *p, tmp[BUFSIZE], mod[6];
+	char *q, *p, tmp[BUFSIZE], mod[8];
 	cn = InfoCanal(parv[2], !0);
-	strcpy(tmp, parv[parc-1]);
+	strlcpy(tmp, parv[parc-1], sizeof(tmp));
 	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
 		al = NULL;
@@ -1231,25 +1240,25 @@ IRCFUNC(m_sjoin)
 		while (*p)
 		{
 			if (*p == '*')
-				strcat(mod, "q");
+				strlcat(mod, "q", sizeof(mod));
 			else if (*p == '~')
-				strcat(mod, "a");
+				strlcat(mod, "a", sizeof(mod));
 			else if (*p == '@')
-				strcat(mod, "o");
+				strlcat(mod, "o", sizeof(mod));
 			else if (*p == '%')
-				strcat(mod, "h");
+				strlcat(mod, "h", sizeof(mod));
 			else if (*p == '+')
-				strcat(mod, "v");
+				strlcat(mod, "v", sizeof(mod));
 			else if (*p == '&')
 			{
 				p++;
-				strcat(mod, "b");
+				strlcat(mod, "b", sizeof(mod));
 				break;
 			}
 			else if (*p == '"')
 			{
 				p++;
-				strcat(mod, "e");
+				strlcat(mod, "e", sizeof(mod));
 				break;
 			}
 			else
@@ -1325,7 +1334,7 @@ IRCFUNC(m_server)
 	LinkCliente *aux;
 	char *protocol, *opts, *numeric, *inf;
 	protocol = opts = numeric = inf = NULL;
-	strcpy(tokbuf, parv[parc - 1]);
+	strlcpy(tokbuf, parv[parc - 1], sizeof(tokbuf));
 	protocol = strtok(tokbuf, "-");
 	if (protocol) /* esto nunca dara null */
 		opts = strtok(NULL, "-");
@@ -1352,7 +1361,7 @@ IRCFUNC(m_server)
 	al->numeric = numeric ? atoi(numeric) : 0;
 	al->tipo = TSERVIDOR;
 	al->trio = strdup(opts);
-	BMalloc(aux, LinkCliente);
+	aux = BMalloc(LinkCliente);
 	aux->user = al;
 	AddItem(aux, servidores);
 	if (!cl) /* primer link */
@@ -1413,9 +1422,9 @@ IRCFUNC(m_error)
 IRCFUNC(m_away)
 {
 	if (parc == 2)
-		cl->away = 1;
+		ircstrdup(cl->away, parv[1]);
 	else if (parc == 1)
-		cl->away = 0;
+		ircfree(cl->away);
 	Senyal2(SIGN_AWAY, cl, parv[1]);
 	return 0;
 }
@@ -1504,17 +1513,17 @@ IRCFUNC(m_module)
 		if (ex->info->version)
 		{
 			ircsprintf(minbuf, " Versión %.2f.", ex->info->version);
-			strcat(send, minbuf);
+			strlcat(send, minbuf, sizeof(send));
 		}
 		if (ex->info->autor)
 		{
 			ircsprintf(minbuf, " Autor: %s.", ex->info->autor); 
-			strcat(send, minbuf);
+			strlcat(send, minbuf, sizeof(send));
 		}
 		if (ex->info->email)
 		{
 			ircsprintf(minbuf, " Email: %s.", ex->info->email);
-			strcat(send, minbuf);
+			strlcat(send, minbuf, sizeof(send));
 		}
 		EnviaAServidor(":%s %s %s :%s", me.nombre, TOK_NOTICE, cl->nombre, send);
 	}

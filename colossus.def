@@ -1,5 +1,6 @@
 ; dlltool --output-def colossus.def.in --export-all-symbols SRC/GUI.OBJ SRC/HASH.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/ZLIB.OBJ SRC/SSL.OBJ SRC/BDD.OBJ
 EXPORTS
+	AbreDirectorio
 	Aleatorio
 	AleatorioEx
 	Alerta
@@ -28,12 +29,15 @@ EXPORTS
 	BuscaModulo
 	BuscaNivel
 	BuscaOpt
+	BuscaOptItem
 	BuscaOptNiv
+	BuscaTipo
 	BuscaTKL
 	CambiaNick
 	CargaExtensiones
 	ChkBtCon
 	CierraColossus
+	CierraDirectorio
 	CierraIrcd
 	CifraNick
 	CogeCache
@@ -50,6 +54,7 @@ EXPORTS
 	DetieneProceso
 	Dominio
 	Email
+	EmailArchivos
 	Encripta
 	EntraBot
 	EnviaAServidor
@@ -80,6 +85,7 @@ EXPORTS
 	InsertaSenyalExt
 	InsertaTKL
 	IrcdEscucha
+	LeeDirectorio
 	LiberaComs
 	LiberaMemoriaCanal
 	LiberaMemoriaCliente
@@ -93,6 +99,7 @@ EXPORTS
 	MascaraTKL
 	ModoAFlag
 	ModosAFlags
+	ModuloEsResidente
 	MuestraAyudaComando
 	NTL_tolower_tab
 	NTL_toupper_tab
@@ -190,6 +197,8 @@ EXPORTS
 	sql
 	str_replace
 	strcopia
+	strlcat
+	strlcpy
 	strtolower
 	strtoupper
 	tea

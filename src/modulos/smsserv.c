@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.6 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.7 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -57,7 +57,7 @@ DataSock *InsertaCola(char *query, int numero, Cliente *cl)
 	if (i < MAX_COLA)
 	{
 		DataSock *dts;
-		BMalloc(dts, DataSock);
+		dts = BMalloc(DataSock);
 		if (query)
 			ircstrdup(dts->query, query);
 		dts->numero = numero;
@@ -166,7 +166,7 @@ void SSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!smsserv)
-		BMalloc(smsserv, SmsServ);
+		smsserv = BMalloc(SmsServ);
 	smsserv->espera = 300;
 	smsserv->restringido = 0;
 	ircfree(smsserv->publi);
@@ -390,8 +390,8 @@ BOTFUNC(SSSend)
 	}
 	if (max < 160)
 	{
-		strcat(texto, "+");
-		strcat(texto, smsserv->publi);
+		strlcat(texto, "+", sizeof(texto));
+		strlcat(texto, smsserv->publi, sizeof(texto));
 	}
 	ircsprintf(buf, "userid=%s&destinos=%u&mensaje=%s", smsserv->id, num, texto);
 	if ((dts = InsertaCola("", 0, cl)))
@@ -492,12 +492,17 @@ BOTFUNC(SSLista)
 	{
 		if (*param[1] == '+')
 		{
+			char tmp[BUFSIZE];
 			param[1]++;
 			if ((val = SQLCogeRegistro(SS_SQL, cl->nombre, "lista")))
 			{
 				ircsprintf(buf, " %s ", strtolower(param[1]));
 				if (!strstr(val, buf))
-					strcat(val, &buf[1]);
+				{
+					strlcpy(tmp, val, sizeof(tmp));
+					strlcat(tmp, &buf[1], sizeof(tmp));
+					val = tmp;
+				}
 			}
 			else
 				ircsprintf(buf, "1 %s ", strtolower(param[1]));
@@ -515,8 +520,8 @@ BOTFUNC(SSLista)
 				{
 					if (strcasecmp(c, param[1]))
 					{
-						strcat(buf, c);
-						strcat(buf, " ");
+						strlcat(buf, c, sizeof(buf));
+						strlcat(buf, " ", sizeof(buf));
 					}
 				}
 			}
@@ -552,10 +557,11 @@ int SSSigSQL()
 {
 	if (!SQLEsTabla(SS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"numero varchar(16) default NULL, "
-  			"lista text"
+  			"lista text, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, SS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
 	}

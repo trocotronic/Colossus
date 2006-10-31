@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.9 2006-02-17 19:47:34 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.10 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -31,11 +31,11 @@ void LiberaSQL()
 }
 int CargaSQL(char *sqlf)
 {
-	char archivo[128], tmppath[PMAX];
+	char archivo[MAX_FNAME], tmppath[PMAX];
 	int (*Carga)();
 	if (sql)
 		LiberaSQL();
-	BMalloc(sql, struct _sql);
+	sql = BMalloc(struct _sql);
 	if ((sql->hmod = CopiaDll(sqlf, archivo, tmppath)))
 	{
 		irc_dlsym(sql->hmod, "Carga", Carga);

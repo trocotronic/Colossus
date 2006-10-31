@@ -166,17 +166,17 @@ EXTFUNC(CSOpts_U)
 		if (params > 3)
 		{
 			char *c, *str;
-			strcpy(tokbuf, Unifica(param, params, 3, -1));
+			strlcpy(tokbuf, Unifica(param, params, 3, -1), sizeof(tokbuf));
 			str = strtok(tokbuf, " ");
 			if ((c = strchr(str, '-')))
 				*c = '\0';
 			if (*str == '+')
 				str++;
-			strcpy(buf, str);
+			strlcpy(buf, str, sizeof(buf));
 			if ((str = strtok(NULL, " ")))
 			{
-				strcat(buf, " ");
-				strcat(buf, str);
+				strlcat(buf, " ", sizeof(buf));
+				strlcat(buf, str, sizeof(buf));
 			}
 			PropagaRegistro("C::%s::M %s", param[1], buf);
 		}
@@ -184,7 +184,7 @@ EXTFUNC(CSOpts_U)
 			PropagaRegistro("C::%s::M", param[1]);
 	}
 	else if (!strcasecmp(param[2], "PASS"))
-		PropagaRegistro("C::%s::P %s", param[1], MDString(param[3]));
+		PropagaRegistro("C::%s::P %s", param[1], MDString(param[3], 0));
 	else if (!strcasecmp(param[2], "FUNDADOR"))
 		PropagaRegistro("C::%s::F %s", param[1], param[3]);
 	return 0;
@@ -253,7 +253,7 @@ BOTFUNC(CSProteger)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_EDT))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_EDT))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -317,7 +317,7 @@ BOTFUNC(CSDemigrar)
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2], 0)))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
@@ -370,7 +370,7 @@ BOTFUNC(CSMigrar)
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2], 0)))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
@@ -431,7 +431,7 @@ BOTFUNC(CSSetUDB)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_SET))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_SET))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;

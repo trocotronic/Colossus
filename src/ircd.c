@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.38 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.39 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -42,6 +42,7 @@ Comando *comandos = NULL;
 char modebuf[BUFSIZE], parabuf[BUFSIZE];
 Tkl *tklines[TKL_MAX];
 time_t tping;
+Timer *timerping = NULL, *timerircd = NULL;
 
 Comando *BuscaComando(char *accion)
 {
@@ -67,7 +68,7 @@ char *Cmd(char *tok)
 		return com->cmd;
 	return tok;
 }
-void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, u_char params)
+void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, int params)
 {
 	Comando *com;
 	if (!cmd)
@@ -83,7 +84,7 @@ void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, u_char par
 		com->funcion[com->funciones++] = func;
 		return;
 	}
-	BMalloc(com, Comando);
+	com = BMalloc(Comando);
 	com->cmd = strdup(cmd);
 	com->tok = strdup(tok);
 	com->funcion[com->funciones++] = func;
@@ -171,10 +172,10 @@ SOCKFUNC(IniciaIrcd)
 #ifdef _WIN32
 	ChkBtCon(1, 1);
 #endif
-	ApagaCrono("rircd", NULL);
+	ApagaCrono(timerircd);
 	canales = NULL;
 	if (protocolo->comandos[P_PING])
-		IniciaCrono("pingpong", sck, 0, 1, MiraPings, NULL, 0);
+		timerping = IniciaCrono(0, 1, MiraPings, NULL);
 	protocolo->inicia();
 	return 0;
 }
@@ -184,7 +185,7 @@ SOCKFUNC(ProcesaIrcd)
 	if (data)
 		Debug("* %s", data);
 #endif
-	strcpy(backupbuf, data);
+	strlcpy(backupbuf, data, sizeof(backupbuf));
 	if (!canal_debug)
 		canal_debug = BuscaCanal(conf_set->debug);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
@@ -213,7 +214,7 @@ SOCKFUNC(CierraIrcd)
 	for (mod = modulos; mod; mod = mod->sig)
 		mod->cl = NULL;
 	if (protocolo->comandos[P_PING])
-		ApagaCrono("pingpong", sck);
+		ApagaCrono(timerping);
 	if (reset)
 	{
 		(void)execv(margv[0], margv);
@@ -233,7 +234,7 @@ SOCKFUNC(CierraIrcd)
 			intentos = 0;
 		}
 		else
-			IniciaCrono("rircd", NULL, 1, conf_set->reconectar.intervalo, AbreSockIrcd, NULL, 0);
+			timerircd = IniciaCrono(1, conf_set->reconectar.intervalo, AbreSockIrcd, NULL);
 	}
 #ifdef _WIN32
 	else /* es local */
@@ -317,7 +318,7 @@ Canal *BuscaCanal(char *canal)
 Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *server, char *vhost, char *umodos, char *info)
 {
 	Cliente *cl;
-	BMalloc(cl, Cliente);
+	cl = BMalloc(Cliente);
 	if (nombre)
 		cl->nombre = strdup(nombre);
 	if (ident)
@@ -325,8 +326,8 @@ Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *ser
 	if (host)
 		cl->host = strdup(host);
 	cl->rvhost = cl->host; /* suponemos que ya es host, si no lo fuera, lo obtendríamos más tarde */
-	if (EsIp(host)) /* es ip, la resolvemos */
-		ResuelveHost(&cl->rvhost, cl->host);
+	//if (EsIp(host)) /* es ip, la resolvemos */
+	//	ResuelveHost(&cl->rvhost, cl->host);
 	if (ip)
 		cl->ip = strdup(ip);	
 	if (server)
@@ -358,7 +359,7 @@ void CambiaNick(Cliente *cl, char *nuevonick)
 MallaCliente *CreaMallaCliente(char flag)
 {
 	MallaCliente *mcl;
-	BMalloc(mcl, MallaCliente);
+	mcl = BMalloc(MallaCliente);
 	mcl->flag = flag;
 	return mcl;
 }
@@ -375,7 +376,7 @@ MallaCliente *BuscaMallaCliente(Canal *cn, char flag)
 MallaMascara *CreaMallaMascara(char flag)
 {
 	MallaMascara *mmk;
-	BMalloc(mmk, MallaMascara);
+	mmk = BMalloc(MallaMascara);
 	mmk->flag = flag;
 	return mmk;
 }
@@ -392,7 +393,7 @@ MallaMascara *BuscaMallaMascara(Canal *cn, char flag)
 MallaParam *CreaMallaParam(char flag)
 {
 	MallaParam *mpm;
-	BMalloc(mpm, MallaParam);
+	mpm = BMalloc(MallaParam);
 	mpm->flag = flag;
 	return mpm;
 }
@@ -408,13 +409,13 @@ MallaParam *BuscaMallaParam(Canal *cn, char flag)
 }
 Canal *InfoCanal(char *canal, int crea)
 {
-	Canal *cn;
+	Canal *cn = NULL;
 	if ((cn = BuscaCanal(canal)))
 		return cn;
 	if (crea)
 	{
 		char *c;
-		BMalloc(cn, Canal);
+		cn = BMalloc(Canal);
 		cn->nombre = strdup(canal);
 		if (canales)
 			canales->prev = cn;
@@ -586,15 +587,15 @@ void DistribuyeMe(Cliente *me, Sock **sck)
 	ircfree(me->trio);
 	me->trio = (char *)Malloc(sizeof(char) * 21); /* hay 20 flags posibles */
 	*(me->trio) = '\0';
-	strcat(me->trio, "hK");
+	strlcat(me->trio, "hK", sizeof(char) * 21);
 #ifdef _WIN32
-	strcat(me->trio, "W");
+	strlcat(me->trio, "W", sizeof(char) * 21);
 #endif
 #ifdef USA_ZLIB
-	strcat(me->trio, "Z");
+	strlcat(me->trio, "Z", sizeof(char) * 21);
 #endif
 #ifdef USA_SSL
-	strcat(me->trio, "e");
+	strlcat(me->trio, "e", sizeof(char) * 21);
 #endif
 	ircstrdup(me->info, conf_server->info);
 	ircstrdup(me->host, "0.0.0.0");
@@ -680,7 +681,7 @@ void SacaBot(Cliente *bl, char *canal, char *motivo)
 char *TipoMascara(char *mask, int tipo)
 {
 	char *nick, *user, *host, *host2;
-	strcpy(tokbuf, mask);
+	strlcpy(tokbuf, mask, sizeof(tokbuf));
 	nick = strtok(tokbuf, "!");
 	user = strtok(NULL, "@");
 	host = strtok(NULL, "");
@@ -718,7 +719,7 @@ char *TipoMascara(char *mask, int tipo)
 			ircsprintf(buf, "%s!*@*.%s", nick, host2);
 			break;
 		default:
-			strcpy(buf, mask);
+			strlcpy(buf, mask, sizeof(buf));
 	}
 	return buf;
 }
@@ -860,20 +861,21 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 
 /*!
  * @desc: Desconecta un bot llamado previamente por CreaBot.
- * @params: $nick [in] Nickname del bot.
+ * @params: $bl [in] Cliente bot.
  	    $motivo [in] Motivo de la desconexión. Si no se precisa, usar NULL.
  * @ver: CreaBot
  * @cat: Modulos
  !*/
  
-void DesconectaBot(char *nick, char *motivo)
+void DesconectaBot(Cliente *bl, char *motivo)
 {
-	Cliente *bl;
 	Modulo *ex;
-	if ((bl = BuscaCliente(nick)) && EsBot(bl))
+	if (EsBot(bl))
+	{
+		if ((ex = BuscaModulo(bl->nombre, modulos)))
+			ex->cl = NULL;
 		ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, motivo);
-	if ((ex = BuscaModulo(nick, modulos)))
-		ex->cl = NULL;
+	}
 }
 void ReconectaBot(char *nick)
 {
@@ -884,7 +886,7 @@ void ReconectaBot(char *nick)
 	ex->cl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
 	{
-		strcpy(tokbuf, ex->residente);
+		strlcpy(tokbuf, ex->residente, sizeof(tokbuf));
 		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 			EntraBot(ex->cl, canal);
 	}
@@ -953,8 +955,8 @@ char *ModosAFlags(u_long modes, mTab tabla[], Canal *cn)
 		MallaParam *mpm;
 		for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
 		{
-			strcat(flags, " ");
-			strcat(flags, mpm->param);
+			strlcat(flags, " ", sizeof(buf));
+			strlcat(flags, mpm->param, sizeof(buf));
 		}
 	}
 	return buf;
@@ -1014,7 +1016,7 @@ int EntraResidentes()
 	{
 		if (aux->residente && !aux->activo)
 		{
-			strcpy(tokbuf, aux->residente);
+			strlcpy(tokbuf, aux->residente, sizeof(tokbuf));
 			for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 				EntraBot(aux->cl, canal);
 		}
@@ -1036,12 +1038,13 @@ char *MascaraTKL(char *user, char *host)
 	char *s = NULL;
 	if (user)
 	{
-		s = (char *)Malloc(sizeof(char) * (strlen(user) + (host ? 1 + strlen(host) : 0) + 1));
-		strcpy(s, user);
+		size_t t = sizeof(char) * (strlen(user) + (host ? 1 + strlen(host) : 0) + 1);
+		s = (char *)Malloc(t);
+		strlcpy(s, user, t);
 		if (host)
 		{
-			strcat(s, "@");
-			strcat(s, host);
+			strlcat(s, "@", t);
+			strlcat(s, host, t);
 		}
 	}
 	return s;
@@ -1049,7 +1052,7 @@ char *MascaraTKL(char *user, char *host)
 Tkl *InsertaTKL(int tipo, char *user, char *host, char *autor, char *motivo, time_t inicio, time_t fin)
 {
 	Tkl *tkl;
-	BMalloc(tkl, Tkl);
+	tkl = BMalloc(Tkl);
 	tkl->mascara = MascaraTKL(user, host);
 	tkl->autor = strdup(autor);
 	tkl->motivo = strdup(motivo);

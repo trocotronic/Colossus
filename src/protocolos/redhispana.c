@@ -265,7 +265,7 @@ void InsertaClienteEnNumerico(Cliente *us, char *clave, Hash *tabla)
 	Trio *aux;
 	u_int hash = 0;
 	hash = HashCliente(clave);
-	BMalloc(aux, Trio);
+	aux = BMalloc(Trio);
 	aux->cl = us;
 	aux->hsig = tabla[hash].item;
 	tabla[hash].item = aux;
@@ -587,7 +587,7 @@ void set(Conf *config)
 {
 	int i, p;
 	if (!conf_set)
-		BMalloc(conf_set, struct Conf_set);
+		conf_set = BMalloc(struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "red"))

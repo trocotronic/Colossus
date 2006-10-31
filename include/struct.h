@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.61 2006-06-20 13:30:07 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.62 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -190,51 +190,40 @@ extern void SockClose(Sock *, char);
 extern Sock *SockListen(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
 extern Sock *SockListenEx(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), u_int);
 extern void SockWriteBin(Sock *, u_long, char *);
-
-/*!
- * @desc: Estructura de datos Hash. Se utiliza para definir una lista de entradas enlazadas.
- * @params: $item Apunta al primer elemento de la lista.
- 	    $items Cantidad de elementos en esa lista.
- * @cat: Programa
- * @ex: 	Hash tabla[100];
- 	UnaEstructura *st;
- 	...
- 	//UnaEstructura debe tener como miembro a hsig
- 	st->hsig = tabla[0].item;
- 	tabla[0].item = cl;
- 	tabla[0].items++;
- !*/	
-typedef struct _hash {
-	void *item;
-	int items;
-}Hash;
-
-extern const char NTL_tolower_tab[];
+extern MODVAR const char NTL_tolower_tab[];
+extern MODVAR const char NTL_toupper_tab[];
 extern MODVAR char buf[BUFSIZE];
 extern Sock *SockActual;
-extern struct _cliente *BuscaClienteEnHash(char *, Hash *);
-extern struct _canal *BuscaCanalEnHash(char *, Hash *);
-extern void InsertaClienteEnHash(struct _cliente*, char *, Hash *);
-extern void InsertaCanalEnHash(struct _canal *, char *, Hash *);
-extern int BorraClienteDeHash(struct _cliente *, char *, Hash *);
-extern int BorraCanalDeHash(struct _canal *, char *, Hash *);
 extern int match(char *, char *);
+
+typedef struct _opts
+{
+	int opt;
+	char *item;
+}Opts;
+extern int BuscaOpt(char *, Opts *);
+extern char *BuscaOptItem(int, Opts *);
 
 extern char *Fecha(time_t *);
 typedef struct _smtpData
 {
+	struct _smtpData *sig;
+	Sock *sck;
+	u_int estado;
 	char *para;
 	char *de;
 	char *tema;
 	char *cuerpo;
 	char enviado;
 	int intentos;
+	Opts *fps;
+	int (*closefunc)(struct _smtpData *);
 }SmtpData;
-extern void EnviaEmail(char *, char *, char *, char *);
 extern void Email(char *, char *, char *, ...);
+extern void EmailArchivos(char *, char *, Opts *, int (*)(SmtpData *), char *, ...);
 
 extern char *AleatorioEx(char *);
-extern int Aleatorio(int, int);
+extern u_int Aleatorio(u_int, u_int);
 extern char *Mx(char *);
 
 #define INI 1
@@ -270,6 +259,11 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  		- SIGN_STARTUP (): Se ha cargado el programa. Sólo se ejecuta una vez.
  		- SIGN_SOCKOPEN (): Se ha establecido la conexión con el ircd. Todavía no se han mandado datos.
  		- SIGN_CDESTROY (Canal *cn): Se borra este canal de la memoria. Se ha vaciado el canal.
+ 		- SIGN_CMSG (Cliente *cl, Canal *cn, char *msg): El cliente <i>cl</i> envía el mensaje <i>msg</i> al canal <i>cn</i>.
+ 		- SIGN_PMSG (Cliente *cl, Cliente *bl, char *msg, int respuesta): El cliente <i>cl</i> envía el mensaje <i>msg</i> al bot <i>bl</i>.
+ 			El valor respuesta toma el valor de respuesta del bot anfitrión. Si es 0, el bot anfitrión ha ejecutado el comando correctamente. 
+ 			Si es 1, el bot anfitrión ha emitido algún error y ha abortado. Si es -1, no existe bot anfitrión.
+ 			NOTA: esta señal se ejecuta <u>después</u> de haber ejecutado la función del bot anfitrión, en el caso de que hubiera.
  *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
  		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
  * @ex: 	int Umodos(Cliente *, char *);
@@ -299,17 +293,15 @@ extern int BorraSenyal(int, int (*)());
 typedef struct _timer
 {
 	struct _timer *sig;
-	char *nombre;
 	int (*func)();
 	void *args;
-	Sock *sck;
 	double cuando;
 	int veces;
 	int lleva;
 	int cada;
 }Timer;
-extern void IniciaCrono(char *, Sock *, int, int, int (*)(), void *, size_t);
-extern int ApagaCrono(char *, Sock *);
+extern Timer *IniciaCrono(u_int, u_int, int (*)(), void *);
+extern int ApagaCrono(Timer *);
 extern void CompruebaCronos(void);
 extern double microtime(void);
 extern char *str_replace(char *, char, char);
@@ -342,26 +334,24 @@ extern int DetieneProceso(int (*)());
 #define INI_SUMD 0xFF
 extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
-extern MODVAR Hash uTab[UMAX];
-extern MODVAR Hash cTab[CHMAX];
-#define COLOSSUS_VERNUM "1.5"
+#define COLOSSUS_VERNUM "1.6"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
-#define COLOSSUS_VERINT 10400
+#define COLOSSUS_VERINT 10600
 extern char **margv;
-#define Malloc(x) ExMalloc(x, __FILE__, __LINE__)
+#define Malloc(x) ExMalloc(x, 0, __FILE__, __LINE__)
 /*!
  * @desc: Aloja memoria y pone a 0 toda la cantidad de memoria solicitada. Es un alias de malloc y memset.
- * @params: $p [in] Puntero a la zona de memoria a reservar.
-	    $s [in] Tamaño o tipo de puntero.
+ * @params: $s [in] Tamaño o tipo de puntero (char, int, algún typedef, etc.). Se usa el operador sizeof() implícitamente.
  * @ex: 	MiEstructura *puntero;
- 	BMalloc(puntero, MiEstructura);
+ 	puntero = BMalloc(MiEstructura);
  	//Hace lo mismo que
  	puntero = (MiEstructura *)malloc(sizeof(MiEstructura));
  	memset(puntero, 0, sizeof(MiEstructura));
- * @sntx: void BMalloc(void *p, s )
+ * @sntx: TipoDeDatos *BMalloc( TipoDeDatos )
+ * @ret: Devuelve un puntero de tipo TipoDeDatos
  * @cat: Programa
  !*/
-#define BMalloc(p,s) do { p = (s *)Malloc(sizeof(s)); bzero(p, sizeof(s)); }while(0)
+#define BMalloc(s) (s *)ExMalloc(sizeof(s), 1, __FILE__, __LINE__)
 #define EST_DESC 0
 #define EST_CONN 1
 #define EST_LIST 2
@@ -392,7 +382,7 @@ extern char **margv;
 #define FSQL 4
 extern void Alerta(char , char *, ...);
 extern void Debug(char *, ...);
-extern char *ExMalloc(size_t, char *, long);
+extern char *ExMalloc(size_t, int, char *, long);
 #define ADD 1
 #define DEL 2
 extern struct in_addr *Resuelve(char *);
@@ -467,8 +457,6 @@ extern Recurso CopiaDll(char *, char *, char *);
 #define SSLFLAG_DONOTACCEPTSELFSIGNED 0x4
 #endif
 extern char *my_itoa(int);
-extern int b64_decode(char const *src, char *, size_t);
-extern int b64_encode(char const *, size_t, char *, size_t);
 extern MODVAR time_t iniciado;
 extern MODVAR int refrescando;
 #define Creditos() 																\
@@ -510,18 +498,11 @@ typedef struct item
 	struct item *sig;
 }Item;
 void add_item(Item *, Item **);
-Item *del_item(Item *, Item **, char);
+Item *del_item(Item *, Item **, int);
 #define AddItem(item, lista) add_item((Item *)item, (Item **)&lista)
 #define BorraItem(item, lista) del_item((Item *)item, (Item **)&lista, 0)
 #define LiberaItem(item, lista) del_item((Item *)item, (Item **)&lista, 1)
 char *Repite(char, int);
-typedef struct _opts
-{
-	int opt;
-	char *item;
-}Opts;
-extern int BuscaOpt(char *, Opts *);
-extern char *BuscaOptItem(int, Opts *);
 
 extern int b64_encode(char const *, size_t, char *, size_t);
 extern int b64_decode(char const *, char *, size_t);
@@ -535,3 +516,6 @@ extern time_t GMTime();
 typedef int (*ECmdFunc)(u_long, char *, void *);
 extern int EjecutaComandoSinc(char *, char *, u_long *, char **);
 extern int EjecutaComandoASinc(char *, char *, ECmdFunc, void *);
+extern Directorio AbreDirectorio(char *);
+extern char *LeeDirectorio(Directorio);
+extern void CierraDirectorio(Directorio);

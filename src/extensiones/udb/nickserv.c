@@ -17,6 +17,8 @@ BOTFUNC(NSMigrar);
 BOTFUNCHELP(NSHMigrar);
 BOTFUNC(NSDemigrar);
 BOTFUNCHELP(NSHDemigrar);
+BOTFUNC(NSAcceso);
+BOTFUNCHELP(NSHAcceso);
 EXTFUNC(NSRegister_U);
 EXTFUNC(NSOpts_U);
 EXTFUNC(NSInfo_U);
@@ -36,6 +38,7 @@ extern void NSCambiaInv(Cliente *);
 bCom nickserv_coms[] = {
 	{ "migrar" , NSMigrar , N1 , "Migra tu nick a la BDD." , NSHMigrar } ,
 	{ "demigrar" , NSDemigrar , N1 , "Demigra tu nick de la BDD." , NSHDemigrar } ,
+	{ "acceso" , NSAcceso , N1 , "Gestiona el acceso de tu nick." , NSHAcceso } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -106,6 +109,25 @@ BOTFUNCHELP(NSHDemigrar)
 	Responde(cl, CLI(nickserv), "Sintaxis: \00312DEMIGRAR tupass");
 	return 0;
 }
+BOTFUNCHELP(NSHAcceso)
+{
+	Responde(cl, CLI(nickserv), "Gestiona los accesos de tu nick.");
+	Responde(cl, CLI(nickserv), "Es decir, fija la ip o el rango de ips desde las cuales se permite el uso de tu nick.");
+	Responde(cl, CLI(nickserv), "Se permite el uso de notación CIDR para especificar un rango de ips.");
+	Responde(cl, CLI(nickserv), "Si no se especifica ninguna ip, se elimina el acceso.");
+	Responde(cl, CLI(nickserv), "NOTA: Si te equivocas con el acceso, *NO* podrás utilizar este nick. Tendrás que pedir a un operador que te levante el acceso.");
+	Responde(cl, CLI(nickserv), " ");
+	if (IsOper(cl))
+	{
+		Responde(cl, CLI(nickserv), "Sintaxis: \00312ACCESO [ip|nick]");
+		Responde(cl, CLI(nickserv), "Si especificas una ip, añadirá un acceso a tu nick.");
+		Responde(cl, CLI(nickserv), "Si especificas un nick, eliminará el acceso a este nick.");
+		Responde(cl, CLI(nickserv), "El acceso de nicks sólo puede borrarse si el usuario ha cambiado de ip y no puede hacerlo él mismo.");
+	}
+	else
+		Responde(cl, CLI(nickserv), "Sintaxis: \00312ACCESO [ip]");
+	return 0;
+}
 BOTFUNC(NSMigrar)
 {
 	int opts;
@@ -119,21 +141,21 @@ BOTFUNC(NSMigrar)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (strcmp(SQLCogeRegistro(NS_SQL, parv[0], "pass"), MDString(param[1])))
+	if (strcmp(SQLCogeRegistro(NS_SQL, cl->nombre, "pass"), MDString(param[1], 0)))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(SQLCogeRegistro(NS_SQL, parv[0], "opts"));
+	opts = atoi(SQLCogeRegistro(NS_SQL, cl->nombre, "opts"));
 	if (opts & NS_OPT_UDB)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ya tienes el nick migrado.");
 		return 1;
 	}
-	PropagaRegistro("N::%s::P %s", parv[0], MDString(param[1]));
+	PropagaRegistro("N::%s::P %s", cl->nombre, MDString(param[1], 0));
 	Responde(cl, CLI(nickserv), "Migración realizada.");
 	opts |= NS_OPT_UDB;
-	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
+	SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
 	NSCambiaInv(cl);
 	return 0;
 }
@@ -150,21 +172,52 @@ BOTFUNC(NSDemigrar)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (strcmp(SQLCogeRegistro(NS_SQL, parv[0], "pass"), MDString(param[1])))
+	if (strcmp(SQLCogeRegistro(NS_SQL, cl->nombre, "pass"), MDString(param[1], 0)))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
 	}
-	opts = atoi(SQLCogeRegistro(NS_SQL, parv[0], "opts"));
+	opts = atoi(SQLCogeRegistro(NS_SQL, cl->nombre, "opts"));
 	if (!(opts & NS_OPT_UDB))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Tu nick no está migrado.");
 		return 1;
 	}
-	PropagaRegistro("N::%s", parv[0]);
+	PropagaRegistro("N::%s", cl->nombre);
 	Responde(cl, CLI(nickserv), "Demigración realizada.");
 	opts &= ~NS_OPT_UDB;
-	SQLInserta(NS_SQL, parv[0], "opts", "%i", opts);
+	SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
+	return 0;
+}
+BOTFUNC(NSAcceso)
+{
+	if (params < 2)
+	{
+		PropagaRegistro("N::%s::A", cl->nombre);
+		Responde(cl, CLI(nickserv), "Acceso eliminado.");
+	}
+	else
+	{
+		char *c;
+		strlcpy(tokbuf, param[1], sizeof(tokbuf));
+		if ((c = strchr(tokbuf, '/')))
+			*c = '\0';
+		if (!EsIp(tokbuf) && !IsOper(cl))
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una ip válida.");
+			return 1;
+		}
+		if (EsIp(tokbuf))
+		{
+			PropagaRegistro("N::%s::A %s", cl->nombre, param[1]);
+			Responde(cl, CLI(nickserv), "Acceso añadido.");
+		}
+		else
+		{
+			PropagaRegistro("N::%s::A", param[1]);
+			Responde(cl, CLI(nickserv), "El acceso de \00312%s\003 ha sido eliminado.", param[1]);
+		}
+	}
 	return 0;
 }
 EXTFUNC(NSRegister_U)
@@ -177,8 +230,10 @@ EXTFUNC(NSRegister_U)
 		char *pass;
 		SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts | NS_OPT_UDB);
 		if ((pass = SQLCogeRegistro(NS_SQL, cl->nombre, "pass")))
+		{
+			NSCambiaInv(cl);
 			PropagaRegistro("N::%s::P %s", cl->nombre, pass);
-		NSCambiaInv(cl);
+		}
 	}
 	return 0;
 }

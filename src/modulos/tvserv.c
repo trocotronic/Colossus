@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.17 2006-06-20 13:19:41 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.18 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -291,7 +291,7 @@ DataSock *InsertaCola(char *query, int numero, Cliente *cl)
 	if (i < MAX_COLA)
 	{
 		DataSock *dts;
-		BMalloc(dts, DataSock);
+		dts = BMalloc(DataSock);
 		if (query)
 			ircstrdup(dts->query, query);
 		dts->numero = numero;
@@ -399,7 +399,7 @@ void TSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!tvserv)
-		BMalloc(tvserv, TvServ);
+		tvserv = BMalloc(TvServ);
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -768,13 +768,13 @@ BOTFUNC(TSPelis)
 		}
 		else
 		{
-			strcpy(buf, "/metropoli/cine.html");
+			strlcpy(buf, "/metropoli/cine.html", sizeof(buf));
 			n = atoi(param[1]);
 		}
 	}
 	else
 	{
-		strcpy(buf, "/metropoli/cine.html");
+		strlcpy(buf, "/metropoli/cine.html", sizeof(buf));
 		n = -1;
 	}
 	if ((dts = InsertaCola(buf, n, cl)))
@@ -936,10 +936,10 @@ SOCKFUNC(TSLeeTv)
 	if (imp)
 	{
 		if (strstr(data, "bgcolor=#C9E7F8") || strstr(data, "bgcolor=#EBF5FC"))
-			strcat(txt, " \x02");
+			strlcat(txt, " \x02", sizeof(txt));
 		TSQuitaTags(data, buf);
 		if (buf[0])
-			strcat(txt, buf[0] == ' ' ? &buf[1] : &buf[0]);
+			strlcat(txt, buf[0] == ' ' ? &buf[1] : &buf[0], sizeof(txt));
 	}
 	return 0;
 }
@@ -956,12 +956,12 @@ SOCKFUNC(TSLeeHoroscopo)
 		txt[0] = '\0';
 		cat = 1;
 		TSQuitaTags(strchr(c+10, '>')+1, tmp);
-		strcat(txt, tmp);
+		strlcat(txt, tmp, sizeof(txt));
 	}
 	else if (cat)
 	{
 		TSQuitaTags(data, tmp);
-		strcat(txt, tmp);
+		strlcat(txt, tmp, sizeof(txt));
 		if (strstr(data, "</center>"))
 		{
 			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, txt);
@@ -978,9 +978,9 @@ SOCKFUNC(TSLeeHoroscopo)
 	else if (!strcmp(data, "</td></tr><tr><td>"))
 	{
 		ircsprintf(txt, "Salud: \00312%s\003 - Dinero: \00312", Repite('*', salud));
-		strcat(txt, Repite('*', dinero));
-		strcat(txt, "\003 - Amor: \00312");
-		strcat(txt, Repite('*', amor));
+		strlcat(txt, Repite('*', dinero), sizeof(txt));
+		strlcat(txt, "\003 - Amor: \00312", sizeof(txt));
+		strlcat(txt, Repite('*', amor), sizeof(txt));
 		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, txt);
 		salud = dinero = amor = 0;
 		SockClose(sck, LOCAL);
@@ -1271,7 +1271,7 @@ SOCKFUNC(TSLeePeli)
 			}
 		}
 		else if (!strncmp(data, "</ta", 4))
-				strcat(snd, " ");
+				strlcat(snd, " ", sizeof(snd));
 		else if (!strncmp("<td height=\"6", data, 13))
 		{
 			n = 0;
@@ -1284,8 +1284,8 @@ SOCKFUNC(TSLeePeli)
 			if (tmp[0] != '\0')
 			{
 				if (tmp[0] != ' ')
-					strcat(snd, " ");
-				strcat(snd, tmp);
+					strlcat(snd, " ", sizeof(snd));
+				strlcat(snd, tmp, sizeof(snd));
 			}
 		}
 	}
@@ -1337,8 +1337,8 @@ SOCKFUNC(TSLeeLiga)
 			if (tmp[0] != '\0')
 			{
 				for (i = 0; tmp[i] == ' '; i++);
-				strcat(tmp2, &tmp[i]);
-				strcat(tmp2, "\t");
+				strlcat(tmp2, &tmp[i], sizeof(tmp2));
+				strlcat(tmp2, "\t", sizeof(tmp2));
 			}
 		}
 	}	
@@ -1358,29 +1358,32 @@ int TSSigSQL()
 {
 	if (!SQLEsTabla(TS_TV))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
-  			"programacion text default NULL "
+  			"programacion text default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, TS_TV))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
 	}
 	if (!SQLEsTabla(TS_HO))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
-  			"prediccion text default NULL "
+  			"prediccion text default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, TS_HO))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
 	}
 	if (!SQLEsTabla(TS_LI))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
   			"puntos int2 default '0', "
-  			"division int2 default '0' "
+  			"division int2 default '0', "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, TS_LI))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
 	}

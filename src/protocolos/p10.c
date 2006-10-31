@@ -131,7 +131,7 @@ void EntraCliente(Cliente *, char *);
 void ProcesaModos(Canal *, char *);
 void ProcesaModo(Cliente *, Canal *, char **, int);
 void p_kick_vl(Cliente *, Cliente *, Canal *, char *, va_list *);
-int p_msg_vl(Cliente *, Cliente *, char, char *, va_list *);
+int p_msg_vl(Cliente *, Cliente *, u_int, char *, va_list *);
 
 /* Para no tocar la variable ->hsig, se crea otra estructura para guardar los trios y se indexa por el numeric */
 typedef struct _trio
@@ -180,7 +180,7 @@ DLLFUNC void InsertaClienteEnNumerico(Cliente *us, char *clave, Hash *tabla)
 	Trio *aux;
 	u_int hash = 0;
 	hash = HashCliente(clave);
-	BMalloc(aux, Trio);
+	aux = BMalloc(Trio);
 	aux->cl = us;
 	aux->hsig = tabla[hash].item;
 	tabla[hash].item = aux;
@@ -374,7 +374,7 @@ void p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
 	{
 		char buf[BUFSIZE];
 		if (!vl)
-			strcpy(buf, motivo);
+			strlcpy(buf, motivo, sizeof(buf));
 		else
 			ircvsprintf(buf, motivo, *vl);
 		EnviaAServidor("%s %s %s %s :%s", bl->trio, TOK_KICK, cn->nombre, cl->trio, buf);
@@ -427,13 +427,13 @@ int p_invite(Cliente *cl, Cliente *bl, Canal *cn)
 	EnviaAServidor("%s %s %s %s", bl->trio, TOK_INVITE, cl->trio, cn->nombre);
 	return 0;
 }
-int p_msg_vl(Cliente *cl, Cliente *bl, char tipo, char *formato, va_list *vl)
+int p_msg_vl(Cliente *cl, Cliente *bl, u_int tipo, char *formato, va_list *vl)
 {
 	char buf[BUFSIZE];
 	if (!bl)
 		return 1;
 	if (!vl)
-		strcpy(buf, formato);
+		strlcpy(buf, formato, sizeof(buf));
 	else
 		ircvsprintf(buf, formato, *vl);
 	if (tipo == 1) 
@@ -527,7 +527,7 @@ void set(Conf *config)
 	int i, p;
 	char *modcl = "ov", *modmk = "b", *modpm1 = "k", *modpm2 = "l";
 	if (!conf_set)
-		BMalloc(conf_set, struct Conf_set);
+		conf_set = BMalloc(struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "red"))
@@ -828,7 +828,7 @@ char *militime_float(char* start)
 #endif
 		} 
 		else 
-      			strcpy(timebuf, "0");
+      			strlcpy(timebuf, "0", sizeof(timebuf));
 	} 
 	else
 #ifdef _WIN32
@@ -855,7 +855,7 @@ IRCFUNC(m_eos)
 IRCFUNC(m_msg)
 {
 	char *param[256], par[BUFSIZE];
-	int params, i;
+	int params, i, resp = -1;
 	Modulo *mod;
 	Cliente *bl;
 	strtok(parv[1], "@");
@@ -863,7 +863,12 @@ IRCFUNC(m_msg)
 	parv[parc+1] = NULL;
 	while (*parv[2] == ':')
 		parv[2]++;
-	strcpy(par, parv[2]);
+	if (*parv[1] == '#')
+	{
+		Senyal3(SIGN_CMSG, cl, BuscaCanal(parv[1]), parv[2]);
+		return 1;
+	}
+	strlcpy(par, parv[2], sizeof(par));
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
 	bl = BuscaClienteNumerico(parv[1], NULL);
@@ -903,7 +908,7 @@ IRCFUNC(m_msg)
 					if ((c = strchr(aux->sintaxis[i], '-')))
 						strncpy(tmp, aux->sintaxis[i]+1, c-aux->sintaxis[i]-1);
 					else
-						strcpy(tmp, aux->sintaxis[i]+1);
+						strlcpy(tmp, aux->sintaxis[i]+1, sizeof(tmp));
 					j = atoi(tmp);
 					top = (c ? params : j+1);
 					while (j < top)
@@ -917,7 +922,7 @@ IRCFUNC(m_msg)
 			params = k;
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
-			func->func(cl, parv, parc, param, params, func);
+			resp = func->func(cl, parv, parc, param, params, func);
 		else
 		{
 			if (!ex && !EsServidor(cl))
@@ -926,8 +931,10 @@ IRCFUNC(m_msg)
 				Responde(cl, bl, ERR_FORB);
 			else
 				Responde(cl, bl, ERR_NOID);
+			resp = 1;
 		}
 	}
+	Senyal4(SIGN_PMSG, cl, bl, parv[2], resp);
 	return 0;
 }
 IRCFUNC(m_whois)
@@ -1049,7 +1056,7 @@ IRCFUNC(m_pass)
 IRCFUNC(m_join)
 {
 	char *canal;
-	strcpy(tokbuf, parv[1]);
+	strlcpy(tokbuf, parv[1], sizeof(tokbuf));
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 		EntraCliente(cl, canal);
 	return 0;
@@ -1162,9 +1169,9 @@ IRCFUNC(m_error)
 IRCFUNC(m_away)
 {
 	if (parc == 2)
-		cl->away = 1;
+		ircstrdup(cl->away, parv[1]);
 	else if (parc == 1)
-		cl->away = 0;
+		ircfree(cl->away);
 	Senyal2(SIGN_AWAY, cl, parv[1]);
 	return 0;
 }
@@ -1232,9 +1239,9 @@ IRCFUNC(m_burst)
 					while (*d)
 					{
 						if (*d == 'o')
-							strcat(mod, "o");
+							strlcat(mod, "o", sizeof(mod));
 						else if (*d == 'v')
-							strcat(mod, "v");
+							strlcat(mod, "v", sizeof(mod));
 						d++;
 					}
 				}
@@ -1262,7 +1269,7 @@ IRCFUNC(m_burst)
 IRCFUNC(m_create)
 {
 	char *canal;
-	strcpy(tokbuf, parv[1]);
+	strlcpy(tokbuf, parv[1], sizeof(tokbuf));
 	for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 		EntraCliente(cl, canal);
 	return 0;

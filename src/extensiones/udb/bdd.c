@@ -87,7 +87,7 @@ void printea(Udb *bloq, int escapes)
 	char tabs[32];
 	tabs[0] = '\0';
 	for (i = 0; i < escapes; i++)
-		strcat(tabs, "\t");
+		strlcat(tabs, "\t", sizeof(tabs));
 //	if (bloq->id)
 //		tabs[escapes] = bloq->id;
 	if (bloq->data_char)
@@ -302,13 +302,8 @@ void IniciaUDB()
 {
 	FILE *fh;
 	int ver;
-#ifdef _WIN32
-	mkdir(DB_DIR);
-	mkdir(DB_DIR_BCK);
-#else
-	mkdir(DB_DIR, 0744);
-	mkdir(DB_DIR_BCK, 0744);
-#endif
+	mkdir(DB_DIR, 0600);
+	mkdir(DB_DIR_BCK, 0600);
 	if (!S)
 		S = AltaBloque('S', DB_DIR "set.udb", &UDB_SET);
 	if (!N)
@@ -334,17 +329,6 @@ void IniciaUDB()
 			ActualizaDataVer4();
 	}
 	SetDataVer(4);
-}
-void CifraCadenaAHex(char *origen, char *destino, int len)
-{
-	int i;
-	destino[0] = 0;
-	for (i = 0; i < len; i++)
-	{
-		char tmp[2];
-		ircsprintf(tmp, "%02x", origen[i]);
-		strcat(destino, tmp);
-	}
 }
 u_long ObtieneHash(UDBloq *bloq)
 {
@@ -507,30 +491,30 @@ Udb *CreaRegistro(Udb *bloque)
 	bloque->down = reg;
 	return reg;
 }
-Udb *DaFormato(char *form, Udb *reg)
+Udb *DaFormato(char *form, Udb *reg, size_t t)
 {
 	Udb *root = NULL;
 	form[0] = '\0';
 	if (reg->up)
-		root = DaFormato(form, reg->up);
+		root = DaFormato(form, reg->up, t);
 	else
 		return reg;
 	if (!BadPtr(reg->item))
-		strcat(form, reg->item);
+		strlcat(form, reg->item, t);
 	if (reg->down)
-		strcat(form, "::");
+		strlcat(form, "::", t);
 	else
 	{
 		if (reg->data_char)
 		{
-			strcat(form, " ");
-			strcat(form, reg->data_char);
+			strlcat(form, " ", t);
+			strlcat(form, reg->data_char, t);
 		}
 		else if (reg->data_long)
 		{
 			char tmp[32];
 			sprintf(tmp, " %c%lu", CHAR_NUM, reg->data_long);
-			strcat(form, tmp);
+			strlcat(form, tmp, t);
 		}
 	}
 	return root ? root : reg;
@@ -542,8 +526,8 @@ int GuardaEnArchivo(Udb *reg, u_int tipo)
 	FILE *fp;
 	bloq = CogeDeId(tipo);
 	form[0] = '\0';
-	DaFormato(form, reg);
-	strcat(form, "\n");
+	DaFormato(form, reg, sizeof(form));
+	strlcat(form, "\n", sizeof(form));
 	if (!(fp = fopen(bloq->path, "ab")))
 		return -1;
 	fputs(form, fp);
@@ -617,7 +601,7 @@ Udb *BorraRegistro(u_int tipo, Udb *reg, int archivo)
 		root->regs--;
 	}
 	LiberaMemoriaUdb(tipo, reg);
-	if (!up->down)
+	if (!up->down && up->up)
 		up = BorraRegistro(tipo, up, archivo);
 	return up;
 }	
@@ -712,35 +696,36 @@ char *CifraIpTEA_U(char *ipreal)
 }	
 int ParseaLinea(u_int tipo, char *cur, int archivo)
 {
-	char *ds, *cop, *sp;
+	char *ds, *cop, *sp = NULL;
 	Udb *bloq;
 	UDBloq *root;
 	root = CogeDeId(tipo);
 	cop = cur = strdup(cur);
 	bloq = root->arbol;
+	sp = strchr(cur, ' ');
 	while ((ds = strchr(cur, ':')))
 	{
+		if (sp && sp < ds)
+			break;
 		if (*(ds + 1) == ':')
 		{
 			*ds++ = '\0';
-			if ((sp = strchr(cur, ' ')))
-				*sp++ = '\0';
 			if (*cur)
-				bloq = InsertaRegistro(tipo, bloq, cur, sp, 0, archivo);
+				bloq = InsertaRegistro(tipo, bloq, cur, NULL, 0, archivo);
 		}
 		else /* ya no son :: */
 			break;
 		cur = ++ds;
 	}
-	if ((ds = strchr(cur, ' ')))
+	if (sp)
 	{
-		*ds++ = '\0';
-		if (BadPtr(ds))
+		*sp++ = '\0';
+		if (BadPtr(sp))
 			goto borra;
-		if (*ds == CHAR_NUM)
-			bloq = InsertaRegistro(tipo, bloq, cur, NULL, atoul(++ds), archivo);
+		if (*sp == CHAR_NUM)
+			bloq = InsertaRegistro(tipo, bloq, cur, NULL, atoul(++sp), archivo);
 		else
-			bloq = InsertaRegistro(tipo, bloq, cur, ds, 0, archivo);
+			bloq = InsertaRegistro(tipo, bloq, cur, sp, 0, archivo);
 	}
 	else
 	{

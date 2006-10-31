@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.h,v 1.5 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: ipserv.h,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 typedef struct _is IpServ;
@@ -20,4 +20,4 @@ struct _is
 
 extern IpServ *ipserv;
 
-#define IS_SIGN_DROP 30
+#define IS_SIGN_DROP 52

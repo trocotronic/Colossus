@@ -1,10 +1,17 @@
 /*
- * $Id: newsserv.c,v 1.5 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.6 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
 #include <expat.h>
 #include <iconv.h>
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <sys/io.h>
+#define O_BINARY 0x0
+#endif
+#include <sys/stat.h>
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -15,6 +22,7 @@
 NewsServ *newsserv = NULL;
 iconv_t icv;
 Noticia *noticias = NULL;
+Timer *timerrss = NULL;
 
 void WSSet(Conf *, Modulo *);
 int WSTest(Conf *, int *);
@@ -38,7 +46,7 @@ static bCom newsserv_coms[] = {
 	{ "help" , WSHelp , N1 , "Muestra esta ayuda." , NULL } ,
 	{ "alta" , WSAlta , N1 , "Te da de alta en el servicio de noticias." , WSHAlta } ,
 	{ "baja" , WSBaja , N1 , "Te da de baja en el servicio de noticias." , WSHBaja } ,
-	//{ "noticias" , Prueba , N1 , "ble" , NULL } ,
+	{ "noticias" , Prueba , N1 , "ble" , NULL } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -122,7 +130,7 @@ int MOD_CARGA(NewsServ)(Modulo *mod)
 		WSSet(NULL, mod);
 	bzero(rss, sizeof(Rss *) * MAX_RSS);
 	icv = iconv_open("ISO-8859-1", "UTF-8");
-	IniciaCrono("ultima_hora", SockIrcd, 0, 300, DescargaRSS, NULL, 0);
+	timerrss = IniciaCrono(0, 300, DescargaRSS, NULL);
 	DescargaRSS();
 	return errores;
 }
@@ -134,8 +142,8 @@ int MOD_DESCARGA(NewsServ)()
 		if (rss[i])
 		{
 			SockClose(rss[i]->sck, LOCAL);
-			if (rss[i]->fp)
-				fclose(rss[i]->fp);
+			if (rss[i]->fp > 0)
+				close(rss[i]->fp);
 			ircsprintf(tokbuf, "tmp/%s.xml", urls[rss[i]->opt].item);
 			unlink(tokbuf);
 			if (rss[i]->pxml)
@@ -144,7 +152,7 @@ int MOD_DESCARGA(NewsServ)()
 		}
 	}
 	BotUnset(newsserv);
-	ApagaCrono("ultima_hora", SockIrcd);
+	ApagaCrono(timerrss);
 	BorraSenyal(SIGN_SQL, WSSigSQL);
 	BorraSenyal(CS_SIGN_DROP, WSSigDrop);
 	BorraSenyal(NS_SIGN_DROP, WSSigDrop);
@@ -164,7 +172,7 @@ void WSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!newsserv)
-		BMalloc(newsserv, NewsServ);
+		newsserv = BMalloc(NewsServ);
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -206,7 +214,7 @@ Noticia *InsertaNoticia(u_int id, char *titular, char *descripcion, u_int servic
 //	if (!BuscaNoticia(id, anteriores) && (!(aux = BuscaNoticia(id, noticias)) || BadPtr(aux->descripcion)))
 //	{
 		Noticia *not;
-		BMalloc(not, Noticia);
+		not = BMalloc(Noticia);
 		not->id = id;
 		strncpy(not->titular, titular, sizeof(not->titular));
 		if (!BadPtr(descripcion))
@@ -235,7 +243,7 @@ void XMLCALL xmlInicio(Rss *rs, const XML_Char *nombre, const XML_Char **atts)
 				d = strchr(c, '/');
 				*d = '\0';
 				id = atoi(c);
-				rs->not.id = atoi(c);
+				rs->not.id = id;
 				rs->not.t = &(rs->not.titular[0]);
 				rs->not.d = &(rs->not.descripcion[0]);
 				Free(e);
@@ -352,7 +360,7 @@ int DescargaRSS()
 	{
 		Rss *tmp;
 		if (!rss[i])
-			BMalloc(tmp, Rss);
+			tmp = BMalloc(Rss);
 		else
 			tmp = rss[i];
 		tmp->pxml = XML_ParserCreate(NULL);
@@ -555,7 +563,7 @@ SOCKFUNC(WSAbre)
 	if (!(rs = BuscaRSS(sck)))
 		return 1;
 	ircsprintf(buf, "tmp/%s.xml", urls[rs->opt].item);
-	rs->fp = fopen(buf, "w+");
+	rs->fp = open(buf, O_RDWR|O_CREAT|O_TRUNC|O_BINARY, S_IREAD|S_IWRITE);
 	SockWrite(sck, "GET /rss/%s/ HTTP/1.1", urls[rs->opt].item);
 	SockWrite(sck, "Accept: */*");
 	SockWrite(sck, "Host: www.20minutos.es");
@@ -586,7 +594,7 @@ SOCKFUNC(WSLee)
 			}
 		}
 	}
-	fputs(c, rs->fp);
+	write(rs->fp, c, strlen(c));
 	return 0;
 }
 char *iso_8859_1[] = {
@@ -644,30 +652,34 @@ SOCKFUNC(WSCierra)
 {
 	int len;
 	static int total = 0;
+	char *tmp;
 	Rss *rs;
+	struct stat inode;
 	if (data)
 		return 1;
 	if (!(rs = BuscaRSS(sck)))
 		return 1;
-	if (rs->fp)
+	if (rs->fp > 0 && fstat(rs->fp, &inode) != -1)
 	{
-		rewind(rs->fp);
+		lseek(rs->fp, 0, SEEK_SET);
+		tmp = (char *)Malloc(sizeof(char) * (inode.st_size+1));
+		tmp[inode.st_size] = '\0';
 		ircsprintf(tokbuf, "tmp/%s.xml", urls[rs->opt].item);
-		while ((len = fread(buf, 1, 512, rs->fp)))
+		if ((len = read(rs->fp, tmp, inode.st_size)) == inode.st_size)
 		{
-			WSEntities(buf, &len);
-			if (!XML_Parse(rs->pxml, buf, len, feof(rs->fp)))
+			WSEntities(tmp, &len);
+			if (!XML_Parse(rs->pxml, tmp, len, 1))
 			{
 			//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
 			//	Debug("%s", buf);
-				break;
 			}
 		}
-		fclose(rs->fp);
+		close(rs->fp);
 		unlink(tokbuf);
+		Free(tmp);
 	}
 	XML_ParserFree(rs->pxml);
-	rs->fp = NULL;
+	rs->fp = -1;
 	rs->sck = NULL;
 	rs->pxml = NULL;
 	if (++total == MAX_RSS)
@@ -682,9 +694,10 @@ int WSSigSQL()
 {
 	if (!SQLEsTabla(WS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255), "
-  			"servicios bigint "
+  			"servicios int4, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, WS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, WS_SQL);
 	}
@@ -739,7 +752,7 @@ int WSEmiteRSS(Proc *proc)
 			{
 				Responde((Cliente *)cl, CLI(newsserv), " ");
 				Responde((Cliente *)cl, CLI(newsserv), "\x02%s\x02:", trads[i]);
-				Responde((Cliente *)cl, CLI(newsserv), "\x1F%s", not->titular);
+				Responde((Cliente *)cl, CLI(newsserv), "%s", not->titular);
 				if (!BadPtr(not->descripcion))
 					Responde((Cliente *)cl, CLI(newsserv), "%s", not->descripcion);
 				Responde((Cliente *)cl, CLI(newsserv), "\x1F\00312http://noticias.redyc.com/?%u", not->id);
@@ -755,6 +768,8 @@ BOTFUNC(Prueba)
 	int i;
 	int len;
 	Rss *rs;
+	struct stat inode;
+	char *tmp;
 	for (i = 0; i < MAX_RSS; i++)
 	{
 		rs = rss[i];
@@ -764,21 +779,29 @@ BOTFUNC(Prueba)
 		XML_SetCharacterDataHandler(rs->pxml, xmlData);
 		XML_SetUserData(rs->pxml, rs);
 		ircsprintf(tokbuf, "tmp/%s.xml", urls[rs->opt].item);
-		rs->fp = fopen(tokbuf, "r");
-		if (rs->fp)
+		rs->fp = open(tokbuf, O_RDONLY|O_BINARY, S_IREAD);
+		if (rs->fp > 0 && fstat(rs->fp, &inode) != -1)
+	{
+		lseek(rs->fp, 0, SEEK_SET);
+		tmp = (char *)Malloc(sizeof(char) * (inode.st_size+1));
+		tmp[inode.st_size] = '\0';
+		if ((len = read(rs->fp, tmp, inode.st_size)) == inode.st_size)
 		{
-			while ((len = fread(buf, 1, 512, rs->fp)))
+			WSEntities(tmp, &len);
+			if (!XML_Parse(rs->pxml, tmp, len, 1))
 			{
-			if (!XML_Parse(rs->pxml, buf, len, feof(rs->fp)))
-			{
-				Debug("error (%s) %s en %i %i", tokbuf, XML_ErrorString(XML_GetErrorCode(rs->pxml)), XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
-				break;
+			//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
+			//	Debug("%s", buf);
 			}
-			}
-			fclose(rs->fp);
-		//unlink(buf);
 		}
+		close(rs->fp);
+		//unlink(tokbuf);
+		Free(tmp);
+	}
 		XML_ParserFree(rs->pxml);
+	rs->fp = -1;
+	rs->sck = NULL;
+	rs->pxml = NULL;
 	}
 		if (noticias)
 			IniciaProceso(WSEmiteRSS);

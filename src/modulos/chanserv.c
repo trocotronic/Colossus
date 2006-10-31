@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.38 2006-06-20 13:48:44 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.39 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -66,7 +66,7 @@ int CSSigStartUp ();
 
 ProcFunc(CSDropachans);
 int CSDropanick(char *);
-int CSBaja(char *, char);
+int CSBaja(char *, int);
 
 int CSCmdMode(Cliente *, Canal *, char *[], int);
 int CSCmdJoin(Cliente *, Canal *);
@@ -195,7 +195,7 @@ void CSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!chanserv)
-		BMalloc(chanserv, ChanServ);
+		chanserv = BMalloc(ChanServ);
 	chanserv->autodrop = 15;
 	chanserv->maxlist = 30;
 	chanserv->bantype = 3;
@@ -309,19 +309,6 @@ char *CSEsFundador_cache(Cliente *al, char *canal)
 	}
 	return NULL;
 }
-int CSEsResidente(Modulo *mod, char *canal)
-{
-	char *aux;
-	if (!mod->residente)
-		return 0;
-	strcpy(tokbuf, mod->residente);
-	for (aux = strtok(tokbuf, ","); aux; aux = strtok(NULL, ","))
-	{
-		if (!strcasecmp(canal, aux))
-			return 1;
-	}
-	return 0;
-}
 /* hace un empaquetamiento de los users de una determinada lista. No olvidar hacer Free() */
 Cliente **CSEmpaquetaClientes(Canal *cn, LinkCliente *lista, u_char opers)
 {
@@ -341,12 +328,15 @@ Cliente **CSEmpaquetaClientes(Canal *cn, LinkCliente *lista, u_char opers)
 }
 void CSMarca(Cliente *cl, char *nombre, char *marca)
 {
-	time_t fecha = time(NULL);
 	char *marcas;
-	if ((marcas = SQLCogeRegistro(CS_SQL, nombre, "marcas")))
-		SQLInserta(CS_SQL, nombre, "marcas", "%s\t\00312%s\003 - \00312%s\003 - %s", marcas, Fecha(&fecha), cl->nombre, marca);
-	else
-		SQLInserta(CS_SQL, nombre, "marcas", "\00312%s\003 - \00312%s\003 - %s", Fecha(&fecha), cl->nombre, marca);
+	if (IsChanReg(nombre))
+	{
+		time_t fecha = time(NULL);
+		if ((marcas = SQLCogeRegistro(CS_SQL, nombre, "marcas")))
+			SQLInserta(CS_SQL, nombre, "marcas", "%s\t\00312%s\003 - \00312%s\003 - %s", marcas, Fecha(&fecha), cl->nombre, marca);
+		else
+			SQLInserta(CS_SQL, nombre, "marcas", "\00312%s\003 - \00312%s\003 - %s", Fecha(&fecha), cl->nombre, marca);
+	}
 }
 BOTFUNCHELP(CSHInfo)
 {
@@ -802,7 +792,7 @@ BOTFUNC(CSIdentify)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}	
-	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2])))
+	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2], 0)))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
 		return 1;
@@ -824,7 +814,7 @@ BOTFUNC(CSIdentify)
 				return 1;
 			}
 		}
-		strcat(buf, cache);
+		strlcat(buf, cache, sizeof(buf));
 	}
 	InsertaCache(CACHE_FUNDADORES, cl->nombre, 0, chanserv->hmod->id, buf);
 	Responde(cl, CLI(chanserv), "Ahora eres reconocido como fundador de \00312%s\003.", param[1]);
@@ -859,8 +849,8 @@ BOTFUNC(CSDeauth)
 	{
 		if (strcasecmp(tok, param[1]))
 		{
-			strcat(buf, tok);
-			strcat(buf, " ");
+			strlcat(buf, tok, sizeof(buf));
+			strlcat(buf, " ", sizeof(buf));
 		}
 	}
 	if (buf[0])
@@ -1332,7 +1322,7 @@ BOTFUNC(CSOpts)
 			Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal PASS contraseña");
 			return 1;
 		}
-		mdpass = MDString(param[3]);
+		mdpass = MDString(param[3], 0);
 		SQLInserta(CS_SQL, param[1], "pass", mdpass);
 		CSMarca(cl, param[1], "Contraseña cambiada.");
 		Responde(cl, CLI(chanserv), "Contraseña cambiada.");
@@ -1770,7 +1760,7 @@ BOTFUNC(CSJb)
 		for (ex = modulos; ex; ex = ex->sig)
 		{
 			bl = BuscaCliente(ex->nick);
-			if (EsLink(cn->miembro, bl) && !CSEsResidente(ex, param[1]))
+			if (EsLink(cn->miembro, bl) && !ModuloEsResidente(ex, param[1]))
 				SacaBot(bl, cn->nombre, "Cambiando bots");
 		}
 	}
@@ -1806,7 +1796,7 @@ BOTFUNC(CSSendpass)
 	}
 	pass = AleatorioEx("******-******");
 	founder = strdup(SQLCogeRegistro(CS_SQL, param[1], "founder"));
-	SQLInserta(CS_SQL, param[1], "pass", MDString(pass));
+	SQLInserta(CS_SQL, param[1], "pass", MDString(pass, 0));
 	Email(SQLCogeRegistro(NS_SQL, founder, "email"), "Reenvío de la contraseña", "Debido a la pérdida de la contraseña de tu canal, se te ha generado otra clave totalmetne segura.\r\n"
 		"A partir de ahora, la clave de tu canal es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", pass, chanserv->hmod->nick, conf_set->red);
 	Responde(cl, CLI(chanserv), "Se generado y enviado otra contraseña al email del founder de \00312%s\003.", param[1]);
@@ -2016,15 +2006,15 @@ BOTFUNC(CSRegister)
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
-				strcat(tokbuf, tok);
-				strcat(tokbuf, " ");
+				strlcat(tokbuf, tok, sizeof(tokbuf));
+				strlcat(tokbuf, " ", sizeof(tokbuf));
 			}
 			desc = Unifica(param, params, 3, params - chanserv->necesarios - 1);
 		}
 		else
 			desc = Unifica(param, params, 3, -1);
 		SQLInserta(CS_SQL, param[1], "founder", parv[0]);
-		SQLInserta(CS_SQL, param[1], "pass", MDString(param[2]));
+		SQLInserta(CS_SQL, param[1], "pass", MDString(param[2], 0));
 		SQLInserta(CS_SQL, param[1], "descripcion", desc);
 		if (IsOper(cl))
 		{
@@ -2142,11 +2132,11 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 		modlock = SQLCogeRegistro(CS_SQL, cn->nombre, "modos");
 		if (opts & CS_OPT_RMOD && modlock)
 		{
-			strcat(modebuf, strtok(modlock, " "));
+			strlcat(modebuf, strtok(modlock, " "), sizeof(modebuf));
 			if ((modlock = strtok(NULL, " ")))
 			{
-				strcat(parabuf, modlock);
-				strcat(parabuf, " ");
+				strlcat(parabuf, modlock, sizeof(parabuf));
+				strlcat(parabuf, " ", sizeof(parabuf));
 			}
 			/* buscamos el -k */
 			k = strchr(modebuf, '-');
@@ -2179,8 +2169,8 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 						if (!CSTieneAuto(mods[pars], cn->nombre, *modos) && (al = BuscaCliente(mods[pars])) && !EsBot(al))
 						{
 							chrcat(modebuf, *modos);
-							strcat(parabuf, TRIO(al));
-							strcat(parabuf, " ");
+							strlcat(parabuf, TRIO(al), sizeof(parabuf));
+							strlcat(parabuf, " ", sizeof(parabuf));
 						}
 					}
 					pars++;
@@ -2272,22 +2262,22 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		}
 		buf[0] = tokbuf[0] = '\0';
 		if (CSEsFundador(cl, cn->nombre) || CSEsFundador_cache(cl, cn->nombre))
-			strcpy(buf, protocolo->modcl);
+			strlcpy(buf, protocolo->modcl, sizeof(buf));
 		else
 		{
 			if (IsId(cl) && (res = CSEsAccess(cn->nombre, cl->nombre)))
 			{
 				row = SQLFetchRow(res);
 				if (!BadPtr(row[3]))
-					strcpy(buf, row[3]);
+					strlcpy(buf, row[3], sizeof(buf));
 				SQLFreeRes(res);
 			}
 		}
 		max = strlen(buf);
 		for (i = 0; i < max; i++)
 		{
-			strcat(tokbuf, cl->nombre);
-			strcat(tokbuf, " ");
+			strlcat(tokbuf, cl->nombre, sizeof(tokbuf));
+			strlcat(tokbuf, " ", sizeof(tokbuf));
 		}
 		if (CSTieneNivel(cl->nombre, cn->nombre, 0L))
 			SQLInserta(CS_SQL, cn->nombre, "ultimo", "%lu", time(0));
@@ -2300,14 +2290,14 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 				char *mod;
 				if ((mod = strtok(modos, strchr(modos, '-') ? "-": " ")))
 				{
-					strcat(buf, *mod == '+' ? mod+1 : mod);
+					strlcat(buf, *mod == '+' ? mod+1 : mod, sizeof(buf));
 					if ((mod = strtok(NULL, "\0")))
 					{
 						char *p;
 						if ((p = strchr(mod, ' '))) 
-							strcat(tokbuf, p+1);
+							strlcat(tokbuf, p+1, sizeof(tokbuf));
 						else
-							strcat(tokbuf, mod);
+							strlcat(tokbuf, mod, sizeof(tokbuf));
 					}
 				}
 			}
@@ -2328,7 +2318,7 @@ int CSSigSQL()
 {
 	if (!SQLEsTabla(CS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"n SERIAL, "
   			"item varchar(255), "
 			"founder varchar(255), "
@@ -2346,7 +2336,8 @@ int CSSigSQL()
   			"suspend text, "
   			"url varchar(255), "
   			"email varchar(255), "
-  			"marcas text "
+  			"marcas text, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, CS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
 	}
@@ -2363,28 +2354,31 @@ int CSSigSQL()
 	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, CS_SQL);
 	if (!SQLEsTabla(CS_TOK))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
 			"nick varchar(255) default NULL, "
-			"hora int4 default '0' "
+			"hora int4 default '0', "
+			"KEY `item` (`item`) "
 			");", PREFIJO, CS_TOK))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
 	}
 	if (!SQLEsTabla(CS_FORBIDS))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
-  			"motivo varchar(255) default NULL "
+  			"motivo varchar(255) default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, CS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
 	}
 	if (!SQLEsTabla(CS_ACCESS))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"canal varchar(255) default NULL, "
   			"nick varchar(255) default NULL, "
   			"nivel int8 default '0', "
-  			"automodos varchar(32) default NULL "
+  			"automodos varchar(32) default NULL, "
+  			"KEY `canal` (`canal`) "
 			");", PREFIJO, CS_ACCESS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
 		else
@@ -2437,11 +2431,12 @@ int CSSigSQL()
 	}
 	if (!SQLEsTabla(CS_AKICKS))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"canal varchar(255) default NULL, "
   			"mascara varchar(255) default NULL, "
   			"motivo varchar(255) default '0', "
-  			"autor varchar(64) default NULL "
+  			"autor varchar(64) default NULL, "
+  			"KEY `canal` (`canal`) "
 			");", PREFIJO, CS_AKICKS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
 		else
@@ -2491,7 +2486,7 @@ int CSSigEOS()
 			bjoins = atoi(row[1]);
 			for (ex = modulos; ex; ex = ex->sig)
 			{
-				if ((bjoins & ex->id) && !CSEsResidente(ex, row[0]))
+				if ((bjoins & ex->id) && !ModuloEsResidente(ex, row[0]))
 				{
 					bl = BuscaCliente(ex->nick);
 					if (bl)
@@ -2508,7 +2503,7 @@ int CSSigPreNick(Cliente *cl, char *nuevo)
 	BorraCache(CACHE_FUNDADORES, cl->nombre, chanserv->hmod->id);
 	return 0;
 }
-int CSBaja(char *canal, char opt)
+int CSBaja(char *canal, int opt)
 {
 	Canal *an;
 	char canalw[256];

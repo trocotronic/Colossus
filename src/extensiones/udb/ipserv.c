@@ -31,6 +31,8 @@ int (*issignick)();
 #define NS_OPT_UDB 0x80
 #define IsNickUDB(x) (IsReg(x) && atoi(SQLCogeRegistro(NS_SQL, x, "opts")) & NS_OPT_UDB)
 
+Timer *timercif = NULL;
+
 bCom ipserv_coms[] = {
 	{ "set" , ISOpts , N4 , "Fija algunos parámetros de la red." } ,
 	{ "dns" , ISDns , N4 , "Establece una resolución inversa de una ip." } ,
@@ -69,6 +71,7 @@ void CargaIpServ(Extension *ext)
 	InsertaSenyal(IS_SIGN_DROP, ISSigVDrop);
 	InsertaSenyalExt(1, ISSetipv_U, ext);
 	InsertaSenyalExt(3, ISClones_U, ext);
+	timercif = IniciaCrono(0, 86400, ISCompruebaCifrado_U, NULL);
 	/*InsertaSenyalExt(16, CSLiberar, ext);
 	InsertaSenyalExt(17, CSForbid, ext);
 	InsertaSenyalExt(18, CSUnforbid, ext);
@@ -83,6 +86,7 @@ void DescargaIpServ(Extension *ext)
 	BorraSenyal(IS_SIGN_DROP, ISSigVDrop);
 	BorraSenyalExt(1, ISSetipv_U, ext);
 	BorraSenyalExt(3, ISClones_U, ext);
+	ApagaCrono(timercif);
 }
 BOTFUNCHELP(ISHSet)
 {

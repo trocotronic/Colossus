@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.18 2006-06-20 13:19:41 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.19 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -39,7 +39,7 @@ void TaskBarCreated()
 	SysTray.uCallbackMessage = WM_USER;
 	SysTray.uFlags = NIF_ICON|NIF_TIP|NIF_MESSAGE;
 	SysTray.uID = 0;
-	lstrcpy(SysTray.szTip, COLOSSUS_VERSION);
+	strlcpy(SysTray.szTip, COLOSSUS_VERSION, sizeof(SysTray.szTip));
 	Shell_NotifyIcon(NIM_ADD ,&SysTray);
 }
 LRESULT CALLBACK MainDLG(HWND, UINT, WPARAM, LPARAM);
@@ -50,10 +50,10 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	HWND hWnd;
 	MSG msg;
 	WSADATA wsaData;
-	InitCommonControls();
-	WM_TASKBARCREATED = RegisterWindowMessage("TaskbarCreated");
 	if (FindWindow(NULL, COLOSSUS_VERSION))
 		return 1;
+	InitCommonControls();
+	WM_TASKBARCREATED = RegisterWindowMessage("TaskbarCreated");
 	hWnd = CreateDialog(hInstance, "COLOSSUS", 0, (DLGPROC)MainDLG);
 	hwMain = hWnd;
 	hInst = hInstance; 
@@ -62,43 +62,43 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	ShowWindow(hWnd, SW_SHOW);
 	VerInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&VerInfo);
-	strcpy(SO, "Windows ");
+	strlcpy(SO, "Windows ", sizeof(SO));
 	if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) 
 	{
 		if (VerInfo.dwMajorVersion == 4) 
 		{
 			if (VerInfo.dwMinorVersion == 0) 
 			{
-				strcat(SO, "95 ");
+				strlcat(SO, "95 ", sizeof(SO));
 				if (!strcmp(VerInfo.szCSDVersion," C"))
-					strcat(SO, "OSR2 ");
+					strlcat(SO, "OSR2 ", sizeof(SO));
 			}
 			else if (VerInfo.dwMinorVersion == 10) 
 			{
-				strcat(SO, "98 ");
+				strlcat(SO, "98 ", sizeof(SO));
 				if (!strcmp(VerInfo.szCSDVersion, " A"))
-					strcat(SO, "SE ");
+					strlcat(SO, "SE ", sizeof(SO));
 			}
 			else if (VerInfo.dwMinorVersion == 90)
-				strcat(SO, "Me ");
+				strlcat(SO, "Me ", sizeof(SO));
 		}
 	}
 	else if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) 
 	{
 		if (VerInfo.dwMajorVersion == 3 && VerInfo.dwMinorVersion == 51)
-			strcat(SO, "NT 3.51 ");
+			strlcat(SO, "NT 3.51 ", sizeof(SO));
 		else if (VerInfo.dwMajorVersion == 4 && VerInfo.dwMinorVersion == 0)
-			strcat(SO, "NT 4.0 ");
+			strlcat(SO, "NT 4.0 ", sizeof(SO));
 		else if (VerInfo.dwMajorVersion == 5) 
 		{
 			if (VerInfo.dwMinorVersion == 0)
-				strcat(SO, "2000 ");
+				strlcat(SO, "2000 ", sizeof(SO));
 			else if (VerInfo.dwMinorVersion == 1) 
-				strcat(SO, "XP ");
+				strlcat(SO, "XP ", sizeof(SO));
 			else if (VerInfo.dwMinorVersion == 2)
-				strcat(SO, "Server 2003 ");
+				strlcat(SO, "Server 2003 ", sizeof(SO));
 		}
-		strcat(SO, VerInfo.szCSDVersion);
+		strlcat(SO, VerInfo.szCSDVersion, sizeof(SO));
 	}
 	if (SO[strlen(SO)-1] == ' ')
 		SO[strlen(SO)-1] = 0;
@@ -182,7 +182,10 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
 					for (ex = modulos; ex; ex = ex->sig)
-						AppendMenu(hConfig, MF_STRING, i++, ex->config);
+					{
+						if (!BadPtr(ex->config))
+							AppendMenu(hConfig, MF_STRING, i++, ex->config);
+					}
 					mitem.cbSize = sizeof(MENUITEMINFO);
 					mitem.fMask = MIIM_SUBMENU;
 					mitem.hSubMenu = hConfig;
@@ -236,7 +239,10 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					AppendMenu(hConfig, MF_STRING, IDM_CONF, CPATH);
 					AppendMenu(hConfig, MF_SEPARATOR, 0, NULL);
 					for (ex = modulos; ex; ex = ex->sig)
+					{
+						if (!BadPtr(ex->config))
 							AppendMenu(hConfig, MF_STRING, i++, ex->config);
+					}
 					TrackPopupMenu(hConfig, TPM_LEFTALIGN|TPM_LEFTBUTTON, p.x, p.y, 0, hDlg, NULL);
 					SendMessage(hDlg, WM_NULL, 0, 0);
 					break;
@@ -380,20 +386,23 @@ void Error(char *formato, ...)
 	va_start(vl, formato);
 	ircvsprintf(buf, formato, vl);
 	va_end(vl);
-	strcat(buf, "\r\n");
+	strlcat(buf, "\r\n", sizeof(buf));
 	if (!hwConfError)
 	{
+		size_t t = sizeof(char) * (strlen(buf) + 1);
 		hwConfError = CreateDialog(hInst, "CONFERROR", hwMain, (DLGPROC)ConfErrorDLG);
 		ShowWindow(hwConfError, SW_SHOW);
-		texto = (char *)Malloc(sizeof(char) * (strlen(buf) + 1));
-		strcpy(texto, buf);
+		texto = (char *)Malloc(t);
+		strlcpy(texto, buf, t);
 	}
 	else
 	{
+		size_t t;
 		len = GetDlgItemText(hwConfError, EDT_ERR, actual, BUFSIZE);
-		texto = (char *)Malloc(sizeof(char) * (len + strlen(buf) + 1));
-		strcpy(texto, actual);
-		strcat(texto, buf);
+		t = sizeof(char) * (len + strlen(buf) + 1);
+		texto = (char *)Malloc(t);
+		strlcpy(texto, actual, t);
+		strlcat(texto, buf, t);
 	}
 	SetDlgItemText(hwConfError, EDT_ERR, texto);
 	Free(texto);
@@ -421,11 +430,11 @@ int Info(char *formato, ...)
 	len += strlen(txt);
 	if (len > sizeof(info))
 	{
-		strcpy(info, txt);
+		strlcpy(info, txt, sizeof(info));
 		len = 0;
 	}
 	else
-		strcat(info, txt);
+		strlcat(info, txt, sizeof(info));
 	SetDlgItemText(hwMain, EDT_INFO, info);
 	return -1;
 }

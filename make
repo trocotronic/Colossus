@@ -1,4 +1,4 @@
-## $Id: make,v 1.31 2006-06-20 13:19:40 Trocotronic Exp $
+## $Id: make,v 1.32 2006-10-31 23:49:10 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -7,7 +7,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-#NOCORE=1
+NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -69,7 +69,7 @@ OPENSSL_LIB=/LIBPATH:$(OPENSSL_LIB_DIR)
 
 INC_FILES = /I ./INCLUDE /J $(ZLIB_INC) $(OPENSSL_INC) /I $(PTHREAD_INC) /nologo /D _WIN32
 CFLAGS=$(DBGCFLAG) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c
-LFLAGS=kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
+LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt
 EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
@@ -77,11 +77,11 @@ EXP_OBJ_FILES=SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF
 	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ $(ZLIBOBJ) $(SSLOBJ) 
 MOD_DLL=SRC/MODULOS/MX.DLL SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL \
-	SRC/MODULOS/NEWSSERV.DLL SRC/MODULOS/HELPSERV.DLL
+	SRC/MODULOS/NEWSSERV.DLL SRC/MODULOS/HELPSERV.DLL SRC/MODULOS/LOGSERV.DLL SRC/MODULOS/NOTESERV.DLL SRC/MODULOS/GAMESERV.DLL
 #	SRC/MODULOS/STATSERV.DLL SRC/MODULOS/LINKSERV.DLL
 OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/DEBUG.OBJ
 PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
-SQL_DLL=SRC/SQL/MYSQL.DLL SRC/SQL/POSTGRESQL.DLL
+SQL_DLL=SRC/SQL/MYSQL.DLL SRC/SQL/POSTGRESQL.DLL SRC/SQL/SQLITE.DLL
 EXT_DLL=SRC/EXTENSIONES/UDB/UDB.DLL SRC/EXTENSIONES/HISPANO/HISPANO.DLL
 
 INCLUDES = ./include/ircd.h ./include/md5.h ./include/modulos.h ./include/parseconf.h ./include/protocolos.h \
@@ -288,7 +288,24 @@ src/modulos/helpserv.dll: src/modulos/helpserv.c $(INCLUDES) ./include/modulos/h
 	$(CC) $(MODCFLAGS) src/modulos/helpserv.c $(MODLFLAGS)
 	-@copy src\modulos\helpserv.dll modulos\helpserv.dll >NUL
 	-@copy src\modulos\helpserv.pdb modulos\helpserv.pdb >NUL
+	
+src/modulos/logserv.dll: src/modulos/logserv.c $(INCLUDES) ./include/modulos/logserv.h ./include/modulos/nickserv.h ./include/modulos/chanserv.h
+	$(CC) $(MODCFLAGS) src/modulos/logserv.c $(MODLFLAGS) src/modulos/chanserv.lib
+	-@copy src\modulos\logserv.dll modulos\logserv.dll >NUL
+	-@copy src\modulos\logserv.pdb modulos\logserv.pdb >NUL
+	
+src/modulos/noteserv.dll: src/modulos/noteserv.c $(INCLUDES) ./include/modulos/noteserv.h
+	$(CC) $(MODCFLAGS) src/modulos/noteserv.c $(MODLFLAGS)
+	-@copy src\modulos\noteserv.dll modulos\noteserv.dll >NUL
+	-@copy src\modulos\noteserv.pdb modulos\noteserv.pdb >NUL
 
+GAMESERV_FILES=src/modulos/gameserv.c src/modulos/gameserv/kyrhos.c 
+src/modulos/gameserv.dll: $(INCLUDES) ./include/modulos/gameserv.h  ./include/modulos/gameserv/kyrhos.h $(GAMESERV_FILES)
+	$(CC) $(MODDBGCFLAG) /Fesrc/modulos/gameserv/ $(INC_FILES) /Fosrc/modulos/gameserv/ \
+	/D ENLACE_DINAMICO /D MODULE_COMPILE $(GAMESERV_FILES) $(MODLFLAGS) /out:src/modulos/gameserv.dll
+	-@copy src\modulos\gameserv.dll modulos\gameserv.dll >NUL
+	-@copy src\modulos\gameserv.pdb modulos\gameserv.pdb >NUL
+	
 src/modulos/statserv.dll: src/modulos/statserv.c $(INCLUDES) ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
 	
@@ -323,6 +340,13 @@ src/sql/postgresql.dll: src/sql/postgresql.c $(INCLUDES)
 	user32.lib ws2_32.lib Advapi32.lib shell32.lib /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
 	-@copy src\sql\postgresql.dll sql\postgresql.dll >NUL
 	-@copy src\sql\postgresql.pdb sql\postgresql.pdb >NUL
+
+src/sql/sqlite.dll: src/sql/sqlite.c $(INCLUDES)
+	$(CC) $(SQLCFLAGS) /I "C:\dev\sqlite\win32" src/sql/sqlite.c \
+	$(SQLLFLAGS) /LIBPATH:"C:\dev\sqlite\win32\sqlite\Release" sqlite.lib \
+	/LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
+	-@copy src\sql\sqlite.dll sql\sqlite.dll >NUL
+	-@copy src\sql\sqlite.pdb sql\sqlite.pdb >NUL
 
 UDB_FILES=src/extensiones/udb/udb.c \
 	src/extensiones/udb/bdd.c \

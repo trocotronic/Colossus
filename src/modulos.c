@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.20 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.21 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -21,7 +21,7 @@ Modulo *modulos = NULL;
 Modulo *CreaModulo(char *modulo)
 {
 	Recurso hmod;
-	char archivo[128], tmppath[PMAX];
+	char archivo[MAX_FNAME], tmppath[PMAX];
 	int (*mod_carga)(Modulo *), (*mod_descarga)(Modulo *);
 	ModInfo *inf;
 	if ((hmod = CopiaDll(modulo, archivo, tmppath)))
@@ -48,7 +48,7 @@ Modulo *CreaModulo(char *modulo)
 			irc_dlclose(hmod);
 			return NULL;
 		}
-		BMalloc(mod, Modulo);
+		mod = BMalloc(Modulo);
 		mod->archivo = strdup(modulo);
 		mod->tmparchivo = strdup(tmppath);
 		mod->hmod = hmod;
@@ -77,7 +77,7 @@ Modulo *CreaModulo(char *modulo)
 }
 void DescargaModulo(Modulo *ex)
 {
-	DesconectaBot(ex->nick, "Refrescando");
+	DesconectaBot(ex->cl, "Refrescando");
 	if (ex->descarga)
 		ex->descarga(ex);
 	ircfree(ex->archivo);
@@ -219,7 +219,7 @@ int BuscaOptNiv(char *nombre)
 Funcion *CreaCom(bCom *padre)
 {
 	Funcion *cm = NULL;
-	BMalloc(cm, Funcion);
+	cm = BMalloc(Funcion);
 	if (padre)
 	{
 		cm->func = padre->func;
@@ -327,7 +327,7 @@ int TestComMod(Conf *config, bCom *coms, int avisa)
 bCom *BuscaComModRemoto(char *remoto, Recurso *hmod)
 {
 	Recurso mod;
-	char archivo[128], tmppath[PMAX];
+	char archivo[MAX_FNAME], tmppath[PMAX];
 	bCom *cm;
 	if ((mod = CopiaDll(remoto, archivo, tmppath)))
 	{
@@ -400,7 +400,7 @@ u_int InsertaNivel(char *nombre, char *flags)
 	Nivel *niv;
 	if (nivs == 15)
 		return 0;
-	BMalloc(niv, Nivel);
+	niv = BMalloc(Nivel);
 	niv->nombre = strdup(nombre);
 	if (flags)
 		niv->flags = strdup(flags);
@@ -436,7 +436,7 @@ Alias *CreaAlias(char *formato, char *sintaxis, Modulo *mod)
 	Alias *alias;
 	char *c;
 	int i;
-	BMalloc(alias, Alias);
+	alias = BMalloc(Alias);
 	for (i = 0, alias->formato[i++] = c = strdup(formato); c = strchr(c, ' '); alias->formato[i++] = c)
 		*c++ = '\0';
 	alias->formato[i] = NULL;
@@ -481,4 +481,24 @@ Alias *BuscaAlias(char **param, int params, Modulo *mod)
 		}
 	}
 	return NULL;
+}
+/*!
+ * @desc: Indica si un canal forma parte de los residentes de un módulo.
+ * @params: $mod [in] Módulo a examinar.
+ 		$canal [in] Nombre del canal del que se quiere saber si es residente o no.
+ * @ret: Devuelve 1 si es residente. 0, si no.
+ * @cat: Modulos
+ !*/
+int ModuloEsResidente(Modulo *mod, char *canal)
+{
+	char *aux;
+	if (!mod->residente)
+		return 0;
+	strlcpy(tokbuf, mod->residente, sizeof(tokbuf));
+	for (aux = strtok(tokbuf, ","); aux; aux = strtok(NULL, ","))
+	{
+		if (!strcasecmp(canal, aux))
+			return 1;
+	}
+	return 0;
 }

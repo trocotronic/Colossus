@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.25 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.26 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -122,7 +122,7 @@ void MSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!memoserv)
-		BMalloc(memoserv, MemoServ);
+		memoserv = BMalloc(MemoServ);
 	memoserv->def = 5;
 	memoserv->cada = 30;
 	if (config)
@@ -845,12 +845,13 @@ int MSSigSQL()
 {
 	if (!SQLEsTabla(MS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"mensaje text, "
   			"para varchar(255), "
   			"de varchar(255), "
   			"fecha int4 default '0', "
-  			"leido int4 default '0' "
+  			"leido int4 default '0', "
+  			"KEY `para` (`para`) "
 			");", PREFIJO, MS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SQL);
 	}
@@ -858,10 +859,11 @@ int MSSigSQL()
 	{
 		SQLRes res;
 		SQLRow row;
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"opts varchar(255) default NULL, "
-  			"limite int4 default '%i' "
+  			"limite int4 default '%i', "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, MS_SET, memoserv->def))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))

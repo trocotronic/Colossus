@@ -1,6 +1,6 @@
 TODO 
 
-$Id: proximamente,v 1.8 2006-02-17 19:19:01 Trocotronic Exp $
+$Id: proximamente,v 1.9 2006-10-31 23:49:10 Trocotronic Exp $
 
 
 Versión 1.1:
@@ -61,6 +61,8 @@ Versión 1.5:
 	
 
 Versión 1.6:
+
+[X] Disponer de un servidor SQL integrado
 
 [ ] Adaptar los módulos o bots a la semántica de IRCServices
 	[ ] ChanServ

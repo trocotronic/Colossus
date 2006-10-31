@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.43 2006-06-20 13:19:39 Trocotronic Exp $
+ * $Id: cambios,v 1.44 2006-10-31 23:49:09 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -396,3 +396,19 @@
 130606452 - Arreglado un fallo con el autojoin de operadores.
 160606453 - Arreglado un fallo con el svsmode.
 200606454 - *** Trigésima release pública: 1.5 ***
+300606455 - Se añaden rutinas para hacer copias de seguridad de los bloques UDB.
+300606456 - Se cambia el sistema de cronómetros.
+300606457 - Se añaden los comandos BACKUP y RESTAURAR en OperServ para hacer eso mismo en UDB.
+010706458 - Mi cumpleaños.
+020706459 - Se añade el motor SQLite: un servidor SQL completamente integrado.
+040706460 - Se cambia por completo el sistema de envío de emails.
+040706461 - Añadida una función para adjuntar archivos en un email.
+040706462 - Arreglado un fallo muy grave al enviar muchos datos de golpe.
+050706463 - Mejorado el sistema de validación. Ahora se validan hasta 8 módulos por consulta.
+090706464 - Se mejora el generador de números aleatorios para que sean equiprobables.
+260806465 - Arreglado un fallo con el UDB y los ::.
+260806466 - Arreglado un fallo al desplegar el menú de las configuraciones.
+050906467 - Arreglado un fallo con el proceso de php en el demonio httpd.
+050906468 - Arreglado un fallo al registrar un nick bajo una cuenta prohibida.
+071006469 - Arreglado un fallo al comprobar si existe otra versión.
+011106470 - *** Cuadragésima release pública: 1.6 ***

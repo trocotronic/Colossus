@@ -51,6 +51,8 @@ extern int CargaBloques();
 extern void IniciaUDB();
 extern int TruncaBloque(Cliente *, UDBloq *, u_long);
 extern void PropagaRegistro(char *, ...);
+extern int CopiaSeguridad(UDBloq *, char *);
+extern int RestauraSeguridad(UDBloq *, char *);
 
 #define E_UDB_NODB 1
 #define E_UDB_LEN 2

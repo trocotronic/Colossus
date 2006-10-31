@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.13 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.14 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -13,9 +13,9 @@ static char zipbuf[ZIP_BUFFER_SIZE];
 
 int ZLibInit(Sock *sck, int nivel)
 {
-	BMalloc(sck->zlib, Zlib);
-	BMalloc(sck->zlib->in, z_stream);
-	BMalloc(sck->zlib->out, z_stream);
+	sck->zlib = BMalloc(Zlib);
+	sck->zlib->in = BMalloc(z_stream);
+	sck->zlib->out = BMalloc(z_stream);
 	sck->zlib->in->data_type = sck->zlib->out->data_type = Z_ASCII;
 	if (inflateInit(sck->zlib->in) != Z_OK)
 		return -1;

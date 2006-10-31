@@ -1,7 +1,6 @@
 /*
- * $Id: httpd.c,v 1.5 2006-06-20 13:46:47 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
-#ifdef _WIN32
 #include "struct.h"
 #include "httpd.h"
 #ifndef _WIN32
@@ -59,13 +58,6 @@ Opts herrores[] = {
 	{ 505 , "HTTP Version Not Supported" } ,
 	{ 0x0 , 0x0 }
 };
-char *htipos[] = {
-	"htm" , "text/html" ,
-	"php" , "text/html" ,
-	"jpg" , "image/jpeg" ,
-	"css" , "text/css" ,
-	NULL
-};
 char *meses[] = {
 	"Jan" , "Feb" , "Mar" , "Apr" , "May" , "Jun" ,
 	"Jul" , "Aug" , "Sep" , "Oct" , "Nov" , "Dec" , 
@@ -85,15 +77,70 @@ int BuscaMes(char *mes)
 }
 char *BuscaTipo(char *ext)
 {
-	int i;
-	if (BadPtr(ext))
+#ifdef _WIN32
+	HKEY hk, hks;
+	char valor[128], item[128];
+	static char tmp[128];
+	DWORD i, j, k = 0, svalor = sizeof(valor), stmp = sizeof(tmp), sitem = sizeof(item);
+	if (!ext)
 		return "text/plain";
-	for (i = 0; htipos[i]; i+= 2)
+	if (*ext == '.')
+		ext++;
+	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, "MIME\\Database\\Content Type", 0, KEY_READ, &hk) == ERROR_SUCCESS)
 	{
-		if (!strncasecmp(htipos[i], ext, strlen(htipos[i])))
-			return htipos[i+1];
+		for (i = 0; RegEnumKey(hk, i, tmp, stmp) != ERROR_NO_MORE_ITEMS; i++)
+		{
+			if (RegOpenKeyEx(hk, tmp, 0, KEY_READ, &hks) == ERROR_SUCCESS)
+			{
+				for (j = 0; RegEnumValue(hks, j, item, &sitem, NULL, NULL, valor, &svalor) != ERROR_NO_MORE_ITEMS; j++)
+				{
+					sitem = sizeof(item);
+					svalor = sizeof(valor);
+					if (!strcmp(item, "Extension") && !strcmp(&valor[1], ext))
+					{
+						k = 1;
+						break;
+					}
+				}
+				//for (j = 0; RegEnumKey(hks, j, valor, svalor) != ERROR_NO_MORE_ITEMS; j++)
+			}
+			RegCloseKey(hks);
+			if (k)
+				break;
+		}
+	}
+	RegCloseKey(hk);
+	if (!k)
+		return "text/plain";
+	return tmp;
+#else
+	FILE *fp;
+	char tmp[BUFSIZE], *tp, *e, *c;
+	static char tipo[128];
+	if (!ext)
+		return "text/plain";
+	if ((fp = fopen("/etc/mime.types", "r")))
+	{
+		while (fgets(tmp, sizeof(tmp), fp))
+		{
+			if ((c = strchr(tmp, '\n')))
+				*c = '\0';
+			tp = strtok(tmp, "\t");
+			while ((e = strtok(NULL, " ")))
+			{
+				while (*e == '\t')
+					e++;
+				if (!strcmp(e, ext))
+				{
+					strncpy(tipo, tp, sizeof(tipo));
+					fclose(fp);
+					return tipo;
+				}
+			}
+		}
 	}
 	return "text/plain";
+#endif
 }
 void LiberaHHead(HHead *hh)
 {
@@ -113,6 +160,11 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 	char tbuf[2048], timebuf[128];
 	char *msg;
 	time_t ahora;
+	if (!hh->sck)
+	{
+		LiberaHHead(hh);
+		return;
+	}
 	if (!bytes && data)
 		bytes = strlen(data);
 	if (!errmsg && !(errmsg = BuscaOptItem(num, herrores)))
@@ -128,9 +180,9 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 		msg = "Content-Length: %lu\r\n"
 			"Content-Type: %s\r\n";
 		sprintf(buf, msg, bytes, BuscaTipo(hh->ext));
-		strcat(tbuf, buf);
+		strlcat(tbuf, buf, sizeof(tbuf));
 		if (conf_httpd->max_age < 0 || (num != 200 && num != 300) || (hh->ext && !strncasecmp(hh->ext, "php", 3)))
-			strcat(tbuf, "Cache-Control: no-cache,no-store\r\n");
+			strlcat(tbuf, "Cache-Control: no-cache,no-store\r\n", sizeof(tbuf));
 		else
 		{
 			time_t expira = ahora + conf_httpd->max_age;
@@ -138,25 +190,20 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 			msg = "Cache-Control: max-age=%i\r\n"
 				"Expires: %s\r\n";
 			ircsprintf(buf, msg, conf_httpd->max_age, timebuf);
-			strcat(tbuf, buf);
+			strlcat(tbuf, buf, sizeof(tbuf));
 			if (lmod >= 0)
 			{
 				strftime(timebuf, sizeof(timebuf), fecha_fmt, gmtime(&lmod));
 				ircsprintf(buf, "Last-Modified: %s\r\n", timebuf);
-				strcat(tbuf, buf);
+				strlcat(tbuf, buf, sizeof(tbuf));
 			}
 		}
 	}
-	strcat(tbuf, "\r\n");
+	strlcat(tbuf, "\r\n", sizeof(tbuf));
 	SockWrite(hh->sck, tbuf);
-	if (hh->sck)
-	{
-		if (data)
-			SockWriteBin(hh->sck, bytes, data);
-		SockClose(hh->sck, LOCAL);
-	}
-	else
-		LiberaHHead(hh);
+	if (data)
+		SockWriteBin(hh->sck, bytes, data);
+	SockClose(hh->sck, LOCAL);
 }
 void EnviaError(HHead *hh, u_int num, char *texto)
 {
@@ -180,7 +227,7 @@ HDir *CreaHDir(char *carpeta, char *ruta, HDIRFUNC(*func))
 	HDir *hd;
 	if (!carpeta || !ruta || !func)
 		return NULL;
-	BMalloc(hd, HDir);
+	hd = BMalloc(HDir);
 	hd->ruta = strdup(ruta);
 	hd->carpeta = strdup(carpeta);
 	hd->func = func;
@@ -213,7 +260,7 @@ SOCKFUNC(AbreHTTPD)
 		if (!httpcons[i])
 		{
 			HHead *hh;
-			BMalloc(hh, HHead);
+			hh = BMalloc(HHead);
 			hh->sck = sck;
 			hh->lmod = 0;
 			hh->slot = i;
@@ -221,10 +268,12 @@ SOCKFUNC(AbreHTTPD)
 			return 0;
 		}
 	}
+	SockClose(sck, LOCAL);
 	return 1;
 }
 int EPhp(u_long len, char *res, HHead *hh)
 {
+	hh->noclosesock = 0;
 	EnviaRespuesta(hh, 200, -1, NULL, len, res);
 	return 0;
 }
@@ -347,85 +396,98 @@ SOCKFUNC(LeeHTTPD)
 	char *c = data, *d, *e;
 	if (!(hh = BuscaHHead(sck)))
 		return 1;
-	Debug("[Web: %s", c);
-	while (!BadPtr(c))
+#ifndef DEBUG
+	Debug("[Web: %s]", c);
+#endif
+	if (!hh->viene_post)
 	{
-		if ((e = strchr(c, '\r')))
-			*e = '\0';
-		else
+		while (!BadPtr(c))
 		{
 			if ((e = strchr(c, '\n')))
+			{
 				*e = '\0';
-		}
-		if (!e)
-			break;
-		if (!hh->metodo)
-		{
-			if (!(c = strchr(c, ' ')))
+				if (*(e-1) == '\r')
+					*(e-1) = '\0';
+			}
+			if (!e)
 				break;
-			c++;
-			if (!strncmp(data, "GET", 3))
-				hh->metodo = HTTP_GET;
-			else if (!strncmp(data, "POST", 4))
-				hh->metodo = HTTP_POST;
-			else if (!strncmp(data, "HEAD", 4))
-				hh->metodo = HTTP_HEAD;
-			else
-				hh->metodo = HTTP_DESC;
-			if ((d = strchr(c, ' ')))
-				*d = '\0';
-			if ((d = strchr(c, '?')))
+			if (!hh->metodo)
 			{
-				*d = '\0';
-				ircstrdup(hh->param_get, d+1);
-			}
-			if ((d = strrchr(c, '/')))
-			{
-				*d = '\0';
-				ircstrdup(hh->archivo, d+1);
-				if ((d = strrchr(d+1, '.')))
+				if (!strncmp(c, "GET", 3))
+					hh->metodo = HTTP_GET;
+				else if (!strncmp(c, "POST", 4))
+					hh->metodo = HTTP_POST;
+				else if (!strncmp(c, "HEAD", 4))
+					hh->metodo = HTTP_HEAD;
+				else
+					hh->metodo = HTTP_DESC;
+				if (!(c = strchr(c, ' ')))
+					break;
+				c++;
+				if ((d = strchr(c, ' ')))
+					*d = '\0';
+				if ((d = strchr(c, '?')))
 				{
-					d++;
-					hh->ext = strdup(d);
+					*d = '\0';
+					ircstrdup(hh->param_get, d+1);
 				}
+				if ((d = strrchr(c, '/')))
+				{
+					*d = '\0';
+					ircstrdup(hh->archivo, d+1);
+					if ((d = strrchr(d+1, '.')))
+					{
+						d++;
+						hh->ext = strdup(d);
+					}
+				}
+				ircstrdup(hh->ruta, c);
 			}
-			ircstrdup(hh->ruta, c);
-		}
-		else if (!strncmp(c, "Host:", 5))
-			ircstrdup(hh->host, data+6);
-		else if (!strncmp(c, "Referer:", 8))
-			ircstrdup(hh->referer, data+9);
-		else if (!strncmp(c, "If-Modified-Since:", 18))
-		{
-			u_int dia, anyo, hora, min, seg;
-			char mes[4], wdia[4];
-			struct tm ttm;
-			sscanf(c+19, fecha_sfmt, wdia, &dia, mes, &anyo, &hora, &min, &seg);
-			wdia[3] = '\0';
-			ttm.tm_sec = seg;
-			ttm.tm_min = min;
+			else if (!strncmp(c, "Host:", 5))
+				ircstrdup(hh->host, c+6);
+			else if (!strncmp(c, "Referer:", 8))
+				ircstrdup(hh->referer, c+9);
+			else if (!strncmp(c, "If-Modified-Since:", 18))
+			{
+				u_int dia, anyo, hora, min, seg;
+				char mes[4], wdia[4];
+				struct tm ttm;
+				sscanf(c+19, fecha_sfmt, wdia, &dia, mes, &anyo, &hora, &min, &seg);
+				wdia[3] = '\0';
+				ttm.tm_sec = seg;
+				ttm.tm_min = min;
 #ifdef _WIN32
-			ttm.tm_hour = hora-_timezone/3600;
+				ttm.tm_hour = hora-_timezone/3600;
 #else
-			ttm.tm_hour = hora;
+				ttm.tm_hour = hora;
 #endif
-			ttm.tm_mday = dia;
-			ttm.tm_mon = BuscaMes(mes);
-			ttm.tm_year = anyo-1900;
-			ttm.tm_isdst = 0;
+				ttm.tm_mday = dia;
+				ttm.tm_mon = BuscaMes(mes);
+				ttm.tm_year = anyo-1900;
+				ttm.tm_isdst = 0;
 #ifdef _WIN32
-			hh->lmod = mktime(&ttm);
+				hh->lmod = mktime(&ttm);
 #else
-			hh->lmod = timegm(&ttm);
+				hh->lmod = timegm(&ttm);
 #endif
-			strftime(buf, sizeof(buf), fecha_fmt, &ttm);
+				strftime(buf, sizeof(buf), fecha_fmt, &ttm);
+			}
+			c = e+1;
+			if (*c == '\n' || *c == '\r')
+			{
+				if (*c == '\r')
+					c++;
+				if (*c == '\n')
+					c++;
+				hh->viene_post = 1;
+				break;
+			}
 		}
-		if (*(c = e+1) == '\n')
-			c++;
 	}
 	if (!BadPtr(c))
 		ircstrdup(hh->param_post, c);
-	ProcesaHHead(hh, sck); 
+	if (hh->viene_post && hh->metodo != HTTP_POST || (hh->metodo == HTTP_POST && hh->param_post))
+		ProcesaHHead(hh, sck); 
 	return 0;
 }
 SOCKFUNC(CierraHTTPD)
@@ -460,13 +522,3 @@ int DetieneHTTPD()
 		SockClose(listen_httpd, LOCAL);
 	return 0;
 }
-#else
-int DetieneHTTPD()
-{
-	return 0;
-}
-int IniciaHTTPD()
-{
-	return 0;
-}
-#endif

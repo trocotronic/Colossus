@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.20 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.21 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -19,7 +19,7 @@ void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
 void LiberaSock(Sock *);
-//#define DEBUG
+#define DEBUG
 
 /*
  * resolv
@@ -73,7 +73,7 @@ void InsertaSock(Sock *sck)
 	sck->slot = i;
 	ListaSocks.socket[i] = sck;
 #ifdef DEBUG
-	Debug("Insertando sock %X %i en %i ", sck, sck->pres, ListaSocks.abiertos);
+//	Debug("Insertando sock %X %i en %i ", sck, sck->pres, ListaSocks.abiertos);
 #endif
 	ListaSocks.abiertos++;
 	if (i > ListaSocks.tope)
@@ -145,7 +145,7 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	struct in_addr *res;
 	if (!(opts & OPT_NADD) && ListaSocks.abiertos == MAXSOCKS)
 		return NULL;
-	BMalloc(sck, Sock);
+	sck = BMalloc(Sock);
 	SockDesc(sck);
 #ifdef USA_SSL
 	if (puerto < 0) /* es un puerto ssl */
@@ -174,8 +174,8 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	if (opts & OPT_NORECVQ)
 		SetNoRecvQ(sck);
 	else
-		BMalloc(sck->recvQ, DBuf);
-	BMalloc(sck->sendQ, DBuf);
+		sck->recvQ = BMalloc(DBuf);
+	sck->sendQ = BMalloc(DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
@@ -240,7 +240,7 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	ad[0] = ad[1] = ad[2] = ad[3] = 0;
 	(void)sscanf(name, "%d.%d.%d.%d", &ad[0], &ad[1], &ad[2], &ad[3]);
 	(void)ircsprintf(ipname, "%d.%d.%d.%d", ad[0], ad[1], ad[2], ad[3]);
-	BMalloc(sck, Sock);
+	sck = BMalloc(Sock);
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		return NULL;
 	sck->server.sin_family = AF_INET;
@@ -260,8 +260,8 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	if (opts & OPT_NORECVQ)
 		SetNoRecvQ(sck);
 	else
-		BMalloc(sck->recvQ, DBuf);
-	BMalloc(sck->sendQ, DBuf);
+		sck->recvQ = BMalloc(DBuf);
+	sck->sendQ = BMalloc(DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
@@ -281,7 +281,7 @@ Sock *SockAccept(Sock *list, int pres)
 		CLOSE_SOCK(pres);
 		return NULL;
 	}
-	BMalloc(sck, Sock);
+	sck = BMalloc(Sock);
 	sck->pres = pres;
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_port = list->server.sin_port;
@@ -296,8 +296,8 @@ Sock *SockAccept(Sock *list, int pres)
 	if (list->opts & OPT_NORECVQ)
 		SetNoRecvQ(sck);
 	else
-		BMalloc(sck->recvQ, DBuf);
-	BMalloc(sck->sendQ, DBuf);
+		sck->recvQ = BMalloc(DBuf);
+	sck->sendQ = BMalloc(DBuf);
 	sck->openfunc = list->openfunc;
 	sck->readfunc = list->readfunc;
 	sck->writefunc = list->writefunc;
@@ -344,9 +344,9 @@ void SockWriteExVL(Sock *sck, int opts, char *formato, va_list vl)
 	if (sck->writefunc && buf[0])
 		sck->writefunc(sck, buf);
 	if (opts & OPT_CR)
-		strcat(buf, "\r");
+		strlcat(buf, "\r", sizeof(buf));
 	if (opts & OPT_LF)
-		strcat(buf, "\n");
+		strlcat(buf, "\n", sizeof(buf));
 	len = strlen(buf);
 #ifdef USA_ZLIB
 	if (EsZlib(sck))
@@ -500,7 +500,7 @@ void Encola(DBuf *bufc, char *str, int bytes)
 	//Debug("Len %i (%i %i %X)",len,bufc->len,bufc->wslot ? bufc->wslot->len : 0,bufc->wslot);
 	if (!bufc->slots)
 	{
-		BMalloc(bufc->wslot, DbufData);
+		bufc->wslot = BMalloc(DbufData);
 		bufc->rslot = bufc->wslot;
 		bufc->rchar = &bufc->rslot->data[0];
 		bufc->wchar = &bufc->wslot->data[0];
@@ -519,7 +519,7 @@ void Encola(DBuf *bufc, char *str, int bytes)
 				Alerta(FERR, "copiados es menor que 0. Póngase en contacto con el autor.");
 				CierraColossus(-1);
 			}
-			BMalloc(aux, DbufData);
+			aux = BMalloc(DbufData);
 			bufc->wslot->sig = aux;
 			bufc->wslot = aux;
 			bufc->wchar = &bufc->wslot->data[0];
@@ -642,7 +642,7 @@ int Desencola(DBuf *bufc, char *buf, int bytes)
 void EnviaCola(Sock *sck)
 {
 	char buf[SOCKBUF], *msg;
-	int len = 0;
+	int len = 0, ret;
 #ifdef USA_ZLIB
 	int mas = 0;
 	if (EsZlib(sck) && sck->zlib->outcount)
@@ -665,13 +665,16 @@ void EnviaCola(Sock *sck)
 	{
 		while ((len = CopiaSlot(sck->sendQ, buf, sizeof(buf))) > 0)
 		{
-			msg = &buf[0];
+			do
+			{
+				msg = &buf[0];
 #ifdef USA_SSL
-			if (EsSSL(sck))
-				SSLSockWrite(sck, msg, len);
-			else
+				if (EsSSL(sck))
+					ret = SSLSockWrite(sck, msg, len);
+				else
 #endif
-			WRITE_SOCK(sck->pres, msg, len);
+				ret = WRITE_SOCK(sck->pres, msg, len);
+			}while(ret == -1 && WSAGetLastError() == WSAEWOULDBLOCK);
 		}
 #ifdef USA_ZLIB
 		if (!sck->sendQ->len && mas)

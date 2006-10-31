@@ -1,5 +1,5 @@
 /*
- * $Id: md5.h,v 1.5 2004-10-01 19:06:11 Trocotronic Exp $ 
+ * $Id: md5.h,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
  
 #define MDInit MD5_Init
@@ -47,4 +47,4 @@ void MD5_Final PROTO_LIST ((unsigned char [16], MD5_CTX *));
 
 #endif
 
-extern char *MDString(char *);
+extern char *MDString(char *, u_int);

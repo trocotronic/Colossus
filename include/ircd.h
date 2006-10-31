@@ -1,6 +1,8 @@
 /*
- * $Id: ircd.h,v 1.26 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.27 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
+ 
+#include "hash.h"
 
 extern SOCKFUNC(IniciaIrcd);
 extern SOCKFUNC(ProcesaIrcd);
@@ -43,6 +45,7 @@ typedef struct _mallaparam MallaParam;
  	    $protocol Protocolo que usa.
  	    $trio Representación alfanumérica del cliente.
  	    $info Realname.
+ 	    $away Si está away, apunta al motivo away. Si no, a NULL.
  * @cat: IRCd
  * @ver: EsCliente EsServidor EsBot TipoMascara MascaraIrcd
  !*/
@@ -60,15 +63,15 @@ struct _cliente
 	char *vmask;
 	u_long modos;
 	Sock *sck;
-	char tipo;
+	u_int tipo;
 	LinkCanal *canal;
 	u_int canales;
-	u_int numeric; /* numeric del cliente */
+	int numeric; /* numeric del cliente */
 	u_int protocol;
 	char *trio; /* representación alfanumérica del numeric del cliente (en b64 o lo que sea) */
 	char *info;
+	char *away;
 	u_int nivel;
-	unsigned away:1;
 };
 /*!
  * @desc: Malla de clientes para canales.
@@ -187,12 +190,12 @@ typedef struct _comando
 	IRCFUNC(*funcion[MAXMODULOS]);
 	int funciones;
 	int cuando;
-	u_char params;
+	int params;
 }Comando;
 extern Comando *comandos;
 #define MAXPARA 15
 #define HOSTLEN 63
-extern void InsertaComando(char *, char *, IRCFUNC(*), int, u_char);
+extern void InsertaComando(char *, char *, IRCFUNC(*), int, int);
 extern int BorraComando(char *, IRCFUNC(*));
 extern Comando *BuscaComando(char *);
 extern Cliente *BuscaCliente(char *);
@@ -285,6 +288,9 @@ extern char *TipoMascara(char *, int);
 #define SIGN_STARTUP 13
 #define SIGN_SOCKOPEN 14
 #define SIGN_CDESTROY 15
+#define SIGN_CMSG 16
+#define SIGN_PMSG 17
+
 /*!
  * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.
  * @params: $sck [in] Recurso de conexión.
@@ -308,7 +314,7 @@ extern char *TipoMascara(char *, int);
  * @ret: Devuelve 1 si el recurso es un bot; 0, si no.
  * @cat: IRCd
  !*/
-#define EsBot(x) (x->tipo == TBOT)
+#define EsBot(x) (x && x->tipo == TBOT)
 extern int EsLink(LinkCliente *, Cliente *);
 extern int EsLinkCanal(LinkCanal *, Canal *);
 extern int AbreSockIrcd(void);
@@ -327,7 +333,7 @@ extern MODVAR Cliente *linkado;
 extern void SacaBot(Cliente *, char *, char *);
 extern int EntraBots();
 extern int EntraResidentes();
-extern void DesconectaBot(char *, char *);
+extern void DesconectaBot(Cliente *, char *);
 extern void EscuchaIrcd();
 extern void ReconectaBot(char *);
 extern MODVAR time_t inicio;

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.22 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.23 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -314,7 +314,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 					error++;
 					break;
 				}
-				BMalloc(actual, Conf);
+				actual = BMalloc(Conf);
 				actual->item = strdup(pitem);
 				if (pdata)
 					actual->data = strdup(pdata);
@@ -354,7 +354,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 						par++;
 					}
 				}
-				BMalloc(actual, Conf);
+				actual = BMalloc(Conf);
 				actual->item = strdup(pitem);
 				if (pdata)
 					actual->data = strdup(pdata);
@@ -421,7 +421,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 						pdata = ini;
 					else
 						pitem = ini;
-					BMalloc(actual, Conf);
+					actual = BMalloc(Conf);
 					actual->item = strdup(pitem);
 					if (pdata)
 						actual->data = strdup(pdata);
@@ -457,7 +457,7 @@ void Printea(Conf *conf, int escapes)
 	Conf *c;
 	tabs[0] = '\0';
 	for (i = 0; i < escapes; i++)
-		strcat(tabs, "\t");
+		strlcat(tabs, "\t", sizeof(tabs));
 //	if (bloq->id)
 //		tabs[escapes] = bloq->id;
 	for (i = 0; i < conf->secciones; i++)
@@ -718,7 +718,7 @@ void ConfServer(Conf *config)
 {
 	int i, p;
 	if (!conf_server)
-		BMalloc(conf_server, struct Conf_server);
+		conf_server = BMalloc(struct Conf_server);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "addr"))
@@ -850,7 +850,7 @@ void ConfDb(Conf *config)
 {
 	int i;
 	if (!conf_db)
-		BMalloc(conf_db, struct Conf_db);
+		conf_db = BMalloc(struct Conf_db);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
@@ -919,7 +919,7 @@ void ConfSmtp(Conf *config)
 {
 	int i;
 	if (!conf_smtp)
-		BMalloc(conf_smtp, struct Conf_smtp);
+		conf_smtp = BMalloc(struct Conf_smtp);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
@@ -1026,7 +1026,7 @@ void ConfSet(Conf *config)
 {
 	int i, p;
 	if (!conf_set)
-		BMalloc(conf_set, struct Conf_set);
+		conf_set = BMalloc(struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "autobop"))
@@ -1196,7 +1196,7 @@ void ConfLog(Conf *config)
 {
 	int i, p;
 	if (!conf_log)
-		BMalloc(conf_log, struct Conf_log);
+		conf_log = BMalloc(struct Conf_log);
 	ircstrdup(conf_log->archivo, config->data);
 	for (i = 0; i < config->secciones; i++)
 	{
@@ -1266,7 +1266,7 @@ void ConfSSL(Conf *config)
 {
 	int i, p;
 	if (!conf_ssl)
-		BMalloc(conf_ssl, struct Conf_ssl);
+		conf_ssl = BMalloc(struct Conf_ssl);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "egd"))
@@ -1350,7 +1350,7 @@ void ConfHttpd(Conf *config)
 {
 	int i;
 	if (!conf_httpd)
-		BMalloc(conf_httpd, struct Conf_httpd);
+		conf_httpd = BMalloc(struct Conf_httpd);
 	conf_httpd->puerto = 80;
 	conf_httpd->max_age = -1;
 	ircfree(conf_httpd->url);
@@ -1373,7 +1373,7 @@ void Error(char *formato, ...)
 	va_start(vl, formato);
 	ircvsprintf(buf, formato, vl);
 	va_end(vl);
-	strcat(buf, "\r\n");
+	strlcat(buf, "\r\n", sizeof(buf));
 	fprintf(stderr, buf);	
 }
 int Info(char *formato, ...)
@@ -1388,7 +1388,7 @@ int Info(char *formato, ...)
 	ircsprintf(txt, "(%.2i:%.2i:%.2i) %s\r\n", timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec, formato);
 	ircvsprintf(buf, txt, vl);
 	va_end(vl);
-	strcat(buf, "\r\n");
+	strlcat(buf, "\r\n", sizeof(buf));
 	fprintf(stderr, buf);
 	return -1;
 }

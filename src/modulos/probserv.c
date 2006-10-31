@@ -81,7 +81,7 @@ void PBSSet(Conf *config, Modulo *mod)
 {
 	int i;
 	if (!probserv)
-		BMalloc(probserv, ProbServ);
+		probserv = BMalloc(ProbServ);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
@@ -134,9 +134,10 @@ int PBSSigSQL()
 {
 	if (!SQLEsTabla(PBS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"campo1 varchar(255) default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, PBS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, PBS_SQL);
 	}

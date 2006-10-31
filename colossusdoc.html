@@ -8,7 +8,7 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
 </style>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.25 2006-06-20 13:19:39 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.26 2006-10-31 23:49:10 Trocotronic Exp $ -->
 
 <body>
 
@@ -18,13 +18,14 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
   <b>&Uacute;ltima modificaci&oacute;n:</b> 20/06/2006</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
-   &nbsp;<br>
+  Tiene una recopilación de las cuestiones más preguntadas en <a href="#faq">FAQ</a>.<br>
+  <br>
   <b><font size="6">&Iacute;NDICE</font></b><br>
   <font size="+1">1.- <a href="#intro">Introducci&oacute;n</a></font><br>
   <font size="+1">2.- <a href="#instalacion">Instalaci&oacute;n</a></font><br>
   <font size="+1">3.- <a href="#caracteristicas">Caracter&iacute;sticas</a></font><br>
   <font size="+1">4.- <a href="#ext">Extensiones</a></font><br>
-  <font size="+1">5.- <a href="#mysql">SQL y bases de datos</a></font><br>
+  <font size="+1">5.- <a href="#sql">SQL y bases de datos</a></font><br>
   <font size="+1">6.- <a href="#remoto">Conexi&oacute;n remota</a> </font><br>
   <font size="+1">7.- <a href="#zlib">SSL y ZLib</a></font><br>
   <font size="+1">8.- <a href="#configuracion">Configuraci&oacute;n</a></font><br>
@@ -50,7 +51,8 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.2 <a href="#p10">P10</a></font><br>
   <font size="+1">11.- <a href="#exts">Configuraci&oacute;n de extensiones</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.1 <a href="#udb">UDB</a></font><br>
-  <font size="+1">12.- <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
+  <font size="+1">12.- <a href="#faq">FAQ (Cuestiones Más Preguntadas)</a></font><br>
+  <font size="+1">13.- <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
   <p><br>
     <b><font size="6"><a name="intro"></a>1.0 Introducci&oacute;n </font></b><br>
     Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
@@ -84,19 +86,19 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base 
   para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones. 
   A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos. 
-  La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
+  La administraci&oacute;n de la base de datos global funciona bajo MySQL, PostgreSQL o SQLite y permite la memoria de registros de forma permanente. </p>
   <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro. 
   Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
   <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll, 
   en Windows, o archivos .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios 
   servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
   <ul>
-    <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.     
-    <li><b>ChanServ:</b> administra los canales y todo lo que les englobe.  
-  <li><b>OperServ:</b> exclusivo para operadores de red.
-  <li><b>MemoServ:</b> servicio de mensajer&iacute;a entre usuarios.   
-  <li><b>IpServ: </b>servicio de ips virtuales.  
-</ul>
+    <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.</li>
+    <li><b>ChanServ:</b> administra los canales y todo lo que les englobe.  </li>
+    <li><b>OperServ:</b> exclusivo para operadores de red.</li>
+    <li><b>MemoServ:</b> servicio de mensajer&iacute;a entre usuarios.   </li>
+    <li><b>IpServ: </b>servicio de ips virtuales.  </li>
+  </ul>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="ext"></a>4.0 Extensiones</font></b></p>
   <p>A partir de la versión 1.3, se crea un sistema de extensiones para protocolos. Estas extensiones permiten modificar el protocolo actual. Por ejemplo, para añadir nuevos modos de canal o añadir algún comando adicional.</p>
@@ -109,8 +111,8 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   Añade varios comandos a ChanServ, OperServ, IpServ y NickServ. También modifica algunas funciones de estos servicios ya existentes.<br /></li>
   </ul></p>
   <p>&nbsp;</p>
-  <p><b><font size="6"><a name="mysql"></a>5.0 SQL y bases de datos</font></b></p>
-  <p>Colossus utiliza sistemas de bases de datos SQL para guardar informaci&oacute;n de forma permanente. Actualmente se soportan dos motores SQL que deber&aacute;n indicarse en el bloque db { }.<br />Estos bloques son:</p>
+  <p><b><font size="6"><a name="sql"></a>5.0 SQL y bases de datos</font></b></p>
+  <p>Colossus utiliza sistemas de bases de datos SQL para guardar informaci&oacute;n de forma permanente. Actualmente se soportan tres motores SQL que deber&aacute;n indicarse en el bloque db { }.<br />Estos bloques son:</p>
   <ul><li><p>MySQL: Descarga de <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
   <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Hecho esto, tendr&aacute; 
   que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots. 
@@ -119,7 +121,11 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p></li>
   <li><p>PostgreSQL: Descarga de <a href="http://www.postgresql.org/download/" target="_blank">http://www.postgresql.org/download/</a>.</p>
   <p>PostgreSQL es otro motor mucho m&aacute;s flexible y con grandes posibilidades. Para poder administrarlo deber&aacute; instalar el paquete <b>pgAdmin III</b> y leer sus instrucciones.</p>
-  <p>As&iacute;mismo, tambi&eacute;n dispone de un editor como <a href="http://phppgadmin.sourceforge.net/" target="_blank">PhpPgAdmin</a>.</p></li></ul>
+  <p>As&iacute;mismo, tambi&eacute;n dispone de un editor como <a href="http://phppgadmin.sourceforge.net/" target="_blank">PhpPgAdmin</a>.</p></li>
+  <li><p>SQlite: se trata de un servidor SQL en sí mismo. Es decir, no hace falta instalar ningún software adicional ni configurarlo, puesto que se trata de un servidor integrado.<br />
+  Está indicado especialmente para aquellos usuarios que no sepan manejar bases de datos SQL ni montar servidores de estas características. Además, no dispone de ningún administrador de su contenido, 
+  puesto que está integrado en el núcleo de Colossus. <br />
+  No obstante, es más lento que los motores anteriores. Úsese cuando no tenga más opciones.</p></ul>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="remoto"></a>6.0 Conexi&oacute;n remota</font></b></p>
   <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha 
@@ -213,15 +219,18 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b><font size="5"><a name="db"></a>8.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>db &quot;ruta/archivo.[dll|so]&quot; {
 	host host;
+	puerto puerto;
 	login login;
 	pass pass;
 	nombre db;
 	prefijo prefijo_;
-	puerto puerto;
 };</pre>
   <p>Establece la configuraci&oacute;n para utilizar el motor SQL. </p>
-  <p><b>host</b><br>Indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>. </p>
-  <p><b>login</b><br>Es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios. </p>
+  <p><b>host</b><br>Indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>.<br />
+  Para SQLite, utilice el valor "localhost".</p>
+  <p><b></b><br>Indica el puerto de escucha del servidor SQL. Es <i>opcional</i>. Si no se especifica, se usa por defecto el puerto usado por cada motor SQL.</p>
+  <p><b>login</b><br>Es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios.<br />
+  Para SQLite, utilice cualquier valor.</p>
   <p><b>pass</b><br>Es <i>opcional</i>. Define una contrase&ntilde;a si fuera necesario para el login anterior. </p>
   <p><b>nombre</b><br>Es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. </p>
   <p><b>prefijo</b><br>Se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
@@ -242,7 +251,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	rejoin;  //opcional
 	admin mail@admin.com;
 	root nickdelroot;
-	clave_cifraddo clave;
+	clave_cifrado clave;
 	reconectar {
 		intentos n&ordm;-intentos;
 		intervalo n&ordm;-intervalo;
@@ -396,9 +405,9 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="bots"></a>9.0 Configuraci&oacute;n de m&oacute;dulos</font></b></p>
   <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.</p>
-  <p>Esta configuraci&oacute;n puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>. Si no se especifica &eacute;sta, se tomar&aacute; la configuraci&oacute;n por defecto.</p>
+  <p>Esta configuraci&oacute;n puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>). Si no se especifica &eacute;sta, se tomar&aacute; la configuraci&oacute;n por defecto.</p>
   <p>&nbsp;</p>
-  <p>Adem&aacute;s, poseen dos bloques comunes en todos los m&oacute;dulos</p>
+  <p>Adem&aacute;s, poseen tres bloques comunes en todos los m&oacute;dulos</p>
   <p><b><font size="4"><a name="funciones"></a>9.0.1 Bloque funciones { }</font></b></p>
   <pre>funciones {
   ...
@@ -423,7 +432,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
 };</pre>
   <p>Crean alias para ejecutar. Si un usuario ejecuta un comando que coincide con "formato", ese comando se reemplazar&aacute; por "sintaxis". 
   Por tanto, en realidad estar&aacute; ejecutando el comando que haya en "sintaxis".</p>
-  <p><b>formato</b> Define el patr&oacute;n que el usuario debe ejecutar. Si utilizar % como comod&iacute;n, est&aacute; indicando que en su lugar va una palabra cualquiera.</p>
+  <p><b>formato</b> Define el patr&oacute;n que el usuario debe ejecutar. Si utiliza % como comod&iacute;n, est&aacute; indicando que en su lugar va una palabra cualquiera.</p>
   <p><b>sintaxis</b> Corresponde a la sintaxis que se reemplazar&aacute; y que realmente se ejecutar&aacute;. Se puede usar %N (%1, %2, etc.) para indicar los par&aacute;metros pasados. Si se usa %N- se asumir&aacute; que se pasan todos los par&aacute;metros desde N hasta el final.
   <br>
   Ejemplo:
@@ -475,7 +484,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
 <p><b>prot</b><br>Especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick. 
 S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>NICK</b> (se le cambia el nick al usuario). </p>
 <p><b>recovernick</b><br>Patr&oacute;n que se sigue al cambiar el nick a un usuario. El par&aacute;metro %s es sustitu&iacute;do por el nick anterior. Para m&aacute;s informaci&oacute;n lea la secci&oacute;n de <a href="#patrones">par&aacute;metros de patr&oacute;n</a>. </p>
-<p><b>securepass</b><br>Gormato a seguir para la creaci&oacute;n de contrase&ntilde;as seguras. </p>
+<p><b>securepass</b><br>Formato a seguir para la creaci&oacute;n de contrase&ntilde;as seguras. </p>
 <p><b>min_reg</b><br>N&uacute;mero que indica cu&aacute;ntas horas deben pasar antes de poder volver a registrar un nick. </p>
 <p><b>autodrop</b><br>N&uacute;mero que indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un nick para que sea dropado autom&aacute;ticamente. </p>
 <p><b>nicks</b><br>N&uacute;mero para indicar cu&aacute;ntos nicks se pueden registrar bajo una misma cuenta. </p>
@@ -722,8 +731,6 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		noticias;
 		rehash;
 		close;
-		modos;
-		snomask;
 		vaciar;
 		akill;
 	};
@@ -930,8 +937,9 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 A continuaci&oacute;n tiene una lista de las extensiones soportados y sus opciones de configuraci&oacute;n.</p>
 <p><b><font size="5"><a name="udb"></a>11.1 UDB</font></b></p>
 <p>Extensión usada en redes UnrealIRCd 3.2 y superiores.</p>
-<pre>extension protocolos/udb.[dll|so] {
+<pre>extension protocolos/extensiones/udb.[dll|so] {
 	autooptimizar; // opcional
+	autobackup; // opcional
 	ChanServ {
 		automigrar; // opcional
 		funciones {
@@ -959,11 +967,14 @@ A continuaci&oacute;n tiene una lista de las extensiones soportados y sus opcion
 		funciones {
 			modos;
 			snomask;
-			optimiza;
+			optimizar;
+			backup;
+			restaurar;
 		};
 	}; // opcional
 };</pre>
-<p><b>autooptimizar</b><br>Ejecuta una optimización periódicamente de las tablas para ahorrar información.</p>
+<p><b>autooptimizar</b><br>Ejecuta una optimización cada 24h de los bloques UDB para ahorrar información.</p>
+<p><b>autobackup</b><br>Realiza una copia de seguridad cada 24h de los bloques UDB.</p>
 <p><b>NickServ, IpServ, ChanServ, OperServ</b><br>Complementan distintamente a estos módulos. Estas configuraciones son las mismas que existen para las configuraciones particulares, 
 como los bloques <i>funciones</i>, <i>funcion</i> y algún otro parámetro.</p>
 <p><b>automigrar</b><br>Los módulos <i>NickServ</i> y <i>ChanServ</i> permiten automigrar el registro de nicks y canales a los bloques de la red, respectivamente.</p>
@@ -971,7 +982,10 @@ como los bloques <i>funciones</i>, <i>funcion</i> y algún otro parámetro.</p>
 <p><b>NOTA:</b> Si no se especifica un bloque para módulos, se cargan por defecto todas sus funciones complementarias. <br>
 Si se especifica un bloque para algún módulo, deben especificarse también las funciones que van a cargarse.</p>
 <p>&nbsp;</p>
-<p><b><font size="6"><a name="patrones"></a>12.0 Par&aacute;metros de patr&oacute;n</font></b></p>
+<p><b><font size="6"><a name="faq"></a>12.0 FAQ (Cuestiones Más Preguntadas)</font></b></p>
+<p>Tiene una recopilación de las cuestiones más preguntadas en <a href="http://www.redyc.com/trabajos.php?faq" target="_blank">FAQ</a>.</p>
+<br>
+<p><b><font size="6"><a name="patrones"></a>13.0 Par&aacute;metros de patr&oacute;n</font></b></p>
 <p>Algunos campos requieren un patr&oacute;n a seguir que contenga comodines que sean intercambiados por valores aleatorios. Estos son:</p>
 <ul>
   <li>? una cifra</li>
@@ -991,3 +1005,4 @@ Si se especifica un bloque para algún módulo, deben especificarse también las fu
 <p>Adem&aacute;s, algunos campos pueden requerir un par&aacute;metro adicional, %s, para que sea rellenado por el propio programa con alguna cadena. Por ejemplo, en el cambio de nick, si en formato utilizas inv-%s-???, si el usuario se llama 'melon', se le cambiar&aacute; el nick por 'inv-melon-987'.</p>
 </body>
 </html>
+

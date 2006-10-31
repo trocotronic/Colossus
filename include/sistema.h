@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.15 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.16 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -25,6 +25,7 @@
 #define irc_dlsym(x,y,z) z = (void *)GetProcAddress(x,y)
 #define irc_dlerror ErrorDl
 #define Recurso HMODULE
+#define Directorio HANDLE
 #else
 #define irc_dlopen dlopen
 #define irc_dlclose dlclose
@@ -32,6 +33,7 @@
 #define irc_dlerror dlerror
 #define DLLFUNC
 #define Recurso void *
+#define Directorio DIR *
 #endif
 
 
@@ -140,7 +142,7 @@
 #define bzero(x,y) memset(x,0,y)
 #endif
 #ifdef NEED_ABS
-#define abs(x) (x < 0) ? -x : x
+#define abs(x) ((x < 0) ? -(x) : x)
 #endif
 #ifdef NEED_INET_NTOA
 #define inet_ntoa(x) inetntoa(&x)
@@ -154,6 +156,8 @@
 #define MAXCONNECTIONS	4096
 #endif
 
+#define MAX_FNAME 128
+
 #ifdef _WIN32
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
@@ -163,8 +167,10 @@
 #define write _write
 #define close _close
 #define unlink _unlink
-#define mkdir _mkdir
+#define mkdir(x,y) _mkdir(x)
 #endif
 
 extern char *strtolower(char *);
 extern char *strtoupper(char *);
+extern size_t strlcpy(char *, const char *, size_t);
+extern size_t strlcat(char *, const char *, size_t);

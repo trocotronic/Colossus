@@ -1,22 +1,25 @@
 /*
- * $Id: smtp.c,v 1.18 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.19 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include <time.h>
-#ifndef _WIN32
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <sys/io.h>
 #endif
 #include "struct.h"
-#define MAXSMTP 128
+#include "httpd.h"
+#include <sys/stat.h>
 #define INTSMTP 5
 
-SmtpData *colasmtp[MAXSMTP];
-int totalcola = 0;
-int conta = 0;
+SmtpData *smtps = NULL;
 
 SOCKFUNC(ProcesaSmtp);
 SOCKFUNC(CierraSmtp);
+void EmailArchivosVL(char *, char *, Opts *, int (*)(SmtpData *), char *, ...);
 
 static const char Base64[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -204,7 +207,7 @@ char *base64_decode(char *src)
 }
 int ParseSmtp(char *data, int numeric)
 {
-	strcpy(tokbuf, data);
+	strlcpy(tokbuf, data, sizeof(tokbuf));
 	if (atoi(strtok(tokbuf, " ")) != numeric)
 		return 1;
 	return 0;
@@ -275,7 +278,7 @@ char *getmx(char *dest)
 	{
 		mxrecs = malloc(sizeof(struct mx));
 		mxrecs[0].pref = 0;
-		strcpy(mxrecs[0].host, dest);
+		strlcpy(mxrecs[0].host, dest, sizeof(mxrecs[0].host));
 		nmx = 0;
 	}
 	else 
@@ -292,7 +295,7 @@ char *getmx(char *dest)
 		}
 		while(1)
 		{
-			memset (expanded_buf, 0, sizeof(expanded_buf));
+			bzero(expanded_buf, sizeof(expanded_buf));
 			ret = dn_expand (startptr, endptr, ptr, expanded_buf, sizeof(expanded_buf));
 			if (ret < 0) 
 				break;
@@ -313,7 +316,7 @@ char *getmx(char *dest)
 				else
 					mxrecs = realloc (mxrecs, (sizeof(struct mx) * nmx));
 				mxrecs[nmx - 1].pref = pref;
-				strcpy(mxrecs[nmx - 1].host, expanded_buf);
+				strlcpy(mxrecs[nmx - 1].host, expanded_buf, sizeof(mxrecs[nmx - 1].host));
 			}
 		}
 	}
@@ -397,54 +400,64 @@ char *Mx(char *dominio)
 #endif
 	return (conf_smtp ? conf_smtp->host : NULL);
 }
-void EncolaSmtp(char *para, char *de, char *tema, char *cuerpo)
+SmtpData *EncolaSmtp(char *para, char *de, char *tema, char *cuerpo, Opts *fps, int (*closefunc)(SmtpData *))
 {
 	SmtpData *smtp;
-	if (totalcola == MAXSMTP)
-		return;
-	smtp = (SmtpData *)Malloc(sizeof(SmtpData));
+	char *hostmx;
+	if (conf_smtp)
+		hostmx = conf_smtp->host;
+	else
+	{
+		char *dominio;
+		strlcpy(tokbuf, para, sizeof(tokbuf));
+		strtok(tokbuf, "@");
+		dominio = strtok(NULL, "@");
+		hostmx = Mx(dominio);
+	}
+	if (!hostmx)
+		return NULL;
+	smtp = BMalloc(SmtpData);
 	smtp->para = strdup(para);
 	smtp->de = strdup(de);
 	smtp->tema = strdup(tema);
 	smtp->cuerpo = strdup(cuerpo);
-	smtp->enviado = 0;
-	smtp->intentos = 0;
-	colasmtp[totalcola++] = smtp;
+	smtp->fps = fps;
+	smtp->closefunc = closefunc;
+	smtp->estado = 0;
+	smtp->sck = SockOpen(hostmx, 25, NULL, ProcesaSmtp, NULL, CierraSmtp);
+	AddItem(smtp, smtps);
+	return smtp;
 }
-int DesencolaSmtp()
+SmtpData *BuscaSmtp(Sock *sck)
 {
-	char *dominio, *hostmx;
-	if (!totalcola)
+	SmtpData *smtp;
+	for (smtp = smtps; smtp; smtp = smtp->sig)
+	{
+		if (smtp->sck == sck)
+			return smtp;
+	}
+	return NULL;
+}
+int LiberaSmtp(SmtpData *smtp)
+{
+	if (!smtp)
 		return 0;
-	conta = 0;
-	strcpy(tokbuf, colasmtp[0]->para);
-	strtok(tokbuf, "@");
-	dominio = strtok(NULL, "@");
-	hostmx = conf_smtp ? conf_smtp->host : Mx(dominio);
-	if (!hostmx)
-		return 1;
-	if (!SockOpen(hostmx, 25, NULL, ProcesaSmtp, NULL, CierraSmtp))
-		return 1;
-	return 0;
-}
-void LiberaMemoriaMensaje()
-{
-	int i;
-	Free(colasmtp[0]->de);
-	Free(colasmtp[0]->para);
-	Free(colasmtp[0]->tema);
-	Free(colasmtp[0]->cuerpo);
-	Free(colasmtp[0]);
-	for (i = 0; i < totalcola; i++)
-		colasmtp[i] = colasmtp[i+1];
-	totalcola--;
-	DesencolaSmtp();
-}
-void EnviaEmail(char *para, char *de, char *tema, char *cuerpo)
-{
-	EncolaSmtp(para, de, tema, cuerpo);
-	if (totalcola == 1)
-		DesencolaSmtp();
+	if (smtp->closefunc)
+		smtp->closefunc(smtp);
+	BorraItem(smtp, smtps);
+	Free(smtp->de);
+	Free(smtp->para);
+	Free(smtp->tema);
+	Free(smtp->cuerpo);
+	if (smtp->fps)
+	{
+		Opts *ofl;
+		for (ofl = smtp->fps; ofl && ofl->item; ofl++)
+			Free(ofl->item);
+		Free(smtp->fps);
+	}
+	Free(smtp);
+	return 1;
 }
 
 /*!
@@ -458,17 +471,47 @@ void EnviaEmail(char *para, char *de, char *tema, char *cuerpo)
  
 void Email(char *para, char *tema, char *cuerpo, ...)
 {
-	char buf[BUFSIZE];
 	va_list vl;
 	va_start(vl, cuerpo);
-	ircvsprintf(buf, cuerpo, vl);
+	EmailArchivosVL(para, tema, NULL, NULL, cuerpo, &vl);
 	va_end(vl);
-	EnviaEmail(para, conf_set->admin, tema, buf);
+}
+/*!
+ * @desc: Envía archivos vía email.
+ * @params: $para [in] Email de destino.
+ 		$tema [in] Tema del mensaje.
+ 		$fps [in] Matriz de <i>Opts</i> correspondiente a los archivos a adjuntar. Debe crearse por <i>Malloc()</i>.
+ 		El campo <i>item</i> corresponde al nombre del archivo. Debe ser una copia por <i>strdup()</i>.
+ 		El campo <i>opt</i> corresponde a un descriptor devuelto por <i>open()</i>. 
+ 		El último elemento debe ser NULL para indicar el fin de la matriz.
+ 		Al final de la función, el programa ejecutará <i>Free()</i> sobre el campo <i>item</i> y sobre el puntero <i>fps</i>.
+ 		$closefunc [in] Función que se llama una vez se ha enviado el correo correctamente. Se pasa como puntero <i>SmtpData</i> referente al correo.
+ 		Esta función deberá cerrar los descriptores usados por <i>open()</i> en los campos <i>opt</i>.
+ 		$cuerpo [in] Cuerpo del mensaje. Es una cadena con formato.
+ 		$... [in] Argumentos variables según cadena con formato.
+ * @cat: Programa
+ !*/
+void EmailArchivos(char *para, char *tema, Opts *fps, int (*closefunc)(SmtpData *), char *cuerpo, ...)
+{
+	va_list vl;
+	va_start(vl, cuerpo);
+	EmailArchivosVL(para, tema, fps, closefunc, cuerpo, &vl);
+	va_end(vl);
+}
+void EmailArchivosVL(char *para, char *tema, Opts *fps, int (*closefunc)(SmtpData *), char *cuerpo, va_list *vl)
+{
+	char buf[BUFSIZE];
+	if (vl)
+		ircvsprintf(buf, cuerpo, *vl);
+	else
+		strncpy(buf, cuerpo, sizeof(buf));
+	EncolaSmtp(para, conf_set->admin, tema, buf, fps, closefunc);
 }
 SOCKFUNC(ProcesaSmtp)
 {
 	SmtpData *smtp;
-	smtp = colasmtp[0];
+	if (!(smtp = BuscaSmtp(sck)))
+		return 1;
 	//printf("%% %s\n", data);
 	if (!ParseSmtp(data, 220))
 	{
@@ -477,51 +520,137 @@ SOCKFUNC(ProcesaSmtp)
 		else
 		{
 			SockWrite(sck, "HELO Colossus");
-			conta = 3;
+			smtp->estado = 3;
 		}
 	}
-	if (!ParseSmtp(data, 250) && conta == 0)
+	if (!ParseSmtp(data, 250) && smtp->estado == 0)
 	{
 		SockWrite(sck, "AUTH LOGIN");
-		conta++;
+		smtp->estado++;
 	}
-	else if (!ParseSmtp(data, 334) && conta == 1)
+	else if (!ParseSmtp(data, 334) && smtp->estado == 1)
 	{
 		SockWrite(sck, base64_encode(conf_smtp->login, strlen(conf_smtp->login)));
-		conta++;
+		smtp->estado++;
 	}
-	else if (!ParseSmtp(data, 334) && conta == 2)
+	else if (!ParseSmtp(data, 334) && smtp->estado == 2)
 	{
 		SockWrite(sck, base64_encode(conf_smtp->pass, strlen(conf_smtp->pass)));
-		conta++;
+		smtp->estado++;
 	}
 	else if (!ParseSmtp(data, 235))
 	{
 		SockWrite(sck, "MAIL FROM: %s", smtp->de);
-		conta++;
+		smtp->estado++;
 	}
-	else if (!ParseSmtp(data, 250) && conta == 3)
+	else if (!ParseSmtp(data, 250) && smtp->estado == 3)
 	{
 		SockWrite(sck, "MAIL FROM: %s", smtp->de);
-		conta++;
+		smtp->estado++;
 	}
-	else if (!ParseSmtp(data, 250) && conta == 4)
+	else if (!ParseSmtp(data, 250) && smtp->estado == 4)
 	{
 		SockWrite(sck, "RCPT TO: %s", smtp->para);
-		conta++;
+		smtp->estado++;
 	}
-	else if (!ParseSmtp(data, 250) && conta == 5)
+	else if (!ParseSmtp(data, 250) && smtp->estado == 5)
 	{
 		SockWrite(sck, "DATA");
-		conta++;
+		smtp->estado++;
 	}
 	if (!ParseSmtp(data, 354))
 	{
+		char timebuf[128], *tipo;
+		Opts *ofl;
+		time_t ahora = time(0);
+#ifdef _WIN32
+		int hora;
+#endif
 		SockWrite(sck, "From: \"%s\" <%s>", conf_set->red, smtp->de);
 		SockWrite(sck, "To: <%s>", smtp->para);
 		SockWrite(sck, "Subject: %s", smtp->tema);
-		SockWrite(sck, "Date: %lu", time(0));
+#ifdef _WIN32
+		hora = abs(_timezone)+_daylight*3600*(_timezone < 0 ? 1 : -1);
+		strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S", localtime(&ahora));
+		ircsprintf(buf, " %s%02i%02i",_timezone < 0 ? "+" : "-",hora/3600, (hora%3600)/60);
+		strlcat(timebuf, buf, sizeof(timebuf));
+#else
+		strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S %z", localtime(&ahora));
+#endif
+		SockWrite(sck, "Date: %s", timebuf);
+		SockWrite(sck, "MIME-Version: 1.0");
+		SockWrite(sck, "Content-Type: multipart/mixed;");
+		SockWrite(sck, "\tboundary=\"-=_NextPart\"");
+		SockWrite(sck, "X-Priority: 3");
+		SockWrite(sck, "X-MSMail-Priority: Normal");
+		SockWrite(sck, "X-Mailer: " COLOSSUS_VERSION);
+		SockWrite(sck, "X-MimeOLE: Produced By " COLOSSUS_VERSION);
+		SockWrite(sck, "");
+		SockWrite(sck, "This is a multi-part message in MIME format.");
+		SockWrite(sck, "");
+		SockWrite(sck, "---=_NextPart");
+		SockWrite(sck, "Content-Type: text/plain;");
+		SockWrite(sck, "\tformat=flowed;");
+		SockWrite(sck, "\tcharset=\"iso-8859-1\";");
+		SockWrite(sck, "\treply-type=original");
+		SockWrite(sck, "Content-Transfer-Encoding: 7bit");
+		SockWrite(sck, "");
 		SockWrite(sck, "%s", smtp->cuerpo);
+		for (ofl = smtp->fps; ofl && ofl->item; ofl++)
+		{
+			struct stat inode;
+			char *t;
+			int b64 = 1;
+			if (ofl->opt == -1)
+				continue;
+			SockWrite(sck, "");
+			SockWrite(sck, "---=_NextPart");
+			if (!(tipo = BuscaTipo(strrchr(ofl->item, '.'))))
+				tipo = "text/plain";
+			SockWrite(sck, "Content-Type: %s;", tipo);
+			SockWrite(sck, "\tname=\"%s\";", ofl->item);
+			if (!strncmp(tipo, "text", 4))
+			{
+				SockWrite(sck, "\tformat=flowed;");
+				SockWrite(sck, "\treply-type=original");
+				SockWrite(sck, "Content-Transfer-Encoding: quoted-printable");
+				b64 = 0;
+			}
+			else
+				SockWrite(sck, "Content-Transfer-Encoding: base64");
+			SockWrite(sck, "Content-Disposition: attachment;");
+			SockWrite(sck, "\tfilename=\"%s\"", ofl->item);
+			SockWrite(sck, "");
+			lseek(ofl->opt, 0, SEEK_SET);
+			if (fstat(ofl->opt, &inode) != -1)
+			{
+				u_long r;
+				t = (char *)Malloc(inode.st_size+1);
+				t[inode.st_size] = '\0';
+				if ((r = read(ofl->opt, t, inode.st_size)) == inode.st_size)
+				{
+					if (b64)
+					{
+						size_t len;
+						char *dst;
+						len = inode.st_size * 4 / 3 + 4;
+						len += len / 72 + 1;
+						dst = (char *)Malloc(sizeof(char) * len);
+						if (b64_encode(t, inode.st_size, dst, sizeof(char) * len) > 0)
+							SockWriteBin(sck, sizeof(char) * len, dst);
+						Free(dst);
+					}
+					else
+						SockWriteBin(sck, inode.st_size, t);
+				}
+				Free(t);
+				//Debug("%u %u", r, inode.st_size);
+			}
+			//close(ofl->opt);
+		}
+		SockWrite(sck, "");
+		SockWrite(sck, "---=_NextPart");
+		SockWrite(sck, "");
 		SockWrite(sck, ".");
 		SockWrite(sck, "QUIT");
 		smtp->enviado = 1;
@@ -532,21 +661,12 @@ SOCKFUNC(ProcesaSmtp)
 }
 SOCKFUNC(CierraSmtp)
 {
-	if (!colasmtp[0]->enviado && colasmtp)
-	{
-		if (totalcola != MAXSMTP)
-		{
-			if (++(colasmtp[0]->intentos) != INTSMTP)
-			{
-				int i;
-				colasmtp[totalcola++] = colasmtp[0];
-				for (i = 0; i < totalcola; i++)
-					colasmtp[i] = colasmtp[i+1];
-				totalcola--;
-				//Alerta(FADV, "No se puede enviar el email %s. Poniendolo al final de la cola", colasmtp[0]->para);
-			}
-		}
-	}
-	LiberaMemoriaMensaje();
-	return 1;
+	SmtpData *smtp;
+	if (!(smtp = BuscaSmtp(sck)))
+		return 1;
+	if (!smtp->enviado && ++(smtp->intentos) < INTSMTP)
+		smtp->sck = SockOpen(sck->host, 25, NULL, ProcesaSmtp, NULL, CierraSmtp);
+	else
+		LiberaSmtp(smtp);
+	return 0;
 }

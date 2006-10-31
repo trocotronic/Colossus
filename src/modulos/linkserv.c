@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.14 2006-04-17 14:19:45 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.15 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -118,7 +118,7 @@ void set(Conf *config, Modulo *mod)
 	int i, p;
 	bCom *ls;
 	if (!linkserv)
-		BMalloc(linkserv, LinkServ);
+		linkserv = BMalloc(LinkServ);
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "nick"))
@@ -348,7 +348,7 @@ int linkserv_sig_mysql()
 	}
 	if (!SQLEsTabla(LS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"servidor varchar(255) default NULL, "
   			"puerto varchar(255) NOT NULL default '6667', "

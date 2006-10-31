@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.16 2006-06-20 13:23:56 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.17 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #define MAXMODS 128
@@ -207,3 +207,4 @@ extern Funcion *TieneNivel(Cliente *, char *, Modulo *, char *);
 extern Alias *CreaAlias(char *, char *, Modulo *);
 extern void DescargaAliases(Modulo *);
 extern Alias *BuscaAlias(char **, int, Modulo *);
+extern int ModuloEsResidente(Modulo *, char *);

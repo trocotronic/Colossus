@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.6 2006-06-20 13:51:17 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.7 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -97,9 +97,12 @@ void __cdecl _dosmaperr (unsigned long oserrno)
 		errno = EINVAL;
 }
 #endif
+
 int Carga()
 {
 	char *c;
+	//if (mysql_server_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
+	//	return -1;
 	if (!(mysql = mysql_init(NULL)))
 		return -1;
 	if (!mysql_real_connect(mysql, conf_db->host, conf_db->login, conf_db->pass, NULL, conf_db->puerto, NULL, CLIENT_COMPRESS))

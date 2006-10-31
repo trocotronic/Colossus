@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.25 2006-05-17 14:27:44 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.26 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -113,7 +113,7 @@ void ISSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!ipserv)
-		BMalloc(ipserv, IpServ);
+		ipserv = BMalloc(IpServ);
 	ipserv->clones = 3;
 	ircstrdup(ipserv->sufijo, "virtual");
 	ipserv->cambio = 86400;
@@ -335,18 +335,20 @@ int ISSigSQL()
 {
 	if (!SQLEsTabla(IS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"ip varchar(255) default NULL, "
-  			"caduca int4 default '0' "
+  			"caduca int4 default '0', "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, IS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_SQL);
 	}
 	if (!SQLEsTabla(IS_CLONS))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
-  			"clones varchar(255) default NULL "
+  			"clones varchar(255) default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, IS_CLONS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
 	}
@@ -420,7 +422,7 @@ char *CifraIpTEA(char *ipreal)
 		{
 			if (++ts == 65536)
 			{
-				strcpy(p, ipreal);
+				strlcpy(p, ipreal, sizeof(cifrada));
 				break;
 			}
 		}

@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.12 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.13 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #define CS_SID 0x1
@@ -45,9 +45,9 @@ struct _cs
 #define CS_LEV_ALL (CS_LEV_SET | CS_LEV_EDT | CS_LEV_LIS | CS_LEV_RMO | CS_LEV_RES | CS_LEV_ACK | CS_LEV_INV | CS_LEV_JOB | CS_LEV_REV | CS_LEV_MEM)
 #define CS_LEV_MOD (CS_LEV_REV) /* el kick revenge también */
 
-#define CS_SIGN_IDOK 50
-#define CS_SIGN_DROP 51
-#define CS_SIGN_REG 52
+#define CS_SIGN_IDOK 32
+#define CS_SIGN_DROP 33
+#define CS_SIGN_REG 34
 
 #define CS_SQL "canales"
 #define CS_TOK "ctokens"

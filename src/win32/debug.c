@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.11 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.12 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -47,9 +47,9 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e)
 	if (!SymGetModuleInfo(hProcess, Stack.AddrPC.Offset, &pMod))
 	{
 		sprintf(buf, "\tFalla SymGetModuleInfo (%i)\n", GetLastError());
-		strcat(buffer, buf);
+		strlcat(buffer, buf, sizeof(buffer));
 	}
-	strcpy(curmodule, pMod.ModuleName);
+	strlcpy(curmodule, pMod.ModuleName, sizeof(curmodule));
 	sprintf(buffer, "\tMódulo: %s (%s)\n", pMod.ModuleName, pMod.LoadedImageName);
 	for (frame = 0; ; frame++) 
 	{
@@ -60,26 +60,26 @@ __inline char *StackTrace(EXCEPTION_POINTERS *e)
 		if (!SymGetModuleInfo(hProcess, Stack.AddrPC.Offset, &pMod))
 		{
 			sprintf(buf, "\tFalla SymGetModuleInfo (%i)\n", GetLastError());
-			strcat(buffer, buf);
+			strlcat(buffer, buf, sizeof(buffer));
 		}
 		if (strcmp(curmodule, pMod.ModuleName)) 
 		{
-			strcpy(curmodule, pMod.ModuleName);
+			strlcpy(curmodule, pMod.ModuleName, sizeof(curmodule));
 			sprintf(buf, "\tMódulo: %s (%s)\n", pMod.ModuleName, pMod.LoadedImageName);
-			strcat(buffer, buf);
+			strlcat(buffer, buf, sizeof(buffer));
 		}
 		if (!SymGetLineFromAddr(hProcess, Stack.AddrPC.Offset, &dwDisp, &pLine))
 		{
 			sprintf(buf, "\t\tFalla SymGetLineFromAddr (%i)\n", GetLastError());
-			strcat(buffer, buf);
+			strlcat(buffer, buf, sizeof(buffer));
 		}
 		if (!SymGetSymFromAddr(hProcess, Stack.AddrPC.Offset, &dwDisp, pSym))
 		{
 			sprintf(buf, "\t\tFalla SymGetSymFromAddr (%i)\n", GetLastError());
-			strcat(buffer, buf);
+			strlcat(buffer, buf, sizeof(buffer));
 		}
 		sprintf(buf, "\t\t#%d %s:%d: %s\n", frame, pLine.FileName, pLine.LineNumber, pSym->Name);
-		strcat(buffer, buf);
+		strlcat(buffer, buf, sizeof(buffer));
 		pLine.FileName = NULL;
 		pLine.LineNumber = 0;
 	}
@@ -190,7 +190,7 @@ __inline char *MyStackWalk(PCONTEXT pContext)
 		if (!GetLogicalAddress((PVOID)pc, szModule, sizeof(szModule), &section, &offset))
 			break;
 		sprintf(buf, "\t%08X  %08X  %04X:%08X %s\n", pc, pFrame, section, offset, szModule);
-		strcat(buffer, buf);
+		strlcat(buffer, buf, sizeof(buffer));
 		pc = pFrame[1];
 		pPrevFrame = pFrame;
 		pFrame = (PDWORD)pFrame[0]; // precede to next higher frame on stack

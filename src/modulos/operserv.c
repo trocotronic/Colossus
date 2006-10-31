@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.34 2006-06-20 13:19:41 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.35 2006-10-31 23:49:12 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -147,7 +147,7 @@ void OSSet(Conf *config, Modulo *mod)
 {
 	int i, p;
 	if (!operserv)
-		BMalloc(operserv, OperServ);
+		operserv = BMalloc(OperServ);
 	operserv->maxlist = 30;
 	if (config)
 	{
@@ -206,7 +206,7 @@ void OSCargaNoticia(int id)
 			goto sigue;
 		}
 	}
-	BMalloc(not, Noticia);
+	not = BMalloc(Noticia);
 	if ((res = SQLQuery("SELECT bot,noticia,fecha FROM %s%s WHERE n=%i", PREFIJO, OS_NOTICIAS, id)))
 	{
 		row = SQLFetchRow(res);
@@ -249,7 +249,10 @@ int OSDescargaNoticia(int id)
 	if (!not)
 		return 0;
 	if (!OSEsBotNoticia(not->botname) && gl)
-		ProtFunc(P_QUIT_USUARIO_LOCAL)(gl, "Mensajería global %s", conf_set->red);
+	{
+		ircsprintf(buf, "Mensajería global %s", conf_set->red);
+		DesconectaBot(gl, buf);
+	}
 	ircfree(not->botname);
 	ircfree(not->noticia);
 	ircfree(not);
@@ -500,7 +503,7 @@ BOTFUNC(OSRaw)
 BOTFUNC(OSRestart)
 {
 	Responde(cl, CLI(operserv), "Los servicios van a reiniciarse.");
-	IniciaCrono("reinicia", NULL, 1, 1, OSReinicia, NULL, 0);
+	IniciaCrono(1, 1, OSReinicia, NULL);
 	EOI(operserv, 2);
 	return 0;
 }
@@ -553,7 +556,7 @@ BOTFUNC(OSGline)
 	}
 	else
 	{
-		strcpy(tokbuf, param[1] + 1);
+		strlcpy(tokbuf, param[1] + 1, sizeof(tokbuf));
 		user = strtok(tokbuf, "@");
 		host = strtok(NULL, "@");
 	}
@@ -887,7 +890,7 @@ BOTFUNC(OSAkill)
 			return 1;
 		}
 		if (strchr(param[1], '@'))
-			strcpy(buf, param[1]);
+			strlcpy(buf, param[1], sizeof(buf));
 		else
 			ircsprintf(buf, "*@%s", param[1]);
 		motivo = Unifica(param, params, 2, -1);
@@ -902,7 +905,7 @@ BOTFUNC(OSAkill)
 		char *c;
 		param[1]++;
 		if (strchr(param[1], '@'))
-			strcpy(buf, param[1]);
+			strlcpy(buf, param[1], sizeof(buf));
 		else
 			ircsprintf(buf, "*@%s", param[1]);
 		if (!SQLCogeRegistro(OS_AKILL, buf, "motivo"))
@@ -968,7 +971,7 @@ BOTFUNC(OSVaciar)
 		while (sql->tablas[i][0])
 			SQLQuery("TRUNCATE %s", sql->tablas[i++][0]);
 		Responde(cl, CLI(operserv), "Se ha vaciado toda la base de datos. Se procederá a reiniciar el programa en 5 segundos...");
-		IniciaCrono("reinicia", NULL, 1, 5, OSReinicia, NULL, 0);
+		IniciaCrono(1, 5, OSReinicia, NULL);
 	}
 	EOI(operserv, 14);
 	return 0;
@@ -1018,27 +1021,30 @@ int OSSigSQL()
 {
 	if (!SQLEsTabla(OS_NOTICIAS))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"n SERIAL, "
   			"bot text, "
   			"noticia text, "
-  			"fecha int4 default '0' "
+  			"fecha int4 default '0', "
+  			"KEY `n` (`n`) "
 			");", PREFIJO, OS_NOTICIAS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
 	}
 	if (!SQLEsTabla(OS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
-  			"nivel varchar(255) default NULL "
+  			"nivel varchar(255) default NULL, "
+  			"KEY `item` (`item`) "
 			");", PREFIJO, OS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_SQL);
 	}
 	if (!SQLEsTabla(OS_AKILL))
 	{
-		if (SQLQuery("CREATE TABLE %s%s ( "
+		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
-			"motivo varchar(255) default NULL "
+			"motivo varchar(255) default NULL, "
+			"KEY `item` (`item`) "
 			");", PREFIJO, OS_AKILL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
 	}

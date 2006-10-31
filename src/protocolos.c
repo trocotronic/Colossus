@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.7 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.8 2006-10-31 23:49:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -33,7 +33,7 @@ void DescargaProtocolo()
 int CargaProtocolo(Conf *config)
 {
 	Recurso prot;
-	char archivo[128], tmppath[PMAX];
+	char archivo[MAX_FNAME], tmppath[PMAX];
 	int (*mod_carga)(), (*mod_descarga)();
 	void (*ini)();
 	SOCKFUNC(*parsea);
@@ -78,7 +78,7 @@ int CargaProtocolo(Conf *config)
 		/* una vez está todo correcto, liberamos el anterior si hubiera uno */
 		if (protocolo)
 			LiberaMemoriaProtocolo(protocolo);
-		BMalloc(protocolo, Protocolo);
+		protocolo = BMalloc(Protocolo);
 		protocolo->archivo = strdup(config->data);
 		protocolo->tmparchivo = strdup(tmppath);
 		protocolo->hprot = prot;
@@ -116,7 +116,7 @@ int DescargaExtension(Extension *ext, Protocolo *mod)
 Extension *CreaExtension(Conf *config, Protocolo *mod)
 {
 	Recurso hmod;
-	char archivo[128], tmppath[PMAX];
+	char archivo[MAX_FNAME], tmppath[PMAX];
 	int (*mod_carga)(Extension *, Protocolo *), (*mod_descarga)(Extension *, Protocolo *);
 	ModInfo *inf;
 	if ((hmod = CopiaDll(config->data, archivo, tmppath)))
@@ -143,7 +143,7 @@ Extension *CreaExtension(Conf *config, Protocolo *mod)
 			irc_dlclose(hmod);
 			return NULL;
 		}
-		BMalloc(ext, Extension);
+		ext = BMalloc(Extension);
 		ext->archivo = strdup(config->data);
 		ext->tmparchivo = strdup(tmppath);
 		ext->hmod = hmod;
@@ -192,7 +192,7 @@ void InsertaExtFuncion(Extension *ext, Modulo *mod, int pos, Mod_Func func)
 	ExtFunc *extp;
 	if (!(extp = BuscaExtFunc(ext, mod)))
 	{
-		BMalloc(extp, ExtFunc);
+		extp = BMalloc(ExtFunc);
 		extp->mod = mod;
 		AddItem(extp, ext->extfunc);
 	}
@@ -217,7 +217,7 @@ void InsertaSenyalExt(int senyal, Ext_Func func, Extension *ext)
 		if (aux->func == func)
 			return;
 	}
-	BMalloc(sign, SenyalExt);
+	sign = BMalloc(SenyalExt);
 	sign->senyal = senyal;
 	sign->func = func;
 	if (!ext->senyals[senyal])

@@ -1,5 +1,5 @@
 /*
- * $Id: hash.c,v 1.5 2006-05-17 14:27:45 Trocotronic Exp $ 
+ * $Id: hash.c,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
  */
 
 #include <stdio.h>
@@ -12,19 +12,39 @@ Hash cTab[CHMAX];
 /*
  * hasheamos utilizando un multiplicador y un sumando. tenemos de sobras.
  */
+unsigned int ELFHash(char* str, unsigned int len)
+{
+   unsigned int hash = 0;
+   unsigned int x    = 0;
+   unsigned int i    = 0;
+
+   for(i = 0; i < len; str++, i++)
+   {
+      hash = (hash << 4) + (ToLower(*str));
+      if((x = hash & 0xF0000000L) != 0)
+      {
+         hash ^= (x >> 24);
+         hash &= ~x;
+      }
+   }
+
+   return (hash & 0x7FFFFFFF);
+}
 u_int HashCliente(char *clave)
 {
-	u_int hash = 0;
+	return (ELFHash(clave, strlen(clave))%UMAX);
+/*	u_int hash = 0;
 	while (*clave)
 		hash += (ToLower(*clave++) + INI_SUMD) * INI_FACT;
-	return (hash % UMAX);
+	return (hash % UMAX);*/
 }
 u_int HashCanal(char *clave)
 {
-	u_int hash = 0;
+	return (ELFHash(clave, strlen(clave))%CHMAX);
+	/*u_int hash = 0;
 	while (*clave)
 		hash += (ToLower(*clave++) + INI_SUMD) * INI_FACT;
-	return (hash % CHMAX);
+	return (hash % CHMAX);*/
 }
 void InsertaClienteEnHash(Cliente *us, char *clave, Hash *tabla)
 {
