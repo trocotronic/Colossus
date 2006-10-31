@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.7 2006-10-31 23:56:44 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "httpd.h"
@@ -396,7 +396,7 @@ SOCKFUNC(LeeHTTPD)
 	char *c = data, *d, *e;
 	if (!(hh = BuscaHHead(sck)))
 		return 1;
-#ifndef DEBUG
+#ifdef DEBUG
 	Debug("[Web: %s]", c);
 #endif
 	if (!hh->viene_post)

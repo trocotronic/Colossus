@@ -1,4 +1,4 @@
-## $Id: make,v 1.32 2006-10-31 23:49:10 Trocotronic Exp $
+## $Id: make,v 1.33 2006-10-31 23:56:44 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -7,7 +7,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-NOCORE=1
+#NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####

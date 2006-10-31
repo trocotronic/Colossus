@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.25 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.26 2006-10-31 23:57:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -393,7 +393,7 @@ int PSCmdNick(Cliente *cl, int nuevo)
 	{
 		Proxy *px;
 		char *host;
-		Debug("******%s",proxyserv->scan_ip);
+//		Debug("******%s",proxyserv->scan_ip);
 		if (!BadPtr(cl->ip) && *(cl->ip) != '*')
 			host = strdup(cl->ip);
 		else
