@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.86 2006-11-01 11:54:27 Trocotronic Exp $ 
+ * $Id: main.c,v 1.87 2006-11-01 12:14:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -2261,7 +2261,7 @@ time_t GMTime()
 	t = time(0);
 	return mktime(gmtime(&t));
 }
-#ifdef _WIN32
+#define TBLOQ 4096
 typedef struct _ecmd
 {
 	char *cmd;
@@ -2271,7 +2271,8 @@ typedef struct _ecmd
 	ECmdFunc func;
 	void *v;
 }ECmd;
-BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
+#ifdef _WIN32
+bool CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
 { 
 	PROCESS_INFORMATION piProcInfo; 
 	STARTUPINFO siStartInfo;
@@ -2289,7 +2290,6 @@ BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr)
 	CloseHandle(piProcInfo.hThread);
 	return bFuncRetn;
 }
-#define TBLOQ 4096
 int EjecutaCmd(ECmd *ecmd)
 {
 	HANDLE hChildStdinRd, hChildStdinWr, hChildStdoutRd, hChildStdoutWr;
@@ -2332,7 +2332,6 @@ int EjecutaCmd(ECmd *ecmd)
 			libres = TBLOQ;
 			t = sizeof(char) * TBLOQ * i;
 			res = (char *)realloc(res, t);
-			
 		}
 		strlcat(res, chBuf, t);
      }
@@ -2348,6 +2347,51 @@ int EjecutaCmd(ECmd *ecmd)
      Free(ecmd);
      return 0;
 }
+#else
+int EjecutaCmd(ECmd *ecmd)
+{
+	FILE *fp;
+	char buf[TBLOQ], *res;
+	int dwRead, i = 1, libres = TBLOQ;
+   	u_long len = 0L;
+   	size_t t;
+	ircsprintf(buf, "%s %s", ecmd->cmd, ecmd->params);
+	t = sizeof(char) * TBLOQ;
+	res = (char *)Malloc(t);
+	*res = '\0';
+	if ((fp = popen(buf, "r")))
+	{
+		while (fgets(buf, sizeof(buf)-1, fp))
+		{
+			dwRed = strlen(buf);
+			libres -= dwRead;
+			len += dwRead;
+			if (libres <= 1)
+			{
+				i++;
+				libres = TBLOQ;
+				t = sizeof(char) * TBLOQ * i;
+				res = (char *)realloc(res, t);
+			}
+			strlcat(res, chBuf, t);
+		}
+		pclose(fp);
+		if (ecmd->func)
+     		ecmd->func(len, res, ecmd->v);
+     	else
+     	{
+     		if (ecmd->len)
+     			*ecmd->len = len;
+     		if (ecmd->res)
+     			*ecmd->res = res;
+     	}
+	}
+	else
+		return 1;
+	Free(ecmd);
+	return 0;
+}
+#endif
 int EjecutaComandoSinc(char *cmd, char *params, u_long *len, char **res)
 {
 	ECmd *ecmd;
@@ -2370,7 +2414,7 @@ int EjecutaComandoASinc(char *cmd, char *params, ECmdFunc func, void *v)
 	pthread_create(&id, NULL, (void *)EjecutaCmd, (void *)ecmd);
 	return 0;
 }
-#endif
+
 /*!
  * @desc: Abre un recurso de tipo Directorio para obtener los nombres de los archivos que hay dentro.
  * @params: $dirname [in] Nombre del directorio a abrir.
