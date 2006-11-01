@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.31 2006-11-01 11:54:26 Trocotronic Exp $
+## $Id: Makefile,v 1.32 2006-11-01 12:35:35 Trocotronic Exp $
 
 OBJS=hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
 	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
@@ -16,7 +16,7 @@ modulo:
 	cd modulos; ${MAKE} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
 build: ircd mods prots sqldb exts
 ircd: $(OBJS)
-	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) -lc $(LDFLAGS) $(CRYPTOLIB)
+	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
 	ar -r colossus.a $(OBJS)
 mods:
 	@if [ ! -r include ] ; then \
