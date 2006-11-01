@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.87 2006-11-01 12:14:51 Trocotronic Exp $ 
+ * $Id: main.c,v 1.88 2006-11-01 12:16:16 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -2351,19 +2351,19 @@ int EjecutaCmd(ECmd *ecmd)
 int EjecutaCmd(ECmd *ecmd)
 {
 	FILE *fp;
-	char buf[TBLOQ], *res;
+	char chBuf[TBLOQ], *res;
 	int dwRead, i = 1, libres = TBLOQ;
    	u_long len = 0L;
    	size_t t;
-	ircsprintf(buf, "%s %s", ecmd->cmd, ecmd->params);
+	ircsprintf(chBuf, "%s %s", ecmd->cmd, ecmd->params);
 	t = sizeof(char) * TBLOQ;
 	res = (char *)Malloc(t);
 	*res = '\0';
-	if ((fp = popen(buf, "r")))
+	if ((fp = popen(chBuf, "r")))
 	{
-		while (fgets(buf, sizeof(buf)-1, fp))
+		while (fgets(chBuf, sizeof(chBuf)-1, fp))
 		{
-			dwRed = strlen(buf);
+			dwRead = strlen(chBuf);
 			libres -= dwRead;
 			len += dwRead;
 			if (libres <= 1)
