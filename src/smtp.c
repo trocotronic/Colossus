@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.19 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.20 2006-11-01 11:48:43 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -19,7 +19,7 @@ SmtpData *smtps = NULL;
 
 SOCKFUNC(ProcesaSmtp);
 SOCKFUNC(CierraSmtp);
-void EmailArchivosVL(char *, char *, Opts *, int (*)(SmtpData *), char *, ...);
+void EmailArchivosVL(char *, char *, Opts *, int (*)(SmtpData *), char *, va_list *);
 
 static const char Base64[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

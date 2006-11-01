@@ -1,10 +1,10 @@
-## $Id: Makefile.in,v 1.7 2005-10-27 19:16:15 Trocotronic Exp $
+## $Id: Makefile.in,v 1.8 2006-11-01 11:38:26 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/parseconf.h \
 	../include/sql.h ../include/struct.h
-R_MODULES=mysql.so postgresql.so
-COMMANDS=mysql.o postgresql.o
+R_MODULES=mysql.so postgresql.so sqlite.so
+COMMANDS=mysql.o postgresql.o sqlite.o
 MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@
 all: build
@@ -19,5 +19,9 @@ postgresql.so: postgresql.c $(INCLUDES) postgresql.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO @POSTGREHEAD@ @POSTGRELIBS@ -o postgresql.so postgresql.c
 postgresql.o: postgresql.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) @POSTGREHEAD@ @POSTGRELIBS@ -c postgresql.c
+postgresql.so: sqlite.c $(INCLUDES) sqlite.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o sqlite.so sqlite.c
+sqlite.o: sqlite.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -c sqlite.c
 clean:
 	$(RM) -f *.o *.so *~ core

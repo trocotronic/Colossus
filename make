@@ -1,4 +1,4 @@
-## $Id: make,v 1.33 2006-10-31 23:56:44 Trocotronic Exp $
+## $Id: make,v 1.34 2006-11-01 11:38:25 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -355,7 +355,7 @@ UDB_FILES=src/extensiones/udb/udb.c \
 	src/extensiones/udb/nickserv.c \
 	src/extensiones/udb/operserv.c
 UDB_LIBS=src/protocolos/unreal.lib src/modulos/nickserv.lib src/modulos/ipserv.lib src/modulos/chanserv.lib src/modulos/operserv.lib
-src/extensiones/udb/udb.dll: $(UDB_FILES) $(INCLUDES)
+src/extensiones/udb/udb.dll: $(UDB_FILES) $(INCLUDES) src/extensiones/udb/bdd.h
 	$(CC) $(MODDBGCFLAG) /Fesrc/extensiones/udb/ $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/extensiones/udb/ \
 	/D ENLACE_DINAMICO /D MODULE_COMPILE $(UDB_FILES) $(MODLFLAGS) $(UDB_LIBS) /out:src/extensiones/udb/udb.dll
 	-@copy src\extensiones\udb\udb.dll protocolos\extensiones\udb.dll >NUL

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.84 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: main.c,v 1.85 2006-11-01 11:46:31 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,7 +23,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <dlfcn.h>
-#include <dirent.h>
+#include <unistd.h>
 #endif
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -2451,7 +2451,7 @@ char *LeeDirectorio(Directorio dir)
 #else
 	struct dirent *dir_entry;
 	struct stat stat_info;
-	if ((dir_entry = readdir(dir)) != NULL)
+	while ((dir_entry = readdir(dir)) != NULL)
 	{
 		lstat(dir_entry->d_name, &stat_info);
 		if (S_ISDIR(stat_info.st_mode)) 

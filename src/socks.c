@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.22 2006-10-31 23:56:44 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.23 2006-11-01 11:51:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -674,7 +674,11 @@ void EnviaCola(Sock *sck)
 				else
 #endif
 				ret = WRITE_SOCK(sck->pres, msg, len);
+#ifdef _WIN32
 			}while(ret == -1 && WSAGetLastError() == WSAEWOULDBLOCK);
+#else
+			}while(ret == -1);
+#endif
 		}
 #ifdef USA_ZLIB
 		if (!sck->sendQ->len && mas)

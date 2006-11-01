@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.62 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.63 2006-11-01 11:44:35 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -15,6 +15,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <dirent.h>
 #ifdef UNISTDH
 #include <unistd.h>
 #endif

@@ -1,4 +1,4 @@
-#define UDB_VER "3.3"
+#define UDB_VER "3.4"
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #define DB_DIR_BCK DB_DIR "backup\\"
