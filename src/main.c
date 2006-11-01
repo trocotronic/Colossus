@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.85 2006-11-01 11:46:31 Trocotronic Exp $ 
+ * $Id: main.c,v 1.86 2006-11-01 11:54:27 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -23,7 +23,6 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <dlfcn.h>
-#include <unistd.h>
 #endif
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

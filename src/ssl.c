@@ -1,12 +1,11 @@
 /*
- * $Id: ssl.c,v 1.12 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.13 2006-11-01 11:54:27 Trocotronic Exp $ 
  */
  
 #include "struct.h"
 #ifdef USA_SSL
 #include "ircd.h"
 #include "ssl.h"
-#include <string.h>
 #ifdef _WIN32
 #include <windows.h>
 #define IDC_PASS 1108
