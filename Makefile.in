@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.12 2005-10-22 19:36:56 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.13 2006-12-03 23:36:01 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -65,6 +65,48 @@ install: all
 	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos
 	$(INSTALL) -m 0700 -d ~/Colossus/sql
 	$(INSTALL) -m 0700 src/sql/*.so ~/Colossus/sql
+	
+release:
+	$(RM) -rf ~/Colossus/Colossus
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
+	$(INSTALL) -m 0600 cambios ~/Colossus/Colossus/cambios
+	$(INSTALL) -m 0700 colossus ~/Colossus/Colossus/colossus
+	$(INSTALL) -m 0600 colossusdoc.html ~/Colossus/Colossus/colossusdoc.html
+	$(INSTALL) -m 0600 leeme.linux ~/Colossus/Colossus/leeme.linux
+	$(INSTALL) -m 0600 proximamente ~/Colossus/Colossus/proximamente
+	$(INSTALL) -m 0600 ejemplo.conf ~/Colossus/Colossus/ejemplo.conf
+	$(INSTALL) -m 0700 servicios ~/Colossus/Colossus/servicios
+	$(INSTALL) -m 0700 cambios ~/Colossus/Colossus/cambios
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/modulos
+	$(INSTALL) -m 0700 modulos/chanserv.so ~/Colossus/Colossus/modulos/chanserv.so
+	$(INSTALL) -m 0700 modulos/nickserv.so ~/Colossus/Colossus/modulos/nickserv.so
+	$(INSTALL) -m 0700 modulos/ipserv.so ~/Colossus/Colossus/modulos/ipserv.so
+	$(INSTALL) -m 0700 modulos/memoserv.so ~/Colossus/Colossus/modulos/memoserv.so
+	$(INSTALL) -m 0700 modulos/operserv.so ~/Colossus/Colossus/modulos/operserv.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos
+	$(INSTALL) -m 0700 protocolos/unreal.so ~/Colossus/Colossus/protocolos/unreal.so
+	$(INSTALL) -m 0700 protocolos/p10.so ~/Colossus/Colossus/protocolos/p10.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos/extensiones
+	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/Colossus/protocolos/extensiones/udb.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/sql
+	$(INSTALL) -m 0700 sql/mysql.so ~/Colossus/Colossus/sql/mysql.so
+	$(INSTALL) -m 0700 sql/postgresql.so ~/Colossus/Colossus/sql/postgresql.so
+	$(INSTALL) -m 0700 sql/sqlite.so ~/Colossus/Colossus/sql/sqlite.so
+	tar -cvzf colossus17.tar.gz Colossus
+devel:
+	$(RM) -rf ~/Colossus/Colossus
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
+	$(INSTALL) -m 0700 Makefile.dev ~/Colossus/Colossus/Makefile
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/include
+	$(INSTALL) -m 0600 include/*.h ~/Colossus/Colossus/include
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/include/modulos
+	$(INSTALL) -m 0600 include/modulos/probserv.h ~/Colossus/Colossus/include/modulos/probserv.h
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/src
+	$(INSTALL) -m 0600 src/Makefile.dev ~/Colossus/Colossus/src/Makefile
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/src/modulos
+	$(INSTALL) -m 0600 src/modulos/Makefile.dev ~/Colossus/Colossus/src/modulos/Makefile
+	$(INSTALL) -m 0600 src/modulos/probserv.c ~/Colossus/Colossus/src/modulos/probserv.c
+	tar -cvzf colossus17-devel.tar.gz Colossus
 
 pem:	src/ssl.cnf
 	@echo "Generating certificate request .. "
