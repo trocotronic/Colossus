@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.36 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.37 2006-12-03 22:30:19 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1001,7 +1001,6 @@ BOTFUNC(OSCache)
 	}
 	else
 	{
-		int i = 0;
 		if (!confirm)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No ha solicitado confirmación. Ejecute el comando nuevamente sin parámetros.");
