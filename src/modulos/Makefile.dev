@@ -1,0 +1,6 @@
+INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
+	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
+	../include/struct.h
+MODULEFLAGS=-fPIC -DPIC -shared
+modulo: $(FUENTE).c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(FUENTE).so $(FUENTE).c 

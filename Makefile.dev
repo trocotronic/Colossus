@@ -1,0 +1,24 @@
+GCC=gcc
+INCLUDEDIR=../include
+IRCDLIBS=-lnsl -lresolv -lpthread -lz -ldl 
+CRYPTOLIB=-lssl -lcrypto
+XCFLAGS=-pipe -g -O2 -funsigned-char -Wall -I/usr/local/ssl/include -export-dynamic
+OPENSSLPATH=/usr/bin/openssl
+CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS)  -L/usr/local/ssl/lib
+
+SHELL=/bin/sh
+SUBDIRS=src
+INSTALL=/usr/bin/install
+RM=/bin/rm
+CP=/bin/cp
+TOUCH=/bin/touch
+all:	build
+
+MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
+		'LDFLAGS=${LDFLAGS}' 'INSTALL=${INSTALL}' \
+		'INCLUDEDIR=${INCLUDEDIR}' 'CRYPTOLIB=${CRYPTOLIB}' \
+		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
+
+modulo:
+	cd src; ${MAKE} ${MAKEARGS} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
+	$(CP) src/modulos/$(FUENTE).so modulos/$(FUENTE).so
