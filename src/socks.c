@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.25 2006-12-03 22:12:21 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.26 2006-12-03 22:23:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -148,7 +148,7 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	sck = BMalloc(Sock);
 	SockDesc(sck);
 #ifdef USA_SSL
-	if (opt & OPT_SSL)
+	if (opts & OPT_SSL)
 		SetSSL(sck);
 #endif
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
