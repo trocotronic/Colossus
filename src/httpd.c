@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.8 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.9 2006-12-03 22:12:21 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "httpd.h"
@@ -315,7 +315,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 				if (!strncasecmp(hh->ext, "php", 3))
 				{
 					hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
-					EjecutaComandoASinc(conf_httpd->php, buf, EPhp, hh);
+					EjecutaComandoASinc(conf_httpd->php, buf, (ECmdFunc) EPhp, hh);
 				}
 				else
 				{
@@ -490,7 +490,7 @@ SOCKFUNC(LeeHTTPD)
 	}
 	if (!BadPtr(c))
 		ircstrdup(hh->param_post, c);
-	if (hh->viene_post && hh->metodo != HTTP_POST || (hh->metodo == HTTP_POST && hh->param_post))
+	if ((hh->viene_post && hh->metodo != HTTP_POST) || (hh->metodo == HTTP_POST && hh->param_post))
 		ProcesaHHead(hh, sck); 
 	return 0;
 }

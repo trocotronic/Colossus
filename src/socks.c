@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.24 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.25 2006-12-03 22:12:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -148,11 +148,8 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	sck = BMalloc(Sock);
 	SockDesc(sck);
 #ifdef USA_SSL
-	if (puerto < 0) /* es un puerto ssl */
-	{
-		puerto = puerto * -1;
+	if (opt & OPT_SSL)
 		SetSSL(sck);
-	}
 #endif
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		return NULL;
@@ -185,7 +182,11 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	sck->contout = contout;
 	sck->recvtout = recvtout;
 #ifdef DEBUG
+#ifdef USA_SSL
 	Debug("Abriendo conexion con %s:%i (%i) %s", host, puerto, sck->pres, EsSSL(sck) ? "[SSL]" : "");
+#else
+	Debug("Abriendo conexion con %s:%i (%i)", host, puerto, sck->pres);
+#endif
 #endif
 	if (!(opts & OPT_NADD))
 		InsertaSock(sck);

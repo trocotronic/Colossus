@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.39 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.40 2006-12-03 22:12:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -137,7 +137,7 @@ int MiraPings()
 int AbreSockIrcd()
 {
 #ifdef USA_SSL
-	if (!(SockIrcd = SockOpen(conf_server->addr, (conf_ssl ? -1 : 1) * conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd)))
+	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, OPT_SSL)))
 #else
 	if (!(SockIrcd = SockOpen(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd)))
 #endif

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.64 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.65 2006-12-03 22:12:21 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -88,6 +88,8 @@ typedef struct _sock Sock;
 #define BUFSIZE 1024
 #define SOCKBUF 4096
 #define DBUF 2032
+
+#ifndef MIN
 /*!
  * @desc: Devuelve el mínimo de dos números.
  * @params: $x [in] Primer número.
@@ -97,6 +99,8 @@ typedef struct _sock Sock;
  * @sntx: int MIN(int x, int y)
  !*/
 #define MIN(x,y) (x < y ? x : y)
+
+#endif
 
 typedef struct _dbuf
 {
@@ -383,8 +387,12 @@ extern char **margv;
 extern void Alerta(char , char *, ...);
 extern void Debug(char *, ...);
 extern char *ExMalloc(size_t, int, char *, long);
+#ifndef ADD
 #define ADD 1
+#endif
+#ifndef DEL
 #define DEL 2
+#endif
 extern struct in_addr *Resuelve(char *);
 #define SQL_CACHE "cache"
 extern MODVAR char tokbuf[BUFSIZE];
