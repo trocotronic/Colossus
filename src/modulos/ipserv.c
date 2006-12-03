@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.26 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.27 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -367,8 +367,9 @@ int ISCompruebaCifrado()
 		{
 			if (atol(tiempo) + ipserv->cambio < time(0))
 			{
-				fclose(fp);
 				escribe:
+				if (fp)
+					fclose(fp);
 				if ((fp = fopen("ts", "w")))
 				{
 					tiempo[0] = '\0';
@@ -378,6 +379,8 @@ int ISCompruebaCifrado()
 				}
 				return 0;
 			}
+			else
+				fclose(fp);
 		}
 		else
 			goto escribe;

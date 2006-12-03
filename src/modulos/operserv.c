@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.35 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.36 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -15,7 +15,6 @@ OperServ *operserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, operserv->hmod, NULL)
 Noticia *gnoticia[MAXNOT];
 int gnoticias = 0;
-char *confirm = NULL;
 
 BOTFUNC(OSHelp);
 BOTFUNC(OSRaw);
@@ -46,6 +45,8 @@ BOTFUNC(OSVaciar);
 BOTFUNCHELP(OSHVaciar);
 BOTFUNC(OSAkill);
 BOTFUNCHELP(OSHAkill);
+BOTFUNC(OSCache);
+BOTFUNCHELP(OSHCache);
 
 static bCom operserv_coms[] = {
 	{ "help" , OSHelp , N3 , "Muestra esta ayuda." , NULL } ,
@@ -63,6 +64,7 @@ static bCom operserv_coms[] = {
 	{ "noticias" , OSNoticias , N4 , "Administra las noticias de la red." , OSHNoticias } ,
 	{ "vaciar" , OSVaciar , N5 , "Elimina todos los registros de la base de datos." , OSHVaciar } ,
 	{ "akill" , OSAkill , N3 , "Prohibe la conexión de una ip/host o usuario permanentemente." , OSHAkill } ,
+	{ "cache" , OSCache , N5 , "Elimina toda la cache interna de los servicios." , OSHCache } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -469,6 +471,18 @@ BOTFUNCHELP(OSHVaciar)
 	Responde(cl, CLI(operserv), "Sintaxis: \00312VACIAR");
 	return 0;
 }
+BOTFUNCHELP(OSHCache)
+{
+	Responde(cl, CLI(operserv), "Elimina la cache interna de los servicios.");
+	Responde(cl, CLI(operserv), "Este comando es muy delicado y sólo debe de usarse en caso expreso, ya que elimina comprobaciones y puede saturar el proceso.");
+	Responde(cl, CLI(operserv), "La cache intera es una tabla de datos que se usa para no tener que procesar lo mismo una y otra vez. Los resultados de búsquedas, consultas, etc. se escriben ahí.");
+	Responde(cl, CLI(operserv), "Así, no es necesario hacer la misma consulta. Se lee el resultado en la tabla y se ahorra mucho tiempo.");
+	Responde(cl, CLI(operserv), "En esa tabla se guardan valores como últimos registros, comprobaciones de proxys, etc. Si se elimina, todos estas consultas volverán a procesarse.");
+	Responde(cl, CLI(operserv), "Requiere confirmación.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312CACHE");
+	return 0;
+}
 BOTFUNC(OSHelp)
 {
 	if (params < 2)
@@ -543,7 +557,7 @@ BOTFUNC(OSGline)
 	if (!strchr(param[1], '@'))
 	{
 		Cliente *al;
-		if ((al = BuscaCliente(param[1] + 1)))
+		if ((al = BuscaCliente(param[1])))
 		{
 			user = al->ident;
 			host = al->host;
@@ -556,7 +570,7 @@ BOTFUNC(OSGline)
 	}
 	else
 	{
-		strlcpy(tokbuf, param[1] + 1, sizeof(tokbuf));
+		strlcpy(tokbuf, param[1], sizeof(tokbuf));
 		user = strtok(tokbuf, "@");
 		host = strtok(NULL, "@");
 	}
@@ -949,10 +963,11 @@ BOTFUNC(OSClose)
 }
 BOTFUNC(OSVaciar)
 {
+	static char *confirm = NULL;
 	if (params < 2)
 	{
 		confirm = AleatorioEx("********");
-		Responde(cl, CLI(operserv), "Para mayor seguridad, ejecute el comando \00312VACIAR %s", confirm);
+		Responde(cl, CLI(operserv), "Para mayor seguridad, ejecute el comando \00312%s %s", fc->com, confirm);
 	}
 	else
 	{
@@ -974,6 +989,34 @@ BOTFUNC(OSVaciar)
 		IniciaCrono(1, 5, OSReinicia, NULL);
 	}
 	EOI(operserv, 14);
+	return 0;
+}
+BOTFUNC(OSCache)
+{
+	static char *confirm = NULL;
+	if (params < 2)
+	{
+		confirm = AleatorioEx("********");
+		Responde(cl, CLI(operserv), "Para mayor seguridad, ejecute el comando \00312%s %s", fc->com, confirm);
+	}
+	else
+	{
+		int i = 0;
+		if (!confirm)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No ha solicitado confirmación. Ejecute el comando nuevamente sin parámetros.");
+			return 1;
+		}
+		if (strcmp(confirm, param[1]))
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "La confirmación no se corresponde con la dada. Ejecut el comando nuevamente sin parámetros.");
+			return 1;
+		}
+		confirm = NULL;
+		SQLQuery("DELETE FROM %s%s", PREFIJO, SQL_CACHE);
+		Responde(cl, CLI(operserv), "Se ha vaciado toda la cache interna.");
+	}
+	EOI(operserv, 15);
 	return 0;
 }
 int OSCmdNick(Cliente *cl, int nuevo)
@@ -1025,8 +1068,7 @@ int OSSigSQL()
   			"n SERIAL, "
   			"bot text, "
   			"noticia text, "
-  			"fecha int4 default '0', "
-  			"KEY `n` (`n`) "
+  			"fecha int4 default '0' "
 			");", PREFIJO, OS_NOTICIAS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
 	}

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.26 2006-10-31 23:57:24 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.27 2006-12-03 20:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -684,6 +684,7 @@ SOCKFUNC(PSFin)
 		{
 			px->escaneados++;
 			CompruebaProxy(px);
+			ppt->sck = NULL;
 		}
 		else
 			ppt->sck = SockOpenEx(sck->host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ);

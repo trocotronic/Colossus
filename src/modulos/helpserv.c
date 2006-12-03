@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.2 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -174,15 +174,31 @@ HDIRFUNC(LeeHDir)
 		helpchan = BuscaCanal(helpserv->canal);
 	if (helpchan && hh->param_get)
 	{
-		char *param;
+		char *user = NULL, *tok = NULL, *c, *d, a;
 		Cliente *al;
-		if (!(param = strchr(hh->param_get, '=')))
+		u_long crc32;
+		strncpy(tokbuf, hh->param_get, sizeof(tokbuf));
+		for (c = strtok(tokbuf, "&"); c; c = strtok(NULL, "&"))
+		{
+			if (!(d = strchr(c, '=')))
+			{
+				*errmsg = "Faltan parámetros";
+				return 400;
+			}
+			if (*c == 'k' || *c == 'v' || *c == 'u')
+			{
+				a = *c;
+				user = d+1;
+			}
+			else if (*c == 'c')
+				tok = d+1;
+		}
+		if ((a == 'v' || a == 'k') && (!tok || !user))
 		{
 			*errmsg = "Faltan parámetros";
 			return 400;
 		}
-		param++;
-		if (!(al = BuscaCliente(param)))
+		if (!(al = BuscaCliente(user)))
 		{
 			*errmsg = "Este usuario no existe";
 			return 400;
@@ -192,10 +208,20 @@ HDIRFUNC(LeeHDir)
 			*errmsg = "Este usuario no está en el canal";
 			return 400;
 		}
-		switch(*hh->param_get)
+		if (tok)
+		{
+			sscanf(tok, "%X", &crc32);
+			ircsprintf(buf, "%s?%s?%s", al->nombre, al->ip, "aquellos ojos verdes");
+			if (crc32 != Crc32(buf, strlen(buf)))
+			{
+				*errmsg = "Acción denegada";
+				return 400;
+			}
+		}
+		switch(a)
 		{
 			case 'v':
-				ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, "+v %s", param);
+				ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, "+v %s", user);
 				break;
 			case 'k':
 			{
@@ -216,6 +242,12 @@ HDIRFUNC(LeeHDir)
 				break;
 			}
 		}
+		return 200;
+	}
+	else if (!helpchan)
+	{
+		*errmsg = "Servicio no disponible";
+		return 400;
 	}
 	return 200;
 }
@@ -234,7 +266,8 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 			Responde(cl, CLI(helpserv), "Para poder hablar en este canal deberás hacer un test y responderlo correctamente.");
 			Responde(cl, CLI(helpserv), "Si lo superas tendrás +v en este canal automáticamente.");
 			ircsprintf(buf, ":%i", conf_httpd->puerto);
-			Responde(cl, CLI(helpserv), "La dirección es \00312http://%s%s/%s?u=%s", conf_httpd->url, conf_httpd->puerto != 80 ? buf : "", helpserv->url_test, cl->nombre);
+			ircsprintf(tokbuf, "%s?%s?%s", cl->nombre, cl->ip, "aquellos ojos verdes");
+			Responde(cl, CLI(helpserv), "La dirección es \00312http://%s%s/%s?u=%s&c=%X", conf_httpd->url, conf_httpd->puerto != 80 ? buf : "", helpserv->url_test, cl->nombre, Crc32(tokbuf, strlen(tokbuf)));
 		}
 	}
 	return 0;
@@ -254,7 +287,7 @@ BOTFUNC(HSTeste)
 		return 1;
 	}
 	sscanf(param[1], "%X", &crc32);
-	ircsprintf(buf, "%s!%s", cl->nombre, cl->ip);
+	ircsprintf(buf, "%s!%s", cl->nombre, "aquellos ojos verdes");
 	if (crc32 != Crc32(buf, strlen(buf)))
 	{
 		Responde(cl, CLI(helpserv), CS_ERR_EMPT, "Clave incorrecta");

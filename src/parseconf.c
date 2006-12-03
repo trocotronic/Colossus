@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.23 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.24 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1343,6 +1343,24 @@ int TestHttpd(Conf *config, int *errores)
 			}
 		}
 	}
+	if (!(eval = BuscaEntrada(config, "ruta_php")))
+	{
+		Error("[%s:%s] No se encuentra la directriz ruta_php.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz ruta_php esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+		if (!EsArchivo(eval->data))
+		{
+			Error("[%s:%s::%s::%i] No se encuentra el archivo %s.", config->archivo, config->item, eval->item, eval->linea, eval->data);
+			error_parcial++;
+		}			
+	}		
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -1362,6 +1380,8 @@ void ConfHttpd(Conf *config)
 			conf_httpd->puerto = atoi(config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "edad_maxima"))
 			conf_httpd->max_age = atoi(config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "ruta_php"))
+			ircstrdup(conf_httpd->php, config->seccion[i]->data);
 	}
 	IniciaHTTPD();
 }

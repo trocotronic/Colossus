@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.19 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.20 2006-12-03 20:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,6 +11,7 @@
 #endif
 #include <commctrl.h>
 #include <windows.h>
+#include <pthread.h>
 
 extern void InitDebug(void);
 extern int IniciaPrograma(int, char **);
@@ -149,8 +150,11 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if (MessageBox(hDlg, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 				return 0;
-			else 
+			else
+			{
+				DestroyWindow(hDlg);
 				CierraColossus(0);
+			}
 		}
 		case WM_SIZE: 
 		{

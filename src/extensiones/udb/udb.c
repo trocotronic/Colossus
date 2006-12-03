@@ -188,7 +188,7 @@ int SigPreNick(Cliente *cl, char *nuevo)
 	{
 		Udb *bloq, *reg;
 		ProcesaModosCliente(cl, "-S");
-		if ((reg = BuscaBloque(cl->nombre, UDB_NICKS)) && (bloq = BuscaBloque(N_MOD_TOK, reg)))
+		if ((reg = BuscaBloque(cl->nombre, UDB_NICKS)) && (bloq = BuscaBloque(N_MOD, reg)))
 		{
 			char tmp[32];
 			ircsprintf(tmp, "-%s", bloq->data_char);
@@ -204,7 +204,7 @@ int SigPostNick_U(Cliente *cl, int nuevo)
 }
 int SigSockOpen()
 {
-	EnviaAServidor("PROTOCTL UDB" UDB_VER "=%s,SD", me.nombre);
+	EnviaAServidor("PROTOCTL UDB" UDB_VER, me.nombre);
 	return 0;
 }
 IRCFUNC(m_db)
@@ -589,8 +589,13 @@ IRCFUNC(m_dbq)
 }
 IRCFUNC(m_eos_U)
 {
+	Udb *reg;
 	if (cl == linkado)
+	{
 		UdbOptimiza();
+		if (!(reg = BuscaBloque(me.nombre, UDB_LINKS)))
+			PropagaRegistro("L::%s::O *%lu", me.nombre, L_OPT_PROP);
+	}
 	return 0;
 }
 IRCFUNC(m_sjoin_U)
@@ -672,12 +677,12 @@ void UdbDaleCosas(Cliente *cl)
 	Udb *reg, *bloq;
 	if (!(reg = BuscaBloque(cl->nombre, UDB_NICKS)))
 		return;
-	if (!BuscaBloque(N_SUS_TOK, reg))
+	if (!BuscaBloque(N_SUS, reg))
 	{
 		ProcesaModosCliente(cl, "+r");
-		if ((bloq = BuscaBloque(N_MOD_TOK, reg)))
+		if ((bloq = BuscaBloque(N_MOD, reg)))
 			ProcesaModosCliente(cl, bloq->data_char);
-		if ((bloq = BuscaBloque(N_OPE_TOK, reg)))
+		if ((bloq = BuscaBloque(N_OPE, reg)))
 		{
 			u_long nivel = bloq->data_long;
 			if (nivel & BuscaOpt("OPER", NivelesBDD))

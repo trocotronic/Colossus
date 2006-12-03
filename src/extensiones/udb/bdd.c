@@ -10,10 +10,10 @@
 #define O_BINARY 0x0
 #endif
 
-Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL;
+Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL, *UDB_LINKS = NULL;
 Udb ***hash;
 UDBloq *ultimo = NULL;
-UDBloq *N = NULL, *C= NULL, *S = NULL, *I = NULL;
+UDBloq *N = NULL, *C= NULL, *S = NULL, *I = NULL, *L = NULL;
 #define DaUdb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 u_int BDD_TOTAL = 0;
 int dataver = 0;
@@ -252,7 +252,7 @@ int ActualizaDataVer3()
 	{
 		if ((c = strchr(buf, ' ')))
 		{
-			if (*(c-2) == ':' && *(c-1) == *(N_OPE_TOK)) /* lo tenemos! */
+			if (*(c-2) == ':' && *(c-1) == *(N_OPE)) /* lo tenemos! */
 			{
 				int val;
 				sscanf(c, " %*c%i\n", &val);
@@ -312,6 +312,8 @@ void IniciaUDB()
 		C = AltaBloque('C', DB_DIR "canales.udb", &UDB_CANALES);
 	if (!I)
 		I = AltaBloque('I', DB_DIR "ips.udb", &UDB_IPS);
+	if (!L)
+		L = AltaBloque('L', DB_DIR "links.udb", &UDB_LINKS);
 	AltaHash();
 	if ((fh = fopen(DB_DIR "crcs", "ab")))
 	{
@@ -649,7 +651,7 @@ u_int LevelOperUdb(char *oper)
 	if ((reg = BuscaBloque(oper, UDB_NICKS)))
 	{
 		Udb *aux;
-		if ((aux = BuscaBloque(N_OPE_TOK, reg)))
+		if ((aux = BuscaBloque(N_OPE, reg)))
 			return (u_int)aux->data_long;
 	}
 	return 0;
@@ -664,7 +666,7 @@ char *CifraIpTEA_U(char *ipreal)
 	bzero(clave, sizeof(clave));
 	bzero(cifrada, sizeof(cifrada));
 	ourcrc = Crc32(ipreal, strlen(ipreal));
-	if ((bloq = BuscaBloque(S_CLA_TOK, UDB_SET)) && !BadPtr(bloq->data_char))
+	if ((bloq = BuscaBloque(S_CLA, UDB_SET)) && !BadPtr(bloq->data_char))
 		clavec = bloq->data_char;
 	else
 		clavec = conf_set->clave_cifrado;

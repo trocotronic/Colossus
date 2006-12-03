@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.18 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.19 2006-12-03 20:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -422,7 +422,8 @@ void TSSet(Conf *config, Modulo *mod)
 		ProcesaComsMod(NULL, mod, tvserv_coms);
 	InsertaSenyal(SIGN_SQL, TSSigSQL);
 	InsertaSenyal(SIGN_QUIT, TSSigQuit);
-	bzero(cola, sizeof(DataSock) * MAX_COLA);
+	for (i = 0; i < MAX_COLA; i++)
+		cola[i] = NULL;
 	BotSet(tvserv);
 }
 char *TSQuitaTags(char *str, char *dest)
@@ -1087,13 +1088,20 @@ SOCKFUNC(TSLeeTiempo)
 		sig = 1;
 	else if (sig)
 	{
-		char *tok, *c;
+		char *tok, *c, *d;
 		for (tok = strstr(data, "<tr>"); tok; tok = strstr(tok, "<tr>"))
 		{
-			c = strstr(tok, "</tr>");
-			*c = '\0';
+			if ((c = strstr(tok, "</tr>")))
+				*c = '\0';
+			if ((d = strstr(tok, "<strong>")))
+			{
+				*(d+7) = ' ';
+				*(d+6) = '>';
+			}
 			TSQuitaTags(tok, tmp);
 			Responde(cl, CLI(tvserv), tmp);
+			if (!c)
+				break;
 			tok = c+1;
 			if (!strncmp(tok+12, "<font size", 10))
 			{
@@ -1105,10 +1113,13 @@ SOCKFUNC(TSLeeTiempo)
 				tok = c+1;
 			}	
 		}
-		dia = sig = 0;
-		if (!IsOper(cl))
-			InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
-		SockClose(sck, LOCAL);
+		if (c)
+		{
+			dia = sig = 0;
+			if (!IsOper(cl))
+				InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
+			SockClose(sck, LOCAL);
+		}
 	}
 	return 0;
 }

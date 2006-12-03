@@ -1,11 +1,10 @@
 /*
- * $Id: ssl.c,v 1.13 2006-11-01 11:54:27 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.14 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
  
 #include "struct.h"
 #ifdef USA_SSL
 #include "ircd.h"
-#include "ssl.h"
 #ifdef _WIN32
 #include <windows.h>
 #define IDC_PASS 1108
@@ -31,16 +30,15 @@ typedef struct {
 } StreamIO;
 
 #ifdef _WIN32
-static StreamIO *streamp;
 LRESULT SSLPassDLG(HWND hDlg, UINT Message, WPARAM wParam, LPARAM lParam) 
 {
-	StreamIO *stream = NULL;
+	static StreamIO *stream = NULL;
 	switch (Message) 
 	{
 		case WM_INITDIALOG:
 			return TRUE;
 		case WM_COMMAND:
-			stream = (StreamIO *)streamp;
+			stream = (StreamIO*)lParam;
 			if (LOWORD(wParam) == IDCANCEL) 
 			{
 				*stream->buffer = NULL;
@@ -117,8 +115,7 @@ int  SSLPemPasswd(char *buf, int size, int rwflag, void *password)
 	pass = passbuf;
 	stream.buffer = &pass;
 	stream.size = &passsize;
-	streamp = &stream;
-	DialogBoxParam(hInst, "SSLPass", hwMain, (DLGPROC)SSLPassDLG, (LPARAM)NULL); 
+	DialogBoxParam(hInst, "SSLPass", hwMain, (DLGPROC)SSLPassDLG, (LPARAM)&stream); 
 #endif
 	if (pass)
 	{

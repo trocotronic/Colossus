@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.63 2006-11-01 11:44:35 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.64 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -21,7 +21,6 @@
 #endif
 #include <sys/time.h>
 #endif /* _WIN32 */
-#include <pthread.h>
 #ifdef FCNTLH
 #include <fcntl.h>
 #endif
@@ -486,7 +485,6 @@ extern void BorraCache(char *, char *, int);
 #define CACHE_HOST "hosts" /* cache para hosts */
 #define CACHE_MX "mx" /* cache para registros mx */
 
-extern MODVAR pthread_mutex_t mutex;
 #ifndef _WIN32
 #define PMAX PATH_MAX 
 #else

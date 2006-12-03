@@ -1,4 +1,4 @@
-#define UDB_VER "3.4"
+#define UDB_VER "3.5"
 #ifdef _WIN32
 #define DB_DIR "database\\"
 #define DB_DIR_BCK DB_DIR "backup\\"
@@ -29,8 +29,8 @@ typedef struct _bloque
 }UDBloq;
 #define DBMAX 64
 #define CHAR_NUM '*'
-extern UDBloq *N, *C, *I, *S;
-extern Udb *UDB_NICKS, *UDB_CANALES, *UDB_IPS, *UDB_SET;
+extern UDBloq *N, *C, *I, *S, *L;
+extern Udb *UDB_NICKS, *UDB_CANALES, *UDB_IPS, *UDB_SET, *UDB_LINKS;
 
 extern Udb *BuscaBloque(char *, Udb *);
 u_int LevelOperUdb(char *);
@@ -65,20 +65,42 @@ extern int RestauraSeguridad(UDBloq *, char *);
 #define E_UDB_FBSRV 9
 #define E_UDB_REP 10
 
+#define C_FUN "F"	/* fundador */
+#define C_MOD "M"	/* modos */
+#define C_TOP "T"	/* topic */
+#define C_ACC "A"	/* acceso */
+#define C_FOR "B"	/* forbid */
+#define C_SUS "S"	/* suspendido */
+#define C_PAS "P"	/* pass */
+#define C_DES "D"	/* desafio */
+#define C_OPT "O"	/* opciones */
+#define N_ALL "A"	/* acceso */
+#define N_PAS "P"	/* pass */
+#define N_VHO "V"	/* vhost */
+#define N_FOR "B"	/* forbid */
+#define N_SUS "S"	/* suspendido */
+#define N_OPE "O"	/* oper */
+#define N_DES "D"	/* desafio */
+#define N_MOD "M"	/* modos */
+#define N_SNO "K"	/* snomasks */
+#define N_SWO "W"	/* swhois */
+#define I_CLO "S"	/* nº clones */
+#define I_NOL "E"	/* nolines */
+#define I_HOS "H"	/* host reverso */
+#define S_CLA "L"	/* clave de cifrado */
+#define S_SUF "J"	/* sufijo */
+#define S_NIC "N"	/* nickserv */
+#define S_CHA "C"	/* chanserv */
+#define S_IPS "I"	/* ipserv */
+#define S_CLO "S"	/* nº clones global */
+#define S_QIP "T"	/* quit por ip */
+#define S_QCL "Q"	/* quit por clones */
+#define S_DES "D"	/* desafio global */
+#define S_FLO "F"	/* pass-flood */
+#define L_OPT "O"	/* opciones */
 
-#define N_SUS "suspendido"
-#define N_SUS_TOK "S"
-#define N_OPE "oper"
-#define N_OPE_TOK "O"
-#define N_MOD "modos"
-#define N_MOD_TOK "M"
-#define S_CLA "clave_cifrado"
-#define S_CLA_TOK "L"
-#define C_SUS "suspendido"
-#define C_SUS_TOK "S"
-#define C_FOR "forbid"
-#define C_FOR_TOK "B"
-#define C_OPT "opciones"
-#define C_OPT_TOK "O"
+#define C_OPT_PBAN 0x1
+#define C_OPT_RMOD 0x2
 
-#define BDD_C_OPT_PBAN 0x1
+#define L_OPT_DEBG 0x1
+#define L_OPT_PROP 0x2

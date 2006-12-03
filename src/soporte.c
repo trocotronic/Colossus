@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.10 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.11 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -235,8 +235,8 @@ void setfilemodtime(char *filename, time_t mtime)
 	if (hFile == INVALID_HANDLE_VALUE)
 		return;
 	llValue = Int32x32To64(mtime, 10000000) + 116444736000000000;
-	mTime.dwLowDateTime = (long)llValue;
-	mTime.dwHighDateTime = (DWORD)llValue >> 32;
+	mTime.dwLowDateTime = (DWORD)llValue;
+	mTime.dwHighDateTime = (DWORD)(llValue >> 32);
 	SetFileTime(hFile, &mTime, &mTime, &mTime);
 	CloseHandle(hFile);
 #else

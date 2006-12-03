@@ -108,13 +108,13 @@ int CSSigEOS_U()
 		for (reg = C->arbol->down; reg; reg = sig)
 		{
 			sig = reg->mid;
-			if ((bloq = BuscaBloque(C_FOR_TOK, reg)) && !SQLCogeRegistro(CS_FORBIDS, reg->item, "motivo"))
+			if ((bloq = BuscaBloque(C_FOR, reg)) && !SQLCogeRegistro(CS_FORBIDS, reg->item, "motivo"))
 				SQLInserta(CS_FORBIDS, reg->item, "motivo", bloq->data_char);
 			if (!IsChanReg(reg->item) || !IsChanUDB(reg->item))
 				PropagaRegistro("C::%s", reg->item);
 			else
 			{
-				if ((bloq = BuscaBloque(C_SUS_TOK, reg)) && !SQLCogeRegistro(CS_SQL, reg->item, "suspend"))
+				if ((bloq = BuscaBloque(C_SUS, reg)) && !SQLCogeRegistro(CS_SQL, reg->item, "suspend"))
 					SQLInserta(CS_SQL, reg->item, "suspend", bloq->data_char);
 			}
 		}
@@ -187,6 +187,29 @@ EXTFUNC(CSOpts_U)
 		PropagaRegistro("C::%s::P %s", param[1], MDString(param[3], 0));
 	else if (!strcasecmp(param[2], "FUNDADOR"))
 		PropagaRegistro("C::%s::F %s", param[1], param[3]);
+	else if (!strcasecmp(param[2], "OPCIONES") && strchr(param[3], 'm'))
+	{
+		int opts;
+		Udb *bloq, *reg;
+		u_long val = 0L;
+		if (!(reg = BuscaBloque(param[1], UDB_CANALES)))
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Error grave: no hay bloque");
+			return 1;
+		}
+		if ((bloq = BuscaBloque(C_OPT, reg)))
+			val = bloq->data_long;
+		opts = atoi(SQLCogeRegistro(CS_SQL, param[1], "opts"));
+		if (opts & CS_OPT_RMOD)
+			PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val | C_OPT_RMOD);
+		else
+		{
+			if (val & ~C_OPT_RMOD)
+				PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val & ~C_OPT_RMOD);
+			else
+				PropagaRegistro("C::%s::O", param[1]);
+		}
+	}
 	return 0;
 }
 EXTFUNC(CSSuspender_U)
@@ -455,14 +478,14 @@ BOTFUNC(CSSetUDB)
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Error grave: no hay bloque");
 			return 1;
 		}
-		if ((bloq = BuscaBloque(C_OPT_TOK, reg)))
+		if ((bloq = BuscaBloque(C_OPT, reg)))
 			val = bloq->data_long;
 		if (!strcasecmp(param[3], "ON"))
-			PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val | BDD_C_OPT_PBAN);
+			PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val | C_OPT_PBAN);
 		else if (!strcasecmp(param[3], "OFF"))
 		{
-			if (val & ~BDD_C_OPT_PBAN)
-				PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val & ~BDD_C_OPT_PBAN);
+			if (val & ~C_OPT_PBAN)
+				PropagaRegistro("C::%s::O %c%lu", param[1], CHAR_NUM, val & ~C_OPT_PBAN);
 			else
 				PropagaRegistro("C::%s::O", param[1]);
 		}

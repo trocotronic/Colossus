@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.7 2006-10-31 23:56:44 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.8 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "httpd.h"
@@ -86,6 +86,8 @@ char *BuscaTipo(char *ext)
 		return "text/plain";
 	if (*ext == '.')
 		ext++;
+	if (!strncmp(ext, "php", 3))
+		return "text/html";
 	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, "MIME\\Database\\Content Type", 0, KEY_READ, &hk) == ERROR_SUCCESS)
 	{
 		for (i = 0; RegEnumKey(hk, i, tmp, stmp) != ERROR_NO_MORE_ITEMS; i++)
@@ -119,6 +121,8 @@ char *BuscaTipo(char *ext)
 	static char tipo[128];
 	if (!ext)
 		return "text/plain";
+	if (!strncmp(ext, "php", 3))
+		return "text/html";
 	if ((fp = fopen("/etc/mime.types", "r")))
 	{
 		while (fgets(tmp, sizeof(tmp), fp))
@@ -311,7 +315,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 				if (!strncasecmp(hh->ext, "php", 3))
 				{
 					hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
-					EjecutaComandoASinc("php", buf, EPhp, hh);
+					EjecutaComandoASinc(conf_httpd->php, buf, EPhp, hh);
 				}
 				else
 				{
@@ -396,7 +400,7 @@ SOCKFUNC(LeeHTTPD)
 	char *c = data, *d, *e;
 	if (!(hh = BuscaHHead(sck)))
 		return 1;
-#ifdef DEBUG
+#ifndef DEBUG
 	Debug("[Web: %s]", c);
 #endif
 	if (!hh->viene_post)

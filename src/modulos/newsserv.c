@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.6 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.7 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -128,7 +128,6 @@ int MOD_CARGA(NewsServ)(Modulo *mod)
 	}
 	else
 		WSSet(NULL, mod);
-	bzero(rss, sizeof(Rss *) * MAX_RSS);
 	icv = iconv_open("ISO-8859-1", "UTF-8");
 	timerrss = IniciaCrono(0, 300, DescargaRSS, NULL);
 	DescargaRSS();
@@ -151,6 +150,7 @@ int MOD_DESCARGA(NewsServ)()
 			Free(rss[i]);
 		}
 	}
+	iconv_close(icv);
 	BotUnset(newsserv);
 	ApagaCrono(timerrss);
 	BorraSenyal(SIGN_SQL, WSSigSQL);
@@ -196,6 +196,8 @@ void WSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SQL, WSSigSQL);
 	InsertaSenyal(CS_SIGN_DROP, WSSigDrop);
 	InsertaSenyal(NS_SIGN_DROP, WSSigDrop);
+	for (i = 0; i < MAX_RSS; i++)
+		rss[i] = NULL;
 	BotSet(newsserv);
 }
 Noticia *BuscaNoticia(u_int id, Noticia *lugar)

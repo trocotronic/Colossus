@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.44 2006-10-31 23:49:09 Trocotronic Exp $
+ * $Id: cambios,v 1.45 2006-12-03 20:30:05 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -412,3 +412,9 @@
 050906468 - Arreglado un fallo al registrar un nick bajo una cuenta prohibida.
 071006469 - Arreglado un fallo al comprobar si existe otra versión.
 011106470 - *** Cuadragésima release pública: 1.6 ***
+121106471 - Arreglado un fallo que mostraba la ayuda de IpServ de la extensión UDB.
+171106472 - Arreglado un fallo con la comprobración de cifrados de IpServ.
+251106473 - Arreglado un fallo al cerrar las conexiones.
+251106474 - Añadido el comando CACHE a OperServ para eliminar la cache.
+221106475 - Arreglado un fallo al leer el MOTD por causa del servidor externo.
+021206476 - Arreglado un fallo en el gline de OperServ.

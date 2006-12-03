@@ -34,9 +34,9 @@ int (*issignick)();
 Timer *timercif = NULL;
 
 bCom ipserv_coms[] = {
-	{ "set" , ISOpts , N4 , "Fija algunos parámetros de la red." } ,
-	{ "dns" , ISDns , N4 , "Establece una resolución inversa de una ip." } ,
-	{ "nolines" , ISNolines , N3 , "Controla las excepciones para una ip." } ,
+	{ "set" , ISOpts , N4 , "Fija algunos parámetros de la red." , ISHSet } ,
+	{ "dns" , ISDns , N4 , "Establece una resolución inversa de una ip." , ISHDns } ,
+	{ "nolines" , ISNolines , N3 , "Controla las excepciones para una ip." , ISHNolines } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 

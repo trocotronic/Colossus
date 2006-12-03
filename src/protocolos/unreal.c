@@ -25,6 +25,7 @@ char *autoopers = NULL;
 LinkCliente *servidores = NULL;
 long base64dec(char *);
 char *base64enc(long);
+int norekill = 0;
 
 IRCFUNC(m_chghost);
 IRCFUNC(m_chgident);
@@ -59,6 +60,7 @@ IRCFUNC(sincroniza);
 IRCFUNC(m_sjoin);
 IRCFUNC(m_tkl);
 IRCFUNC(m_sethost);
+IRCFUNC(m_432);
 
 ProtInfo PROT_INFO(Unreal) = {
 	"Protocolo UnrealIRCd" ,
@@ -727,6 +729,7 @@ int PROT_CARGA(Unreal)(Conf *config)
 	InsertaComando(MSG_SJOIN, TOK_SJOIN, m_sjoin, INI, MAXPARA);
 	InsertaComando(MSG_TKL, TOK_TKL, m_tkl, INI, MAXPARA);
 	InsertaComando(MSG_SETHOST, TOK_SETHOST, m_sethost, INI, MAXPARA);
+	InsertaComando("432", "432", m_432, INI, MAXPARA);
 	InsertaModoProtocolo('r', &UMODE_REGNICK, protocolo->umodos);
 	InsertaModoProtocolo('N', &UMODE_NETADMIN, protocolo->umodos);
 	InsertaModoProtocolo('o', &UMODE_OPER, protocolo->umodos);
@@ -815,6 +818,8 @@ int PROT_DESCARGA(Unreal)()
 	BorraComando(MSG_SJOIN, m_sjoin);
 	BorraComando(MSG_TKL, m_tkl);
 	BorraComando(MSG_SETHOST, m_sethost);
+	BorraComando("432", m_432);
+	BorraComando("401", m_432);
 	return 0;
 }
 void PROT_INICIA(Unreal)()
@@ -1129,11 +1134,11 @@ IRCFUNC(m_kill)
 		for (lk = al->canal; lk; lk = lk->sig)
 			BorraClienteDeCanal(lk->chan, al);
 		LiberaMemoriaCliente(al);
-	}
-	if (conf_set->opts & REKILL)
-	{
-		if (BuscaModulo(parv[1], modulos))
-			ReconectaBot(parv[1]);
+		if (conf_set->opts & REKILL && !norekill)
+		{
+			if (BuscaModulo(parv[1], modulos))
+				ReconectaBot(parv[1]);
+		}
 	}
 	return 0;
 }
@@ -1267,8 +1272,8 @@ IRCFUNC(m_sjoin)
 		}
 		if (mod[0] != 'b' && mod[0] != 'e') /* es un usuario */
 		{
-			al = BuscaCliente(p);
-			EntraCliente(al, parv[2]);
+			if ((al = BuscaCliente(p)))
+				EntraCliente(al, parv[2]);
 		}
 		if (mod[0])
 		{
@@ -1533,6 +1538,13 @@ IRCFUNC(sincroniza)
 {
 	tburst = microtime();
 	Senyal1(SIGN_SYNCH, cl);
+	return 0;
+}
+IRCFUNC(m_432)
+{
+	Cliente *bl;
+	if ((bl = BuscaCliente(parv[2])))
+		DesconectaBot(bl, parv[3]);
 	return 0;
 }
 int TipoTKL(char tipo)

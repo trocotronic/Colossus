@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.7 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.8 2006-12-03 20:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,6 +10,8 @@
 #include <mysql/mysql.h>
 #endif
 #include "ircd.h"
+#include <pthread.h>
+extern MODVAR pthread_mutex_t mutex;
 
 MYSQL *mysql = NULL;
 SQLRes Query(const char *);

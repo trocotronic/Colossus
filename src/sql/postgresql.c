@@ -1,10 +1,12 @@
 /*
- * $Id: postgresql.c,v 1.7 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.8 2006-12-03 20:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include <libpq-fe.h>
 #include "ircd.h"
+#include <pthread.h>
+extern MODVAR pthread_mutex_t mutex;
 
 PGconn *postgres = NULL;
 SQLRes Query(const char *);

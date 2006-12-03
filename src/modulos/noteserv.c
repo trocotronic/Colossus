@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.2 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -21,6 +21,9 @@ BOTFUNCHELP(ESHVer);
 void ESSet(Conf *, Modulo *);
 int ESTest(Conf *, int *);
 int ESSigSQL		();
+int CompruebaNotas();
+
+Timer *timercomp = NULL;
 
 static bCom noteserv_coms[] = {
 	{ "entrada" , ESEntrada , N1 , "Inserta una entrada en tu agenda." , ESHEntrada } ,
@@ -455,6 +458,7 @@ int MOD_CARGA(NoteServ)(Modulo *mod)
 int MOD_DESCARGA(NoteServ)()
 {
 	BorraSenyal(SIGN_SQL, ESSigSQL);
+	ApagaCrono(timercomp);
 	BotUnset(noteserv);
 	return 0;
 }
@@ -493,6 +497,7 @@ void ESSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, noteserv_coms);
 	InsertaSenyal(SIGN_SQL, ESSigSQL);
+	timercomp = IniciaCrono(0, 60, CompruebaNotas, NULL);
 	BotSet(noteserv);
 }
 time_t CreaTime(int dia, int mes, int ano, int hora, int min)
@@ -641,11 +646,11 @@ BOTFUNC(ESVer)
 			strftime(buf, sizeof(buf), "\00312%a\003,\00312 %d %b %Y\003", ttm);
 			Responde(cl, CLI(noteserv), "%s (%s)", buf, signo);
 			Responde(cl, CLI(noteserv), "%s", santos[ttm->tm_yday]);
-			Responde(cl, CLI(noteserv), "");
+			Responde(cl, CLI(noteserv), " ");
 			m = 1;
 		}
 		if (ttm->tm_hour && ttm->tm_min)
-			Responde(cl, CLI(noteserv), "\00312%02i:%02i\003 - %s", ttm->tm_mday, ttm->tm_mon+1, ttm->tm_year+1900, ttm->tm_hour, ttm->tm_min, row[3]);
+			Responde(cl, CLI(noteserv), "\00312%02i:%02i\003 - %s", ttm->tm_hour, ttm->tm_min, row[3]);
 		else
 			Responde(cl, CLI(noteserv), "- %s", row[3]);
 	}
@@ -666,5 +671,41 @@ int ESSigSQL()
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, ES_SQL);
 	}
 	SQLCargaTablas();
+	return 0;
+}
+int CompruebaNotas()
+{
+	time_t t = time(0), tr;
+	SQLRes res;
+	SQLRow row;
+	Cliente *al;
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE fecha < %lu", PREFIJO, ES_SQL, t)))
+	{
+		while ((row = SQLFetchRow(res)))
+		{
+			if ((al = BuscaCliente(row[0])))
+			{
+				Responde(al, CLI(noteserv), "Tienes una tarea pendiente", buf);
+				Responde(al, CLI(noteserv), "- %s", row[3]);
+			}
+		}
+		SQLFreeRes(res);
+	}
+	SQLQuery("DELETE FROM %s%s WHERE fecha < %lu", PREFIJO, ES_SQL, t);
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE (avisar < %lu AND avisar > 0)", PREFIJO, ES_SQL, t)))
+	{
+		while ((row = SQLFetchRow(res)))
+		{
+			if ((al = BuscaCliente(row[0])))
+			{
+				tr = atoi(row[1]);
+				strftime(buf, sizeof(buf), "%a, %d %b %Y %H:%M", localtime(&tr));
+				Responde(al, CLI(noteserv), "Recordatorio: tienes una tarea para el \00312%s", buf);
+				Responde(al, CLI(noteserv), "- %s", row[3]);
+			}
+		}
+		SQLFreeRes(res);
+	}
+	SQLQuery("UPDATE %s%s SET avisar=0 WHERE (avisar < %lu AND avisar > 0)", PREFIJO, ES_SQL, t);
 	return 0;
 }

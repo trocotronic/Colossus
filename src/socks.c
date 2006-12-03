@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.23 2006-11-01 11:51:21 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.24 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -19,7 +19,7 @@ void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
 void LiberaSock(Sock *);
-//#define DEBUG
+#define DEBUG
 
 /*
  * resolv
@@ -844,14 +844,11 @@ int LeeSocks() /* devuelve los bytes leídos */
 	{
 		if (!(sck = ListaSocks.socket[i]))
 			continue;
-		if (EsCerr(sck))
-		{
-			LiberaSock(sck);
-			continue;
-		}
 		if (sck->pres >= 0)
 		{
-			if ((EsConn(sck) && ((time_t)(sck->inicio + sck->contout) < ahora)) || (EsOk(sck) && sck->recvtout && (time_t)(sck->recibido + sck->recvtout) < ahora))
+			if (EsCerr(sck))
+				LiberaSock(sck);
+			else if ((EsConn(sck) && ((time_t)(sck->inicio + sck->contout) < ahora)) || (EsOk(sck) && sck->recvtout && (time_t)(sck->recibido + sck->recvtout) < ahora))
 				SockClose(sck, LOCAL);
 			else
 			{
@@ -896,11 +893,6 @@ int LeeSocks() /* devuelve los bytes leídos */
 			break;
 		if (!(SockActual = ListaSocks.socket[i]))
 			continue;
-		if (EsCerr(SockActual))
-		{
-			LiberaSock(SockActual);
-			continue;
-		}
 		if (FD_ISSET(SockActual->pres, &write_set))
 		{
 			int err = 0;

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.88 2006-11-01 12:16:16 Trocotronic Exp $ 
+ * $Id: main.c,v 1.89 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,6 +24,7 @@
 #include <net/if.h>
 #include <dlfcn.h>
 #endif
+#include <pthread.h>
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -63,8 +64,12 @@ struct Signatura
  !*/
 int refrescando = 0;
 
+#ifdef _WIN32
+LPCSTR cmdLine;
+#else
+char **margv;
+#endif
 
-MODVAR char **margv;
 /*!
  * @desc: Hora timestamp en la que se inició el programa.
  * @cat: Programa
@@ -419,7 +424,8 @@ VOIDSIG Refresca()
 	DescargaModulos();
 	DescargaProtocolo();
 	DescargaConfiguracion();
-	ParseaConfiguracion(CPATH, &config, 1);
+	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
+		CierraColossus(-1);
 	DistribuyeConfiguracion(&config);
 	if (!SockIrcd)
 		DistribuyeMe(&me, &SockIrcd);
@@ -449,7 +455,7 @@ VOIDSIG Reinicia()
 	CierraTodo();
 #ifdef _WIN32
 	CleanUp();
-	execv(margv[0], margv);
+	WinExec(cmdLine, SW_SHOWDEFAULT);
 #else
 	execv(SPATH, margv);
 #endif
@@ -464,9 +470,6 @@ VOIDSIG Reinicia()
 VOIDSIG CierraColossus(int excode)
 {
 	CierraTodo();
-#ifdef _WIN32
-	CleanUp();
-#endif
 	exit(excode);
 }
 #ifdef _WIN32
@@ -606,7 +609,11 @@ int main(int argc, char *argv[])
 	}
 	*/
 	//IniciaXML();
+#ifdef _WIN32
+	cmdLine = GetCommandLine();
+#else
 	margv = argv;
+#endif
 	CargaCache();
 	Senyal(SIGN_STARTUP);
 	Senyal(SIGN_SQL);
@@ -1889,7 +1896,6 @@ char *BuscaOptItem(int opt, Opts *lista)
 	}
 	return NULL;
 }
-
 int CreaClave(char *clave)
 {
 	int ret = 0;
@@ -1913,29 +1919,24 @@ u_int BytesNeededToDecode(u_int cb, u_int nEqualSigns)
 {
 	if(cb % 4 || !cb || nEqualSigns > 2)
 		return 0;
-	
 	return (cb >> 2) * 3 - nEqualSigns;
 }
 u_int CountEqualSigns(char *lpInput)
 {
 	int len, i;
 	u_int uEqualSigns = 0;
-
 	if(BadPtr(lpInput))
 		return 0xFFFFFFFF;
-
 	len = strlen(lpInput);
-	
-	for(i = len; i > 0; i--) {
+	for(i = len; i > 0; i--) 
+	{
 		if(lpInput[i - 1] == '=')
 			uEqualSigns++;
 		else
 			break;
-		
 		if(uEqualSigns > 2)
 			return 0xFFFFFFFF;
 	}
-	
 	return uEqualSigns;
 }
 char *Encripta(char *cadena, char *clave)
@@ -1998,16 +1999,21 @@ SOCKFUNC(MotdLee)
 	if (*data == '#')
 	{
 		int ver;
+		char *tok;
 		data++;
-		if (EsIp(data))
-			ircstrdup(me.ip, data);
-		else if ((ver = atoi(data)))
+		strlcpy(tokbuf, data, sizeof(tokbuf));
+		for (tok = strtok(tokbuf, "#"); tok; tok = strtok(NULL, "#"))
 		{
-			if (COLOSSUS_VERINT < ver)
-				Info("Existe una versión más nueva de Colossus. Descárguela de www.redyc.com");
+			if (EsIp(tok))
+				ircstrdup(me.ip, tok);
+			else if ((ver = atoi(tok)))
+			{
+				if (COLOSSUS_VERINT < ver)
+					Info("Existe una versión más nueva de Colossus. Descárguela de www.redyc.com");
+			}
+			else
+				Info(tok);
 		}
-		else
-			Info(data);
 	}
 	return 0;
 }
@@ -2272,7 +2278,7 @@ typedef struct _ecmd
 	void *v;
 }ECmd;
 #ifdef _WIN32
-bool CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
+BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
 { 
 	PROCESS_INFORMATION piProcInfo; 
 	STARTUPINFO siStartInfo;

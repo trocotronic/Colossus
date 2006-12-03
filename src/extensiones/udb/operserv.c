@@ -19,6 +19,10 @@ BOTFUNC(OSBackup);
 BOTFUNCHELP(OSHBackup);
 BOTFUNC(OSRestaurar);
 BOTFUNCHELP(OSHRestaurar);
+BOTFUNC(OSPassFlood);
+BOTFUNCHELP(OSHPassFlood);
+BOTFUNC(OSServerDebug);
+BOTFUNCHELP(OSHServerDebug);
 EXTFUNC(OSOpers);
 
 #define NS_OPT_UDB 0x80
@@ -30,6 +34,8 @@ bCom operserv_coms[] = {
 	{ "optimizar" , OSOptimizar , N4 , "Optimiza la base de datos (BDD)." , OSHOptimizar } ,
 	{ "backup" , OSBackup , N4 , "Realiza una copia de seguridad de los bloques (BDD)." , OSHBackup } ,
 	{ "restaurar" , OSRestaurar , N4 , "Restaura una copia de seguridad realizada con el comando \00312backup\003." , OSHRestaurar } ,
+	{ "pass-flood" , OSPassFlood , N4 , "Establece el número de intentos para poner una contraseña vía /nick nick:pass" , OSHPassFlood } ,
+	{ "server-debug" , OSServerDebug , N4 , "Establece un servidor como debug" , OSHServerDebug } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -102,6 +108,26 @@ BOTFUNCHELP(OSHRestaurar)
 	Responde(cl, CLI(operserv), "Si no se especifican parámetros, listará todas las copias de seguridad que estén disponibles.");
 	Responde(cl, CLI(operserv), " ");
 	Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR [punto_restauración]");
+	return 0;
+}
+BOTFUNCHELP(OSHPassFlood)
+{
+	Responde(cl, CLI(operserv), "Establece el número de intentos para intentar una contraseña vía /nick nick:pass");
+	Responde(cl, CLI(operserv), "El formato que se usa es <v>:<s>, donde <v> es el número de intentos y <s> el número de segundos.");
+	Responde(cl, CLI(operserv), "Por ejemplo, un valor de 2:60 significaría que el usuario puede usar /nick nick:pass 2 veces cada 60 segundos");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312PASS-FLOOD <v>:<s>");
+	return 0;
+}
+BOTFUNCHELP(OSHServerDebug)
+{
+	Responde(cl, CLI(operserv), "Fija un servidor como servidor debug.");
+	Responde(cl, CLI(operserv), "Este servidor recibirá todos los cambios de modos realizados por UDB sobre un usuario.");
+	Responde(cl, CLI(operserv), "En general no necesitará esta opción, salvo que decida conectar un servidor no-UDB y quiera procesar este tipo de datos.");
+	Responde(cl, CLI(operserv), "Por ejemplo, si quiere unir a la red un servidor de estadísticas, puede serle útil esta opción.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Si utiliza este comando sobre un servidor que ya es debug, se le quitará esta opción. Si no es debug, se le añadirá.");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SERVER-DEBUG nombre.del.servidor");
 	return 0;
 }
 BOTFUNC(OSModos)
@@ -262,6 +288,62 @@ BOTFUNC(OSRestaurar)
 		}
 	}
 	Responde(cl, CLI(operserv), "El punto de restauración \00312%s %s\003 se ha restaurado con éxito", param[1], param[2]);
+	return 0;
+}
+BOTFUNC(OSPassFlood)
+{
+	int v, s;
+	if (params < 2)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "<v>:<s>");
+		return 1;
+	}
+	if (sscanf(param[1], "%i:%i", &v, &s) != 2)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_SNTX, fc->com, "PASS-FLOOD <v>:<s>. <v> y <s> deben ser segundos");
+		return 1;
+	}
+	if (v < 1 || v > 60)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "El número de intentos <v> debe estar entre 1-60 intentos");
+		return 1;
+	}
+	if (s < 2 || s > 120)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "El número de segundos <s> debe estar entre 2-120 segundos");
+		return 1;
+	}
+	PropagaRegistro("S::F %i:%i", v, s);
+	Responde(cl, CLI(operserv), "Se ha fijado el pass-flood en \00312%s", param[1]);
+	return 0;
+}
+BOTFUNC(OSServerDebug)
+{
+	Udb *reg, *bloq;
+	u_long val = 0L;
+	if (params < 2)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nombre.del.servidor");
+		return 1;
+	}
+	if ((reg = BuscaBloque(param[1], UDB_LINKS)))
+	{
+		if ((bloq = BuscaBloque(L_OPT, reg)))
+			val = bloq->data_long;
+	}
+	if (val & L_OPT_DEBG)
+	{
+		if (val & ~L_OPT_DEBG)
+			PropagaRegistro("L::%s::O %c%lu", param[1], CHAR_NUM, val & ~L_OPT_DEBG);
+		else
+			PropagaRegistro("L::%s::O", param[1]);
+		Responde(cl, CLI(operserv), "Se ha quitado el servidor \00312%s\003 como servidor debug", param[1]);
+	}
+	else
+	{
+		PropagaRegistro("L::%s::O %c%lu", param[1], CHAR_NUM, val | C_OPT_PBAN);
+		Responde(cl, CLI(operserv), "Se ha añadido el servidor \00312%s\003 como servidor debug", param[1]);
+	}
 	return 0;
 }
 EXTFUNC(OSOpers)

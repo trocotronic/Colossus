@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.16 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.17 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -103,6 +103,7 @@ struct Conf_httpd
 	int puerto;
 	char *url;
 	int max_age;
+	char *php;
 };
 
 #define LOG_ERROR 0x1

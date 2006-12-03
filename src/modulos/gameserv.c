@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.2 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,7 +13,6 @@ GameServ *gameserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, gameserv->hmod, NULL)
 
 extern Kyrhos *kyrhos;
-
 
 static bCom gameserv_coms[] = {
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
@@ -125,7 +124,7 @@ void GSSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, gameserv_coms);
 	InsertaSenyal(SIGN_EOS, GSSigEOS);
-	InsertaSenyal(SIGN_EOS, GSSigSQL);
+	InsertaSenyal(SIGN_SQL, GSSigSQL);
 	InsertaSenyal(SIGN_PMSG, GSSigPMsg);
 	BotSet(gameserv);
 }

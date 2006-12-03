@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.7 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.8 2006-12-03 20:30:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -200,7 +200,8 @@ void SSSet(Conf *config, Modulo *mod)
 		ProcesaComsMod(NULL, mod, smsserv_coms);
 	InsertaSenyal(SIGN_SQL, SSSigSQL);
 	InsertaSenyal(SIGN_QUIT, SSSigQuit);
-	bzero(cola, sizeof(DataSock) * MAX_COLA);
+	for (i = 0; i < MAX_COLA; i++)
+		cola[i] = NULL;
 	BotSet(smsserv);
 }
 SOCKFUNC(SmsAbre)

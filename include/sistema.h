@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.17 2006-11-01 11:43:18 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.18 2006-12-03 20:30:06 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -63,7 +63,15 @@ typedef DIR * Directorio;
 #define P_ECONNRESET	ECONNRESET
 #define P_ENOTCONN ENOTCONN
 #define P_EMSGSIZE EMSGSIZE
-#else
+
+#if defined(_MSC_VER) && (_MSV_VER >= 1400)
+	#define open _open
+	#define getpid _getpid
+	#define write _write
+	#define close _close
+	#define getcwd _getcwd
+#endif
+#else /* _WIN32 */
 #define NETDB_INTERNAL -1
 #define NETDB_SUCCESS 0 
 
