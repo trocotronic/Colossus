@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.21 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.22 2006-12-23 01:00:23 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -437,11 +437,11 @@ Alias *CreaAlias(char *formato, char *sintaxis, Modulo *mod)
 	char *c;
 	int i;
 	alias = BMalloc(Alias);
-	for (i = 0, alias->formato[i++] = c = strdup(formato); c = strchr(c, ' '); alias->formato[i++] = c)
+	for (i = 0, alias->formato[i++] = c = strdup(formato); (c = strchr(c, ' ')); alias->formato[i++] = c)
 		*c++ = '\0';
 	alias->formato[i] = NULL;
 	alias->crc = Crc32(alias->formato[0], strlen(alias->formato[0]));
-	for (i = 0, alias->sintaxis[i++] = c = strdup(sintaxis); c = strchr(c, ' '); alias->sintaxis[i++] = c)
+	for (i = 0, alias->sintaxis[i++] = c = strdup(sintaxis); (c = strchr(c, ' ')); alias->sintaxis[i++] = c)
 		*c++ = '\0';
 	alias->sintaxis[i] = NULL;
 	AddItem(alias, mod->aliases);
