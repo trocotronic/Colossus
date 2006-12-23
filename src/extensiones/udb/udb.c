@@ -62,6 +62,9 @@ extern void EntraCliente(Cliente *, char *);
 #ifdef _WIN32
 long base64dec(char *);
 char *base64enc(long);
+#else
+extern long base64dec(char *);
+extern char *base64enc(long);
 #endif
 #define NOSERVDEOP 0x40
 IRCFUNC(*sjoin);
