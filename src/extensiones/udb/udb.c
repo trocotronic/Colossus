@@ -71,6 +71,7 @@ IRCFUNC(*sjoin);
 IRCFUNC(m_sjoin_U);
 int opts = 0;
 Timer *timeropt = NULL, *timerbck = NULL;
+int *(*p_svsmode_r)(Cliente *, Cliente *, char *, ...);
 #define UDB_AUTOOPT 0x1
 #define UDB_AUTOBCK 0x2
 
@@ -125,7 +126,8 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 		timeropt = IniciaCrono(0, 86400, UdbOptimiza, NULL);
 	if (opts & UDB_AUTOBCK)
 		timerbck = IniciaCrono(0, 86400, UdbBackup, NULL);
-	protocolo->comandos[P_MODO_USUARIO_REMOTO] = p_svsmode_U;
+	p_svsmode_r = protocolo->comandos[P_MODO_USUARIO_REMOTO];
+	protocolo->comandos[P_MODO_USUARIO_REMOTO] = (int(*)())p_svsmode_U;
 	InsertaComando(MSG_DB, TOK_DB, m_db, INI, 5);
 	InsertaComando(MSG_DBQ, TOK_DBQ, m_dbq, INI, 2);
 	InsertaComando(MSG_EOS, TOK_EOS, m_eos_U, INI, MAXPARA);
@@ -184,6 +186,7 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 	BorraSenyal(SIGN_POST_NICK, SigPostNick_U);
 	BorraSenyal(SIGN_SYNCH, SigSynch);
 	BorraSenyal(SIGN_SOCKOPEN, SigSockOpen);
+	protocolo->comandos[P_MODO_USUARIO_REMOTO] = (int(*)())p_svsmode_r;
 	opts = 0;
 	return 0;
 }

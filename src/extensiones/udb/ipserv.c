@@ -6,6 +6,9 @@
 #include "modulos/ipserv.h"
 #include "modulos/nickserv.h"
 #include "bdd.h"
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
 
 #ifdef _WIN32
 IpServ *ipserv = NULL;
