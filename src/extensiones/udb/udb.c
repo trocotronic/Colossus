@@ -59,8 +59,10 @@ u_long UMODE_SHOWIP;
 extern u_long UMODE_SERVICES;
 extern void ProcesaModo(Cliente *, Canal *, char **, int);
 extern void EntraCliente(Cliente *, char *);
+#ifdef _WIN32
 long base64dec(char *);
 char *base64enc(long);
+#endif
 #define NOSERVDEOP 0x40
 IRCFUNC(*sjoin);
 IRCFUNC(m_sjoin_U);
@@ -961,6 +963,7 @@ int RestauraSeguridad(UDBloq *bloq, char *nombre)
 	return 0;
 }
 #endif
+#ifdef _WIN32
 /* ':' and '#' and '&' and '+' and '@' must never be in this table. */
 /* these tables must NEVER CHANGE! >) */
 char int6_to_base64_map[] = {
@@ -1050,3 +1053,4 @@ long base64dec(char *b64)
 	else
 		return 0;
 }
+#endif

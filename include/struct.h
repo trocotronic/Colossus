@@ -1,25 +1,26 @@
 /*
- * $Id: struct.h,v 1.66 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.67 2006-12-23 01:07:00 Trocotronic Exp $ 
  */
 
 #include "setup.h"
 #ifdef _WIN32
-#include <Winsock.h>
+#include <winsock.h>
 #include <direct.h>
 #include <sys/timeb.h>
 #include <process.h>
 #else
 #define DWORD int
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dirent.h>
+#include <sys/time.h>
 #ifdef UNISTDH
 #include <unistd.h>
 #endif
-#include <sys/time.h>
 #endif /* _WIN32 */
 #ifdef FCNTLH
 #include <fcntl.h>
