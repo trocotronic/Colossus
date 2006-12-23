@@ -71,7 +71,7 @@ IRCFUNC(*sjoin);
 IRCFUNC(m_sjoin_U);
 int opts = 0;
 Timer *timeropt = NULL, *timerbck = NULL;
-int *(*p_svsmode_r)(Cliente *, Cliente *, char *, ...);
+int (*p_svsmode_r)(Cliente *, Cliente *, char *, ...);
 #define UDB_AUTOOPT 0x1
 #define UDB_AUTOBCK 0x2
 
