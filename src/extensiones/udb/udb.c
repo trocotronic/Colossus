@@ -126,7 +126,7 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 		timeropt = IniciaCrono(0, 86400, UdbOptimiza, NULL);
 	if (opts & UDB_AUTOBCK)
 		timerbck = IniciaCrono(0, 86400, UdbBackup, NULL);
-	p_svsmode_r = protocolo->comandos[P_MODO_USUARIO_REMOTO];
+	p_svsmode_r = (int(*)(Cliente *, Cliente *, char *, ...))protocolo->comandos[P_MODO_USUARIO_REMOTO];
 	protocolo->comandos[P_MODO_USUARIO_REMOTO] = (int(*)())p_svsmode_U;
 	InsertaComando(MSG_DB, TOK_DB, m_db, INI, 5);
 	InsertaComando(MSG_DBQ, TOK_DBQ, m_dbq, INI, 2);
