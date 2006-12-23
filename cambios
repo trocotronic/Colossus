@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.45 2006-12-03 20:30:05 Trocotronic Exp $
+ * $Id: cambios,v 1.46 2006-12-23 00:32:23 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -418,3 +418,14 @@
 251106474 - Añadido el comando CACHE a OperServ para eliminar la cache.
 221106475 - Arreglado un fallo al leer el MOTD por causa del servidor externo.
 021206476 - Arreglado un fallo en el gline de OperServ.
+031206477 - Añadida la función PASS-FLOOD en OperServ.
+031206478 - Añadida la función SERVER-DEBUG en OperServ.
+031206479 - Arreglado un fallo al compilar sin soporte SSL.
+061206480 - Añadida la directriz enlace para escuchar a una ip de enlace.
+101206481 - Arreglado un fallo al no poder escribir en el hash si la carpeta no tiene permisos.
+111206482 - Arreglado un fallo con el no_server_deop.
+211206483 - Arreglado un fallo al volcar un hash.
+211206484 - Arreglado un fallo al cargar un bloque.
+221206485 - Añadida la función CLIENTES en OperServ.
+221206486 - Añadida la función SETUDB en OperServ para gestionar el pass-flood, el server-debug y clientes.
+221206487 - *** Quintugésima release pública: 1.7 ***

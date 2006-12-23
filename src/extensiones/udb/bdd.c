@@ -5,6 +5,12 @@
 #include <sys/stat.h>
 #ifdef _WIN32
 #include <io.h>
+#define read _read
+#define write _write
+#define open _open
+#define close _close
+#define fsync _commit
+#define ftruncate _chsize
 #else
 #include <sys/io.h>
 #define O_BINARY 0x0
@@ -16,16 +22,10 @@ UDBloq *ultimo = NULL;
 UDBloq *N = NULL, *C= NULL, *S = NULL, *I = NULL, *L = NULL;
 #define DaUdb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 u_int BDD_TOTAL = 0;
-int dataver = 0;
-FILE *fcrc = NULL;
 #define MAX_HASH 2048
 
-void SetDataVer(u_int);
+int SetDataVer(u_int);
 int CogeDataVer();
-int ActualizaHash(UDBloq *);
-UDBloq *CogeDeId(u_int);
-int CargaBloques();
-int TruncaBloque(Cliente *, UDBloq *, u_long);
 
 Opts NivelesBDD[] = {
 	{ 0x1 , "OPER" } ,
@@ -35,7 +35,7 @@ Opts NivelesBDD[] = {
 };
 UDBloq *AltaBloque(char letra, char *ruta, Udb **dest)
 {
-	int id = 0;
+	u_int id = 0;
 	UDBloq *reg;
 	if (ultimo)
 		id = ultimo->id + 1;
@@ -72,7 +72,7 @@ void VaciaHash(int id)
 void AltaHash()
 {
 	UDBloq *reg;
-	int id;
+	u_int id;
 	hash = (Udb ***)Malloc(sizeof(Udb **) * BDD_TOTAL);
 	for (reg = ultimo; reg; reg = reg->sig)
 	{
@@ -236,7 +236,7 @@ int ActualizaDataVer2()
 		unlink(p1);
 		rename(p2, p1);
 		unlink(p2);
-		ActualizaHash(CogeDeId(i));
+		//ActualizaHash(CogeDeId(i));
 	}
 	return 0;
 }
@@ -287,21 +287,20 @@ int ActualizaDataVer3()
 	unlink(DB_DIR "nicks.udb");
 	rename(DB_DIR "temporal", DB_DIR "nicks.udb");
 	unlink(DB_DIR "temporal");
-	ActualizaHash(N);
+	//ActualizaHash(N);
 	return 0;
 }
 int ActualizaDataVer4()
 {
-	ActualizaHash(N);
-	ActualizaHash(C);
-	ActualizaHash(I);
-	ActualizaHash(S);
+	//ActualizaHash(N);
+	//ActualizaHash(C);
+	//ActualizaHash(I);
+	//ActualizaHash(S);
 	return 0;
 }
-void IniciaUDB()
+int IniciaUDB()
 {
-	FILE *fh;
-	int ver;
+	int dataver;
 	mkdir(DB_DIR, 0600);
 	mkdir(DB_DIR_BCK, 0600);
 	if (!S)
@@ -315,12 +314,7 @@ void IniciaUDB()
 	if (!L)
 		L = AltaBloque('L', DB_DIR "links.udb", &UDB_LINKS);
 	AltaHash();
-	if ((fh = fopen(DB_DIR "crcs", "ab")))
-	{
-		fclose(fh);
-		fcrc = fopen(DB_DIR "crcs", "r+b");
-	}
-	switch ((ver = CogeDataVer()))
+	switch ((dataver = CogeDataVer()))
 	{
 		case 0:
 		case 1:
@@ -330,101 +324,79 @@ void IniciaUDB()
 		case 3:
 			ActualizaDataVer4();
 	}
-	SetDataVer(4);
+	SetDataVer(5);
+	return 1;
 }
 u_long ObtieneHash(UDBloq *bloq)
 {
-	int fp;
 	char *par;
 	struct stat inode;
-	if ((fp = open(bloq->path, O_RDONLY|O_BINARY|O_CREAT, S_IREAD|S_IWRITE)) == -1)
+	u_long crc32 = 0L;
+	size_t t;
+	if (fstat(bloq->fd, &inode) < 0)
 		return 0L;
-	if (fstat(fp, &inode) == -1)
-	{
-		close(fp);
+	t = inode.st_size - INI_DATA;
+	if (t <= 0)
 		return 0L;
-	}
-	par = Malloc(inode.st_size + 1);
-	*(par + inode.st_size) = '\0';
-	if (read(fp, par, inode.st_size) == inode.st_size)
-	{
-		bloq->lof = inode.st_size;
-		bloq->crc32 = Crc32(par, inode.st_size);
-	}
-	close(fp);
+	par = Malloc(t);
+	lseek(bloq->fd, INI_DATA, SEEK_SET);
+	if (read(bloq->fd, par, t) == t)
+		crc32 = Crc32(par, t);
 	Free(par);
-	return bloq->crc32;
+	return crc32;
 }
-u_long CogeHash(u_int id)
+int ActualizaHash(UDBloq *bloq)
 {
-	u_long hash = 0;
-	char lee[9];
-	if (fseek(fcrc, 8 * id, SEEK_SET))
-		return 0L;
-	bzero(lee, 9);
-	fread(lee, 1, 8, fcrc);
-	if (!sscanf(lee, "%lX", &hash))
-		return 0L;
-	return hash;
+	bloq->crc32 = ObtieneHash(bloq);
+	if (lseek(bloq->fd, INI_HASH, SEEK_SET) < 0)
+		return 0;
+	if (write(bloq->fd, &bloq->crc32, sizeof(bloq->crc32)) < 0)
+		return 0;
+	fsync(bloq->fd);
+	return 1;
 }
 int CogeDataVer()
 {
-	if (!dataver)
+	FILE *fcrc;
+	int dataver;
+	if ((fcrc = fopen(DB_DIR "crcs", "r+b")))
 	{
 		char ver[3];
 		if (fseek(fcrc, 72, SEEK_SET))
+		{
+			fclose(fcrc);
 			return 0;
+		}
 		bzero(ver, 3);
 		fread(ver, 1, 2, fcrc);
+		fclose(fcrc);
+		unlink(DB_DIR "crcs");
 		if (!sscanf(ver, "%X", &dataver))
 			return 0;
 		return dataver;
 	}
-	return dataver;
+	return -1;
 }
-void SetDataVer(u_int v)
+int SetDataVer(u_int v)
 {
-	char ver[3];
-	bzero(ver, 3);
-	if (fseek(fcrc, 72, SEEK_SET))
-		return;
-	ircsprintf(ver, "%X", v);
-	fwrite(ver, 1, 2, fcrc);
-	fflush(fcrc);
-}
-int ActualizaHash(UDBloq *bloq)
-{
-	char lee[9];
-	u_long lo;
-	bzero(lee, 9);
-	if (fseek(fcrc, 8 * bloq->id, SEEK_SET))
-		return -1;
-	lo = ObtieneHash(bloq);
-	ircsprintf(lee, "%lX", lo);
-	fwrite(lee, 1, 8, fcrc);
-	fflush(fcrc);
-	return 0;
-}
-time_t LeeGMT(u_int id)
-{
-	char lee[11];
-	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * id, SEEK_SET))
-		return 0L;
-	bzero(lee, 11);
-	fread(lee, 1, 10, fcrc);
-	return atoul(lee);
+	UDBloq *bloq;
+	for (bloq = ultimo; bloq; bloq = bloq->sig)
+	{
+		lseek(bloq->fd, INI_VER, SEEK_SET);
+		if (write(bloq->fd, &v, sizeof(v)) < 0)
+			return 0;
+		fsync(bloq->fd);
+	}
+	return 1;
 }
 int ActualizaGMT(UDBloq *bloq, time_t gm)
 {
-	char lee[11];
 	time_t hora = gm ? gm : time(0);
-	bzero(lee, 11);
-	if (fseek(fcrc, BDD_TOTAL * 8 + 10 * bloq->id, SEEK_SET))
-		return -1;
-	ircsprintf(lee, "%lu", hora);
-	fwrite(lee, 1, 10, fcrc);
-	fflush(fcrc);
-	bloq->gmt = gm;
+	lseek(bloq->fd, INI_GMT, SEEK_SET);
+	if (write(bloq->fd, &hora, sizeof(hora)) < 0)
+		return 0;
+	fsync(bloq->fd);
+	bloq->gmt = hora;
 	return 0;
 }
 /* devuelve el puntero a todo el bloque a partir de su id o letra */
@@ -525,17 +497,16 @@ int GuardaEnArchivo(Udb *reg, u_int tipo)
 {
 	char form[BUFSIZE];
 	UDBloq *bloq;
-	FILE *fp;
-	bloq = CogeDeId(tipo);
+	if (!(bloq = CogeDeId(tipo)))
+		return 0;
 	form[0] = '\0';
 	DaFormato(form, reg, sizeof(form));
-	strlcat(form, "\n", sizeof(form));
-	if (!(fp = fopen(bloq->path, "ab")))
-		return -1;
-	fputs(form, fp);
-	fclose(fp);
+	strcat(form, "\n");
+	lseek(bloq->fd, 0, SEEK_END);
+	if (write(bloq->fd, form, sizeof(char) * strlen(form)) < 0)
+		return 0;
 	ActualizaHash(bloq);
-	return 0;
+	return 1;
 }
 /* guarda en un archivo un registro pero hacia abajo */
 int GuardaEnArchivoInv(Udb *reg, u_int tipo)
@@ -599,8 +570,9 @@ Udb *BorraRegistro(u_int tipo, Udb *reg, int archivo)
 	reg->down = down;
 	if (!reg->up->up)
 	{
-		UDBloq *root = CogeDeId(tipo);
-		root->regs--;
+		UDBloq *root;
+		if ((root = CogeDeId(tipo)))
+			root->regs--;
 	}
 	LiberaMemoriaUdb(tipo, reg);
 	if (!up->down && up->up)
@@ -617,8 +589,9 @@ Udb *InsertaRegistro(u_int tipo, Udb *bloque, char *item, char *data_char, u_lon
 		reg = CreaRegistro(bloque);
 		if (!bloque->up)
 		{
-			UDBloq *root = CogeDeId(tipo);
-			root->regs++;
+			UDBloq *root;
+			if ((root = CogeDeId(tipo)))
+				root->regs++;
 		}
 		reg->id = bloque->id;
 		/*if (*(item+1) == '\0')
@@ -696,12 +669,10 @@ char *CifraIpTEA_U(char *ipreal)
 	}
 	return cifrada;
 }	
-int ParseaLinea(u_int tipo, char *cur, int archivo)
+int ParseaLinea(UDBloq *root, char *cur, int archivo)
 {
 	char *ds, *cop, *sp = NULL;
 	Udb *bloq;
-	UDBloq *root;
-	root = CogeDeId(tipo);
 	cop = cur = strdup(cur);
 	bloq = root->arbol;
 	sp = strchr(cur, ' ');
@@ -713,7 +684,7 @@ int ParseaLinea(u_int tipo, char *cur, int archivo)
 		{
 			*ds++ = '\0';
 			if (*cur)
-				bloq = InsertaRegistro(tipo, bloq, cur, NULL, 0, archivo);
+				bloq = InsertaRegistro(bloq->id, bloq, cur, NULL, 0, archivo);
 		}
 		else /* ya no son :: */
 			break;
@@ -725,63 +696,115 @@ int ParseaLinea(u_int tipo, char *cur, int archivo)
 		if (BadPtr(sp))
 			goto borra;
 		if (*sp == CHAR_NUM)
-			bloq = InsertaRegistro(tipo, bloq, cur, NULL, atoul(++sp), archivo);
+			bloq = InsertaRegistro(bloq->id, bloq, cur, NULL, atoul(++sp), archivo);
 		else
-			bloq = InsertaRegistro(tipo, bloq, cur, sp, 0, archivo);
+			bloq = InsertaRegistro(bloq->id, bloq, cur, sp, 0, archivo);
 	}
 	else
 	{
 		borra:
 		if ((bloq = BuscaBloque(cur, bloq)))
-			bloq = BorraRegistro(tipo, bloq, archivo);
+			bloq = BorraRegistro(bloq->id, bloq, archivo);
 	}
 	Free(cop);
 	if (bloq)
 		return 0;
 	return 1;
 }
-void CargaBloque(u_int tipo)
+int FijaCabecera(UDBloq *bloq)
 {
-	UDBloq *root;
-	u_long lee, obtiene, trunca = 0L, bytes = 0L;
-	char linea[BUFSIZE], *c;
-	FILE *fp;
-	root = CogeDeId(tipo);
-	lee = CogeHash(tipo);
-	obtiene = ObtieneHash(root);
-	if (lee != obtiene)
+	int fd;
+	char path[BUFSIZE];
+	size_t len = 0;
+	u_long hash = 0L, gmt = 0L;
+	u_int ver = 1;
+	ircsprintf(path, "%s.tmp", bloq->path);
+	if ((fd = open(path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
+		return 0;
+	if (write(fd, &bloq->id, sizeof(bloq->id)) < 0)
+		return 0;
+	if (write(fd, &ver, sizeof(ver)) < 0)
+		return 0;
+	if (write(fd, &hash, sizeof(hash)) < 0)
+		return 0;
+	if (write(fd, &gmt, sizeof(gmt)) < 0)
+		return 0;
+	lseek(bloq->fd, 0, SEEK_SET);
+	while ((len = read(bloq->fd, buf, sizeof(buf))) > 0)
+		write(fd, buf, len);
+	fsync(bloq->fd);
+	close(bloq->fd);
+	close(fd);
+	if (unlink(bloq->path) < 0)
+		return 0;
+	if (rename(path, bloq->path) < 0)
+		return 0;
+	if ((bloq->fd = open(bloq->path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
+		return 0;
+	ActualizaHash(bloq);
+	return 1;
+}
+int CargaCabecera(UDBloq *bloq)
+{
+	u_int id;
+	struct stat inode;
+	if ((bloq->fd = open(bloq->path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
+		return 0;
+	if (read(bloq->fd, &id, sizeof(id)) < 0)
+		return 0;
+	if (id != bloq->id && !FijaCabecera(bloq))
+		return 0;
+	lseek(bloq->fd, INI_VER, SEEK_SET);
+	if (read(bloq->fd, &bloq->ver, sizeof(bloq->ver)) < 0)
+		return 0;
+	if (read(bloq->fd, &bloq->crc32, sizeof(bloq->crc32)) < 0)
+		return 0;
+	if (read(bloq->fd, &bloq->gmt, sizeof(bloq->gmt)) < 0)
+		return 0;
+	lseek(bloq->fd, 0, SEEK_SET);
+	if (fstat(bloq->fd, &inode) < 0)
+		return 0;
+	bloq->lof = inode.st_size - INI_DATA;
+	return 1;
+}
+int CargaBloque(u_int tipo)
+{
+	UDBloq *bloq;
+	u_long obtiene, bytes = 0L;
+	char linea[BUFSIZE], c;
+	int i = 0;
+	if (!(bloq = CogeDeId(tipo)))
 	{
-		Info("El bloque %c está corrupto (%lu != %lu)", root->letra, lee, obtiene);
-		if ((fp = fopen(root->path, "wb")))
-		{
-			fclose(fp);
-			ActualizaHash(root);
-		}
+		Info("Ha sido imposible cargar el bloque %i", tipo);
+		return 0;
+	}
+	CargaCabecera(bloq);
+	obtiene = ObtieneHash(bloq);
+	if (bloq->crc32 != obtiene)
+	{
+		Info("El bloque %c está corrupto (%lu != %lu)", bloq->letra, bloq->crc32, obtiene);
+		TruncaBloque(bloq, 0);
 		if (linkado)
-			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, linkado->nombre, root->letra);
-		return;
+			EnviaAServidor(":%s DB %s RES %c 0", me.nombre, linkado->nombre, bloq->letra);
+		return 0;
 	}
-	root->gmt = LeeGMT(tipo);
-	if ((fp = fopen(root->path, "rb")))
+	lseek(bloq->fd, INI_DATA, SEEK_SET);
+	while (read(bloq->fd, &c, sizeof(c)) > 0)
 	{
-		while (fgets(linea, sizeof(linea), fp))
+		if (c == '\r' || c == '\n')
 		{
-			if ((c = strchr(linea, '\r')))
-				*c = '\0';
-			if ((c = strchr(linea, '\n')))
-				*c ='\0';
-			else
-			{
-				trunca = bytes;
-				break;
-			}
+			linea[i] = '\0';
 			bytes += strlen(linea) + 1;
-			ParseaLinea(tipo, linea, 0);
-			bzero(linea, sizeof(linea));
+			ParseaLinea(bloq, linea, 0);
+			i = 0;
 		}
-		fclose(fp);
+		else
+			linea[i++] = c;
 	}
-	
+	if (i)
+		TruncaBloque(bloq, bytes);
+	return 1;
+}
 /*
 #ifdef _WIN32
 	if ((archivo = CreateFile(root->item, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
@@ -825,14 +848,12 @@ void CargaBloque(u_int tipo)
 	close(fd);
 #endif
 */
-	if (trunca)
-		TruncaBloque(&me, root, trunca);
-}
 void DescargaBloque(u_int tipo)
 {
 	Udb *aux, *sig;
 	UDBloq *root;
-	root = CogeDeId(tipo);
+	if (!(root = CogeDeId(tipo)))
+		return;
 	for (aux = root->arbol->down; aux; aux = sig)
 	{
 		sig = aux->mid;
@@ -841,6 +862,7 @@ void DescargaBloque(u_int tipo)
 	root->lof = 0L;
 	root->regs = 0;
 	VaciaHash(tipo);
+	close(root->fd);
 }
 int CargaBloques()
 {
@@ -851,66 +873,22 @@ int CargaBloques()
 		CargaBloque(i);
 	return 0;
 }
-int TruncaBloque(Cliente *cl, UDBloq *bloq, u_long bytes)
+int TruncaBloque(UDBloq *bloq, u_long bytes)
 {
-	FILE *fp;
-	char *contenido = NULL;
-	if ((fp = fopen(bloq->path, "rb")))
-	{
-		if (bytes)
-		{
-			contenido = Malloc(bytes);
-			if (fread(contenido, 1, bytes, fp) != bytes)
-			{
-				fclose(fp);
-				EnviaAServidor(":%s DB %s ERR DRP %i %c fread", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
-				ircfree(contenido);
-				return 1;
-			}
-		}
-		fclose(fp);
-		if ((fp = fopen(bloq->path, "wb")))
-		{
-			if (bytes && fwrite(contenido, 1, bytes, fp) != bytes)
-			{
-				fclose(fp);
-				ircfree(contenido);
-				EnviaAServidor(":%s DB %s ERR DRP %i %c fwrite", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
-				return 1;
-			}
-			fflush(fp);
-			fclose(fp);
-			ActualizaHash(bloq);
-			DescargaBloque(bloq->id);
-			CargaBloque(bloq->id);
-		}
-		else
-		{
-			ircfree(contenido);
-			EnviaAServidor(":%s DB %s ERR DRP %i %c fopen(wb)", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
-			return 1;
-		}
-		ircfree(contenido);
-	}
-	else
-	{
-		EnviaAServidor(":%s DB %s ERR DRP %i %c fopen(rb)", me.nombre, cl->nombre, E_UDB_FATAL, bloq->letra);
-		return 1;
-	}
-	return 0;
+	if (ftruncate(bloq->fd, INI_DATA + bytes) < 0)
+		return 0;
+	ActualizaHash(bloq);
+	DescargaBloque(bloq->id);
+	CargaBloque(bloq->id);
+	return 1;
 }
 int OptimizaBloque(UDBloq *bloq)
 {
-	FILE *fp;
-	if (!(fp = fopen(bloq->path, "wb")))
-		return 1;
-	fclose(fp);
+	if (ftruncate(bloq->fd, INI_DATA) < 0)
+		return 0;
 	GuardaEnArchivoInv(bloq->arbol->down, bloq->id);
 	ActualizaHash(bloq);
-	/* De momento, lo comento porque no creo que sea necesario remapear toda el bloque. En memoria, no hay registros superfluos */
-	//descarga_bloque(id);
-	//carga_bloque(id);
-	return 0;
+	return 1;
 }
 /*!
  * @desc: Propaga un registro UDB por la red. Debe estar cargada la extensión UDB.
@@ -929,9 +907,10 @@ void PropagaRegistro(char *item, ...)
 	ircvsprintf(buf, item, vl);
 	va_end(vl);
 	r = buf[0];
-	bloq = CogeDeId(r);
+	if (!(bloq = CogeDeId(r)))
+		return;
 	pos = bloq->lof;
-	if (!ParseaLinea(bloq->id, &buf[3], 1))
+	if (!ParseaLinea(bloq, &buf[3], 1))
 	{
 		if (strchr(buf, ' '))
 			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, buf);

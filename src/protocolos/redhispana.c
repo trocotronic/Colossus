@@ -593,7 +593,7 @@ void set(Conf *config)
 		if (!strcmp(config->seccion[i]->item, "red"))
 			ircstrdup(conf_set->red, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "nicklen"))
-			conf_set->nicklen = abs(atoi(config->seccion[i]->data));
+			protocolo->nicklen = abs(atoi(config->seccion[i]->data));
 		else if (!strcmp(config->seccion[i]->item, "modos"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)

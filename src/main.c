@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.89 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: main.c,v 1.90 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -113,7 +113,7 @@ char *ExMalloc(size_t size, int bz, char *file, long line)
 	void *x;
 	x = malloc(size);
 #ifdef DEBUG
-	Debug("Dando direccion %X", x);
+	Debug("Dando direccion %X (%s:%i)", x, file, line);
 #endif
 	if (!x)
 	{
@@ -579,8 +579,8 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
 	if (sql && sql->servinfo)
 		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
-	fprintf(stderr, "\n\t\tTrocotronic - http://www.redyc.com\n");
-	fprintf(stderr, "\t\t(c)2004-2006\n");
+	fprintf(stderr, "\n\t\tTrocotronic - http://www.redyc.com/\n");
+	fprintf(stderr, "\t\t(c)2004-2007\n");
 	fprintf(stderr, "\n");
 #endif
 /*	if (EsArchivo("backup.sql"))
@@ -1493,9 +1493,9 @@ void parsea_comando(char *comando)
 	else if (!strcasecmp(comando, "VERSION"))
 	{
 #ifdef UDB
-		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.redyc.com\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s+UDB2.1\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2007\n\thttp://www.redyc.com\n\n", COLOSSUS_VERSION);
 #else
-		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2006\n\thttp://www.redyc.com\n\n", COLOSSUS_VERSION);
+		printf("\n\tv%s\n\tServicios para IRC.\n\n\tTrocotronic - 2004-2007\n\thttp://www.redyc.com\n\n", COLOSSUS_VERSION);
 #endif
 	}
 	else if (!strcasecmp(comando, "QUIT"))
@@ -1536,7 +1536,7 @@ void Debug(char *formato, ...)
 	{
 		if (AllocConsole())
 		{
-			conh = (HANDLE *)Malloc(sizeof(HANDLE));
+			conh = (HANDLE *)malloc(sizeof(HANDLE));
 			*conh = GetStdHandle(STD_OUTPUT_HANDLE);
 		}
 	}
@@ -1739,21 +1739,21 @@ const char *inttobase64(char *buf, u_int v, u_int count)
 char *CifraNick(char *nickname, char *pass)
 {
 	u_int v[2], k[2], x[2], *p;
-	int cont = (conf_set->nicklen + 8) / 8, i = 0;
+	int cont = (protocolo->nicklen + 8) / 8, i = 0;
 	char *tmpnick, tmppass[12 + 1], *nick;
 	static char clave[12 + 1];
 	if (nickname == NULL || pass == NULL)
 		return "\0";
-	tmpnick = (char *)Malloc(sizeof(char) * ((8 * (conf_set->nicklen + 8) / 8) + 1));
-	nick = (char *)Malloc(sizeof(char) * (conf_set->nicklen + 1));
-	strlcpy(nick, nickname, sizeof(char) * (conf_set->nicklen + 1));
+	tmpnick = (char *)Malloc(sizeof(char) * ((8 * (protocolo->nicklen + 8) / 8) + 1));
+	nick = (char *)Malloc(sizeof(char) * (protocolo->nicklen + 1));
+	strlcpy(nick, nickname, sizeof(char) * (protocolo->nicklen + 1));
 	while (nick[i] != 0)
 	{
 		nick[i] = ToLower(nick[i]);
 		i++;
 	}  
-	memset(tmpnick, 0, (8 * (conf_set->nicklen + 8) / 8) + 1);
-	strncpy(tmpnick, nick , (8 * (conf_set->nicklen + 8) / 8) + 1 - 1);
+	memset(tmpnick, 0, (8 * (protocolo->nicklen + 8) / 8) + 1);
+	strncpy(tmpnick, nick , (8 * (protocolo->nicklen + 8) / 8) + 1 - 1);
 	memset(tmppass, 0, sizeof(tmppass));
 	strncpy(tmppass, pass, sizeof(tmppass) - 1);
 	strncat(tmppass, "AAAAAAAAAAAA", sizeof(tmppass) - strlen(tmppass) -1);

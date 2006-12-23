@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.27 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.28 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -170,6 +170,7 @@ struct _canal
 	MallaMascara *mallamk;
 	LinkCliente *miembro;
 	u_int miembros;
+	time_t creacion;
 };
 /*!
  * @desc: Malla de canales para usuarios.

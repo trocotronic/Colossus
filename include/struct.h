@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.65 2006-12-03 22:12:21 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.66 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -78,7 +78,7 @@ extern void strcopia(char **, const char *);
  * @sntx: void Free(void *x)
  !*/
 #ifdef DEBUG
-#define Free(x) do { free(x); Debug("Liberando %X", x); }while(0)
+#define Free(x) do { Debug("Liberando %X (%s:%i)", x, __FILE__, __LINE__); free(x); }while(0)
 #else
 #define Free free
 #endif
@@ -161,7 +161,7 @@ struct _sock
 	SOCKFUNC(*writefunc);
 	DBuf *recvQ;
 	DBuf *sendQ;
-	char estado;
+	int estado;
 	int opts;
 	int slot;
 	char buffer[SOCKBUF]; /* buffer de parseo */
@@ -338,7 +338,7 @@ extern int DetieneProceso(int (*)());
 #define INI_SUMD 0xFF
 extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
-#define COLOSSUS_VERNUM "1.6"
+#define COLOSSUS_VERNUM "1.7"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
 #define COLOSSUS_VERINT 10600
 extern char **margv;
@@ -468,7 +468,7 @@ extern char *my_itoa(int);
 extern MODVAR time_t iniciado;
 extern MODVAR int refrescando;
 #define Creditos() 																\
-	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2006", COLOSSUS_VERSION);								\
+	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2007", COLOSSUS_VERSION);								\
 	Responde(cl, bl, " ");															\
 	Responde(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");						\
 	Responde(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\

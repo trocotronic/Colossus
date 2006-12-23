@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.17 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.18 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -49,6 +49,7 @@ struct Conf_server
 	int compresion;
 #endif
 	int escucha;
+	char *bind_ip;
 };
 struct Conf_db
 {
@@ -69,16 +70,15 @@ struct Conf_set
 {
 	int opts;
 	char *root;
-	int nicklen;
 	char clave_cifrado[33];
 	char *admin;
-	char *red;
 	struct Conf_set_reconectar
 	{
 		int intentos;
 		int intervalo;
 	}reconectar;
 	char *debug;
+	char *red;
 };
 struct Conf_log
 {

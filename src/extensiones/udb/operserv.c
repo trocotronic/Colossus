@@ -19,10 +19,8 @@ BOTFUNC(OSBackup);
 BOTFUNCHELP(OSHBackup);
 BOTFUNC(OSRestaurar);
 BOTFUNCHELP(OSHRestaurar);
-BOTFUNC(OSPassFlood);
-BOTFUNCHELP(OSHPassFlood);
-BOTFUNC(OSServerDebug);
-BOTFUNCHELP(OSHServerDebug);
+BOTFUNC(OSSetUDB);
+BOTFUNCHELP(OSHSetUDB);
 EXTFUNC(OSOpers);
 
 #define NS_OPT_UDB 0x80
@@ -34,8 +32,7 @@ bCom operserv_coms[] = {
 	{ "optimizar" , OSOptimizar , N4 , "Optimiza la base de datos (BDD)." , OSHOptimizar } ,
 	{ "backup" , OSBackup , N4 , "Realiza una copia de seguridad de los bloques (BDD)." , OSHBackup } ,
 	{ "restaurar" , OSRestaurar , N4 , "Restaura una copia de seguridad realizada con el comando \00312backup\003." , OSHRestaurar } ,
-	{ "pass-flood" , OSPassFlood , N4 , "Establece el número de intentos para poner una contraseña vía /nick nick:pass" , OSHPassFlood } ,
-	{ "server-debug" , OSServerDebug , N4 , "Establece un servidor como debug" , OSHServerDebug } ,
+	{ "setudb" , OSSetUDB , N4 , "Fija distintos parámetros UDB de red." , OSHSetUDB } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -108,6 +105,53 @@ BOTFUNCHELP(OSHRestaurar)
 	Responde(cl, CLI(operserv), "Si no se especifican parámetros, listará todas las copias de seguridad que estén disponibles.");
 	Responde(cl, CLI(operserv), " ");
 	Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR [punto_restauración]");
+	return 0;
+}
+BOTFUNCHELP(OSHSetUDB)
+{
+	if (params < 3)
+	{
+		Responde(cl, CLI(operserv), "Fija distintos parámetros UDB de red.");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Opciones disponibles:");
+		Responde(cl, CLI(operserv), "\00312PASS-FLOOD\003 Establece el número de intentos para intentar una contraseña vía /nick nick:pass");
+		Responde(cl, CLI(operserv), "\00312SERVER-DEBUG\003 Fija un servidor como servidor debug.");
+		Responde(cl, CLI(operserv), "\00312CLIENTES\003 Permite o no la conexión de clientes en un servidor no-UDB, leaf y uline.");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312SETUDB <opción> [parámetros]");
+		Responde(cl, CLI(operserv), "Para más información, \00312/msg %s %s SETUDB <opción>", operserv->hmod->nick, strtoupper(param[0]));
+	}
+	else if (!strcasecmp(param[2], "PASS-FLOOD"))
+	{
+		Responde(cl, CLI(operserv), "Establece el número de intentos para intentar una contraseña vía /nick nick:pass");
+		Responde(cl, CLI(operserv), "El formato que se usa es <v>:<s>, donde <v> es el número de intentos y <s> el número de segundos.");
+		Responde(cl, CLI(operserv), "Por ejemplo, un valor de 2:60 significaría que el usuario puede usar /nick nick:pass 2 veces cada 60 segundos");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312PASS-FLOOD <v>:<s>");
+	}
+	else if (!strcasecmp(param[2], "SERVER-DEBUG"))
+	{
+		Responde(cl, CLI(operserv), "Fija un servidor como servidor debug.");
+		Responde(cl, CLI(operserv), "Este servidor recibirá todos los cambios de modos realizados por UDB sobre un usuario.");
+		Responde(cl, CLI(operserv), "En general no necesitará esta opción, salvo que decida conectar un servidor no-UDB y quiera procesar este tipo de datos.");
+		Responde(cl, CLI(operserv), "Por ejemplo, si quiere unir a la red un servidor de estadísticas, puede serle útil esta opción.");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Si utiliza este comando sobre un servidor que ya es debug, se le quitará esta opción. Si no es debug, se le añadirá.");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312SERVER-DEBUG nombre.del.servidor ON|OFF");
+	}
+	else if (!strcasecmp(param[2], "CLIENTES"))
+	{
+		Responde(cl, CLI(operserv), "Los servidores que no sean UDB sólo pueden conectarse a la red si son leafs (es decir, no son hubs).");
+		Responde(cl, CLI(operserv), "No obstante, estos servidores no-UDB leafs no pueden introducir clientes por motivos de desincronización.");
+		Responde(cl, CLI(operserv), "Aún así, es posible que sea necesario que conecten clientes virtuales. Esto se produce cuando se conectan servidores como servicios o estadísticas.");
+		Responde(cl, CLI(operserv), "Es muy importante que este valor sólo se active si realmente se sabe que el servidor no-UDB no causará desincronización.");
+		Responde(cl, CLI(operserv), "\0034TENGA CUIDADO CON ESTA OPCIÓN");
+		Responde(cl, CLI(operserv), "Con esta opción activa, un servidor de estadísticas podría introducir clientes, siempre y cuando esté configurado como uline.");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312CLIENTES nombre.del.servidor ON|OFF");
+	}
+	else
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
 BOTFUNCHELP(OSHPassFlood)
@@ -205,10 +249,12 @@ BOTFUNC(OSOptimizar)
 	UDBloq *aux;
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		aux = CogeDeId(i);
-		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
-		OptimizaBloque(aux);
-		ActualizaGMT(aux, hora);
+		if ((aux = CogeDeId(i)))
+		{
+			EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
+			OptimizaBloque(aux);
+			ActualizaGMT(aux, hora);
+		}
 	}
 	Responde(cl, CLI(operserv), "Se han optimizado todos los bloques");
 	return 0;
@@ -221,17 +267,19 @@ BOTFUNC(OSBackup)
 	strftime(buf, sizeof(buf), "%d%m%y-%H%M", gmtime(&hora));
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		aux = CogeDeId(i);
-		EnviaAServidor(":%s DB * BCK %c %s", me.nombre, aux->letra, buf);
-		switch (CopiaSeguridad(aux, buf))
+		if ((aux = CogeDeId(i)))
 		{
-			case -1:
-			case -2:
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error grave (fopen)");
-				return 1;
-			case -3:
-				Responde(cl, CLI(operserv), OS_ERR_EMPT,"Ha ocurrido un error grave (zDeflate)");
-				return 1;
+			EnviaAServidor(":%s DB * BCK %c %s", me.nombre, aux->letra, buf);
+			switch (CopiaSeguridad(aux, buf))
+			{
+				case -1:
+				case -2:
+					Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error grave (fopen)");
+					return 1;
+				case -3:
+					Responde(cl, CLI(operserv), OS_ERR_EMPT,"Ha ocurrido un error grave (zDeflate)");
+					return 1;
+			}
 		}
 	}
 	Responde(cl, CLI(operserv), "Se ha realizado una copia de seguridad de todos los bloques");
@@ -267,82 +315,104 @@ BOTFUNC(OSRestaurar)
 	}
 	if (sscanf(param[1], "%02u/%02u/%02u", &dia, &mes, &ano) != 3 || sscanf(param[2], "%02u:%02u", &hora, &min) != 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_SNTX, fc->com, "el punto de restauración debe tener el formato de fecha dd/mm/yy hh:mm");
+		Responde(cl, CLI(operserv), OS_ERR_SNTX, "El punto de restauración debe tener el formato de fecha dd/mm/yy hh:mm");
 		return 1;
 	}
 	tshora = time(0);
 	ircsprintf(tmp, "%02u%02u%02u-%02u%02u", dia, mes, ano, hora, min);
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		aux = CogeDeId(i);
-		EnviaAServidor(":%s DB * RST %c %s %lu", me.nombre, aux->letra, tmp, tshora);
-		switch (RestauraSeguridad(aux, tmp))
+		if ((aux = CogeDeId(i)))
 		{
-			case -1:
-			case -2:
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este punto de restauración no existe");
-				return 1;
-			case -3:
-				Responde(cl, CLI(operserv), OS_ERR_EMPT,"Ha ocurrido un error grave (zInflate)");
-				return 1;
+			EnviaAServidor(":%s DB * RST %c %s %lu", me.nombre, aux->letra, tmp, tshora);
+			switch (RestauraSeguridad(aux, tmp))
+			{
+				case -1:
+				case -2:
+					Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este punto de restauración no existe");
+					return 1;
+				case -3:
+					Responde(cl, CLI(operserv), OS_ERR_EMPT,"Ha ocurrido un error grave (zInflate)");
+					return 1;
+			}
 		}
 	}
 	Responde(cl, CLI(operserv), "El punto de restauración \00312%s %s\003 se ha restaurado con éxito", param[1], param[2]);
 	return 0;
 }
-BOTFUNC(OSPassFlood)
-{
-	int v, s;
-	if (params < 2)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "<v>:<s>");
-		return 1;
-	}
-	if (sscanf(param[1], "%i:%i", &v, &s) != 2)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_SNTX, fc->com, "PASS-FLOOD <v>:<s>. <v> y <s> deben ser segundos");
-		return 1;
-	}
-	if (v < 1 || v > 60)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "El número de intentos <v> debe estar entre 1-60 intentos");
-		return 1;
-	}
-	if (s < 2 || s > 120)
-	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "El número de segundos <s> debe estar entre 2-120 segundos");
-		return 1;
-	}
-	PropagaRegistro("S::F %i:%i", v, s);
-	Responde(cl, CLI(operserv), "Se ha fijado el pass-flood en \00312%s", param[1]);
-	return 0;
-}
-BOTFUNC(OSServerDebug)
+BOTFUNC(OSSetUDB)
 {
 	Udb *reg, *bloq;
-	u_long val = 0L;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nombre.del.servidor");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "opción [parámetros]");
 		return 1;
 	}
-	if ((reg = BuscaBloque(param[1], UDB_LINKS)))
+	if (!strcasecmp(param[1], "PASS-FLOOD"))
 	{
-		if ((bloq = BuscaBloque(L_OPT, reg)))
-			val = bloq->data_long;
+		int v, s;
+		if (params < 3)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "PASS-FLOOD <v>:<s>");
+			return 1;
+		}
+		if (sscanf(param[2], "%i:%i", &v, &s) != 2)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_SNTX, "PASS-FLOOD <v>:<s>. <v> y <s> deben ser segundos");
+			return 1;
+		}
+		if (v < 1 || v > 60)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "El número de intentos <v> debe estar entre 1-60 intentos");
+			return 1;
+		}
+		if (s < 2 || s > 120)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "El número de segundos <s> debe estar entre 2-120 segundos");
+			return 1;
+		}
+		PropagaRegistro("S::F %i:%i", v, s);
+		Responde(cl, CLI(operserv), "Se ha fijado el pass-flood en \00312%s", param[2]);
 	}
-	if (val & L_OPT_DEBG)
+	else if (!strcasecmp(param[1], "SERVER-DEBUG") || !strcasecmp(param[1], "CLIENTES"))
 	{
-		if (val & ~L_OPT_DEBG)
-			PropagaRegistro("L::%s::O %c%lu", param[1], CHAR_NUM, val & ~L_OPT_DEBG);
+		u_long val = 0L;
+		int opt;
+		char tmp[BUFSIZE];
+		if (ToLower(*param[1]) == 's')
+			opt = L_OPT_DEBG;
 		else
-			PropagaRegistro("L::%s::O", param[1]);
-		Responde(cl, CLI(operserv), "Se ha quitado el servidor \00312%s\003 como servidor debug", param[1]);
-	}
-	else
-	{
-		PropagaRegistro("L::%s::O %c%lu", param[1], CHAR_NUM, val | C_OPT_PBAN);
-		Responde(cl, CLI(operserv), "Se ha añadido el servidor \00312%s\003 como servidor debug", param[1]);
+			opt = L_OPT_CLNT;
+		ircsprintf(tmp, "%s nombre.del.servidor ON|OFF", strtoupper(param[1]));
+		if (params < 4)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, tmp);
+			return 1;
+		}
+		if ((reg = BuscaBloque(param[2], UDB_LINKS)))
+		{
+			if ((bloq = BuscaBloque(L_OPT, reg)))
+				val = bloq->data_long;
+		}
+		if (!strcasecmp(param[3], "ON"))
+		{
+			PropagaRegistro("L::%s::O %c%lu", param[2], CHAR_NUM, val | opt);
+			Responde(cl, CLI(operserv), "Se ha añadido el servidor \00312%s\003 como servidor debug", param[2]);
+		}
+		else if (!strcasecmp(param[3], "OFF"))
+		{
+			if (val & ~opt)
+				PropagaRegistro("L::%s::O %c%lu", param[2], CHAR_NUM, val & ~opt);
+			else
+				PropagaRegistro("L::%s::O", param[2]);
+			Responde(cl, CLI(operserv), "Se ha quitado el servidor \00312%s\003 como servidor debug", param[2]);
+		}
+		else
+		{
+			Responde(cl, CLI(operserv), OS_ERR_SNTX, tmp);
+			return 1;
+		}
+		Responde(cl, CLI(operserv), "El parámetro \00312%s\003 para el servidor \00312%s\003 está en \00312%s", strtoupper(param[1]), param[2], param[3]);
 	}
 	return 0;
 }

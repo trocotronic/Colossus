@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.8 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.9 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -18,6 +18,10 @@ void LiberaMemoriaProtocolo(Protocolo *prot)
 {
 	protocolo->descarga();
 	irc_dlclose(prot->hprot);
+	if (prot->modcanales)
+		Free(prot->modcanales);
+	if (prot->modusers)
+		Free(prot->modusers);
 	Free(prot->archivo);
 	Free(prot->tmparchivo);
 	Free(prot);

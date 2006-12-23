@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.24 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.25 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -596,25 +596,39 @@ int TestServer(Conf *config, int *errores)
 			}
 		}
 	}
-	if ((eval = BuscaEntrada(config, "puerto_escucha")))
+	if ((eval = BuscaEntrada(config, "escucha")))
 	{
-		if (!eval->data)
+		if ((aux = BuscaEntrada(eval, "puerto")))
 		{
-			Error("[%s:%s::%s::%i] La directriz puerto_escucha esta vacia.", config->archivo, config->item, eval->item, eval->linea);
-			error_parcial++;
-		}
-		else
-		{
-			puerto = atoi(eval->data);
-			if (puerto < 0 || puerto > 65535)
+			if (!aux->data)
 			{
-				Error("[%s:%s::%s::%i] El puerto_escucha debe estar entre 0 y 65535.", config->archivo, config->item, eval->item, eval->linea);
+				Error("[%s:%s::%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, aux->item, eval->linea);
 				error_parcial++;
 			}
-			if ((aux = BuscaEntrada(config, "puerto")) && puerto == atoi(aux->data))
+			else
 			{
-				Error("[%s:%s::%s::%i] El puerto_escucha no puede ser el mismo que puerto.", config->archivo, config->item, eval->item, eval->linea);
+				puerto = atoi(aux->data);
+				if (puerto < 1 || puerto > 65535)
+				{
+					Error("[%s:%s::%s::%s::%i] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item, aux->item, eval->linea);
+					error_parcial++;
+				}
+			}
+		}
+		if ((aux = BuscaEntrada(eval, "enlace")))
+		{
+			if (!aux->data)
+			{
+				Error("[%s:%s::%s::%s::%i] La directriz enlace esta vacia.", config->archivo, config->item, eval->item, aux->item, eval->linea);
 				error_parcial++;
+			}
+			else
+			{
+				if (!EsIp(aux->data))
+				{
+					Error("[%s:%s::%s::%s::%i] La dirección de enlace debe ser una ip válida.", config->archivo, config->item, eval->item, aux->item, eval->linea);
+					error_parcial++;
+				}
 			}
 		}
 	}
@@ -745,8 +759,16 @@ void ConfServer(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "compresion"))
 			conf_server->compresion = atoi(config->seccion[i]->data);
 #endif
-		else if (!strcmp(config->seccion[i]->item, "puerto_escucha"))
-			conf_server->escucha = atoi(config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "escucha"))
+		{
+			for (p = 0; p < config->seccion[i]->secciones; p++)
+			{
+				if (!strcmp(config->seccion[i]->seccion[p]->item, "local"))
+					conf_server->escucha = atoi(config->seccion[i]->seccion[p]->data);
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "enlace"))
+					ircstrdup(conf_server->bind_ip, config->seccion[i]->seccion[p]->data);
+			}
+		}
 	}
 	if (!conf_server->escucha)
 		conf_server->escucha = conf_server->puerto;

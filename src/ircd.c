@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.40 2006-12-03 22:12:21 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.41 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -137,7 +137,7 @@ int MiraPings()
 int AbreSockIrcd()
 {
 #ifdef USA_SSL
-	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, OPT_SSL)))
+	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, conf_ssl ? OPT_SSL : 0)))
 #else
 	if (!(SockIrcd = SockOpen(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd)))
 #endif
@@ -427,6 +427,7 @@ Canal *InfoCanal(char *canal, int crea)
 			AddItem(CreaMallaParam(*c), cn->mallapm);
 		for (c = protocolo->modpm2; !BadPtr(c); c++)
 			AddItem(CreaMallaParam(*c), cn->mallapm);
+		cn->creacion = time(0);
 		AddItem(cn, canales);
 		InsertaCanalEnHash(cn, canal, cTab);
 	}

@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.2 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.3 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -162,6 +162,8 @@ void HSSet(Conf *config, Modulo *mod)
 }
 int HSQuitaBan(char *b)
 {
+	if (!b)
+		return 1;
 	if (!helpchan)
 		helpchan = BuscaCanal(helpserv->canal);
 	ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, b);

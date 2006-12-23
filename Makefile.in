@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.13 2006-12-03 23:36:01 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.14 2006-12-23 00:32:23 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -66,7 +66,7 @@ install: all
 	$(INSTALL) -m 0700 -d ~/Colossus/sql
 	$(INSTALL) -m 0700 src/sql/*.so ~/Colossus/sql
 	
-release:
+release: install
 	$(RM) -rf ~/Colossus/Colossus
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
 	$(INSTALL) -m 0600 cambios ~/Colossus/Colossus/cambios
@@ -93,7 +93,7 @@ release:
 	$(INSTALL) -m 0700 sql/postgresql.so ~/Colossus/Colossus/sql/postgresql.so
 	$(INSTALL) -m 0700 sql/sqlite.so ~/Colossus/Colossus/sql/sqlite.so
 	tar -cvzf colossus17.tar.gz Colossus
-devel:
+devel: install
 	$(RM) -rf ~/Colossus/Colossus
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
 	$(INSTALL) -m 0700 Makefile.dev ~/Colossus/Colossus/Makefile

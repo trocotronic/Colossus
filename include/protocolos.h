@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.9 2006-06-20 13:19:40 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.10 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 typedef struct _extension Extension;
 typedef struct _proto Protocolo;
@@ -49,6 +49,10 @@ struct _proto
 	char *modpm1;
 	char *modpm2;
 	Extension *extensiones;
+	int nicklen;
+	int modos;
+	char *modcanales;
+	char *modusers;
 };
 	
 extern MODVAR Protocolo *protocolo;

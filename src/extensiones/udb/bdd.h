@@ -26,7 +26,21 @@ typedef struct _bloque
 	Cliente *res;
 	u_int regs;
 	char letra;
+	u_int ver;
+	int fd;
 }UDBloq;
+
+/*
+ * ----------------------------------------------------------------
+ * | u_int id | u_int ver | u_long hash | time_t gmt | ...data... |
+ * ----------------------------------------------------------------
+ */
+#define INI_ID 0
+#define INI_VER (INI_ID + sizeof(u_int))
+#define INI_HASH (INI_VER + sizeof(u_int))
+#define INI_GMT (INI_HASH + sizeof(u_long))
+#define INI_DATA (INI_GMT + sizeof(time_t))
+
 #define DBMAX 64
 #define CHAR_NUM '*'
 extern UDBloq *N, *C, *I, *S, *L;
@@ -39,17 +53,17 @@ extern u_int BDD_TOTAL;
 extern UDBloq *ultimo;
 extern Opts NivelesBDD[];
 extern UDBloq *CogeDeId(u_int);
-extern void CargaBloque(u_int);
+extern int CargaBloque(u_int);
 extern void DescargaBloque(u_int);
-extern int ParseaLinea(u_int, char *, int);
+extern int ParseaLinea(UDBloq *, char *, int);
 extern int ActualizaHash(UDBloq *);
 extern int OptimizaBloque(UDBloq *);
 extern int ActualizaGMT(UDBloq *, time_t);
 extern time_t LeeGMT(u_int);
 extern u_long LeeHash(u_int);
 extern int CargaBloques();
-extern void IniciaUDB();
-extern int TruncaBloque(Cliente *, UDBloq *, u_long);
+extern int IniciaUDB();
+extern int TruncaBloque(UDBloq *, u_long);
 extern void PropagaRegistro(char *, ...);
 extern int CopiaSeguridad(UDBloq *, char *);
 extern int RestauraSeguridad(UDBloq *, char *);
@@ -104,3 +118,4 @@ extern int RestauraSeguridad(UDBloq *, char *);
 
 #define L_OPT_DEBG 0x1
 #define L_OPT_PROP 0x2
+#define L_OPT_CLNT 0x4

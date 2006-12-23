@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.26 2006-12-03 22:23:24 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.27 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -19,7 +19,7 @@ void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
 void LiberaSock(Sock *);
-#define DEBUG
+//#define DEBUG
 
 /*
  * resolv
@@ -93,7 +93,7 @@ void BorraSock(Sock *sck)
  	- Sock *sck: Conexión a la que pertenece.
  	- char *data: Datos. En algunos casos puede ser NULL.
  * @params: $host [in] Host o ip a conectar.
- 	    $puerto [in] Puerto remoto. Si es negativo, indica que se usa bajo SSL.
+ 	    $puerto [in] Puerto remoto.
  	    $openfunc [in] Función a ejecutar cuando se complete la conexión. Si no se precisa, usar NULL.
  	    El parámetro <i>data</i> apunta a NULL.
  	    $readfunc [in] Función a ejecutar cuando se reciban datos a través de la conexión. Si no se precisa, usar NULL.
@@ -102,7 +102,6 @@ void BorraSock(Sock *sck)
  	    El parámetro <i>data</i> apunta a los datos que se escriben.
  	    $closefunc [in] Función a ejecutar cuando se cierra la conexión.
  	    El parámetro <i>data</i> sólo vale NULL si la desconexión es remota.
- 	    $add [in] Si vale 1 se añade a la lista de proceso interna de sockets. Se recomienda extremadamente usar 1.
  * @ret: Devuelve la estructura de conexión en caso que haya podido establecerse con éxito. Devuelve NULL si no ha podido conectar.
  * @ex:
  Sock *sck;
@@ -131,14 +130,40 @@ if (!(sck = SockOpen("1.2.3.4", 123, Abrir, Leer, NULL, Cerrar)))
 	return;
 }
 ...
- * @ver: SockClose SockListen
+ * @ver: SockClose SockListen SockOpenEx
  * @cat: Conexiones
  !*/
 Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
 {
 	return SockOpenEx(host, puerto, openfunc, readfunc, writefunc, closefunc, 30, 0, 0);
 }
-
+/*!
+ * @desc: Abre una conexión avanzada.
+ Las funciones SOCKFUNC reciben dos parámetros:
+ 	- Sock *sck: Conexión a la que pertenece.
+ 	- char *data: Datos. En algunos casos puede ser NULL.
+ * @params: $host [in] Host o ip a conectar.
+ 	    $puerto [in] Puerto remoto.
+ 	    $openfunc [in] Función a ejecutar cuando se complete la conexión. Si no se precisa, usar NULL.
+ 	    El parámetro <i>data</i> apunta a NULL.
+ 	    $readfunc [in] Función a ejecutar cuando se reciban datos a través de la conexión. Si no se precisa, usar NULL.
+ 	    El parámetro <i>data</i> apunta a la cadena de datos. Esta función se ejecuta cada vez que se recibe una cadena que termina con \n.
+ 	    $writefunc [in] Función a ejecutar cuando se escriben datos.
+ 	    El parámetro <i>data</i> apunta a los datos que se escriben.
+ 	    $closefunc [in] Función a ejecutar cuando se cierra la conexión.
+ 	    El parámetro <i>data</i> sólo vale NULL si la desconexión es remota.
+ 	    $contout [in] Número de segundos de timeout de espera a conectar. Si en este tiempo no conecta, se aborta la conexión (se ejecuta SockClose local).
+ 	    $recvout [in] Número de segundos de timeout para recibir datos. Si en este tiempo no se reciben datos, se cierra la conexión (se ejecuta SockClose remoto).
+ 	    $opts [in] Opciones:
+ 	    	- OPT_SSL: La conexión es SSL.
+ 	    	- OPT_NORECVQ: Los datos se envían por bloques a medida que se leen. No se envían líneas que terminen por \r\n sino que se envían por bloques de 16KB.
+ 	    	- OPT_NADD: No añade el socket en la lista interna de sockets. Deberá gestionar el socket por su cuenta. Si no se añade el socket a la lista, no se ejecutan las funciones SockRead.
+ 	    	- OPT_ZLIB: La conexión comprime los datos con ZLIB.
+ * @ret: Devuelve la estructura de conexión en caso que haya podido establecerse con éxito. Devuelve NULL si no ha podido conectar.
+ * @ver: SockClose SockListen SockOpen
+ * @cat: Conexiones
+ !*/
+  
 Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), u_int contout, u_int recvtout, u_int opts)
 {
 	Sock *sck;
@@ -230,7 +255,7 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	Sock *sck;
 	int i;
 	int ad[4];
-	char ipname[20], *name = "*";
+	char ipname[20], *name = conf_server->bind_ip;
 	for (i = 0; i < listenS; i++)
 	{
 		if (listens[i] == puerto)
@@ -238,6 +263,8 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	}
 	if (ListaSocks.abiertos == MAXSOCKS)
 		return NULL;
+	if (!name)
+		name = "*";
 	ad[0] = ad[1] = ad[2] = ad[3] = 0;
 	(void)sscanf(name, "%d.%d.%d.%d", &ad[0], &ad[1], &ad[2], &ad[3]);
 	(void)ircsprintf(ipname, "%d.%d.%d.%d", ad[0], ad[1], ad[2], ad[3]);
@@ -267,6 +294,10 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
 	sck->closefunc = closefunc;
+#ifdef USA_SSL
+	if (opts & OPT_SSL)
+		SetSSL(sck);
+#endif
 	listen(sck->pres, LISTEN_SIZE);
 	listens[listenS++] = puerto;
 	InsertaSock(sck);
@@ -705,18 +736,19 @@ int LeeMensaje(Sock *sck)
 	SET_ERRNO(0);
 #ifdef USA_SSL
 	if (EsSSL(sck))
-		len = SSLSockRead(sck, lee, sizeof(lee));
+		len = SSLSockRead(sck, lee, sizeof(lee)-1);
 	else
 #endif
-	len = READ_SOCK(sck->pres, lee, sizeof(lee));
+	len = READ_SOCK(sck->pres, lee, sizeof(lee)-1);
 	if (len < 0 && ERRNO == P_EWOULDBLOCK)
 		return 1;
 	if (len > 0)
 	{
 		if (EsNoRecvQ(sck))
 		{
-			strncpy(sck->buffer, lee, MIN(len, sizeof(sck->buffer)));
-			sck->buffer[len] = '\0';
+			sck->pos = MIN(len, sizeof(sck->buffer)-1);
+			strncpy(sck->buffer, lee, sck->pos);
+			sck->buffer[sck->pos] = '\0';
 			if (sck->readfunc)
 				sck->readfunc(sck, sck->buffer);
 		}
@@ -840,17 +872,17 @@ int LeeSocks() /* devuelve los bytes leídos */
 	FD_ZERO(&read_set);
 	FD_ZERO(&write_set);
 	FD_ZERO(&excpt_set);
-	time(&ahora);
+	ahora = time(NULL);
 	for (i = ListaSocks.tope; i >= 0; i--)
 	{
 		if (!(sck = ListaSocks.socket[i]))
 			continue;
 		if (sck->pres >= 0)
 		{
+			if ((EsConn(sck) && ((time_t)(sck->inicio + sck->contout) < ahora)) || (EsOk(sck) && sck->recvtout && (time_t)(sck->recibido + sck->recvtout) < ahora))
+				SockClose(sck, LOCAL);
 			if (EsCerr(sck))
 				LiberaSock(sck);
-			else if ((EsConn(sck) && ((time_t)(sck->inicio + sck->contout) < ahora)) || (EsOk(sck) && sck->recvtout && (time_t)(sck->recibido + sck->recvtout) < ahora))
-				SockClose(sck, LOCAL);
 			else
 			{
 				FD_SET(sck->pres, &read_set);

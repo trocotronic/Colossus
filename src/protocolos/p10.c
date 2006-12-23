@@ -4,7 +4,6 @@
 #include "protocolos.h"
 
 double tburst;
-static char *modcanales;
 
 static char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]";
 static int i64[] = {
@@ -524,7 +523,7 @@ int test(Conf *config, int *errores)
 }
 void set(Conf *config)
 {
-	int i, p;
+	int i, p, modos = 6;
 	char *modcl = "ov", *modmk = "b", *modpm1 = "k", *modpm2 = "l";
 	if (!conf_set)
 		conf_set = BMalloc(struct Conf_set);
@@ -533,13 +532,13 @@ void set(Conf *config)
 		if (!strcmp(config->seccion[i]->item, "red"))
 			ircstrdup(conf_set->red, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "nicklen"))
-			conf_set->nicklen = abs(atoi(config->seccion[i]->data));
+			protocolo->nicklen = abs(atoi(config->seccion[i]->data));
 		else if (!strcmp(config->seccion[i]->item, "modos"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
-					ircstrdup(modcanales, config->seccion[i]->seccion[p]->data);
+					ircstrdup(protocolo->modcanales, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "parametros"))
@@ -554,6 +553,8 @@ void set(Conf *config)
 					modpm1 = config->seccion[i]->seccion[p]->data;
 				else if (!strcmp(config->seccion[i]->seccion[p]->item, "resto2"))
 					modpm2 = config->seccion[i]->seccion[p]->data;
+				else if (!strcmp(config->seccion[i]->seccion[p]->item, "max_modos"))
+					modos = atoi(config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "extension"))
@@ -566,6 +567,7 @@ void set(Conf *config)
 	ircstrdup(protocolo->modmk, modmk);
 	ircstrdup(protocolo->modpm1, modpm1);
 	ircstrdup(protocolo->modpm2, modpm2);
+	protocolo->modos = modos;
 	conf_set->opts |= NO_OVERRIDE;
 }
 int PROT_CARGA(P10)(Conf *config)
@@ -1414,8 +1416,8 @@ void EntraCliente(Cliente *cl, char *canal)
 			}
 			p_mode(&me, cn, "+sim");
 		}
-		else
-			p_mode(&me, cn, modcanales);
+		else if (protocolo->modcanales)
+			p_mode(&me, cn, protocolo->modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);

@@ -14,11 +14,9 @@
 #define TKL_SPAMF 3
 #define TKL_QLINE 4
 
-#define PROTOCOL 2308
+#define PROTOCOL 2309
 
 double tburst;
-char *modcanales = NULL;
-char *modusers = NULL;
 char *autousers = NULL;
 char *autoopers = NULL;
 #define NOSERVDEOP 0x40
@@ -610,7 +608,7 @@ void set(Conf *config)
 	if (!conf_set)
 		conf_set = BMalloc(struct Conf_set);
 	autousers = autoopers = NULL;
-	modusers = modcanales = NULL;
+	protocolo->modusers = protocolo->modcanales = NULL;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "no_server_deop"))
@@ -630,9 +628,9 @@ void set(Conf *config)
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
 				if (!strcmp(config->seccion[i]->seccion[p]->item, "usuarios"))
-					ircstrdup(modusers, config->seccion[i]->seccion[p]->data);
+					ircstrdup(protocolo->modusers, config->seccion[i]->seccion[p]->data);
 				else if (!strcmp(config->seccion[i]->seccion[p]->item, "canales"))
-					ircstrdup(modcanales, config->seccion[i]->seccion[p]->data);
+					ircstrdup(protocolo->modcanales, config->seccion[i]->seccion[p]->data);
 			}
 		}
 		else if (!strcmp(config->seccion[i]->item, "parametros"))
@@ -1065,8 +1063,8 @@ IRCFUNC(m_nick)
 			Alerta(FERR, "Se ha detectado un error en el protocolo de nicks.\nEl programa se ha cerrado para evitar daños.");
 			CierraColossus(-1);
 		}
-		if (modusers)
-			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, &me, modusers);
+		if (protocolo->modusers)
+			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, &me, protocolo->modusers);
 		if (autousers)
 			EnviaAServidor(":%s %s %s %s", me.nombre, TOK_SVSJOIN, parv[1], autousers);
 		if (parc >= 11)
@@ -1180,49 +1178,8 @@ IRCFUNC(m_mode)
 	modebuf[0] = parabuf[0] = '\0';
 	cn = InfoCanal(parv[1], !0);
 	ProcesaModo(cl, cn, parv + 2, parc - 2);
-	if (EsServidor(cl) && (conf_set->opts & NOSERVDEOP))
-	{
-		int i = 3, j = 1, f = ADD;
-		char *modos = parv[2];
-		Canal *cn;
-		if (!(cn = BuscaCanal(parv[1])))
-			return 1;
-		while (!BadPtr(modos))
-		{
-			switch (*modos)
-			{
-				case '+':
-					f = ADD;
-					break;
-				case '-':
-					f = DEL;
-					break;
-				case 'q':
-				case 'a':
-				case 'o':
-				case 'h':
-				case 'v':
-					if (f == DEL)
-					{
-						modebuf[j++] = *modos;
-						strlcat(parabuf, parv[i], sizeof(parabuf));
-						strlcat(parabuf, " ", sizeof(parabuf));
-					}
-				case 'b':
-				case 'e':
-				case 'I':
-				case 'k':
-				case 'L':
-				case 'l':
-					i++;
-					break;
-			}
-			modos++;
-		}
-		modebuf[j] = '\0';
-	}
-	if (modcanales)
-		strlcat(modebuf, modcanales, sizeof(modcanales));
+	if (protocolo->modcanales)
+		strlcat(modebuf, protocolo->modcanales, sizeof(modebuf));
 	if (modebuf[0] != '\0')
 		ProtFunc(P_MODO_CANAL)(&me, cn, "%s %s", modebuf, parabuf);
 	Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
@@ -1233,7 +1190,9 @@ IRCFUNC(m_sjoin)
 	Cliente *al = NULL;
 	Canal *cn = NULL;
 	char *q, *p, tmp[BUFSIZE], mod[8];
+	time_t creacion;
 	cn = InfoCanal(parv[2], !0);
+	creacion = base64dec(parv[1]);
 	strlcpy(tmp, parv[parc-1], sizeof(tmp));
 	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
@@ -1288,11 +1247,76 @@ IRCFUNC(m_sjoin)
 				Senyal4(SIGN_MODE, al, cn, arr, i);
 		}
 	}
-	if (parc > 4) /* hay modos */
+	if (creacion < cn->creacion) /* debemos quitar todo lo nuestro */
+	{
+		MallaParam *mpm;
+		MallaMascara *mmk;
+		Mascara *mk, *tmk;
+		cn->modos = 0L;
+		for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
+			ircfree(mpm->param);
+		for (mmk = cn->mallamk; mmk; mmk = mmk->sig)
+		{
+			for (mk = mmk->malla; mk; mk = tmk)
+			{
+				tmk = mk->sig;
+				Free(mk->mascara);
+				Free(mk);
+			}
+			mmk->malla = NULL;
+		}
+		if (cl != linkado)
+		{
+			MallaCliente *mcl;
+			LinkCliente *lk, *tlk;
+			if (conf_set->opts & NOSERVDEOP)
+			{
+				int i = 0;
+				char *modos = (char *)Malloc(sizeof(char) * (protocolo->modos + 1));
+				tmp[0] = '\0';
+				for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
+				{
+					for (lk = mcl->malla; lk; lk = lk->sig)
+					{
+						if (i == protocolo->modos)
+						{
+							modos[i] = '\0';
+							ProtFunc(P_MODO_CANAL)(&me, cn, "+%s %s", modos, tmp);
+							i = 0;
+							tmp[0] = '\0';
+						}
+						modos[i++] = mcl->flag;
+						strlcat(tmp, lk->user->nombre, sizeof(tmp));
+						strlcat(tmp, " ", sizeof(tmp));
+					}
+				}
+				if (i > 0)
+				{
+					modos[i] = '\0';
+					ProtFunc(P_MODO_CANAL)(&me, cn, "+%s %s", modos, tmp);
+				}
+				Free(modos);
+			}
+			else
+			{
+				for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
+				{
+					for (lk = mcl->malla; lk; lk = tlk)
+					{
+						tlk = lk->sig;
+						Free(lk);
+					}
+					mcl->malla = NULL;
+				}
+			}
+		}
+		cn->creacion = creacion;
+	}
+	if (parc > 4 && creacion <= cn->creacion) /* hay modos */
 	{
 		ProcesaModo(cl, cn, parv + 3, parc - 4);
 		Senyal4(SIGN_MODE, cl, cn, parv + 3, parc - 4);
-	}
+	}	
 	return 0;
 }
 IRCFUNC(m_kick)
@@ -1440,13 +1464,18 @@ IRCFUNC(m_105)
 	{
 		if (!strncmp("NICKLEN", parv[i], 7))
 		{
-			conf_set->nicklen = atoi(strchr(parv[i], '=') + 1);
+			protocolo->nicklen = atoi(strchr(parv[i], '=') + 1);
 			break;
 		}
 		else if (!strncmp("NETWORK", parv[i], 7))
 		{
 			char *p = strchr(parv[i], '=') + 1;
 			ircstrdup(conf_set->red, p);
+			break;
+		}
+		else if (!strncmp("MODES", parv[i], 5))
+		{
+			protocolo->modos = atoi(strchr(parv[i], '=') + 1);
 			break;
 		}
 	}
@@ -1610,7 +1639,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 {
 	int modo = ADD, param = 1;
 	char *mods = parv[0];
-	while (*mods)
+	while (!BadPtr(mods))
 	{
 		switch(*mods)
 		{
@@ -1768,6 +1797,10 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 						Debug("*");
 					}
 #endif
+#ifdef DEBUG
+					for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
+						Debug("!%c %s", mpm->flag, mpm->param);
+#endif
 				}
 				else
 				{
@@ -1820,8 +1853,8 @@ void EntraCliente(Cliente *cl, char *canal)
 			}
 			ProtFunc(P_MODO_CANAL)(&me, cn, "+sAm");
 		}
-		if (modcanales)
-			ProtFunc(P_MODO_CANAL)(&me, cn, modcanales);
+		else if (protocolo->modcanales)
+			ProtFunc(P_MODO_CANAL)(&me, cn, protocolo->modcanales);
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);

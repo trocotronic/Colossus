@@ -1,5 +1,5 @@
 /*
- * $Id: sqlite.c,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.2 2006-12-23 00:32:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -58,7 +58,7 @@ SQLRes Query(const char *query)
 	}
 	sqlite3_reset(pmt);
 #ifdef DEBUG
-	Debug(query);
+	Debug("%s", query);
 #endif
 	return (SQLRes)pmt;
 }

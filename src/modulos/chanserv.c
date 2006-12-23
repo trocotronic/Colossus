@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.39 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.40 2006-12-23 00:32:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -591,8 +591,8 @@ BOTFUNCHELP(CSHAccess)
 	Responde(cl, CLI(chanserv), "Un acceso no engloba otro. Por ejemplo, el tener +e no implica tener +l.");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal nick [+flags-flags] [automodos]");
 	Responde(cl, CLI(chanserv), "Añade los accesos al nick y sus automodos.");
-	Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal pepito -le [o]");
-	Responde(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal y se le quitarían los privilegios de acceder y editar lista.");
+	Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal pepito +m-le [o]");
+	Responde(cl, CLI(chanserv), "pepito tendría +o al entrar en #canal, se le daría privilegio para gestionar memos y se le quitarían los privilegios de acceder y editar lista.");
 	Responde(cl, CLI(chanserv), "Ejemplo: \00312ACCESS #canal pepito [h]");
 	Responde(cl, CLI(chanserv), "pepito recibiría el modo +h al entrar en #canal y no se modificarían los privilegios que tuviera.");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312ACCESS #canal nick []");
@@ -1519,7 +1519,7 @@ BOTFUNC(CSAccess)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick [+-flags]]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick [+-flags] [automodos]]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -1565,13 +1565,13 @@ BOTFUNC(CSAccess)
 		strncpy(canal, strtolower(param[1]), sizeof(canal));
 		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, canal, nick);
 		Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
-		CSDebug(param[1], "Acceso de %s eliminado", param[2]);
+		CSDebug(param[1], "Acceso de \00312%s\003 eliminado", param[2]);
 	}
 	else if (params > 3)
 	{
 		SQLRes res;
 		SQLRow row;
-		char f = ADD, *modos = NULL, *autof = NULL, canalw[256], nickw[256], *autom = NULL;
+		char f = ADD, *modos = NULL, autof[256], canalw[256], nickw[256];
 		u_long prev = 0L;
 		if (!CSTieneNivel(parv[0], param[1], CS_LEV_EDT))
 		{
@@ -1583,24 +1583,23 @@ BOTFUNC(CSAccess)
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
+		autof[0] = '\0';
 		if (*param[3] == '[')
 		{
-			autof = param[3];
+			strncpy(autof, &param[3][1], sizeof(autof));
 			if (params > 4)
 				modos = param[4];
 		}
 		else
 		{
 			modos = param[3];
-			if (params > 4)
-				autof = param[4];
+			if (params > 4 && *param[4] == '[')
+				strncpy(autof, &param[4][1], sizeof(autof));
 		}
 		if ((res = CSEsAccess(param[1], param[2])))
 		{
 			row = SQLFetchRow(res);
 			prev = atoul(row[2]);
-			if (!BadPtr(row[3]))
-				autom = row[3];
 		}
 		while (!BadPtr(modos))
 		{
@@ -1620,26 +1619,20 @@ BOTFUNC(CSAccess)
 			}
 			modos++;
 		}
-		if (autof)
+		if (!BadPtr(autof))
 		{
 			char *c;
-			autof = strdup(autof);
 			if ((c = strchr(autof, ']')))
 				*c = '\0';
-			if (*autof == '[')
-				autof++;
 		}
 		strncpy(canalw, strtolower(param[1]), sizeof(canalw));
 		strncpy(nickw, strtolower(param[2]), sizeof(nickw));
 		if (!res)
 			SQLQuery("INSERT INTO %s%s (canal,nick) values ('%s','%s')", PREFIJO, CS_ACCESS, canalw, nickw);
 		SQLQuery("UPDATE %s%s SET nivel=%lu WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, prev, canalw, nickw);
-		if (autof)
-		{
+		if (!BadPtr(autof))
 			SQLQuery("UPDATE %s%s SET automodos='%s' WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, autof, canalw, nickw);
-			autom = NULL;
-		}
-		if (prev || !BadPtr(autof) || autom)
+		if (prev || !BadPtr(autof))
 		{
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
 			CSDebug(param[1], "Acceso de \00312%s\003 cambiado a %s", param[2], Unifica(param, params, 3, -1));
@@ -1650,8 +1643,6 @@ BOTFUNC(CSAccess)
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 			CSDebug(param[1], "Acceso de \00312%s\003 eliminado.", param[2]);
 		}
-		if (autof)
-			Free(autof);
 		if (res)
 			SQLFreeRes(res);
 	}

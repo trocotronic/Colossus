@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.8 2006-12-03 20:30:07 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.9 2006-12-23 00:32:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -168,7 +168,7 @@ SQLRes Query(const char *query)
 {
 	MYSQL_RES *resultado;
 #ifdef DEBUG
-	Debug(query);
+	Debug("%s", query);
 #endif
 	if (!mysql)
 		return NULL;

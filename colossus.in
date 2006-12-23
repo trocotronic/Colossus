@@ -15,6 +15,9 @@ if [ "$1" = "start" ] ; then
 		echo "====================================================="
 		echo "Comprueba todos los errores primero "
 		echo "====================================================="
+		echo "Si se ha generado un archivo .core, ejecute ./colossus backtrace"
+		echo "Diríjase a http://bugs.redyc.com/, abra un post y copie la información que se le ha mostrado entre las secciones INICIO y FIN";
+		echo "====================================================="
 		if [ -r $PID_BACKUP ] ; then
 			mv -f $PID_BACKUP $PID_FILE
 		fi

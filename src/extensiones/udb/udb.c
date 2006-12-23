@@ -9,8 +9,11 @@
 #include "bdd.h"
 #ifdef USA_ZLIB
 #include "zip.h"
-int zDeflate(FILE *, FILE *, int);
+int zDeflate(int, FILE *, int);
 int zInflate(FILE *, FILE *);
+#endif
+#ifdef _WIN32
+#include <io.h>
 #endif
 
 ////////////////////////////////////////////////////////////////////
@@ -31,7 +34,6 @@ extern void DescargaOperServ(Extension *);
 extern IpServ *ipserv;
 extern void CargaIpServ(Extension *);
 extern void DescargaIpServ(Extension *);
-
 
 IRCFUNC(m_db);
 IRCFUNC(m_dbq);
@@ -57,6 +59,9 @@ u_long UMODE_SHOWIP;
 extern u_long UMODE_SERVICES;
 extern void ProcesaModo(Cliente *, Canal *, char **, int);
 extern void EntraCliente(Cliente *, char *);
+long base64dec(char *);
+char *base64enc(long);
+#define NOSERVDEOP 0x40
 IRCFUNC(*sjoin);
 IRCFUNC(m_sjoin_U);
 int opts = 0;
@@ -233,7 +238,7 @@ IRCFUNC(m_db)
 			{
 				if (gm > bloq->gmt)
 				{
-					TruncaBloque(cl, bloq, 0);
+					TruncaBloque(bloq, 0);
 					EnviaAServidor(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
 					bloq->res = cl; /* esperamos su res */
 					ActualizaGMT(bloq, gm);
@@ -273,30 +278,24 @@ IRCFUNC(m_db)
 			bytes = atoul(parv[4]);
 			if (bytes <= bloq->lof) /* tiene menos o los mismos, se los mandamos */
 			{
-				FILE *fp;
-				if ((fp = fopen(bloq->path, "rb")))
+				char c, linea[BUFSIZE];
+				int i = 0;
+				lseek(bloq->fd, INI_DATA + bytes, SEEK_SET);
+				while (read(bloq->fd, &c, sizeof(c)) > 0)
 				{
-					char linea[512], *d;
-					fseek(fp, bytes, SEEK_SET);
-					while (!feof(fp))
+					if (c == '\r' || c == '\n')
 					{
-						bzero(linea, 512);
-						if (!fgets(linea, 512, fp))
-							break;
-						if ((d = strchr(linea, '\r')))
-							*d = '\0';
-						if ((d = strchr(linea, '\n')))
-							*d = '\0';
+						linea[i] = '\0';
 						if (strchr(linea, ' '))
 							EnviaAServidor(":%s DB * INS %lu %c::%s", me.nombre, bytes, *parv[3], linea);
 						else
 							EnviaAServidor(":%s DB * DEL %lu %c::%s", me.nombre, bytes, *parv[3], linea);
-						bytes = ftell(fp);
+						bytes += strlen(linea) + 1;
+						i = 0;
 					}
-					fclose(fp);
+					else
+						linea[i++] = c;
 				}
-				else
-					EnviaAServidor(":%s DB %s ERR RES %i %c", me.nombre, cl->nombre, E_UDB_NOOPEN, *parv[3]);
 				EnviaAServidor(":%s DB %s FDR %c 0", me.nombre, cl->nombre, *parv[3]);
 				bloq->res = NULL; /* OJO! ya hemos terminado, si no se queda esperando */
 			}
@@ -346,7 +345,7 @@ IRCFUNC(m_db)
 			}
 			r += 3;
 			ircsprintf(buf, "%s %s", r, parv[5]);
-			if (ParseaLinea(bloq->id, buf, 1))
+			if (ParseaLinea(bloq, buf, 1))
 			{
 				EnviaAServidor(":%s DB %s ERR INS %i", me.nombre, cl->nombre, E_UDB_REP);
 				return 1;
@@ -381,7 +380,7 @@ IRCFUNC(m_db)
 				return 1;
 			}
 			r += 3;
-			if (ParseaLinea(bloq->id, r, 1))
+			if (ParseaLinea(bloq, r, 1))
 			{
 				EnviaAServidor(":%s DB %s ERR DEL %i", me.nombre, cl->nombre, E_UDB_REP);
 				return 1;
@@ -410,7 +409,7 @@ IRCFUNC(m_db)
 				EnviaAServidor(":%s DB %s ERR DRP %i %c %lu", me.nombre, cl->nombre, E_UDB_LEN, *parv[3], bloq->lof);
 				return 1;
 			}
-			TruncaBloque(cl, bloq, bytes);
+			TruncaBloque(bloq, bytes);
 		}
 	}
 /*	else if (!strcmp(parv[2], "ERR"))
@@ -497,7 +496,7 @@ IRCFUNC(m_db)
 		{
 			case -1:
 			case -2:
-				TruncaBloque(cl, bloq, 0);
+				TruncaBloque(bloq, 0);
 				EnviaAServidor(":%s DB %s RES %c 0", me.nombre, parv[0], *parv[3]);
 				bloq->res = cl;
 				break;
@@ -603,12 +602,14 @@ IRCFUNC(m_sjoin_U)
 	Cliente *al = NULL;
 	Canal *cn = NULL;
 	char *q, *p, tmp[BUFSIZE], mod[8];
+	time_t creacion;
 	cn = InfoCanal(parv[2], !0);
+	creacion = base64dec(parv[1]);
 	strlcpy(tmp, parv[parc-1], sizeof(tmp));
 	for (p = tmp; (q = strchr(p, ' ')); p = q)
 	{
-		q = strchr(p, ' ');
 		al = NULL;
+		q = strchr(p, ' ');
 		if (q)
 			*q++ = '\0';
 		mod[0] = '\0';
@@ -642,8 +643,8 @@ IRCFUNC(m_sjoin_U)
 		}
 		if (mod[0] != 'b' && mod[0] != 'e') /* es un usuario */
 		{
-			al = BuscaCliente(p);
-			EntraCliente(al, parv[2]);
+			if ((al = BuscaCliente(p)))
+				EntraCliente(al, parv[2]);
 		}
 		if (mod[0])
 		{
@@ -658,7 +659,72 @@ IRCFUNC(m_sjoin_U)
 				Senyal4(SIGN_MODE, al, cn, arr, i);
 		}
 	}
-	if (parc > 4) /* hay modos */
+	if (creacion < cn->creacion) /* debemos quitar todo lo nuestro */
+	{
+		MallaParam *mpm;
+		MallaMascara *mmk;
+		Mascara *mk, *tmk;
+		cn->modos = 0L;
+		for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
+			ircfree(mpm->param);
+		for (mmk = cn->mallamk; mmk; mmk = mmk->sig)
+		{
+			for (mk = mmk->malla; mk; mk = tmk)
+			{
+				tmk = mk->sig;
+				Free(mk->mascara);
+				Free(mk);
+			}
+			mmk->malla = NULL;
+		}
+		if (cl != linkado)
+		{
+			MallaCliente *mcl;
+			LinkCliente *lk, *tlk;
+			if (conf_set->opts & NOSERVDEOP)
+			{
+				int i = 0;
+				char *modos = (char *)Malloc(sizeof(char) * (protocolo->modos + 1));
+				tmp[0] = '\0';
+				for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
+				{
+					for (lk = mcl->malla; lk; lk = lk->sig)
+					{
+						if (i == protocolo->modos)
+						{
+							modos[i] = '\0';
+							ProtFunc(P_MODO_CANAL)(&me, cn, "+%s %s", modos, tmp);
+							i = 0;
+							tmp[0] = '\0';
+						}
+						modos[i++] = mcl->flag;
+						strlcat(tmp, lk->user->nombre, sizeof(tmp));
+						strlcat(tmp, " ", sizeof(tmp));
+					}
+				}
+				if (i > 0)
+				{
+					modos[i] = '\0';
+					ProtFunc(P_MODO_CANAL)(&me, cn, "+%s %s", modos, tmp);
+				}
+				Free(modos);
+			}
+			else
+			{
+				for (mcl = cn->mallacl; mcl; mcl = mcl->sig)
+				{
+					for (lk = mcl->malla; lk; lk = tlk)
+					{
+						tlk = lk->sig;
+						Free(lk);
+					}
+					mcl->malla = NULL;
+				}
+			}
+		}
+		cn->creacion = creacion;
+	}
+	if (parc > 4 && creacion <= cn->creacion) /* hay modos */
 	{
 		ProcesaModo(cl, cn, parv + 3, parc - 4);
 		Senyal4(SIGN_MODE, cl, cn, parv + 3, parc - 4);
@@ -703,10 +769,12 @@ int UdbOptimiza()
 		return 1;
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		aux = CogeDeId(i);
-		EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
-		OptimizaBloque(aux);
-		ActualizaGMT(aux, hora);
+		if ((aux = CogeDeId(i)))
+		{
+			EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
+			OptimizaBloque(aux);
+			ActualizaGMT(aux, hora);
+		}
 	}
 	return 0;
 }
@@ -719,150 +787,140 @@ int UdbBackup()
 		return 1;
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		aux = CogeDeId(i);
-		strftime(buf, sizeof(buf), "%d%m%y-%H%M", gmtime(&hora));
-		EnviaAServidor(":%s DB * BCK %c %s", me.nombre, aux->letra, buf);
-		CopiaSeguridad(aux,	buf);
+		if ((aux = CogeDeId(i)))
+		{
+			strftime(buf, sizeof(buf), "%d%m%y-%H%M", gmtime(&hora));
+			EnviaAServidor(":%s DB * BCK %c %s", me.nombre, aux->letra, buf);
+			CopiaSeguridad(aux,	buf);
+		}
 	}
 	return 0;
 }
 #ifdef USA_ZLIB
 /* rutinas de www.zlib.net */
 #define CHUNK 16384
-int zDeflate(FILE *source, FILE *dest, int level)
+int zDeflate(int source, FILE *dest, int level)
 {
-    int ret, flush;
-    unsigned have;
-    z_stream strm;
-    unsigned char in[CHUNK];
-    unsigned char out[CHUNK];
-
-    /* allocate deflate state */
-    strm.zalloc = Z_NULL;
-    strm.zfree = Z_NULL;
-    strm.opaque = Z_NULL;
-    ret = deflateInit(&strm, level);
-    if (ret != Z_OK)
-        return ret;
-
-    /* compress until end of file */
-    do {
-        strm.avail_in = fread(in, 1, CHUNK, source);
-        if (ferror(source)) {
-            (void)deflateEnd(&strm);
-            return Z_ERRNO;
-        }
-        flush = feof(source) ? Z_FINISH : Z_NO_FLUSH;
-        strm.next_in = in;
-
-        /* run deflate() on input until output buffer not full, finish
-           compression if all of source has been read in */
-        do {
-            strm.avail_out = CHUNK;
-            strm.next_out = out;
-            ret = deflate(&strm, flush);    /* no bad return value */
-            have = CHUNK - strm.avail_out;
-            if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
-                (void)deflateEnd(&strm);
-                return Z_ERRNO;
-            }
-        } while (strm.avail_out == 0);
-
-        /* done when last data in file processed */
-    } while (flush != Z_FINISH);
-
-    /* clean up and return */
-    (void)deflateEnd(&strm);
-    return Z_OK;
+	int ret, flush;
+	unsigned have;
+	z_stream strm;
+	unsigned char in[CHUNK];
+	unsigned char out[CHUNK];
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	ret = deflateInit(&strm, level);
+	if (ret != Z_OK)
+		return ret;
+	/* compress until end of file */
+	do 
+	{
+		lseek(source, 0, SEEK_SET);
+		strm.avail_in = read(source, in, CHUNK);
+		if (strm.avail_in < 0) 
+		{
+			(void)deflateEnd(&strm);
+			return Z_ERRNO;
+		}
+		flush = strm.avail_in == 0 ? Z_FINISH : Z_NO_FLUSH;
+		strm.next_in = in;
+		/* run deflate() on input until output buffer not full, finish
+		compression if all of source has been read in */
+		do 
+		{
+			strm.avail_out = CHUNK;
+			strm.next_out = out;
+			ret = deflate(&strm, flush);    /* no bad return value */
+			have = CHUNK - strm.avail_out;
+			if (fwrite(out, 1, have, dest) != have || ferror(dest)) 
+			{
+				(void)deflateEnd(&strm);
+				return Z_ERRNO;
+			}
+		} while (strm.avail_out == 0);
+		/* done when last data in file processed */
+	} while (flush != Z_FINISH);
+	/* clean up and return */
+	(void)deflateEnd(&strm);
+	return Z_OK;
 }
 int zInflate(FILE *source, FILE *dest)
 {
-    int ret;
-    unsigned have;
-    z_stream strm;
-    unsigned char in[CHUNK];
-    unsigned char out[CHUNK];
-
-    /* allocate inflate state */
-    strm.zalloc = Z_NULL;
-    strm.zfree = Z_NULL;
-    strm.opaque = Z_NULL;
-    strm.avail_in = 0;
-    strm.next_in = Z_NULL;
-    ret = inflateInit(&strm);
-    if (ret != Z_OK)
-        return ret;
-
-    /* decompress until deflate stream ends or end of file */
-    do {
-        strm.avail_in = fread(in, 1, CHUNK, source);
-        if (ferror(source)) {
-            (void)inflateEnd(&strm);
-            return Z_ERRNO;
-        }
-        if (strm.avail_in == 0)
-            break;
-        strm.next_in = in;
-
-        /* run inflate() on input until output buffer not full */
-        do {
-            strm.avail_out = CHUNK;
-            strm.next_out = out;
-            ret = inflate(&strm, Z_NO_FLUSH);
-            switch (ret) {
-            case Z_NEED_DICT:
-                ret = Z_DATA_ERROR;     /* and fall through */
-            case Z_DATA_ERROR:
-            case Z_MEM_ERROR:
-                (void)inflateEnd(&strm);
-                return ret;
-            }
-            have = CHUNK - strm.avail_out;
-            if (fwrite(out, 1, have, dest) != have || ferror(dest)) {
-                (void)inflateEnd(&strm);
-                return Z_ERRNO;
-            }
-        } while (strm.avail_out == 0);
-
-        /* done when inflate() says it's done */
-    } while (ret != Z_STREAM_END);
-
-    /* clean up and return */
-    (void)inflateEnd(&strm);
-    return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
+	int ret;
+	unsigned have;
+	z_stream strm;
+	unsigned char in[CHUNK];
+	unsigned char out[CHUNK];
+	strm.zalloc = Z_NULL;
+	strm.zfree = Z_NULL;
+	strm.opaque = Z_NULL;
+	strm.avail_in = 0;
+	strm.next_in = Z_NULL;
+	ret = inflateInit(&strm);
+	if (ret != Z_OK)
+		return ret;
+	/* decompress until deflate stream ends or end of file */
+	do 
+	{
+		strm.avail_in = fread(in, 1, CHUNK, source);
+		if (ferror(source)) 
+		{
+			(void)inflateEnd(&strm);
+			return Z_ERRNO;
+		}
+		if (strm.avail_in == 0)
+			break;
+		strm.next_in = in;
+		/* run inflate() on input until output buffer not full */
+		do 
+		{
+			strm.avail_out = CHUNK;
+			strm.next_out = out;
+			ret = inflate(&strm, Z_NO_FLUSH);
+			switch (ret) 
+			{
+				case Z_NEED_DICT:
+					ret = Z_DATA_ERROR;     /* and fall through */
+				case Z_DATA_ERROR:
+				case Z_MEM_ERROR:
+					(void)inflateEnd(&strm);
+					return ret;
+			}
+			have = CHUNK - strm.avail_out;
+			if (fwrite(out, 1, have, dest) != have || ferror(dest)) 
+			{
+				(void)inflateEnd(&strm);
+				return Z_ERRNO;
+			}
+		} while (strm.avail_out == 0);
+		/* done when inflate() says it's done */
+	} while (ret != Z_STREAM_END);
+	/* clean up and return */
+	(void)inflateEnd(&strm);
+	return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
 }
 int CopiaSeguridad(UDBloq *bloq, char *nombre)
 {
-	FILE *fp1, *fp2;
+	FILE *fp2;
 	char tmp[BUFSIZE];
 	ircsprintf(tmp, DB_DIR_BCK "%c%s.bck.udb", bloq->letra, nombre);
-	if ((fp1 = fopen(bloq->path, "rb")))
+	if ((fp2 = fopen(tmp, "wb")))
 	{
-		if ((fp2 = fopen(tmp, "wb")))
-		{
 #ifdef USA_ZLIB
-			if (zDeflate(fp1, fp2, Z_DEFAULT_COMPRESSION) != Z_OK)
-			{
-				fclose(fp2);
-				fclose(fp1);
-				return -3;
-			}
-#else
-			size_t leidos;
-			while ((leidos = fread(tmp, 1, BUFSIZE, fp1)))
-				fwrite(tmp, 1, leidos, fp2);
-#endif
-			fclose(fp2);
-		}
-		else
+		if (zDeflate(bloq->fd, fp2, Z_DEFAULT_COMPRESSION) != Z_OK)
 		{
-			fclose(fp1);
-			return -1;
+			fclose(fp2);
+			return -3;
 		}
-		fclose(fp1);
+#else
+		size_t leidos;
+		while ((leidos = read(bloq->fd, tmp, BUFSIZE)))
+			fwrite(tmp, 1, leidos, fp2);
+#endif
+		fclose(fp2);
 	}
 	else
-		return -2;
+		return -1;
 	return 0;
 }
 int RestauraSeguridad(UDBloq *bloq, char *nombre)
@@ -872,6 +930,7 @@ int RestauraSeguridad(UDBloq *bloq, char *nombre)
 	ircsprintf(tmp, DB_DIR_BCK "%c%s.bck.udb", bloq->letra, nombre);
 	if ((fp1 = fopen(tmp, "rb")))
 	{
+		close(bloq->fd);
 		if ((fp2 = fopen(bloq->path, "wb")))
 		{
 #ifdef USA_ZLIB
@@ -894,7 +953,6 @@ int RestauraSeguridad(UDBloq *bloq, char *nombre)
 			return -2;
 		}
 		fclose(fp1);
-		ActualizaHash(bloq);
 		DescargaBloque(bloq->id);
 		CargaBloque(bloq->id);
 	}
@@ -903,3 +961,92 @@ int RestauraSeguridad(UDBloq *bloq, char *nombre)
 	return 0;
 }
 #endif
+/* ':' and '#' and '&' and '+' and '@' must never be in this table. */
+/* these tables must NEVER CHANGE! >) */
+char int6_to_base64_map[] = {
+	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D',
+	    'E', 'F',
+	'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+	    'U', 'V',
+	'W', 'X', 'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+	    'k', 'l',
+	'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+	    '{', '}'
+};
+
+char base64_to_int6_map[] = {
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1,
+	-1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+	25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1,
+	-1, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+	51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, -1, 63, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+};
+
+static char *int_to_base64(long val)
+{
+	/* 32/6 == max 6 bytes for representation, 
+	 * +1 for the null, +1 for byte boundaries 
+	 */
+	static char base64buf[8];
+	long i = 7;
+
+	base64buf[i] = '\0';
+
+	/* Temporary debugging code.. remove before 2038 ;p.
+	 * This might happen in case of 64bit longs (opteron/ia64),
+	 * if the value is then too large it can easily lead to
+	 * a buffer underflow and thus to a crash. -- Syzop
+	 */
+	if (val > 2147483647L)
+	{
+		abort();
+	}
+
+	do
+	{
+		base64buf[--i] = int6_to_base64_map[val & 63];
+	}
+	while (val >>= 6);
+
+	return base64buf + i;
+}
+
+static long base64_to_int(char *b64)
+{
+	int v = base64_to_int6_map[(u_char)*b64++];
+
+	if (!b64)
+		return 0;
+		
+	while (*b64)
+	{
+		v <<= 6;
+		v += base64_to_int6_map[(u_char)*b64++];
+	}
+
+	return v;
+}
+char *base64enc(long i)
+{
+	if (i < 0)
+		return ("0");
+	return int_to_base64(i);
+}
+long base64dec(char *b64)
+{
+	if (b64)
+		return base64_to_int(b64);
+	else
+		return 0;
+}

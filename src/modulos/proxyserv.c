@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.27 2006-12-03 20:30:07 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.28 2006-12-23 00:32:25 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,6 +24,7 @@ SOCKFUNC(PSFin);
 Proxy *proxys = NULL;
 
 int PSCmdNick(Cliente *, int);
+void PSEscanea(char *);
 
 Opts TiposProxy[] = {
 	{ XS_T_HTTP , "HTTP" } ,
@@ -94,8 +95,11 @@ int MOD_DESCARGA(ProxyServ)()
 	int i;
 	for (px = proxys; px; px = px->sig)
 	{
-		for (i = 0; i < proxyserv->puertos; i++)
-			SockClose(px->puerto[i]->sck, LOCAL);
+		for (i = 0; i < px->puertos; i++)
+		{
+			if (px->puerto[i])
+				SockClose(px->puerto[i]->sck, LOCAL);
+		}
 	}
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
 	BorraSenyal(SIGN_SQL, PSSigSQL);
@@ -266,60 +270,6 @@ void PSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SYNCH, PSSigSynch);
 	BotSet(proxyserv);
 }
-void PSEscanea(char *host)
-{
-	Proxy *px;
-	int i;
-	if (!strncmp("192.168", host, 7) || !strcmp("127.0.0.1", host))
-	{
-		Free(host);
-		return;
-	}
-	if (proxyserv->opm && EsIp(host))
-	{
-		u_int tmp1, tmp2, tmp3, tmp4;
-		struct hostent *he;
-		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
-		ircsprintf(buf, "%u.%u.%u.%u.opm.blitzed.org", tmp4, tmp3, tmp2, tmp1);
-		if ((he = gethostbyname(buf))) 
-		{
-			char tmp[128], motivo[256];
-			tmp[0] = '\0';
-			if (proxyserv->detalles)
-			{
-				int res = ntohl((*(struct in_addr *)he->h_addr).s_addr)&0xFF;
-				if (res & 0x1)
-					strlcat(tmp, ",WINGATE", sizeof(tmp));
-				if (res & 0x2)
-					strlcat(tmp, ",SOCKSx", sizeof(tmp));
-				if (res & 0x4)
-					strlcat(tmp, ",HTTP", sizeof(tmp));
-				if (res & 0x8)
-					strlcat(tmp, ",ROUTER", sizeof(tmp));
-				if (res & 0x10)
-					strlcat(tmp, ",POST", sizeof(tmp));
-				if (res & 0x20)
-					strlcat(tmp, ",GET", sizeof(tmp));
-			}
-			ircsprintf(motivo, "Posible PROXY %s ilegal", !BadPtr(tmp) ? &tmp[1] : "");
-			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
-			return;
-		}
-	}
-	px = BMalloc(Proxy);
-	for (i = 0; i < proxyserv->puertos; i++)
-	{
-		px->puerto[i] = BMalloc(PPuerto);
-		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
-		{
-			px->puerto[i]->puerto = proxyserv->puerto[i].puerto;
-			px->puerto[i]->tipo = proxyserv->puerto[i].tipo;
-			px->puertos++;
-		}
-	}
-	px->host = host; /* ya es un strdup */
-	AddItem(px, proxys);
-}
 BOTFUNCHELP(PSHHost)
 {
 	Responde(cl, CLI(proxyserv), "Gestiona los hosts que omiten el escán.");
@@ -410,6 +360,62 @@ int PSCmdNick(Cliente *cl, int nuevo)
 	}
 	return 0;
 }
+void PSEscanea(char *host)
+{
+	Proxy *px;
+	int i;
+	if (!strncmp("192.168", host, 7) || !strcmp("127.0.0.1", host))
+	{
+		Free(host);
+		return;
+	}
+	if (proxyserv->opm && EsIp(host))
+	{
+		u_int tmp1, tmp2, tmp3, tmp4;
+		struct hostent *he;
+		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
+		ircsprintf(buf, "%u.%u.%u.%u.opm.blitzed.org", tmp4, tmp3, tmp2, tmp1);
+		if ((he = gethostbyname(buf))) 
+		{
+			char tmp[128], motivo[256];
+			tmp[0] = '\0';
+			if (proxyserv->detalles)
+			{
+				int res = ntohl((*(struct in_addr *)he->h_addr).s_addr)&0xFF;
+				if (res & 0x1)
+					strlcat(tmp, ",WINGATE", sizeof(tmp));
+				if (res & 0x2)
+					strlcat(tmp, ",SOCKSx", sizeof(tmp));
+				if (res & 0x4)
+					strlcat(tmp, ",HTTP", sizeof(tmp));
+				if (res & 0x8)
+					strlcat(tmp, ",ROUTER", sizeof(tmp));
+				if (res & 0x10)
+					strlcat(tmp, ",POST", sizeof(tmp));
+				if (res & 0x20)
+					strlcat(tmp, ",GET", sizeof(tmp));
+			}
+			ircsprintf(motivo, "Posible PROXY %s ilegal", !BadPtr(tmp) ? &tmp[1] : "");
+			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
+			return;
+		}
+	}
+	px = BMalloc(Proxy);
+	for (i = 0; i < proxyserv->puertos; i++)
+	{
+		px->puerto[i] = BMalloc(PPuerto);
+		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
+		{
+			px->puerto[i]->puerto = proxyserv->puerto[i].puerto;
+			px->puerto[i]->tipo = proxyserv->puerto[i].tipo;
+			px->puertos++;
+		}
+		else
+			ircfree(px->puerto[i--]);
+	}
+	px->host = host; /* ya es un strdup */
+	AddItem(px, proxys);
+}
 int PSSigSQL()
 {
 	if (!SQLEsTabla(XS_SQL))
@@ -449,15 +455,14 @@ int PSSigSynch()
 }
 void CompruebaProxy(Proxy *px)
 {
-	int i;
-	int tipo = 0;
+	int i, tipo = 0;
 	char psbuf[128], ptbuf[128];
 	if (px->escaneados == proxyserv->puertos)
 	{
 		psbuf[0] = ptbuf[0] = '\0';
-		for (i = 0; i < proxyserv->puertos; i++)
+		for (i = 0; i < px->puertos; i++)
 		{
-			if (px->puerto[i]->proxy)
+			if (px->puerto[i] && px->puerto[i]->proxy)
 			{
 				switch (px->puerto[i]->proxy)
 				{
@@ -516,7 +521,7 @@ void CompruebaProxy(Proxy *px)
 				ircsprintf(buf, ",%i", px->puerto[i]->puerto);
 				strlcat(ptbuf, buf, sizeof(ptbuf));
 			}
-			Free(px->puerto[i]);
+			//Free(px->puerto[i]);
 		}
 		if (tipo)
 		{
@@ -552,7 +557,7 @@ PPuerto *BuscaPPuerto(Sock *sck)
 		int i;
 		for (i = 0; i < px->puertos; i++)
 		{
-			if (px->puerto[i]->puerto == sck->puerto)
+			if (px->puerto[i] && px->puerto[i]->puerto == sck->puerto)
 				return px->puerto[i];
 		}
 	}
@@ -563,6 +568,7 @@ SOCKFUNC(PSAbre)
 	PPuerto *ppt;
 	if ((ppt = BuscaPPuerto(sck)))
 	{
+		ppt->abierto = 1;
 		if (ppt->tipo & XS_T_ABIERTO)
 		{
 			ppt->proxy = XS_T_ABIERTO;
@@ -680,7 +686,7 @@ SOCKFUNC(PSFin)
 			ppt->tipo &= ~XS_T_POST;
 		else if (ppt->tipo & XS_T_GET)
 			ppt->tipo &= ~XS_T_GET;
-		if (!ppt->tipo || ppt->proxy)
+		if (!ppt->tipo || ppt->proxy || !ppt->abierto)
 		{
 			px->escaneados++;
 			CompruebaProxy(px);

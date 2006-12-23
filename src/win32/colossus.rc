@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.18 2006-12-03 20:30:07 Trocotronic Exp $
+// $Id: colossus.rc,v 1.19 2006-12-23 00:32:25 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -74,8 +74,8 @@ END
 //
 
 VER_COLOSSUS VERSIONINFO
- FILEVERSION 1,6,0,0
- PRODUCTVERSION 1,6,0,0
+ FILEVERSION 1,7,0,0
+ PRODUCTVERSION 1,7,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -93,14 +93,14 @@ BEGIN
             VALUE "Comments", "\0"
             VALUE "CompanyName", "Redyc\0"
             VALUE "FileDescription", "Colossus - Servicios de red\0"
-            VALUE "FileVersion", "1.6\0"
+            VALUE "FileVersion", "1.7\0"
             VALUE "InternalName", "Colossus\0"
-            VALUE "LegalCopyright", "Copyright © 2004-2006\0"
+            VALUE "LegalCopyright", "Copyright © 2004-2007\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Colossus\0"
-            VALUE "ProductVersion", "1.6\0"
+            VALUE "ProductVersion", "1.7\0"
             VALUE "SpecialBuild", "\0"
         END
     END
@@ -158,8 +158,8 @@ CAPTION "Acerca de Colossus..."
 FONT 8, "Tahoma"
 BEGIN
     LTEXT           "Autor: Trocotronic",IDC_STATIC,10,10,76,8	
-    LTEXT           "©2004-2006",IDC_VER,10,20,76,8
-    CONTROL         "http://www.redyc.com",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
+    LTEXT           "©2004-2007",IDC_VER,10,20,76,8
+    CONTROL         "http://www.redyc.com/",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
     CONTROL         BMP_LOGO,IDC_STATIC,"Static",SS_BITMAP,111,3,64,64
     GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,60,BS_LEFT
     LTEXT           "OpenSSL: ",IDC_STATIC,14,56,40,8
