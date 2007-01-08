@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.46 2006-12-23 00:32:23 Trocotronic Exp $
+ * $Id: cambios,v 1.47 2007-01-08 10:41:31 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -429,3 +429,7 @@
 221206485 - Añadida la función CLIENTES en OperServ.
 221206486 - Añadida la función SETUDB en OperServ para gestionar el pass-flood, el server-debug y clientes.
 221206487 - *** Quintugésima release pública: 1.7 ***
+020107488 - Arreglado un fallo al hacer backups de los bloques UDB.
+020107489 - Arreglado un fallo al procesar los parámetros de red.
+030107490 - Arreglado un fallo en la compilación sin soporte ZLIB.
+080107491 - *** Sextugésima release pública: 1.7a ***

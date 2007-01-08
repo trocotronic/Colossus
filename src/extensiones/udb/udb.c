@@ -820,36 +820,32 @@ int zDeflate(int source, FILE *dest, int level)
 	ret = deflateInit(&strm, level);
 	if (ret != Z_OK)
 		return ret;
-	/* compress until end of file */
+	lseek(source, 0, SEEK_SET);
 	do 
 	{
-		lseek(source, 0, SEEK_SET);
-		strm.avail_in = read(source, in, CHUNK);
-		if (strm.avail_in < 0) 
+		ret = read(source, in, CHUNK);
+		if (ret < 0) 
 		{
-			(void)deflateEnd(&strm);
+			deflateEnd(&strm);
 			return Z_ERRNO;
 		}
-		flush = strm.avail_in == 0 ? Z_FINISH : Z_NO_FLUSH;
+		flush = (ret == 0 ? Z_FINISH : Z_NO_FLUSH);
+		strm.avail_in = ret;
 		strm.next_in = in;
-		/* run deflate() on input until output buffer not full, finish
-		compression if all of source has been read in */
 		do 
 		{
 			strm.avail_out = CHUNK;
 			strm.next_out = out;
-			ret = deflate(&strm, flush);    /* no bad return value */
+			ret = deflate(&strm, flush);
 			have = CHUNK - strm.avail_out;
-			if (fwrite(out, 1, have, dest) != have || ferror(dest)) 
+			if (fwrite(out, 1, have, dest) != have || ferror(dest))
 			{
-				(void)deflateEnd(&strm);
+				deflateEnd(&strm);
 				return Z_ERRNO;
 			}
 		} while (strm.avail_out == 0);
-		/* done when last data in file processed */
 	} while (flush != Z_FINISH);
-	/* clean up and return */
-	(void)deflateEnd(&strm);
+	deflateEnd(&strm);
 	return Z_OK;
 }
 int zInflate(FILE *source, FILE *dest)
@@ -867,19 +863,17 @@ int zInflate(FILE *source, FILE *dest)
 	ret = inflateInit(&strm);
 	if (ret != Z_OK)
 		return ret;
-	/* decompress until deflate stream ends or end of file */
 	do 
 	{
 		strm.avail_in = fread(in, 1, CHUNK, source);
 		if (ferror(source)) 
 		{
-			(void)inflateEnd(&strm);
+			inflateEnd(&strm);
 			return Z_ERRNO;
 		}
 		if (strm.avail_in == 0)
 			break;
 		strm.next_in = in;
-		/* run inflate() on input until output buffer not full */
 		do 
 		{
 			strm.avail_out = CHUNK;
@@ -888,25 +882,24 @@ int zInflate(FILE *source, FILE *dest)
 			switch (ret) 
 			{
 				case Z_NEED_DICT:
-					ret = Z_DATA_ERROR;     /* and fall through */
+					ret = Z_DATA_ERROR;
 				case Z_DATA_ERROR:
 				case Z_MEM_ERROR:
-					(void)inflateEnd(&strm);
+					inflateEnd(&strm);
 					return ret;
 			}
 			have = CHUNK - strm.avail_out;
-			if (fwrite(out, 1, have, dest) != have || ferror(dest)) 
+			if (fwrite(out, 1, have, dest) != have || ferror(dest))
 			{
-				(void)inflateEnd(&strm);
+				inflateEnd(&strm);
 				return Z_ERRNO;
 			}
 		} while (strm.avail_out == 0);
-		/* done when inflate() says it's done */
 	} while (ret != Z_STREAM_END);
-	/* clean up and return */
-	(void)inflateEnd(&strm);
-	return ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR;
+	inflateEnd(&strm);
+	return (ret == Z_STREAM_END ? Z_OK : Z_DATA_ERROR);
 }
+#endif
 int CopiaSeguridad(UDBloq *bloq, char *nombre)
 {
 	FILE *fp2;
@@ -968,7 +961,6 @@ int RestauraSeguridad(UDBloq *bloq, char *nombre)
 		return -1;
 	return 0;
 }
-#endif
 #ifdef _WIN32
 /* ':' and '#' and '&' and '+' and '@' must never be in this table. */
 /* these tables must NEVER CHANGE! >) */

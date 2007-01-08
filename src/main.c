@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.90 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: main.c,v 1.91 2007-01-08 10:41:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -483,6 +483,9 @@ int main(int argc, char *argv[])
 #ifdef FORCE_CORE
 	struct rlimit corelim;
 #endif
+#ifndef _WIN32
+	struct sigaction act;
+#endif
 	char nofork = 0;
 	iniciado = time(0);
 #ifndef _WIN32
@@ -622,21 +625,20 @@ int main(int argc, char *argv[])
 	signal(SIGSEGV, CleanUpSegv);
 #else
   #ifdef POSIX_SIGNALS
-  	struct sigaction act;
 	act.sa_handler = SIG_IGN;
 	act.sa_flags = 0;
-	(void)sigemptyset(&act.sa_mask);
-	(void)sigaddset(&act.sa_mask, SIGHUP);
-	(void)sigaction(SIGHUP, &act, NULL);
+	sigemptyset(&act.sa_mask);
+	sigaddset(&act.sa_mask, SIGHUP);
+	sigaction(SIGHUP, &act, NULL);
 	act.sa_handler = Reinicia;
-	(void)sigaddset(&act.sa_mask, SIGINT);
-	(void)sigaction(SIGINT, &act, NULL);
+	sigaddset(&act.sa_mask, SIGINT);
+	sigaction(SIGINT, &act, NULL);
 	act.sa_handler = CierraColossus;
-	(void)sigaddset(&act.sa_mask, SIGTERM);
-	(void)sigaction(SIGTERM, &act, NULL);
+	sigaddset(&act.sa_mask, SIGTERM);
+	sigaction(SIGTERM, &act, NULL);
 	act.sa_handler = AbreSockIrcd;
-	(void)sigaddset(&act.sa_mask, SIGPIPE);
-	(void)sigaction(SIGPIPE, &act, NULL);
+	sigaddset(&act.sa_mask, SIGPIPE);
+	sigaction(SIGPIPE, &act, NULL);
   #elif BSD_RELIABLE_SIGNALS
 	signal(SIGHUP, Refresca);
 	signal(SIGTERM, CierraColossus);

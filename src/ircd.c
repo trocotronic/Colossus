@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.41 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.42 2007-01-08 10:41:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -143,7 +143,7 @@ int AbreSockIrcd()
 #endif
 	{
 		Info("No puede conectar");
-		CierraIrcd(NULL, NULL);
+		CierraIrcd(NULL, NULL, 0);
 		return 0;
 	}
 	if (IrcdEscucha)
@@ -190,7 +190,7 @@ SOCKFUNC(ProcesaIrcd)
 		canal_debug = BuscaCanal(conf_set->debug);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
 		ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
-	return protocolo->parsea(sck, data);
+	return protocolo->parsea(sck, data, strlen(data));
 }
 SOCKFUNC(CierraIrcd)
 {
@@ -265,7 +265,7 @@ SOCKFUNC(EscuchaAbre) /* nos aceptan el sock, lo renombramos */
 			EscuchaIrcd();
 			return 1;
 		}
-		IniciaIrcd(sck, NULL);
+		IniciaIrcd(sck, NULL, 0);
 	}
 	return 0;
 }

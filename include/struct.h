@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.67 2006-12-23 01:07:00 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.68 2007-01-08 10:41:32 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -84,7 +84,7 @@ extern void strcopia(char **, const char *);
 #define Free free
 #endif
 typedef struct _sock Sock;
-#define SOCKFUNC(x) int (x)(Sock *sck, char *data)
+#define SOCKFUNC(x) int (x)(Sock *sck, char *data, u_int len)
 #define MAXSOCKS MAXCONNECTIONS
 #define BUFSIZE 1024
 #define SOCKBUF 4096
@@ -339,9 +339,9 @@ extern int DetieneProceso(int (*)());
 #define INI_SUMD 0xFF
 extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
-#define COLOSSUS_VERNUM "1.7"
+#define COLOSSUS_VERNUM "1.7a"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
-#define COLOSSUS_VERINT 10600
+#define COLOSSUS_VERINT 10701
 extern char **margv;
 #define Malloc(x) ExMalloc(x, 0, __FILE__, __LINE__)
 /*!
@@ -420,6 +420,7 @@ extern int EsArchivo(char *);
 #define UnsetSSL(x) x->opts &= ~OPT_SSL
 #endif
 #define OPT_NADD 0x8
+#define OPT_BIN 0x10
 #ifdef _WIN32
 extern void ChkBtCon(int, int);
 extern char *PreguntaCampo(char *, char *, char *);

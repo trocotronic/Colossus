@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.27 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.28 2007-01-08 10:41:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,7 +14,6 @@ int listens[MAX_LISTN];
 int listenS = 0;
 
 void Encola(DBuf *, char *, int);
-int Desencola(DBuf *, char *, int);
 void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
@@ -89,9 +88,10 @@ void BorraSock(Sock *sck)
 }
 /*!
  * @desc: Abre una conexión.
- Las funciones SOCKFUNC reciben dos parámetros:
+ Las funciones SOCKFUNC reciben tres parámetros:
  	- Sock *sck: Conexión a la que pertenece.
  	- char *data: Datos. En algunos casos puede ser NULL.
+ 	- u_int len: Longitud válida de los datos.
  * @params: $host [in] Host o ip a conectar.
  	    $puerto [in] Puerto remoto.
  	    $openfunc [in] Función a ejecutar cuando se complete la conexión. Si no se precisa, usar NULL.
@@ -139,9 +139,10 @@ Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
 }
 /*!
  * @desc: Abre una conexión avanzada.
- Las funciones SOCKFUNC reciben dos parámetros:
+ Las funciones SOCKFUNC reciben tres parámetros:
  	- Sock *sck: Conexión a la que pertenece.
  	- char *data: Datos. En algunos casos puede ser NULL.
+ 	- u_int len: Longitud válida de los datos.
  * @params: $host [in] Host o ip a conectar.
  	    $puerto [in] Puerto remoto.
  	    $openfunc [in] Función a ejecutar cuando se complete la conexión. Si no se precisa, usar NULL.
@@ -159,6 +160,7 @@ Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
  	    	- OPT_NORECVQ: Los datos se envían por bloques a medida que se leen. No se envían líneas que terminen por \r\n sino que se envían por bloques de 16KB.
  	    	- OPT_NADD: No añade el socket en la lista interna de sockets. Deberá gestionar el socket por su cuenta. Si no se añade el socket a la lista, no se ejecutan las funciones SockRead.
  	    	- OPT_ZLIB: La conexión comprime los datos con ZLIB.
+ 	    	- OPT_BIN: La conexión recibirá datos binarios. No añadirá \0 al final.
  * @ret: Devuelve la estructura de conexión en caso que haya podido establecerse con éxito. Devuelve NULL si no ha podido conectar.
  * @ver: SockClose SockListen SockOpen
  * @cat: Conexiones
@@ -374,7 +376,7 @@ void SockWriteExVL(Sock *sck, int opts, char *formato, va_list vl)
 	Debug("[Enviando: %s]", buf);
 #endif
 	if (sck->writefunc && buf[0])
-		sck->writefunc(sck, buf);
+		sck->writefunc(sck, buf, strlen(buf));
 	if (opts & OPT_CR)
 		strlcat(buf, "\r", sizeof(buf));
 	if (opts & OPT_LF)
@@ -454,7 +456,7 @@ void SockClose(Sock *sck, char closef)
 		Debug("Cerrando conexion de escucha en puerto %i (%i)", sck->puerto, sck->pres);
 #endif
 		if (sck->closefunc)
-			sck->closefunc(sck, closef ? NULL : "LOCAL");
+			sck->closefunc(sck, closef ? NULL : "LOCAL", 0);
 		LiberaSock(sck);
 	}
 	else
@@ -467,14 +469,14 @@ void SockClose(Sock *sck, char closef)
 			Debug("[Parseando: %s]", sck->buffer);
 #endif
 			if (sck->readfunc) /* nos ha quedado algo en el buffer, lo enviamos; pero solo si es remoto */
-				sck->readfunc(sck, sck->buffer);
+				sck->readfunc(sck, sck->buffer, sck->pos);
 		}
 		SockCerr(sck);
 #ifdef DEBUG
 		Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
 #endif
 		if (sck->closefunc)
-			sck->closefunc(sck, closef ? NULL : "LOCAL");
+			sck->closefunc(sck, closef ? NULL : "LOCAL", 0);
 	}
 }
 void LiberaSock(Sock *sck)
@@ -616,61 +618,6 @@ int CopiaSlot(DBuf *bufc, char *dest, int bytes)
 	}
 	return b - dest;
 }
-/* mete en buf una línea completa o hasta que se quede lleno */	
-int Desencola(DBuf *bufc, char *buf, int bytes)
-{
-	/* bytes contiene el máximo que podemos copiar */
-	DbufData *aux;
-	char *s;
-	int len, copiados, i;
-	inicio:
-	if (!bufc)
-		return 0;
-	if (!bufc->slots || !bufc->rslot)
-		return 0;
-	aux = bufc->rslot;
-	s = bufc->rchar;
-	len = bufc->len;
-	copiados = i = 0;
-	if ((i = bufc->rslot->len) > len)
-		i = len;
-	*buf = 0;
-	while (len > 0 && bytes > 0)
-	{
-		len--;
-		bytes--;
-		if (*s == '\n' || *s == '\r')
-		{
-			copiados = bufc->len - len;
-			if (copiados == 1)
-			{
-				EliminaSlot(bufc, 1);
-				goto inicio;
-			}
-			break;
-		}
-		if (!--i)
-		{
-			if (aux && (aux = aux->sig))
-			{
-				s = aux->data;
-				i = MIN(DBUF, aux->len);
-			}
-			else if (!aux)
-				break;
-		}
-		else
-			s++;
-	}
-	if (copiados <= 0)
-		return 0;
-	i = CopiaSlot(bufc, buf, MIN(copiados, bytes)+1);
-	if (copiados > i)
-		EliminaSlot(bufc, copiados - i);
-	if (i >= 0)
-		*(buf + i) = '\0';
-	return i;
-}
 void EnviaCola(Sock *sck)
 {
 	char buf[SOCKBUF], *msg;
@@ -748,9 +695,10 @@ int LeeMensaje(Sock *sck)
 		{
 			sck->pos = MIN(len, sizeof(sck->buffer)-1);
 			strncpy(sck->buffer, lee, sck->pos);
-			sck->buffer[sck->pos] = '\0';
+			if (!(sck->opts & OPT_BIN))
+				sck->buffer[sck->pos] = '\0';
 			if (sck->readfunc)
-				sck->readfunc(sck, sck->buffer);
+				sck->readfunc(sck, sck->buffer, sck->pos);
 		}
 		else
 			Encola(sck->recvQ, lee, len);
@@ -798,13 +746,14 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 			{
 				if (b == sck->buffer) 
 					continue;
-				*b = '\0';
-				sck->pos = 0;
+				if (!(sck->opts & OPT_BIN))
+					*b = '\0';
 #ifdef DEBUG
 				Debug("[Parseando: %s]", sck->buffer);
 #endif
 				if (sck->readfunc)
-					sck->readfunc(sck, sck->buffer);
+					sck->readfunc(sck, sck->buffer, sck->pos);
+				sck->pos = 0;
 				if (EsCerr(sck))
 					return -1;
 #ifdef USA_ZLIB
@@ -848,7 +797,8 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 	} while(!hecho);
 #endif
 	sck->pos = b - sck->buffer;
-	sck->buffer[sck->pos] = '\0';
+	if (!(sck->opts & OPT_BIN))
+		sck->buffer[sck->pos] = '\0';
 	return 0;
 }
 int CompletaConexion(Sock *sck)
@@ -858,7 +808,7 @@ int CompletaConexion(Sock *sck)
 	Debug("Conexion establecida con %s:%i (%i)", sck->host, sck->puerto, sck->pres);
 #endif
 	if (sck->openfunc)
-		sck->openfunc(sck, NULL);
+		sck->openfunc(sck, NULL, 0);
 	Loguea(LOG_CONN, "Conexión establecida con %s:%i", sck->host, sck->puerto);
 	return 0;
 }

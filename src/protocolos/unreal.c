@@ -1402,7 +1402,7 @@ IRCFUNC(m_server)
 			{
 				Alerta(FERR, "No puede hacer inicia_zlib");
 				ZLibLibera(sck);
-				CierraIrcd(NULL, NULL);
+				CierraIrcd(NULL, NULL, 0);
 				return 0;
 			}
 			SetZlib(sck);
@@ -1465,18 +1465,18 @@ IRCFUNC(m_105)
 		if (!strncmp("NICKLEN", parv[i], 7))
 		{
 			protocolo->nicklen = atoi(strchr(parv[i], '=') + 1);
-			break;
+			continue;
 		}
 		else if (!strncmp("NETWORK", parv[i], 7))
 		{
 			char *p = strchr(parv[i], '=') + 1;
 			ircstrdup(conf_set->red, p);
-			break;
+			continue;
 		}
 		else if (!strncmp("MODES", parv[i], 5))
 		{
 			protocolo->modos = atoi(strchr(parv[i], '=') + 1);
-			break;
+			continue;
 		}
 	}
 	return 0;

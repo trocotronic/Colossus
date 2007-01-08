@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.28 2006-12-23 00:32:25 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.29 2007-01-08 10:41:32 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -404,7 +404,7 @@ void PSEscanea(char *host)
 	for (i = 0; i < proxyserv->puertos; i++)
 	{
 		px->puerto[i] = BMalloc(PPuerto);
-		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
+		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, 0)))
 		{
 			px->puerto[i]->puerto = proxyserv->puerto[i].puerto;
 			px->puerto[i]->tipo = proxyserv->puerto[i].tipo;
@@ -633,7 +633,7 @@ SOCKFUNC(PSLee)
 	if ((ppt = BuscaPPuerto(sck)))
 	{
 		int i;
-		ppt->bytes += strlen(data);
+		ppt->bytes += len;
 		if (ppt->bytes > 4096)
 		{
 			SockClose(sck, LOCAL);
@@ -693,7 +693,7 @@ SOCKFUNC(PSFin)
 			ppt->sck = NULL;
 		}
 		else
-			ppt->sck = SockOpenEx(sck->host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ);
+			ppt->sck = SockOpenEx(sck->host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, 0);
 	}
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.7 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.8 2007-01-08 10:41:32 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -652,7 +652,7 @@ char *WSEntities(char *str, int *len)
 }
 SOCKFUNC(WSCierra)
 {
-	int len;
+	int l;
 	static int total = 0;
 	char *tmp;
 	Rss *rs;
@@ -667,10 +667,10 @@ SOCKFUNC(WSCierra)
 		tmp = (char *)Malloc(sizeof(char) * (inode.st_size+1));
 		tmp[inode.st_size] = '\0';
 		ircsprintf(tokbuf, "tmp/%s.xml", urls[rs->opt].item);
-		if ((len = read(rs->fp, tmp, inode.st_size)) == inode.st_size)
+		if ((l = read(rs->fp, tmp, inode.st_size)) == inode.st_size)
 		{
-			WSEntities(tmp, &len);
-			if (!XML_Parse(rs->pxml, tmp, len, 1))
+			WSEntities(tmp, &l);
+			if (!XML_Parse(rs->pxml, tmp, l, 1))
 			{
 			//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
 			//	Debug("%s", buf);
@@ -767,8 +767,7 @@ int WSEmiteRSS(Proc *proc)
 }
 BOTFUNC(Prueba)
 {
-	int i;
-	int len;
+	int i, len;
 	Rss *rs;
 	struct stat inode;
 	char *tmp;
@@ -783,31 +782,30 @@ BOTFUNC(Prueba)
 		ircsprintf(tokbuf, "tmp/%s.xml", urls[rs->opt].item);
 		rs->fp = open(tokbuf, O_RDONLY|O_BINARY, S_IREAD);
 		if (rs->fp > 0 && fstat(rs->fp, &inode) != -1)
-	{
-		lseek(rs->fp, 0, SEEK_SET);
-		tmp = (char *)Malloc(sizeof(char) * (inode.st_size+1));
-		tmp[inode.st_size] = '\0';
-		if ((len = read(rs->fp, tmp, inode.st_size)) == inode.st_size)
 		{
-			WSEntities(tmp, &len);
-			if (!XML_Parse(rs->pxml, tmp, len, 1))
+			lseek(rs->fp, 0, SEEK_SET);
+			tmp = (char *)Malloc(sizeof(char) * (inode.st_size+1));
+			tmp[inode.st_size] = '\0';
+			if ((len = read(rs->fp, tmp, inode.st_size)) == inode.st_size)
 			{
-			//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
-			//	Debug("%s", buf);
+				WSEntities(tmp, &len);
+				if (!XML_Parse(rs->pxml, tmp, len, 1))
+				{
+				//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
+				//	Debug("%s", buf);
+				}
 			}
+			close(rs->fp);
+			//unlink(tokbuf);
+			Free(tmp);
 		}
-		close(rs->fp);
-		//unlink(tokbuf);
-		Free(tmp);
-	}
 		XML_ParserFree(rs->pxml);
-	rs->fp = -1;
-	rs->sck = NULL;
-	rs->pxml = NULL;
-	}
+		rs->fp = -1;
+		rs->sck = NULL;
+		rs->pxml = NULL;
+		}
 		if (noticias)
 			IniciaProceso(WSEmiteRSS);
-		
 	return 0;
 }
 int WSSigDrop(char *dropado)
