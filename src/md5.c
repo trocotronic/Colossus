@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.9 2007-01-09 19:08:30 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.10 2007-01-09 19:13:22 Trocotronic Exp $ 
  */
 #include "md5.h"
 #include "ircsprintf.h"
@@ -66,7 +66,6 @@ static void Decode PROTO_LIST
   ((UINT4 *, unsigned char *, unsigned int));
 static void MD5_memcpy PROTO_LIST ((POINTER, POINTER, unsigned int));
 static void MD5_memset PROTO_LIST ((POINTER, int, unsigned int));
-static void MDPrint PROTO_LIST ((unsigned char [16]));
 
 static unsigned char PADDING[64] = {
   0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
