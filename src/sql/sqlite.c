@@ -1,5 +1,5 @@
 /*
- * $Id: sqlite.c,v 1.4 2007-01-18 14:34:37 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.5 2007-01-18 14:36:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -85,7 +85,7 @@ SQLRow FetchRow(SQLRes res)
 	e = sqlite3_step((sqlite3_stmt *)res);
 	if (e == SQLITE_ROW)
 	{
-		static const char *result[256];
+		static const unsigned char *result[256];
 		int i, m;
 		m = sqlite3_column_count((sqlite3_stmt *)res);
 		for (i = 0; i < m; i++)

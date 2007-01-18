@@ -1,10 +1,11 @@
 /*
- * $Id: p10.c,v 1.30 2007-01-18 14:34:37 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.31 2007-01-18 14:36:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
 #include <sys/timeb.h>
 #else
+#include <time.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
 #endif
