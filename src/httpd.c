@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.14 2007-01-18 14:06:26 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.15 2007-01-18 14:07:55 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -7,6 +7,7 @@
 #else
 #include <sys/mman.h>
 #include <time.h>
+#include <sys/stat.h>
 #endif
 #include "struct.h"
 #include "httpd.h"
