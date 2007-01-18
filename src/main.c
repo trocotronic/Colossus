@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.94 2007-01-18 14:10:58 Trocotronic Exp $ 
+ * $Id: main.c,v 1.95 2007-01-18 14:11:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -7,7 +7,8 @@
 #include <direct.h>
 #else
 #include <sys/resource.h> 
-#include <sys/types.h>
+#include <sys/stat.h>
+#include <errno.h>
 #endif
 #include <signal.h>
 #include <pthread.h>
