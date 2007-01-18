@@ -1,13 +1,15 @@
 /*
- * $Id: httpd.c,v 1.13 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.14 2007-01-18 14:06:26 Trocotronic Exp $ 
  */
-#include "struct.h"
-#include "httpd.h"
+ 
 #ifdef _WIN32
 #include <io.h>
 #else
 #include <sys/mman.h>
+#include <time.h>
 #endif
+#include "struct.h"
+#include "httpd.h"
 
 Sock *listen_httpd;
 HHead *httpcons[MAX_CON];

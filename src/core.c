@@ -1,5 +1,5 @@
 /*
- * $Id: core.c,v 1.4 2007-01-18 14:04:15 Trocotronic Exp $ 
+ * $Id: core.c,v 1.5 2007-01-18 14:04:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,6 +12,7 @@
 #else
 #include <sys/ioctl.h>
 #include <net/if.h>
+#include <errno.h>
 #endif
 
 char *ExMalloc(size_t size, int bz, char *file, long line)

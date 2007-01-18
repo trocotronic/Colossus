@@ -1,7 +1,10 @@
 /*
- * $Id: eventos.c,v 1.1 2007-01-18 12:46:27 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.2 2007-01-18 14:06:26 Trocotronic Exp $ 
  */
 
+#ifndef _WIN32
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
