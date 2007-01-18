@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.71 2007-01-18 13:54:59 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.72 2007-01-18 14:00:09 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -7,17 +7,11 @@
 #include <windows.h>
 #else
 #define DWORD int
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <dirent.h>
-#include <sys/time.h>
-#include <sys/io.h>
-#include <errno.h>
-#include <utime.h>
-#include <sys/resource.h>
+#include <stdio.h>
+#include <stdlib.h>
+#ifdef STRINGH
+#include <string.h>
+#endif
 #ifdef UNISTDH
 #include <unistd.h>
 #endif
