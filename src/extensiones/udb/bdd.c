@@ -1,3 +1,7 @@
+/*
+ * $Id: bdd.c,v 1.20 2007-01-18 14:34:37 Trocotronic Exp $ 
+ */
+
 #ifdef _WIN32
 #include <io.h>
 #include <direct.h>
@@ -5,6 +9,7 @@
 #define ftruncate _chsize
 #else
 #include <sys/io.h>
+#include <time.h>
 #endif
 #include <sys/stat.h>
 #include "struct.h"

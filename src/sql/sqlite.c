@@ -1,9 +1,11 @@
 /*
- * $Id: sqlite.c,v 1.3 2007-01-18 13:54:59 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.4 2007-01-18 14:34:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
 #include <direct.h>
+#else
+#include <sys/stat.h>
 #endif
 #include "struct.h"
 #include <sqlite3.h>

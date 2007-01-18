@@ -1,3 +1,10 @@
+/*
+ * $Id: operserv.c,v 1.8 2007-01-18 14:34:37 Trocotronic Exp $ 
+ */
+
+#ifndef _WIN32
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

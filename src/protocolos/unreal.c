@@ -1,3 +1,11 @@
+/*
+ * $Id: unreal.c,v 1.42 2007-01-18 14:31:10 Trocotronic Exp $ 
+ */
+
+#ifndef _WIN32
+#include <time.h>
+#include <arpa/inet.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

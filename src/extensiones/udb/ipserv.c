@@ -1,3 +1,11 @@
+/*
+ * $Id: ipserv.c,v 1.9 2007-01-18 14:34:37 Trocotronic Exp $ 
+ */
+
+#ifndef _WIN32
+#include <dlfcn.h>
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -6,9 +14,6 @@
 #include "modulos/ipserv.h"
 #include "modulos/nickserv.h"
 #include "bdd.h"
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
 
 #ifdef _WIN32
 IpServ *ipserv = NULL;
