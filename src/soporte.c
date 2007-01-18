@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.14 2007-01-18 14:26:17 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.15 2007-01-18 14:27:04 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,7 +10,9 @@
 #include <sys/timeb.h>
 #include <io.h>
 #else
+#include <time.h>
 #include <utime.h>
+#include <dlfcn.h>
 #endif
 #include <sys/stat.h>
 extern pthread_mutex_t mutex;
