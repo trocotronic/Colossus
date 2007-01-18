@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.45 2007-01-18 14:08:42 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.46 2007-01-18 14:16:57 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -139,7 +139,7 @@ int MiraPings()
 		tping = 0;
 	return 0;
 }
-int AbreSockIrcd()
+VOIDSIG AbreSockIrcd()
 {
 #ifdef USA_SSL
 	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, conf_ssl ? OPT_SSL : 0)))
@@ -149,7 +149,7 @@ int AbreSockIrcd()
 	{
 		Info("No puede conectar");
 		CierraIrcd(NULL, NULL, 0);
-		return 0;
+		return;
 	}
 	if (IrcdEscucha)
 	{
@@ -157,7 +157,6 @@ int AbreSockIrcd()
 		IrcdEscucha = NULL;
 	}
 	tping = 0;
-	return 1;
 }
 void EscuchaIrcd()
 {
@@ -239,7 +238,7 @@ SOCKFUNC(CierraIrcd)
 			intentos = 0;
 		}
 		else
-			timerircd = IniciaCrono(1, conf_set->reconectar.intervalo, AbreSockIrcd, NULL);
+			timerircd = IniciaCrono(1, conf_set->reconectar.intervalo, (int(*)())AbreSockIrcd, NULL);
 	}
 #ifdef _WIN32
 	else /* es local */

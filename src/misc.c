@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.2 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.3 2007-01-18 14:16:57 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -8,6 +8,8 @@
 #ifdef _WIN32
 #include <io.h>
 WIN32_FIND_DATA FindFileData;
+#else
+#include <netdb.h>
 #endif
 #include <sys/stat.h>
 

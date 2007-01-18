@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.29 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.30 2007-01-18 14:16:57 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -318,7 +318,7 @@ extern char *TipoMascara(char *, int);
 #define EsBot(x) (x && x->tipo == TBOT)
 extern int EsLink(LinkCliente *, Cliente *);
 extern int EsLinkCanal(LinkCanal *, Canal *);
-extern int AbreSockIrcd(void);
+extern VOIDSIG AbreSockIrcd();
 extern MODVAR int intentos;
 extern void LiberaMemoriaCliente(Cliente *);
 extern void LiberaMemoriaCanal(Canal *);
