@@ -1,5 +1,5 @@
 /*
- * $Id: core.c,v 1.3 2007-01-18 14:03:56 Trocotronic Exp $ 
+ * $Id: core.c,v 1.4 2007-01-18 14:04:15 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,6 +10,7 @@
 #include <process.h>
 #include <io.h>
 #else
+#include <sys/ioctl.h>
 #include <net/if.h>
 #endif
 
