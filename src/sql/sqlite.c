@@ -1,5 +1,5 @@
 /*
- * $Id: sqlite.c,v 1.6 2007-01-18 14:38:00 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.7 2007-01-18 14:38:44 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -48,7 +48,7 @@ int Carga()
 }
 SQLRes Query(const char *query)
 {
-	unsigned char *ztail;
+	char *ztail;
 	int err;
 	sqlite3_stmt *pmt;	
 	if (sqlite3_prepare(sqlite, query, -1, &pmt, &ztail) != SQLITE_OK && (err = sqlite3_errcode(sqlite)) != 1)
@@ -101,7 +101,7 @@ void Descarga()
 }
 void CargaTablas()
 {
-	unsigned char *z, *tabla;
+	char *z, *tabla;
 	sqlite3_stmt *pmt, *pmt2;
 	int i = 0, j;
 	if (sqlite3_prepare(sqlite, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name", -1, &pmt, &z) == SQLITE_OK)
