@@ -1,16 +1,17 @@
 /*
- * $Id: smtp.c,v 1.22 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.23 2007-01-18 14:22:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "httpd.h"
 #ifdef _WIN32
 #include <io.h>
-#include <sys/stat.h>
 #else
 #include <arpa/nameser.h>
 #include <resolv.h>
+#include <time.h>
 #endif
+#include <sys/stat.h>
 #define INTSMTP 5
 
 SmtpData *smtps = NULL;

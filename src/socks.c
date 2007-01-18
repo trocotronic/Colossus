@@ -1,9 +1,13 @@
 /*
- * $Id: socks.c,v 1.31 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.32 2007-01-18 14:23:41 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
 #include <winsock.h>
+#else
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <errno.h>
 #endif
 #include "struct.h"
 #ifdef USA_ZLIB

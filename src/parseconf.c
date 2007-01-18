@@ -1,11 +1,12 @@
 /*
- * $Id: parseconf.c,v 1.28 2007-01-18 14:21:07 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.29 2007-01-18 14:21:47 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
 #include <io.h>
 #else
 #include <netdb.h>
+#include <time.h>
 #endif
 #include <sys/stat.h>
 #include "struct.h"
