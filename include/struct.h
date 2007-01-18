@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.72 2007-01-18 14:00:09 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.73 2007-01-18 14:01:43 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -12,6 +12,7 @@
 #ifdef STRINGH
 #include <string.h>
 #endif
+#include <sys/types.h>
 #ifdef UNISTDH
 #include <unistd.h>
 #endif
