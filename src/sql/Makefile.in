@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.9 2006-11-01 12:35:35 Trocotronic Exp $
+## $Id: Makefile.in,v 1.10 2007-01-18 14:48:13 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/parseconf.h \
@@ -14,11 +14,11 @@ custommodule: $(MODULEFILE).c
 mysql.so: mysql.c $(INCLUDES) mysql.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO @MYSQLHEAD@ @MYSQLLIBS@ -o mysql.so mysql.c
 mysql.o: mysql.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) @MYSQLHEAD@ @MYSQLLIBS@ -c mysql.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) @MYSQLHEAD@ -c mysql.c
 postgresql.so: postgresql.c $(INCLUDES) postgresql.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO @POSTGREHEAD@ @POSTGRELIBS@ -o postgresql.so postgresql.c
 postgresql.o: postgresql.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) @POSTGREHEAD@ @POSTGRELIBS@ -c postgresql.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) @POSTGREHEAD@ -c postgresql.c
 sqlite.so: sqlite.c $(INCLUDES) sqlite.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o sqlite.so sqlite.c
 sqlite.o: sqlite.c $(INCLUDES)

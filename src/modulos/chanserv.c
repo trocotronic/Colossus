@@ -1,7 +1,10 @@
 /*
- * $Id: chanserv.c,v 1.41 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.42 2007-01-18 14:44:45 Trocotronic Exp $ 
  */
 
+#ifndef _WIN32
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

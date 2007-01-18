@@ -1,5 +1,5 @@
 /*
- * $Id: sqlite.c,v 1.8 2007-01-18 14:39:50 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.9 2007-01-18 14:42:55 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -51,10 +51,10 @@ SQLRes Query(const char *query)
 	const char *ztail;
 	int err;
 	sqlite3_stmt *pmt;	
-	if (sqlite3_prepare(sqlite, query, -1, &pmt, &ztail) != SQLITE_OK && (err = sqlite3_errcode(sqlite)) != 1)
+	if (sqlite3_prepare(sqlite, query, -1, &pmt, &ztail) != SQLITE_OK && (err = sqlite3_errcode(sqlite)) != SQLITE_OK)
 	{
 		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, err, sqlite3_errmsg(sqlite));
-		ircfree(ztail);
+		return NULL;
 	}
 	if (sqlite3_step(pmt) != SQLITE_ROW)
 	{

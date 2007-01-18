@@ -1,3 +1,12 @@
+/*
+ * $Id: udb.c,v 1.20 2007-01-18 14:44:45 Trocotronic Exp $ 
+ */
+
+#ifdef _WIN32
+#include <io.h>
+#else
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -12,9 +21,7 @@
 int zDeflate(int, FILE *, int);
 int zInflate(FILE *, FILE *);
 #endif
-#ifdef _WIN32
-#include <io.h>
-#endif
+
 
 ////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////
