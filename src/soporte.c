@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.13 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.14 2007-01-18 14:26:17 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -9,6 +9,8 @@
 #ifdef _WIN32
 #include <sys/timeb.h>
 #include <io.h>
+#else
+#include <utime.h>
 #endif
 #include <sys/stat.h>
 extern pthread_mutex_t mutex;
@@ -249,7 +251,11 @@ int copyfile(char *src, char *dest)
 {
 	char buf[2048];
 	time_t mtime = getfilemodtime(src);
+#ifdef _WIN32
 	int srcfd = open(src, _O_RDONLY|_O_BINARY);
+#else
+	int srcfd = open(src, O_RDONLY);
+#endif
 	int destfd;
 	int len;
 	if (srcfd < 0)
