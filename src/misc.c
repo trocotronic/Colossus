@@ -1,13 +1,15 @@
 /*
- * $Id: misc.c,v 1.1 2007-01-18 12:46:27 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.2 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include <pthread.h>
 
 #ifdef _WIN32
+#include <io.h>
 WIN32_FIND_DATA FindFileData;
 #endif
+#include <sys/stat.h>
 
 #define TBLOQ 4096
 typedef struct _ecmd

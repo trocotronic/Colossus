@@ -1,5 +1,5 @@
 /*
- * $Id: match.c,v 1.4 2005-10-27 19:16:14 Trocotronic Exp $ 
+ * $Id: match.c,v 1.5 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 /*
@@ -29,26 +29,32 @@
  *	return	0, if match
  *		1, if no match
  */
-#include "struct.h"
+#ifndef NULL
+#define NULL 0
+#endif
+extern const char NTL_tolower_tab[];
+extern const char NTL_toupper_tab[];
+#define ToLower(c) (NTL_tolower_tab[(int)(c)])
+#define ToUpper(c) (NTL_toupper_tab[(int)(c)])
 /*
  * match()
  *  written by binary
  */
 static int match2(char *mask, char *name)
 {
-	u_char *m;		/* why didn't the old one use registers */
-	u_char *n;		/* because registers suck -- codemastr */
-	u_char cm;
-	u_char *wsn;
-	u_char *wsm;
+	unsigned char *m;		/* why didn't the old one use registers */
+	unsigned char *n;		/* because registers suck -- codemastr */
+	unsigned char cm;
+	unsigned char *wsn;
+	unsigned char *wsm;
 
-	m = (u_char *)mask;
+	m = (unsigned char *)mask;
 
 	cm = *m;
 
 #define lc(x) ToLower(x)
 
-	n = (u_char *)name;
+	n = (unsigned char *)name;
 	if (cm == '*')
 	{
 		if (m[1] == '\0')	/* mask is just "*", so true */
@@ -66,8 +72,8 @@ static int match2(char *mask, char *name)
 		n++;
 	}
 	cm = lc(*m);
-	wsm = (u_char *)NULL;
-	wsn = (u_char *)NULL;
+	wsm = (unsigned char *)NULL;
+	wsn = (unsigned char *)NULL;
 	while (1)
 	{
 		if (cm == '*')	/* found the * wildcard */

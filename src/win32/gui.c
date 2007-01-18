@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.20 2006-12-03 20:30:07 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.21 2007-01-18 13:54:59 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -12,6 +12,7 @@
 #include <commctrl.h>
 #include <windows.h>
 #include <pthread.h>
+#include <process.h>
 
 extern void InitDebug(void);
 extern int IniciaPrograma(int, char **);

@@ -1,11 +1,11 @@
 /*
- * $Id: httpd.c,v 1.12 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.13 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "httpd.h"
-#ifndef _WIN32
-#include <sys/types.h>
-#include <sys/stat.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <sys/mman.h>
 #endif
 

@@ -1,8 +1,11 @@
 /*
- * $Id: socksint.c,v 1.1 2007-01-18 12:46:27 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.2 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
-#include <stdlib.h>
+#ifdef _WIN32
+#include <io.h>
+#include <sys/stat.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

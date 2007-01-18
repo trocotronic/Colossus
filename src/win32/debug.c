@@ -1,7 +1,8 @@
 /*
- * $Id: debug.c,v 1.12 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.13 2007-01-18 13:54:59 Trocotronic Exp $ 
  */
 
+#include <process.h>
 #include "struct.h"
 #include "ircd.h"
 #include <dbghelp.h>

@@ -1,15 +1,10 @@
 /*
- * $Id: struct.h,v 1.70 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.71 2007-01-18 13:54:59 Trocotronic Exp $ 
  */
 
 #include "setup.h"
 #ifdef _WIN32
-#include <winsock.h>
-#include <direct.h>
-#include <sys/timeb.h>
-#include <process.h>
-#include <io.h>
-#include <iphlpapi.h>
+#include <windows.h>
 #else
 #define DWORD int
 #include <sys/types.h>
@@ -30,15 +25,6 @@
 #ifdef FCNTLH
 #include <fcntl.h>
 #endif
-#include <stdio.h>
-#ifdef STDLIBH
-#include <stdlib.h>
-#endif
-#include <time.h>
-#ifdef STRINGH
-#include <string.h>
-#endif
-#include <sys/stat.h>
 #include "sistema.h" /* portabilidades */
 
 #ifdef USA_SSL

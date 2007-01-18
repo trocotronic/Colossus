@@ -1,6 +1,8 @@
 /*
- * $Id: protocolos.h,v 1.10 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.11 2007-01-18 13:54:59 Trocotronic Exp $ 
  */
+ 
+#include "modulos.h"
 typedef struct _extension Extension;
 typedef struct _proto Protocolo;
 typedef int (*Ext_Func)(Modulo *, Cliente *, char *[], int, char *[], int);

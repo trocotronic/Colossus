@@ -1,19 +1,16 @@
-#include "struct.h"
-#include "ircd.h"
-#include "bdd.h"
-#include "md5.h"
-#include <sys/stat.h>
 #ifdef _WIN32
 #include <io.h>
-#define read _read
-#define write _write
-#define open _open
-#define close _close
+#include <direct.h>
 #define fsync _commit
 #define ftruncate _chsize
 #else
 #include <sys/io.h>
 #endif
+#include <sys/stat.h>
+#include "struct.h"
+#include "ircd.h"
+#include "bdd.h"
+#include "md5.h"
 
 Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL, *UDB_LINKS = NULL;
 Udb ***hash;

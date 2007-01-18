@@ -1,7 +1,14 @@
 /*
- * $Id: logserv.c,v 1.2 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.3 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
+#ifdef _WIN32
+#include <io.h>
+#include <direct.h>
+#else
+#include <sys/io.h>
+#endif
+#include <sys/stat.h>
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -10,12 +17,6 @@
 #include "modulos/logserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/nickserv.h"
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <sys/io.h>
-#endif
-#include <sys/stat.h>
 
 LogServ *logserv = NULL;
 LogChan *logueos = NULL;

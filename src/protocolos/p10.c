@@ -2,6 +2,9 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
+#ifdef _WIN32
+#include <sys/timeb.h>
+#endif
 
 double tburst;
 

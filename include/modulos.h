@@ -1,7 +1,9 @@
 /*
- * $Id: modulos.h,v 1.17 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.18 2007-01-18 13:54:59 Trocotronic Exp $ 
  */
 
+#ifndef _modulos_
+#define _modulos_
 #define MAXMODS 128
 #define MAX_RES 64
 #define MAX_COMS 256
@@ -208,3 +210,4 @@ extern Alias *CreaAlias(char *, char *, Modulo *);
 extern void DescargaAliases(Modulo *);
 extern Alias *BuscaAlias(char **, int, Modulo *);
 extern int ModuloEsResidente(Modulo *, char *);
+#endif

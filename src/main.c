@@ -1,14 +1,18 @@
 /*
- * $Id: main.c,v 1.92 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: main.c,v 1.93 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
+#ifdef _WIN32
+#include <process.h>
+#include <direct.h>
+#endif
+#include <signal.h>
+#include <pthread.h>
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
 #include "socksint.h"
-#include <signal.h>
-#include <pthread.h>
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 

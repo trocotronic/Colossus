@@ -1,3 +1,4 @@
+#include <time.h>
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

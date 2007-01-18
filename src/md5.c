@@ -1,9 +1,11 @@
 /*
- * $Id: md5.c,v 1.10 2007-01-09 19:13:22 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.11 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
+
+#include <stdio.h>
+#include <string.h>
 #include "md5.h"
 #include "ircsprintf.h"
-#include <string.h>
 
 #ifndef PROTOTYPES
 #define PROTOTYPES 0

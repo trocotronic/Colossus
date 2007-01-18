@@ -1,7 +1,8 @@
 /*
- * $Id: gameserv.c,v 1.2 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.3 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
+#include <time.h>
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

@@ -1,19 +1,16 @@
 /*
- * $Id: parseconf.c,v 1.26 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.27 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
 #include <io.h>
-#else
-#include <sys/io.h>
-#endif
-#include <fcntl.h>
 #include <sys/stat.h>
+#else
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
-#include "md5.h"
 
 struct Conf_server *conf_server = NULL;
 struct Conf_db *conf_db = NULL;

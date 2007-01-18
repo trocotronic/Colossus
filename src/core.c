@@ -1,11 +1,15 @@
 /*
- * $Id: core.c,v 1.1 2007-01-18 12:46:27 Trocotronic Exp $ 
+ * $Id: core.c,v 1.2 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "socksint.h"
+#ifdef _WIN32
+#include <process.h>
+#include <io.h>
+#endif
 
 char *ExMalloc(size_t size, int bz, char *file, long line)
 {

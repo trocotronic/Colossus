@@ -1,20 +1,16 @@
 /*
- * $Id: soporte.c,v 1.12 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.13 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
-#include <sys/stat.h>
-#ifdef _WIN32
-#include <io.h>
-#else
-#include <sys/io.h>
-#include <errno.h>
-#include <utime.h>
-#include <sys/resource.h>
-#endif
 #include <pthread.h>
+#ifdef _WIN32
+#include <sys/timeb.h>
+#include <io.h>
+#endif
+#include <sys/stat.h>
 extern pthread_mutex_t mutex;
 
 const char NTL_tolower_tab[] = {

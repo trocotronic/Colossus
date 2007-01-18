@@ -1,15 +1,16 @@
 /*
- * $Id: socks.c,v 1.30 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.31 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
+#ifdef _WIN32
+#include <winsock.h>
+#endif
 #include "struct.h"
 #ifdef USA_ZLIB
 #include "zip.h"
 #endif
 #include "ircd.h"
-#ifndef _WIN32
-#include <errno.h>
-#endif
+
 int listens[MAX_LISTN];
 int listenS = 0;
 

@@ -1,11 +1,14 @@
 /*
- * $Id: ircd.c,v 1.43 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.44 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
+#ifdef _WIN32
+#include <process.h>
+#endif
 
 /*!
  * @desc: Contiene la fecha de inicio de la conexión con el servidor IRCd.

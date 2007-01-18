@@ -1,10 +1,9 @@
 /*
- * $Id: protocolos.c,v 1.9 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.10 2007-01-18 13:54:58 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
-#include "modulos.h"
 #include "protocolos.h"
 #ifndef _WIN32
 #include <dlfcn.h>
