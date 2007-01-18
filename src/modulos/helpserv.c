@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.3 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.4 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -179,7 +179,7 @@ HDIRFUNC(LeeHDir)
 		char *user = NULL, *tok = NULL, *c, *d, a;
 		Cliente *al;
 		u_long crc32;
-		strncpy(tokbuf, hh->param_get, sizeof(tokbuf));
+		strlcpy(tokbuf, hh->param_get, sizeof(tokbuf));
 		for (c = strtok(tokbuf, "&"); c; c = strtok(NULL, "&"))
 		{
 			if (!(d = strchr(c, '=')))
@@ -260,8 +260,8 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 		char canalw[256], nickw[256];
 		if (!helpchan)
 			helpchan = BuscaCanal(helpserv->canal);
-		strncpy(canalw, strtolower(cn->nombre), sizeof(canalw));
-		strncpy(nickw, strtolower(cl->nombre), sizeof(nickw));
+		strlcpy(canalw, strtolower(cn->nombre), sizeof(canalw));
+		strlcpy(nickw, strtolower(cl->nombre), sizeof(nickw));
 		if (!SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, canalw, nickw) &&
 			!SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND LOWER(founder)='%s'", PREFIJO, CS_SQL, canalw, nickw))
 		{

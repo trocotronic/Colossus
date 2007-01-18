@@ -1,6 +1,6 @@
 TODO 
 
-$Id: proximamente,v 1.9 2006-10-31 23:49:10 Trocotronic Exp $
+$Id: proximamente,v 1.10 2007-01-18 12:43:55 Trocotronic Exp $
 
 
 Versión 1.1:
@@ -74,3 +74,5 @@ Versión 1.6:
 Versión 1.7:
 
 [ ] Administración por vía web
+
+[X] Actualizador de componentes automático (.dll y .so)

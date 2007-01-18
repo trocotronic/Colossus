@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.29 2007-01-09 19:39:01 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.30 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -174,10 +174,6 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 		return NULL;
 	sck = BMalloc(Sock);
 	SockDesc(sck);
-#ifdef USA_SSL
-	if (opts & OPT_SSL)
-		SetSSL(sck);
-#endif
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 		return NULL;
 	sck->server.sin_family = AF_INET;
@@ -195,9 +191,7 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) < 0 && errno != EINPROGRESS)
 #endif			
 			return NULL;
-	if (opts & OPT_NORECVQ)
-		SetNoRecvQ(sck);
-	else
+	if (!(opts & OPT_NORECVQ))
 		sck->recvQ = BMalloc(DBuf);
 	sck->sendQ = BMalloc(DBuf);
 	sck->openfunc = openfunc;
@@ -208,6 +202,7 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	sck->inicio = time(NULL);
 	sck->contout = contout;
 	sck->recvtout = recvtout;
+	sck->opts |= opts;
 #ifdef DEBUG
 #ifdef USA_SSL
 	Debug("Abriendo conexion con %s:%i (%i) %s", host, puerto, sck->pres, EsSSL(sck) ? "[SSL]" : "");
@@ -287,19 +282,14 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 #ifdef DEBUG
 	Debug("Escuchando puerto %i (%i)", puerto, sck->pres);
 #endif
-	if (opts & OPT_NORECVQ)
-		SetNoRecvQ(sck);
-	else
+	if (!(opts & OPT_NORECVQ))
 		sck->recvQ = BMalloc(DBuf);
 	sck->sendQ = BMalloc(DBuf);
 	sck->openfunc = openfunc;
 	sck->readfunc = readfunc;
 	sck->writefunc = writefunc;
 	sck->closefunc = closefunc;
-#ifdef USA_SSL
-	if (opts & OPT_SSL)
-		SetSSL(sck);
-#endif
+	sck->opts |= opts;
 	listen(sck->pres, LISTEN_SIZE);
 	listens[listenS++] = puerto;
 	InsertaSock(sck);
@@ -327,15 +317,14 @@ Sock *SockAccept(Sock *list, int pres)
 		Free(sck);
 		return NULL;
 	}
-	if (list->opts & OPT_NORECVQ)
-		SetNoRecvQ(sck);
-	else
+	if (!(list->opts & OPT_NORECVQ))
 		sck->recvQ = BMalloc(DBuf);
 	sck->sendQ = BMalloc(DBuf);
 	sck->openfunc = list->openfunc;
 	sck->readfunc = list->readfunc;
 	sck->writefunc = list->writefunc;
 	sck->closefunc = list->closefunc;
+	sck->opts |= list->opts;
 	InsertaSock(sck);
 #ifdef USA_SSL
 	if (EsSSL(list))
@@ -346,7 +335,6 @@ Sock *SockAccept(Sock *list, int pres)
 			SockClose(sck, LOCAL);
 			return NULL;
 		}
-		SetSSL(sck);
 		SSL_set_fd(sck->ssl, pres);
 		SSLSockNoBlock(sck->ssl);
 		if (!SSLAccept(sck, pres)) 
@@ -466,10 +454,13 @@ void SockClose(Sock *sck, char closef)
 		else if (sck->pos)
 		{
 #ifdef DEBUG
-			Debug("[Parseando: %s]", sck->buffer);
+			if (!(sck->opts & OPT_BIN))
+				Debug("[Parseando: %s]", sck->buffer);
 #endif
 			if (sck->readfunc) /* nos ha quedado algo en el buffer, lo enviamos; pero solo si es remoto */
 				sck->readfunc(sck, sck->buffer, sck->pos);
+			sck->pos = 0;
+			sck->buffer[0] = '\0';
 		}
 		SockCerr(sck);
 #ifdef DEBUG
@@ -694,11 +685,13 @@ int LeeMensaje(Sock *sck)
 		if (EsNoRecvQ(sck))
 		{
 			sck->pos = MIN(len, sizeof(sck->buffer)-1);
-			strncpy(sck->buffer, lee, sck->pos);
+			memcpy(sck->buffer, lee, sck->pos);
 			if (!(sck->opts & OPT_BIN))
 				sck->buffer[sck->pos] = '\0';
 			if (sck->readfunc)
 				sck->readfunc(sck, sck->buffer, sck->pos);
+			sck->pos = 0;
+			sck->buffer[0] = '\0';
 		}
 		else
 			Encola(sck->recvQ, lee, len);
@@ -747,10 +740,12 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 				if (b == sck->buffer) 
 					continue;
 				if (!(sck->opts & OPT_BIN))
+				{
 					*b = '\0';
 #ifdef DEBUG
-				Debug("[Parseando: %s]", sck->buffer);
+					Debug("[Parseando: %s]", sck->buffer);
 #endif
+				}
 				if (sck->readfunc)
 					sck->readfunc(sck, sck->buffer, sck->pos);
 				sck->pos = 0;

@@ -13,7 +13,6 @@
 #define ftruncate _chsize
 #else
 #include <sys/io.h>
-#define O_BINARY 0x0
 #endif
 
 Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL, *UDB_LINKS = NULL;
@@ -314,7 +313,7 @@ int GuardaEnArchivo(Udb *reg, u_int tipo)
 		return 0;
 	form[0] = '\0';
 	DaFormato(form, reg, sizeof(form));
-	strcat(form, "\n");
+	strlcat(form, "\n", sizeof(form));
 	lseek(bloq->fd, 0, SEEK_END);
 	if (write(bloq->fd, form, sizeof(char) * strlen(form)) < 0)
 		return 0;
@@ -633,7 +632,7 @@ char *CifraIpTEA_U(char *ipreal)
 		clavec = bloq->data_char;
 	else
 		clavec = conf_set->clave_cifrado;
-	strncpy(clave, clavec, 12);
+	strlcpy(clave, clavec, sizeof(clave));
 	p = cifrada;
 	while (1)
   	{
@@ -652,7 +651,7 @@ char *CifraIpTEA_U(char *ipreal)
 		{
 			if (++ts == 65536)
 			{
-				strncpy(p, ipreal, sizeof(cifrada));
+				strlcpy(p, ipreal, sizeof(cifrada));
 				break;
 			}
 		}
@@ -788,7 +787,7 @@ int ActualizaDataVer2()
 	FILE *fp, *tmp;
 	int i, j, k;
 	char *c, *d, buf[8192], f, p1[PMAX], p2[PMAX];
-	strncpy(p2, DB_DIR "temporal", sizeof(p2));
+	strlcpy(p2, DB_DIR "temporal", sizeof(p2));
 	for (i = 0; archivos[i]; i++)
 	{
 		ircsprintf(p1, "%s%s", DB_DIR, archivos[i]);

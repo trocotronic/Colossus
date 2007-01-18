@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.18 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.19 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -34,6 +34,9 @@ typedef HANDLE Directorio;
 #define DLLFUNC
 typedef void * Recurso;
 typedef DIR * Directorio;
+  #ifndef O_BINARY
+  #define O_BINARY 0x0
+  #endif
 #endif
 
 

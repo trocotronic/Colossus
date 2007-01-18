@@ -1209,13 +1209,13 @@ IRCFUNC(m_burst)
 					while (*d)
 					{
 						if (*d == 'o')
-							strcat(mod, "o");
+							strlcat(mod, "o", sizeof(mod)-1);
 						else if (*d == 'v')
-							strcat(mod, "v");
+							strlcat(mod, "v", sizeof(mod)-1);
 						else if (*d == 'h')
-							strcat(mod, "h");
+							strlcat(mod, "h", sizeof(mod)-1);
 						else if (*d == 'q')
-							strcat(mod, "q");
+							strlcat(mod, "q", sizeof(mod)-1);
 						d++;
 					}
 				}

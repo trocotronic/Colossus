@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.18 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.19 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -79,6 +79,7 @@ struct Conf_set
 	}reconectar;
 	char *debug;
 	char *red;
+	unsigned actualiza:1;
 };
 struct Conf_log
 {

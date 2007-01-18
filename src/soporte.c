@@ -1,8 +1,10 @@
 /*
- * $Id: soporte.c,v 1.11 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.12 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
+#include "ircd.h"
+#include "modulos.h"
 #include <sys/stat.h>
 #ifdef _WIN32
 #include <io.h>
@@ -12,6 +14,8 @@
 #include <utime.h>
 #include <sys/resource.h>
 #endif
+#include <pthread.h>
+extern pthread_mutex_t mutex;
 
 const char NTL_tolower_tab[] = {
        /* x00-x07 */ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
@@ -249,19 +253,15 @@ int copyfile(char *src, char *dest)
 {
 	char buf[2048];
 	time_t mtime = getfilemodtime(src);
-#ifdef _WIN32
 	int srcfd = open(src, _O_RDONLY|_O_BINARY);
-#else
-	int srcfd = open(src, O_RDONLY);
-#endif
 	int destfd;
 	int len;
 	if (srcfd < 0)
 		return 0;
 #ifdef _WIN32
-	destfd = open(dest, _O_BINARY|_O_WRONLY|_O_CREAT, _S_IWRITE);
+	destfd = open(dest, _O_BINARY|_O_TRUNC|_O_WRONLY|_O_CREAT, _S_IWRITE);
 #else
-	destfd  = open(dest, O_WRONLY|O_CREAT, DEFAULT_PERMISSIONS);
+	destfd  = open(dest, O_WRONLY|O_TRUNC|O_CREAT, DEFAULT_PERMISSIONS);
 #endif
 	if (destfd < 0)
 	{
@@ -320,7 +320,7 @@ char *strtolower(char *str)
 {
 	static char tol[BUFSIZE];
 #ifdef _WIN32
-	strncpy(tol, str, sizeof(tol));
+	strlcpy(tol, str, sizeof(tol));
 	return _strlwr(tol);
 #else
 	char *tolo;
@@ -345,7 +345,7 @@ char *strtoupper(char *str)
 {
 	static char tou[BUFSIZE];
 #ifdef _WIN32
-	strncpy(tou, str, sizeof(tou));
+	strlcpy(tou, str, sizeof(tou));
 	return _strupr(tou);
 #else
 	char *toup;
@@ -378,4 +378,367 @@ int StrCount(char *pajar, char *aguja)
 		tot++;
 	}
 	return tot;
+}
+
+static u_int seed = 1;
+void rstart(u_int _seed) {
+    seed = _seed;
+}
+
+u_int rrand(void) {
+    seed = seed * 214013 + 2531011;
+    return (seed >> 16) & 0x7fff;
+}
+/*!
+ * @desc: Genera un número aleatorio entre márgenes
+ * @params: $min [in] Margen inferior
+ 	    $max [in] Margen superior
+ * @ret: Devuelve el número generado
+ * @cat: Programa
+ !*/
+u_int Aleatorio(u_int min, u_int max)
+{
+	static int i = 0;
+	u_int r;
+	if (!i)
+	{
+		rstart(time(0));
+		i = 1;
+	}
+	r = (rrand() % (max-min+1))+min;
+	return r;
+}
+/*!
+ * @desc: Genera una cadena aleatoria siguiendo un patrón
+ * @params: $patron [in] Patrón a seguir.
+ * Existen algunos comodines para sustituir.
+ * - ? : Cifra aleatoria
+ * - º : Letra mayúscula aleatoria
+ * - ! : Letra minúscula aleatoria
+ * - # : Letra aleatoria (min/may)
+ * - * : Cifra o letra aleatoria
+ * El resto de símbolos se copiarán sin sustituir
+ * @ret: Devuelve la cadena generada
+ * @cat: Programa
+ !*/
+
+char *AleatorioEx(char *patron)
+{
+	char *ptr;
+	static char buf[BUFSIZE];
+	int len;
+	const char *upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ", *lower = "abcdefghijklmnopqrstuvwxyz";
+	len = strlen(patron);
+	buf[0] = '\0';
+	ptr = &buf[0];
+	while (*patron)
+	{
+		switch(*patron)
+		{
+			case '?':
+				*ptr++ = Aleatorio(0, 9) + 48;
+				break;
+			case 'º':
+				*ptr++ = upper[Aleatorio(0, 25)];
+				break;
+			case '!':
+				*ptr++ = lower[Aleatorio(0, 25)];
+				break;
+			case '#':
+				*ptr++ = (Aleatorio(0, 1) == 1 ? upper[Aleatorio(0, 25)] : lower[Aleatorio(0, 25)]);
+				break;
+			case '*':
+				*ptr++ = (Aleatorio(0, 1) == 1 ? Aleatorio(0, 9) + 48 : (Aleatorio(0, 1) == 1 ? upper[Aleatorio(0, 25)] : lower[Aleatorio(0, 25)]));
+				break;
+			default:
+				*ptr++ = *patron;
+		}
+		patron++;
+	}
+	*ptr = '\0';
+	return buf;
+}
+
+/*!
+ * @desc: Devuelve el valor TimeStamp actual con milisegundos
+ * @ret: Devuelve el valor TimeStamp actual con milisegundos.
+ * @cat: Programa
+ !*/
+
+double microtime()
+{
+	double segs, milisegs;
+#ifdef _WIN32
+	struct _timeb atime;
+	_ftime(&atime);
+	segs = atime.time;
+	milisegs = atime.millitm;
+#else
+	struct timeval atime;
+	gettimeofday(&atime, NULL);
+	segs = atime.tv_sec;
+	milisegs = atime.tv_usec;
+#endif
+	while (milisegs > 1) 
+		milisegs /= 10;
+	return (segs + milisegs);
+}
+
+/*!
+ * @desc: Convierte un array a una cadena, cuyos elementos se separan con espacios.
+ * @params: $array [in] Array a concatenar.
+  	    $total [in] Número total de elementos.
+ 	    $parte [in] Inicio de la concatenación.
+ 	    $hasta [in] Final de la concatenación. Si vale -1, se une hasta el final del array.
+ * @ret: Devuelve la cadena concatenada.
+ * @ex: char *prueba[5] = {
+ 		"Esto" ,
+ 		"quedará",
+ 		"unido",
+ 		"por",
+ 		"espacios"
+ 	};
+ 	printf("%s", Unifica(array, 5, 0, -1));
+ 	//Imprimirá "Esto quedará unido por espacios"
+ * @cat: Programa
+ !*/
+
+char *Unifica(char *array[], int total, int parte, int hasta)
+{
+	static char imp[BUFSIZE];
+	int i, len = sizeof(imp), j;
+	imp[0] = '\0';
+	for (i = parte; i < total; i++)
+	{
+		if (len > 0)
+		{
+			j = strlen(array[i]);
+			strncat(imp, array[i], MIN(j, len));
+			len -= MIN(j, len);
+			if (i != total - 1)
+				strlcat(imp, " ", sizeof(imp));
+			if (i == hasta)
+				break;
+		}
+		else
+			break;
+	}
+	return imp;
+}
+char *gettok(char *str, int pos, char sep)
+{
+	int i;
+	static char buftok[BUFSIZE];
+	while (!BadPtr(str))
+	{
+		if (*str == sep || pos == 1)
+		{
+			if (pos > 1)
+			{
+				str++;
+				pos--;
+			}
+			if (pos == 1)
+			{
+				while (*str == sep)
+					str++;
+				for (i = 0; !BadPtr(str); i++)
+				{
+					buftok[i] = *str++;
+					if (*str == sep)
+					{
+						buftok[i+1] = '\0';
+						return buftok;
+					}
+				}
+				buftok[i] = '\0';
+				return buftok;
+			}
+		}
+		str++;
+	}
+	return NULL;
+}
+/*!
+ * @desc: Convierte una fecha en TS a formato legible.
+ * @params: $tim [in] Puntero a fecha en TS.
+ * @ret: Devuelve esa fecha de forma legible.
+ * @ex: time_t tm;
+ tm = time(NULL);
+ printf("%s", Fecha(&tm));
+ * @cat: Programa
+ !*/
+ 
+char *Fecha(time_t *tim)
+{
+    static char *wday_name[] = {
+        "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+    };
+    static char *mon_name[] = {
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    };
+    static char result[26];
+    struct tm *timeptr;
+    timeptr = localtime(tim);
+    sprintf(result, "%.3s %.2d %.3s %d %.2d:%.2d:%.2d",
+        wday_name[timeptr->tm_wday],
+        timeptr->tm_mday,
+        mon_name[timeptr->tm_mon],
+        1900 + timeptr->tm_year,
+        timeptr->tm_hour,
+        timeptr->tm_min, timeptr->tm_sec);
+    return result;
+}
+
+/*!
+ * @desc: Añade un caracter a una cadena. Análogo a strcat.
+ * @params: $dest [in/out] Cadena a concatenar. El usuario es responsable de garantizar que haya espacio suficiente.
+ 	    $car [in] Caracter a añadir.
+ * @ret: Devuelve la cadena <i>des</i> con el nuevo caracter añadido. NULL, en caso de error.
+ * @cat: Programa
+ !*/
+ 
+char *chrcat(char *dest, char car)
+{
+	char *c;
+	if ((c = strchr(dest, '\0')))
+	{
+		*c = car;
+		*(c + 1) = '\0';
+		return dest;
+	}
+	return NULL;
+}
+
+/*!
+ * @desc: Elimina todas las apariciones de un caracter en una cadena.
+ * @params: $dest [in/out] Cadena a procesar.
+ 	    $rem [in] Caracter a eliminar.
+ * @ret: Devuelve la cadena <i>dest</i> con el caracter eliminado.
+ * @cat: Programa
+ !*/
+ 
+char *chrremove(char *dest, char rem)
+{
+	char *c, *r = dest;
+	for (c = dest; !BadPtr(c); c++)
+	{
+		if (*c != rem)
+			*r++ = *c;
+	}
+	return dest;
+}
+
+
+/*!
+ * @desc: Repite un caracter varias veces.
+ * @params: $car [in] Caracter a repetir.
+ 	    $veces [in] Número de veces a repetir.
+ * @ret: Devuelve una cadena con el caracter repetido varias veces.
+ * @cat: Programa
+ !*/
+ 
+char *Repite(char car, int veces)
+{
+	static char ret[128];
+	int i = 0;
+	if (veces < sizeof(ret)-1)
+	{
+		while (i < veces)
+			ret[i++] = car;
+	}
+	ret[i] = 0;
+	return ret;
+}
+
+/*!
+ * @desc: Busca una opción en una lista de opciones a partir de su ítem.
+ * @params: $item [in] Ítem a buscar.
+ 	    $lista [in] Lista donde buscar.
+ * @ret: Devuelve el valor de esa opción.
+ * @cat: Programa
+ !*/
+ 
+int BuscaOpt(char *item, Opts *lista)
+{
+	Opts *ofl;
+	for (ofl = lista; ofl->item; ofl++)
+	{
+		if (!strcasecmp(item, ofl->item))
+			return ofl->opt;
+	}
+	return 0;
+}
+
+/*!
+ * @desc: Busca un ítem en una lista de opciones a partir de su opción.
+ * @params: $opt [in] Opción a buscar.
+ 		$lista [in] Lista donde buscar.
+ * @ret: Devuelve el ítem de esa opción. NULL si no lo encuentra.
+ * @cat: Programa
+ !*/
+ 
+char *BuscaOptItem(int opt, Opts *lista)
+{
+	Opts *ofl;
+	for (ofl = lista; ofl->item; ofl++)
+	{
+		if (ofl->opt == opt)
+			return ofl->item;
+	}
+	return NULL;
+}
+Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
+{
+	Recurso hmod;
+	char *c;
+#ifdef _WIN32
+	char tmppdb[MAX_FNAME], pdb[MAX_FNAME];
+#endif
+	if (!(c = strrchr(dll, '/')))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", dll);
+		return NULL;
+	}
+	strlcpy(archivo, ++c, MAX_FNAME);
+	ircsprintf(tmppath, "./tmp/%s", archivo);
+#ifdef _WIN32
+	strlcpy(pdb, dll, sizeof(pdb));
+	if (!(c = strrchr(pdb, '.')))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla pdb)", dll);
+		return NULL;
+	}
+	strlcpy(c, ".pdb", sizeof(pdb) - (c-pdb));
+	if (!(c = strrchr(pdb, '/')))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta pdb)", pdb);
+		return NULL;
+	}
+	c++;
+	ircsprintf(tmppdb, "./tmp/%s", c);
+#endif
+	if (!copyfile(dll, tmppath))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", dll);
+		return NULL;
+	}
+#ifdef _WIN32
+	if (!copyfile(pdb, tmppdb))
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar pdb)", pdb);
+		return NULL;
+	}
+#endif
+	if ((hmod = irc_dlopen(tmppath, RTLD_LAZY)))
+		return hmod;
+	Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", dll, irc_dlerror());
+	return NULL;
+}
+time_t GMTime()
+{
+	time_t t;
+	t = time(0);
+	return mktime(gmtime(&t));
 }

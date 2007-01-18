@@ -1,8 +1,7 @@
 /*
- * $Id: hash.c,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: hash.c,v 1.7 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
-#include <stdio.h>
 #include "struct.h"
 #include "ircd.h"
 
@@ -123,6 +122,30 @@ Canal *BuscaCanalEnHash(char *clave, Hash *tabla)
 	{
 		if (!strcasecmp(aux->nombre, clave))
 			return aux;
+	}
+	return NULL;
+}
+void add_item(Item *item, Item **lista)
+{
+	item->sig = *lista;
+	*lista = item;
+}
+Item *del_item(Item *item, Item **lista, int borra)
+{
+	Item *aux, *prev = NULL;
+	for (aux = *lista; aux; aux = aux->sig)
+	{
+		if (aux == item)
+		{
+			if (prev)
+				prev->sig = aux->sig;
+			else
+				*lista = aux->sig;
+			if (borra)
+				Free(item);
+			return (prev ? prev->sig : *lista);
+		}
+		prev = aux;
 	}
 	return NULL;
 }

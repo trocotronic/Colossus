@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.69 2007-01-09 19:08:30 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.70 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -8,16 +8,21 @@
 #include <direct.h>
 #include <sys/timeb.h>
 #include <process.h>
+#include <io.h>
+#include <iphlpapi.h>
 #else
 #define DWORD int
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <dirent.h>
 #include <sys/time.h>
+#include <sys/io.h>
+#include <errno.h>
+#include <utime.h>
+#include <sys/resource.h>
 #ifdef UNISTDH
 #include <unistd.h>
 #endif
@@ -33,6 +38,7 @@
 #ifdef STRINGH
 #include <string.h>
 #endif
+#include <sys/stat.h>
 #include "sistema.h" /* portabilidades */
 
 #ifdef USA_SSL
@@ -460,6 +466,7 @@ extern VOIDSIG Reinicia();
 extern int Pregunta(char *);
 extern VOIDSIG Refresca();
 extern int copyfile(char *, char *);
+extern void setfilemodtime(char *, time_t);
 extern Recurso CopiaDll(char *, char *, char *);
 #ifdef USA_SSL
 #define SSLFLAG_FAILIFNOCERT 	0x1
@@ -520,7 +527,6 @@ extern char *base64_decode(char *);
 
 extern char *Encripta(char *, char *);
 extern char *Desencripta(char *, char *);
-extern char *Long2Char(u_long);
 extern time_t GMTime();
 typedef int (*ECmdFunc)(u_long, char *, void *);
 extern int EjecutaComandoSinc(char *, char *, u_long *, char **);

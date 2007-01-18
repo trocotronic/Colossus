@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.28 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.29 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -218,7 +218,7 @@ extern MallaCliente *BuscaMallaCliente(Canal *, char);
 extern MallaMascara *BuscaMallaMascara(Canal *, char);
 extern MallaParam *BuscaMallaParam(Canal *, char);
 extern void GeneraMascara(Cliente *);
-extern void DistribuyeMe(Cliente *, Sock **);
+extern void DistribuyeMe(Cliente *);
 extern MODVAR Cliente me;
 
 /*!

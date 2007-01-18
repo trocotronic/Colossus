@@ -1,7 +1,8 @@
-## $Id: Makefile,v 1.32 2006-11-01 12:35:35 Trocotronic Exp $
+## $Id: Makefile,v 1.33 2007-01-18 12:46:16 Trocotronic Exp $
 
-OBJS=hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o modulos.o\
-	parseconf.o protocolos.o sql.o smtp.o socks.o soporte.o ssl.o zlib.o
+OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
+	misc.o modulos.o parseconf.o protocolos.o sql.o smtp.o socks.o socksint.o \
+	soporte.o ssl.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'LDFLAGS=${LDFLAGS}' 'INSTALL=${INSTALL}' \
@@ -10,7 +11,7 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 MAKE = make $(MAKEARGS)
 INCLUDES = ../include/ircd.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
-	../include/ircsprintf.h ../include/struct.h
+	../include/ircsprintf.h ../include/struct.h ../include/socksint.h
 all: build
 modulo:
 	cd modulos; ${MAKE} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo

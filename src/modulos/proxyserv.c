@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.29 2007-01-08 10:41:32 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.30 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -136,7 +136,7 @@ int PSTest(Conf *config, int *errores)
 			if (eval->seccion[i]->data)
 			{
 				char *tok;
-				strncpy(tokbuf, eval->seccion[i]->data, sizeof(tokbuf));
+				strlcpy(tokbuf, eval->seccion[i]->data, sizeof(tokbuf));
 				for (tok = strtok(tokbuf, ","); tok; tok = strtok(NULL, ","))
 				{
 					if (!BuscaOpt(tok, TiposProxy))
@@ -230,7 +230,7 @@ void PSSet(Conf *config, Modulo *mod)
 					{
 						char *tok;
 						proxyserv->puerto[proxyserv->puertos].tipo = 0;
-						strncpy(tokbuf, config->seccion[i]->seccion[p]->data, sizeof(tokbuf));
+						strlcpy(tokbuf, config->seccion[i]->seccion[p]->data, sizeof(tokbuf));
 						for (tok = strtok(tokbuf, ","); tok; tok = strtok(NULL, ","))
 							proxyserv->puerto[proxyserv->puertos].tipo |= BuscaOpt(tok, TiposProxy);
 					}
@@ -634,7 +634,7 @@ SOCKFUNC(PSLee)
 	{
 		int i;
 		ppt->bytes += len;
-		if (ppt->bytes > 4096)
+		if (ppt->bytes > 1024)
 		{
 			SockClose(sck, LOCAL);
 			return 1;

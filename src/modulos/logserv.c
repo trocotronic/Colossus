@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.2 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,7 +14,6 @@
 #include <io.h>
 #else
 #include <sys/io.h>
-#define O_BINARY 0x0
 #endif
 #include <sys/stat.h>
 
@@ -486,7 +485,7 @@ int LSCmdCMsg(Cliente *cl, Canal *cn, char *msg)
 		if (strcmp(tmptime, lc->envio))
 		{
 			EnviaLogueo(lc);
-			strncpy(lc->envio, tmptime, sizeof(lc->envio));
+			strlcpy(lc->envio, tmptime, sizeof(lc->envio));
 			lc->fd = open(buf, O_RDWR | O_CREAT | O_BINARY | O_APPEND, S_IREAD | S_IWRITE);
 		}
 		ircsprintf(tmp, "%lu %s %s\r\n", hora, cl->nombre, msg);

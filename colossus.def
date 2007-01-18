@@ -93,7 +93,6 @@ EXPORTS
 	ListaDescrips
 	LlamaSenyalExt
 	Loguea
-	Long2Char
 	MDString
 	MascaraIrcd
 	MascaraTKL

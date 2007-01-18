@@ -226,7 +226,7 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 	{
 		char account[13];
 		bzero(account, sizeof(account));
-		strncpy(account, cl->nombre, sizeof(account)-1);
+		strlcpy(account, cl->nombre, sizeof(account));
 		ProcesaModosCliente(cl, buf);
 		EnviaAServidor("%s %s %s %s %lu", me.trio, TOK_ACCOUNT, cl->trio, account, time(0));
 	}

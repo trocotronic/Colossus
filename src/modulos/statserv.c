@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.19 2006-10-31 23:49:12 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.20 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -313,7 +313,7 @@ void vuelca()
 		linea[strlen(linea)-1] = '\0';
 		dom = strchr(linea, ' ');
 		*dom++ = '\0';
-		strncpy(statserv->dominios[i].dominio, linea, 5);
+		strlcpy(statserv->dominios[i].dominio, linea, 5);
 		statserv->dominios[i].donde = strdup(dom);
 		statserv->dominios[i].usuarios = 0;
 	}

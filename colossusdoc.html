@@ -8,7 +8,7 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
 </style>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.31 2007-01-09 19:07:11 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.32 2007-01-18 12:43:55 Trocotronic Exp $ -->
 
 <body>
 
@@ -268,6 +268,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		nombre [flags];
 		...
 	};
+	auto_actualiza;
 };</pre>
 <p>Este bloque configura los par&aacute;metros del programa. </p>
 <p><b>autobop</b><br>Indica que los robots obtienen el estado de @ al entrar en un canal. </p>
@@ -284,6 +285,8 @@ con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 <p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango. 
 El par&aacute;metro flags es opcional. Si est&aacute; presente, indica que para adquirir ese nivel necesita poseer este flag. Si no, adquirir&aacute; ese nivel a partir de una rutina propia de alg&uacute;n m&oacute;dulo.<br>
 Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a partir de la directriz root.</p>
+<p><b>auto_actualiza</b><br>Activa el auto-actualizador. Cuando se arranque el programa se comprobará si hay actualizaciones disponibles de los componentes (.dll o .so). Si los hay, los descarga y se reinicia.
+Esta característica sólo afecta a los componentes como módulos, protocolos, motores sql o extensiones. No se aplica al programa principal, que deberá descargarse de su web.</p>
 <p>Ejemplo:</p>
 <pre>set {
 	autobop;
@@ -304,6 +307,7 @@ Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a pa
 		ADMIN N;
 		ROOT;
 	};
+	auto_actualiza;
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="5"><a name="modulos"></a>8.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>

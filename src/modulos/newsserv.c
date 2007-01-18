@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.8 2007-01-08 10:41:32 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.9 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -9,7 +9,6 @@
 #include <io.h>
 #else
 #include <sys/io.h>
-#define O_BINARY 0x0
 #endif
 #include <sys/stat.h>
 #include "struct.h"
@@ -218,9 +217,9 @@ Noticia *InsertaNoticia(u_int id, char *titular, char *descripcion, u_int servic
 		Noticia *not;
 		not = BMalloc(Noticia);
 		not->id = id;
-		strncpy(not->titular, titular, sizeof(not->titular));
+		strlcpy(not->titular, titular, sizeof(not->titular));
 		if (!BadPtr(descripcion))
-			strncpy(not->descripcion, descripcion, sizeof(not->descripcion));
+			strlcpy(not->descripcion, descripcion, sizeof(not->descripcion));
 		not->servicio = servicio;
 		AddItem(not, noticias);
 		return not;

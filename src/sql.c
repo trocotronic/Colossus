@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.10 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.11 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -223,7 +223,7 @@ char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
 		SQLFreeRes(res);
 		return NULL;
 	}
-	strncpy(resultado, row[0], sizeof(resultado));
+	strlcpy(resultado, row[0], sizeof(resultado));
 	SQLFreeRes(res);
 	return resultado;
 }

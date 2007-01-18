@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.48 2007-01-09 19:07:11 Trocotronic Exp $
+ * $Id: cambios,v 1.49 2007-01-18 12:43:55 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -436,3 +436,6 @@
 080107492 - Arreglado un fallo al insertar o borrar registros en UDB.
 090107493 - Las rutinas MD5 se han linkado estáticamente para compatibilidades entre sistemas operativos.
 090107494 - *** Septuagésima release pública: 1.7b ***
+120107945 - Se añade una advertencia si se cargan varias veces el mismo módulo.
+120107496 - Se añade una advertencia si es incapaz de conectar a un bot.
+180107497 - Se añade un actualizador de componentes.

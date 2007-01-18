@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.14 2006-12-03 20:30:06 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.15 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -106,7 +106,7 @@ int  SSLPemPasswd(char *buf, int size, int rwflag, void *password)
 	bzero(buf, size);
 	if (before)
 	{
-		strncpy(buf, (char *)beforebuf, size);
+		strlcpy(buf, (char *)beforebuf, size);
 		return (strlen(buf));
 	}
 #ifndef _WIN32
@@ -121,8 +121,8 @@ int  SSLPemPasswd(char *buf, int size, int rwflag, void *password)
 	{
 		bzero(buf, size);
 		bzero(beforebuf, sizeof(beforebuf));
-		strncpy(buf, (char *)pass, size);
-		strncpy(beforebuf, (char *)pass, sizeof(beforebuf));
+		strlcpy(buf, (char *)pass, size);
+		strlcpy(beforebuf, (char *)pass, sizeof(beforebuf));
 		before = 1;
 		SSLKeyPasswd = beforebuf;
 		return (strlen(buf));

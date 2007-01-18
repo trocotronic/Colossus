@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.42 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.43 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -790,7 +790,7 @@ BOTFUNC(NSInfo)
 	if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
 	{
 		char nickw[256];
-		strncpy(nickw, strtolower(param[1]), sizeof(nickw));
+		strlcpy(nickw, strtolower(param[1]), sizeof(nickw));
 		Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
 		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, nickw)))
 		{

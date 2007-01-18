@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.42 2007-01-08 10:41:32 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.43 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -580,7 +580,7 @@ void GeneraMascara(Cliente *cl)
 		ircsprintf(cl->vmask, "%s!%s@%s", cl->nombre, cl->ident, cl->vhost);
 	}
 }
-void DistribuyeMe(Cliente *me, Sock **sck)
+void DistribuyeMe(Cliente *me)
 {
 	ircstrdup(me->nombre, conf_server->host);
 	me->tipo = TSERVIDOR;
@@ -600,7 +600,7 @@ void DistribuyeMe(Cliente *me, Sock **sck)
 #endif
 	ircstrdup(me->info, conf_server->info);
 	ircstrdup(me->host, "0.0.0.0");
-	me->sck = *sck;
+	me->sck = SockIrcd;
 	me->sig = me->prev = NULL;
 	if (!clientes)
 	{
@@ -1015,11 +1015,19 @@ int EntraResidentes()
 	Modulo *aux;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
-		if (aux->residente && !aux->activo)
+		if (!aux->activo)
 		{
-			strlcpy(tokbuf, aux->residente, sizeof(tokbuf));
-			for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-				EntraBot(aux->cl, canal);
+			if (!aux->cl)
+			{
+				Info("No se puede conectar a %s. Tal vez haya alguien utilizando este nick.", aux->nick);
+				continue;
+			}
+			if (aux->residente)
+			{
+				strlcpy(tokbuf, aux->residente, sizeof(tokbuf));
+				for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
+					EntraBot(aux->cl, canal);
+			}
 		}
 	}
 	return 0;

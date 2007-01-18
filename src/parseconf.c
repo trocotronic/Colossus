@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.25 2006-12-23 00:32:24 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.26 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -235,11 +235,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 	root->data = NULL;
 	root->archivo = strdup(archivo);
 	root->root = NULL;
-#ifdef _WIN32	
 	if ((fp = open(archivo, O_RDONLY|O_BINARY)) == -1)
-#else
-	if ((fp = open(archivo, O_RDONLY)) == -1)
-#endif	
 	{
 		if (avisa)
 			Alerta(FERR, "No existe el archivo %s", archivo);
@@ -1081,12 +1077,14 @@ void ConfSet(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "debug"))
 			ircstrdup(conf_set->debug, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "clave_cifrado"))
-			strncpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
+			strlcpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
 		else if (!strcmp(config->seccion[i]->item, "niveles"))
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 				InsertaNivel(config->seccion[i]->seccion[p]->item, config->seccion[i]->seccion[p]->data);
 		}
+		else if (!strcmp(config->seccion[i]->item, "auto_actualiza"))
+			conf_set->actualiza = 1;
 	}
 }
 int TestModulos(Conf *config, int *errores)

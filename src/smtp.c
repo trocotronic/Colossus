@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.20 2006-11-01 11:48:43 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.21 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -321,7 +321,7 @@ char *getmx(char *dest)
 		}
 	}
 	sort_mxrecs(mxrecs, nmx);
-	strncpy(retb, mxrecs[0].host, sizeof(ret));
+	strlcpy(retb, mxrecs[0].host, sizeof(ret));
 	return retb;
 }
 #endif
@@ -384,7 +384,7 @@ char *Mx(char *dominio)
 			if ((mx = strtok(NULL,"\n")))
 			{
 				_pclose(pp);
-				strcpy(host, ++mx);
+				strlcpy(host, ++mx, sizeof(host));
 				SQLInserta(SQL_CACHE, dominio, "valor", host);
 				SQLInserta(SQL_CACHE, dominio, "hora", "%lu", time(0));
 				return host;
@@ -504,7 +504,7 @@ void EmailArchivosVL(char *para, char *tema, Opts *fps, int (*closefunc)(SmtpDat
 	if (vl)
 		ircvsprintf(buf, cuerpo, *vl);
 	else
-		strncpy(buf, cuerpo, sizeof(buf));
+		strlcpy(buf, cuerpo, sizeof(buf));
 	EncolaSmtp(para, conf_set->admin, tema, buf, fps, closefunc);
 }
 SOCKFUNC(ProcesaSmtp)

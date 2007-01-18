@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.22 2006-12-23 01:00:23 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.23 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,6 +24,19 @@ Modulo *CreaModulo(char *modulo)
 	char archivo[MAX_FNAME], tmppath[PMAX];
 	int (*mod_carga)(Modulo *), (*mod_descarga)(Modulo *);
 	ModInfo *inf;
+	Modulo *aux;
+	for (aux = modulos; aux; aux = aux->sig)
+	{
+#ifdef _WIN32
+		if (!strcasecmp(aux->archivo, modulo))
+#else
+		if (!strcmp(aux->archivo, modulo))
+#endif
+		{
+			Alerta(FADV, "El módulo %s ya está cargado.", archivo);
+			return NULL;
+		}
+	}
 	if ((hmod = CopiaDll(modulo, archivo, tmppath)))
 	{
 		Modulo *mod;
@@ -61,7 +74,6 @@ Modulo *CreaModulo(char *modulo)
 			modulos = mod;
 		else
 		{
-			Modulo *aux;
 			for (aux = modulos; aux; aux = aux->sig)
 			{
 				if (!aux->sig)

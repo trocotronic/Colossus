@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.19 2006-12-03 20:30:07 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.20 2007-01-18 12:43:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -634,7 +634,7 @@ BOTFUNC(TSTiempo)
 			if ((c = strchr(param[i], '\'')))
 			{
 				*c = '\0';
-				strncpy(pueblo, Unifica(param, params, 1, i), sizeof(pueblo));
+				strlcpy(pueblo, Unifica(param, params, 1, i), sizeof(pueblo));
 				break;
 			}
 		}
@@ -645,7 +645,7 @@ BOTFUNC(TSTiempo)
 		}
 	}
 	else
-		strncpy(pueblo, param[1], sizeof(pueblo));
+		strlcpy(pueblo, param[1], sizeof(pueblo));
 	
 	i++;
 	if (*param[i] == '\'')
@@ -657,7 +657,7 @@ BOTFUNC(TSTiempo)
 			if ((c = strchr(param[j], '\'')))
 			{
 				*c = '\0';
-				strncpy(pueblo, Unifica(param, params, i, j), sizeof(pueblo));
+				strlcpy(pueblo, Unifica(param, params, i, j), sizeof(pueblo));
 				break;
 			}
 		}
@@ -668,7 +668,7 @@ BOTFUNC(TSTiempo)
 		}
 	}
 	else
-		strncpy(pueblo, param[i], sizeof(pueblo));
+		strlcpy(pueblo, param[i], sizeof(pueblo));
 	if (!(p = TSBuscaProvincia(provincia)))
 	{
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta provincia no existe");
@@ -677,17 +677,17 @@ BOTFUNC(TSTiempo)
 	*/
 	if (!IsDigit(*param[1]))
 	{
-		strncpy(pueblo, str_replace(Unifica(param, params, 1, -1), ' ', '+'), sizeof(pueblo));
+		strlcpy(pueblo, str_replace(Unifica(param, params, 1, -1), ' ', '+'), sizeof(pueblo));
 		n = 0;
 	}
 	else
 	{
-		strncpy(pueblo, str_replace(Unifica(param, params, 2, -1), ' ', '+'), sizeof(pueblo));
+		strlcpy(pueblo, str_replace(Unifica(param, params, 2, -1), ' ', '+'), sizeof(pueblo));
 		n = atoi(param[1]);
 	}
-	strncpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
-	//strncpy(provincia, str_replace(p, ' ', '+'), sizeof(provincia));
-	//strncpy(provincia, str_replace(p, 'ñ', 'n'), sizeof(provincia));
+	strlcpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
+	//strlcpy(provincia, str_replace(p, ' ', '+'), sizeof(provincia));
+	//strlcpy(provincia, str_replace(p, 'ñ', 'n'), sizeof(provincia));
 	ircsprintf(buf, "/buscar.php?criterio=%s", pueblo);
 	if ((dts = InsertaCola(buf, n, cl)))
 		dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
@@ -739,8 +739,8 @@ BOTFUNC(TSCine)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este pueblo no dispone de un cine");
 		return 1;
 	}
-	strncpy(pueblo, str_replace(p, ' ', '+'), sizeof(pueblo));
-	strncpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
+	strlcpy(pueblo, str_replace(p, ' ', '+'), sizeof(pueblo));
+	strlcpy(pueblo, str_replace(pueblo, 'ñ', 'n'), sizeof(pueblo));
 	ircsprintf(buf, "/cartelera/?provincia=%i&buscar=&municipio=%s", i, prids[i-1][j]);
 	if ((dts = InsertaCola(buf, n, cl)))
 		dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeeCine, NULL, TSCierraDataSock);
@@ -765,7 +765,7 @@ BOTFUNC(TSPelis)
 		if (!IsDigit(*param[1]))
 		{
 			ircsprintf(buf, "/metropoli/cine.html?%s", Unifica(param, params, 1, -1));
-			strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
+			strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
 		}
 		else
 		{
@@ -1022,7 +1022,7 @@ SOCKFUNC(TSLeeTiempo)
 				if ((d = strrchr(c, '.')))
 					*d = '\0';
 				ircsprintf(buf, "/%s-%i.html", c, ++dia);
-				strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
+				strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
 				SockClose(sck, LOCAL);	
 				if ((dts = InsertaCola(buf, 0, cl)))
 					dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
@@ -1065,7 +1065,7 @@ SOCKFUNC(TSLeeTiempo)
 						{
 							*d = '\0';
 							ircsprintf(buf, "/%s-%i.html", c, ++dia);
-							strncpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));	
+							strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));	
 							SockClose(sck, LOCAL);	
 							if ((dts = InsertaCola(buf, 0, cl)))
 								dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);

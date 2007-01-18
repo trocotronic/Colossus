@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.11 2007-01-08 10:41:32 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.12 2007-01-18 12:43:55 Trocotronic Exp $ 
  */
 #include "struct.h"
 #include "httpd.h"
@@ -136,7 +136,7 @@ char *BuscaTipo(char *ext)
 					e++;
 				if (!strcmp(e, ext))
 				{
-					strncpy(tipo, tp, sizeof(tipo));
+					strlcpy(tipo, tp, sizeof(tipo));
 					fclose(fp);
 					return tipo;
 				}
