@@ -1,7 +1,10 @@
 /*
- * $Id: operserv.c,v 1.37 2006-12-03 22:30:19 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.38 2007-01-18 14:31:10 Trocotronic Exp $ 
  */
 
+#ifndef _WIN32
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

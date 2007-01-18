@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.15 2007-01-18 14:27:04 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.16 2007-01-18 14:27:42 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -10,7 +10,7 @@
 #include <sys/timeb.h>
 #include <io.h>
 #else
-#include <time.h>
+#include <sys/time.h>
 #include <utime.h>
 #include <dlfcn.h>
 #endif

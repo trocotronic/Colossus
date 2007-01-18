@@ -1,10 +1,17 @@
+/*
+ * $Id: p10.c,v 1.29 2007-01-18 14:31:10 Trocotronic Exp $ 
+ */
+
+#ifdef _WIN32
+#include <sys/timeb.h>
+#else
+#include <time.h>
+#include <arpa/inet.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
-#ifdef _WIN32
-#include <sys/timeb.h>
-#endif
 
 double tburst;
 

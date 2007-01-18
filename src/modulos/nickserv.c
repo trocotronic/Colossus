@@ -1,7 +1,11 @@
 /*
- * $Id: nickserv.c,v 1.43 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.44 2007-01-18 14:31:10 Trocotronic Exp $ 
  */
 
+#ifndef _WIN32
+#include <time.h>
+#include <netdb.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"

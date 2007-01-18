@@ -1,7 +1,10 @@
 /*
- * $Id: memoserv.c,v 1.26 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.27 2007-01-18 14:31:10 Trocotronic Exp $ 
  */
 
+#ifndef _WIN32
+#include <time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
