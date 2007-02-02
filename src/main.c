@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.96 2007-01-18 14:16:57 Trocotronic Exp $ 
+ * $Id: main.c,v 1.97 2007-02-02 18:05:27 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -18,6 +18,9 @@
 #include "modulos.h"
 #include "protocolos.h"
 #include "socksint.h"
+#ifdef USA_ZLIB
+#include "zip.h"
+#endif
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
