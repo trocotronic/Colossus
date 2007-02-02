@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.16 2007-01-18 14:27:42 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.17 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -159,16 +159,6 @@ void strcopia(char **dest, const char *orig)
 		*dest = NULL;
 	else
 		*dest = strdup(orig);
-}
-char *my_itoa(int i)
-{
-	static char buf[128];
-#ifndef _WIN32	
-	ircsprintf(buf, "%d", i);
-#else
-	_itoa(i, buf, 10);
-#endif
-	return (buf);
 }
 #ifdef NEED_INET_NTOA
 char *inet_ntoa(struct sockaddr_in *in)
@@ -385,7 +375,8 @@ int StrCount(char *pajar, char *aguja)
 }
 
 static u_int seed = 1;
-void rstart(u_int _seed) {
+void rstart(u_int _seed) 
+{
     seed = _seed;
 }
 

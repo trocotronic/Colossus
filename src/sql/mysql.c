@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.9 2006-12-23 00:32:25 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.10 2007-02-02 17:43:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -103,6 +103,9 @@ void __cdecl _dosmaperr (unsigned long oserrno)
 int Carga()
 {
 	char *c;
+#if MYSQL_VERSION_ID >= 50013
+	my_bool rec = 1;
+#endif
 	//if (mysql_server_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
 	//	return -1;
 	if (!(mysql = mysql_init(NULL)))
@@ -147,6 +150,9 @@ int Carga()
 			return -5;
 		}
 	}
+#if MYSQL_VERSION_ID >= 50013
+	mysql_options(mysql, MYSQL_OPT_RECONNECT, &rec);
+#endif
 	sql->recurso = (void *)mysql;
 	sql->Query = Query;
 	sql->Descarga = Descarga;
@@ -170,9 +176,18 @@ SQLRes Query(const char *query)
 #ifdef DEBUG
 	Debug("%s", query);
 #endif
-	if (!mysql)
-		return NULL;
 	pthread_mutex_lock(&mutex);
+	if (!mysql)
+	{
+		Carga();
+		if (!mysql)
+		{
+			pthread_mutex_unlock(&mutex);
+			return NULL;
+		}
+	}
+	if (mysql_ping(mysql))
+		Carga();
 	if (mysql_query(mysql, query) < 0)
 	{
 		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
@@ -189,6 +204,12 @@ SQLRes Query(const char *query)
 		}
 		pthread_mutex_unlock(&mutex);
 		return (SQLRes)resultado;
+	}
+	else if (mysql_errno(mysql))
+	{
+		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
+		pthread_mutex_unlock(&mutex);
+		return NULL;
 	}
 	pthread_mutex_unlock(&mutex);
 	return NULL;

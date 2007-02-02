@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.30 2007-01-18 14:16:57 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.31 2007-02-02 17:43:03 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -30,7 +30,6 @@ typedef struct _mallaparam MallaParam;
  * @params: $nombre Nickname.
  	    $ident Username.
  	    $host Host real de conexión. Puede ser un host o una ip.
- 	    $rvhost Host real resuelto del cliente. Siempre es un host.
  	    $ip Ip. Siempre es una ip.
  	    $server Servidor al que está conectado.
  	    $vhost Host virtual. Si no tiene, apunta NULL.
@@ -55,7 +54,6 @@ struct _cliente
 	char *nombre;
 	char *ident;
 	char *host; /* siempre apunta al host del cliente que conecta (puede ser ip o host) */
-	char *rvhost; /* *SIEMPRE* apunta al host resuelto: a host si ya es host o a un strdup del host resuelto. si no resuelve, apunta a su ip */
 	char *ip; /* *SIEMPRE* apunta a la ip */
 	Cliente *server;
 	char *vhost;

@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.16 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.17 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -244,6 +244,7 @@ void	SSLSockNoBlock(SSL *s)
 char *SSLCifrado(SSL *ssl)
 {
 	static char buf[400];
+	char tmp[128];
 	int bits;
 	SSL_CIPHER *c; 
 	buf[0] = '\0';
@@ -253,7 +254,8 @@ char *SSLCifrado(SSL *ssl)
 	c = SSL_get_current_cipher(ssl);
 	SSL_CIPHER_get_bits(c, &bits);
 	strlcat(buf, "-", sizeof(buf));
-	strlcat(buf, (char *)my_itoa(bits), sizeof(buf));
+	ircsprintf(tmp, "%i", bits);
+	strlcat(buf, tmp, sizeof(buf));
 	strlcat(buf, "bits", sizeof(buf));
 	return (buf);
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.6 2007-01-18 14:22:34 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.7 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -280,7 +280,6 @@ Directorio AbreDirectorio(char *dirname)
 #else
 	if ((dir = opendir(dirname)) == NULL)
 		return NULL;
-	chdir(dirname);
 	return dir;
 #endif
 }
@@ -348,7 +347,6 @@ void CierraDirectorio(Directorio dir)
 #ifdef _WIN32
 	FindClose(dir);
 #else
-	chdir("..");
 	closedir(dir);
 #endif
 }

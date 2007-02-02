@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.42 2007-01-18 14:44:45 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.43 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -2343,7 +2343,7 @@ int CSSigSQL()
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN suspend text", PREFIJO, CS_SQL);
 		SQLQuery("ALTER TABLE `%s%s` CHANGE `item` `item` VARCHAR( 255 )", PREFIJO, CS_SQL);
 	}
-	SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, CS_SQL);
+	//SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, CS_SQL);
 	SQLQuery("ALTER TABLE `%s%s` DROP INDEX `item`", PREFIJO, CS_SQL);
 	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, CS_SQL);
 	if (!SQLEsTabla(CS_TOK))
@@ -2418,11 +2418,13 @@ int CSSigSQL()
 						}
 					}
 				}
+				SQLFreeRes(res);
 			}
-			SQLFreeRes(res);
 			SQLQuery("ALTER TABLE %s%s DROP accesos", PREFIJO, CS_SQL);
 		}
 	}
+	//else
+	//	SQLQuery("ALTER TABLE %s%s CHANGE automodos automodos VARCHAR(32) NOT NULL", PREFIJO, CS_ACCESS);
 	if (!SQLEsTabla(CS_AKICKS))
 	{
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
@@ -2584,10 +2586,9 @@ int CSTieneAuto(char *nick, char *canal, char autof)
 		return 0;
 	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))
 		return 1;
-	if ((res = CSEsAccess(canal, nick)))
+	if ((res = CSEsAccess(canal, nick)) && (row = SQLFetchRow(res)))
 	{
-		row = SQLFetchRow(res);
-		if (strchr(row[3], autof))
+		if (row[3] && strchr(row[3], autof))
 			return 1;
 	}
 	return 0;

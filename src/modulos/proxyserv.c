@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.30 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.31 2007-02-02 17:43:03 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -39,7 +39,7 @@ Opts TiposProxy[] = {
 
 static bCom proxyserv_coms[] = {
 	{ "help" , PSHelp , N4 , "Muestra esta ayuda." , NULL } ,
-	{ "host" , PSHost , N4 , "Host que omiten el escáner." , PSHHost } ,
+	{ "host" , PSHost , N4 , "Hosts que omiten el escáner." , PSHHost } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -345,9 +345,9 @@ int PSCmdNick(Cliente *cl, int nuevo)
 		char *host;
 //		Debug("******%s",proxyserv->scan_ip);
 		if (!BadPtr(cl->ip) && *(cl->ip) != '*')
-			host = strdup(cl->ip);
+			host = cl->ip;
 		else
-			host = strdup(cl->host);
+			host = cl->host;
 		if (CogeCache(CACHE_PROXY, host, proxyserv->hmod->id) || SQLCogeRegistro(XS_SQL, host, NULL))
 			return 1;
 		for (px = proxys; px; px = px->sig)
@@ -365,10 +365,7 @@ void PSEscanea(char *host)
 	Proxy *px;
 	int i;
 	if (!strncmp("192.168", host, 7) || !strcmp("127.0.0.1", host))
-	{
-		Free(host);
 		return;
-	}
 	if (proxyserv->opm && EsIp(host))
 	{
 		u_int tmp1, tmp2, tmp3, tmp4;
@@ -404,7 +401,7 @@ void PSEscanea(char *host)
 	for (i = 0; i < proxyserv->puertos; i++)
 	{
 		px->puerto[i] = BMalloc(PPuerto);
-		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, 0)))
+		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
 		{
 			px->puerto[i]->puerto = proxyserv->puerto[i].puerto;
 			px->puerto[i]->tipo = proxyserv->puerto[i].tipo;
@@ -413,7 +410,8 @@ void PSEscanea(char *host)
 		else
 			ircfree(px->puerto[i--]);
 	}
-	px->host = host; /* ya es un strdup */
+	px->puerto[i] = NULL;
+	px->host = strdup(host);
 	AddItem(px, proxys);
 }
 int PSSigSQL()
@@ -521,7 +519,7 @@ void CompruebaProxy(Proxy *px)
 				ircsprintf(buf, ",%i", px->puerto[i]->puerto);
 				strlcat(ptbuf, buf, sizeof(ptbuf));
 			}
-			//Free(px->puerto[i]);
+			Free(px->puerto[i]);
 		}
 		if (tipo)
 		{
@@ -583,13 +581,13 @@ SOCKFUNC(PSAbre)
 		{
 			u_long laddr;
 			laddr = htonl(inet_addr(proxyserv->scan_ip));
-			sprintf(buf, "%c%c%c%c%c%c%c%c%c", 
+			sprintf(buf, "%c%c%c%c%c%c%c%c", 
 				4, 1,
 				(((u_short)proxyserv->scan_puerto)>>8) & 0xFF,
 				((u_short)proxyserv->scan_puerto) & 0xFF,
 				(char) (laddr >> 24) & 0xFF, (char) (laddr >> 16) & 0xFF,
 				(char) (laddr >> 8) & 0xFF, (char) laddr & 0xFF, 0);
-			send(sck->pres, buf, 9, 0);
+			send(sck->pres, buf, 8, 0);
 		}
 		else if (ppt->tipo & XS_T_SOCKS5)
 		{
@@ -689,11 +687,11 @@ SOCKFUNC(PSFin)
 		if (!ppt->tipo || ppt->proxy || !ppt->abierto)
 		{
 			px->escaneados++;
-			CompruebaProxy(px);
 			ppt->sck = NULL;
+			CompruebaProxy(px);
 		}
 		else
-			ppt->sck = SockOpenEx(sck->host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, 0);
+			ppt->sck = SockOpenEx(sck->host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ);
 	}
 	return 0;
 }

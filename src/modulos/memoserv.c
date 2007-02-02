@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.27 2007-01-18 14:31:10 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.28 2007-02-02 17:43:03 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -322,7 +322,7 @@ BOTFUNC(MSRead)
 		if ((res = SQLQuery("SELECT MAX(fecha) FROM %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, strtolower(para))))
 		{
 			row = SQLFetchRow(res);
-			if (!row[0])
+			if (BadPtr(row[0]))
 				goto non;
 			fech = strdup(row[0]);
 			SQLFreeRes(res);
@@ -744,7 +744,7 @@ BOTFUNC(MSCancelar)
 	if ((res = SQLQuery("SELECT MAX(fecha) from %s%s where LOWER(de)='%s' AND LOWER(para)='%s'", PREFIJO, MS_SQL, de, strtolower(param[1]))))
 	{
 		row = SQLFetchRow(res);
-		if (!row[0])
+		if (BadPtr(row[0]))
 			goto non;
 		SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND LOWER(de)='%s' AND fecha=%s", PREFIJO, MS_SQL, strtolower(param[1]), de, row[0]);
 		SQLFreeRes(res);

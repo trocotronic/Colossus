@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.23 2007-01-18 14:22:34 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.24 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -483,7 +483,7 @@ void Email(char *para, char *tema, char *cuerpo, ...)
  		El campo <i>item</i> corresponde al nombre del archivo. Debe ser una copia por <i>strdup()</i>.
  		El campo <i>opt</i> corresponde a un descriptor devuelto por <i>open()</i>. 
  		El último elemento debe ser NULL para indicar el fin de la matriz.
- 		Al final de la función, el programa ejecutará <i>Free()</i> sobre el campo <i>item</i> y sobre el puntero <i>fps</i>.
+ 		Al final de la función, se ejecutará <i>Free()</i> sobre el campo <i>item</i> y sobre el puntero <i>fps</i>.
  		$closefunc [in] Función que se llama una vez se ha enviado el correo correctamente. Se pasa como puntero <i>SmtpData</i> referente al correo.
  		Esta función deberá cerrar los descriptores usados por <i>open()</i> en los campos <i>opt</i>.
  		$cuerpo [in] Cuerpo del mensaje. Es una cadena con formato.

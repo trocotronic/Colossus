@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.33 2007-01-18 14:24:22 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.34 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -456,24 +456,24 @@ void SockClose(Sock *sck, char closef)
 	else
 	{
 		if (closef == LOCAL)
-			EnviaCola(sck); /* enviamos toda su cola */
+			EnviaCola(sck);
 		else if (sck->pos)
 		{
 #ifdef DEBUG
 			if (!(sck->opts & OPT_BIN))
 				Debug("[Parseando: %s]", sck->buffer);
 #endif
-			if (sck->readfunc) /* nos ha quedado algo en el buffer, lo enviamos; pero solo si es remoto */
+			if (sck->readfunc)
 				sck->readfunc(sck, sck->buffer, sck->pos);
 			sck->pos = 0;
 			sck->buffer[0] = '\0';
 		}
+		if (sck->closefunc)
+			sck->closefunc(sck, closef ? NULL : "LOCAL", 0);
 		SockCerr(sck);
 #ifdef DEBUG
 		Debug("Cerrando conexion con %s:%i (%i) [%s]", sck->host, sck->puerto, sck->pres, closef == LOCAL ? "LOCAL" : "REMOTO");
 #endif
-		if (sck->closefunc)
-			sck->closefunc(sck, closef ? NULL : "LOCAL", 0);
 	}
 }
 void LiberaSock(Sock *sck)
@@ -823,7 +823,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 	FD_ZERO(&read_set);
 	FD_ZERO(&write_set);
 	FD_ZERO(&excpt_set);
-	ahora = time(NULL);
+	ahora = time(0);
 	for (i = ListaSocks.tope; i >= 0; i--)
 	{
 		if (!(sck = ListaSocks.socket[i]))

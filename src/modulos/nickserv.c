@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.44 2007-01-18 14:31:10 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.45 2007-02-02 17:43:03 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -591,22 +591,17 @@ BOTFUNC(NSRegister)
 	}
 	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
-	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
+	if (!SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
 			PREFIJO, NS_SQL,
 			cl->nombre, pass ? MDString(pass, 0) : "null",
 			mail, cl->info,
 			cl->ident, cl->host,
 			opts, nickserv->opts & NS_SMAIL ? 0 : time(0),
-			time(0), time(0));
-	/*if (pass)
-		SQLInserta(NS_SQL, cl->nombre, "pass", MDString(pass, 0));
-	SQLInserta(NS_SQL, cl->nombre, "email", mail);
-	SQLInserta(NS_SQL, cl->nombre, "gecos", cl->info);
-	SQLInserta(NS_SQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
-	SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
-	SQLInserta(NS_SQL, cl->nombre, "id", "%i", nickserv->opts & NS_SMAIL ? 0 : time(0));
-	SQLInserta(NS_SQL, cl->nombre, "reg", "%i", time(0));
-	SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));*/
+			time(0), time(0)))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible insertar tu nick en la base de datos. Vuelve a probarlo.");
+		return 1;
+	}
 	if (nickserv->opts & NS_SMAIL)
 		Email(mail, "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
 		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(cl->nombre), nickserv->hmod->nick, conf_set->red);
@@ -1178,7 +1173,7 @@ int NSSigSQL()
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, NS_SQL);
 		SQLQuery("ALTER TABLE `%s%s` CHANGE `item` `item` VARCHAR( 255 )", PREFIJO, NS_SQL);
 	}	
-	SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, NS_SQL);
+	//SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE `%s%s` DROP INDEX `item`", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, NS_SQL);
 	if (!SQLEsTabla(NS_FORBIDS))

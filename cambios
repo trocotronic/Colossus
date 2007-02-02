@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.49 2007-01-18 12:43:55 Trocotronic Exp $
+ * $Id: cambios,v 1.50 2007-02-02 17:43:01 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -395,7 +395,7 @@
 090606451 - Arreglado un fallo al solicitar modos en OperServ con el nick migrado, aviso de ArthaS- (#0000188).
 130606452 - Arreglado un fallo con el autojoin de operadores.
 160606453 - Arreglado un fallo con el svsmode.
-200606454 - *** Trigésima release pública: 1.5 ***
+200606454 - *** Decimatercera release pública: 1.5 ***
 300606455 - Se añaden rutinas para hacer copias de seguridad de los bloques UDB.
 300606456 - Se cambia el sistema de cronómetros.
 300606457 - Se añaden los comandos BACKUP y RESTAURAR en OperServ para hacer eso mismo en UDB.
@@ -411,7 +411,7 @@
 050906467 - Arreglado un fallo con el proceso de php en el demonio httpd.
 050906468 - Arreglado un fallo al registrar un nick bajo una cuenta prohibida.
 071006469 - Arreglado un fallo al comprobar si existe otra versión.
-011106470 - *** Cuadragésima release pública: 1.6 ***
+011106470 - *** Decimacuarta release pública: 1.6 ***
 121106471 - Arreglado un fallo que mostraba la ayuda de IpServ de la extensión UDB.
 171106472 - Arreglado un fallo con la comprobración de cifrados de IpServ.
 251106473 - Arreglado un fallo al cerrar las conexiones.
@@ -428,14 +428,18 @@
 211206484 - Arreglado un fallo al cargar un bloque.
 221206485 - Añadida la función CLIENTES en OperServ.
 221206486 - Añadida la función SETUDB en OperServ para gestionar el pass-flood, el server-debug y clientes.
-221206487 - *** Quintuagésima release pública: 1.7 ***
+221206487 - *** Decimoquinta release pública: 1.7 ***
 020107488 - Arreglado un fallo al hacer backups de los bloques UDB.
 020107489 - Arreglado un fallo al procesar los parámetros de red.
 030107490 - Arreglado un fallo en la compilación sin soporte ZLIB.
-080107491 - *** Sextuagésima release pública: 1.7a ***
+080107491 - *** Decimosexta release pública: 1.7a ***
 080107492 - Arreglado un fallo al insertar o borrar registros en UDB.
 090107493 - Las rutinas MD5 se han linkado estáticamente para compatibilidades entre sistemas operativos.
-090107494 - *** Septuagésima release pública: 1.7b ***
+090107494 - *** Decimoséptima release pública: 1.7b ***
 120107945 - Se añade una advertencia si se cargan varias veces el mismo módulo.
 120107496 - Se añade una advertencia si es incapaz de conectar a un bot.
 180107497 - Se añade un actualizador de componentes.
+230107498 - Se mejora la carga de MySQL por si se pierde la conexión con el servidor.
+240107499 - Se mejora la depuración de mensajes de error en MySQL.
+270107500 - Arreglado un fallo con los accesos y MySQL, aviso de ReCoRD (#0000221).
+270107501 - *** Decimoctava release pública: 1.8 ***

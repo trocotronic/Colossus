@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.h,v 1.1 2007-01-18 12:46:27 Trocotronic Exp $ 
+ * $Id: socksint.h,v 1.2 2007-02-02 17:43:03 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -31,7 +31,6 @@ struct _componente
 	Sock *sck;
 	char *ruta;
 	char *tmp;
-	u_long ts;
 	int fd;
 };
 extern Componente comps[MAX_COMP];

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.46 2007-01-18 14:16:57 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.47 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -194,7 +194,7 @@ SOCKFUNC(ProcesaIrcd)
 		canal_debug = BuscaCanal(conf_set->debug);
 	if (conf_set->debug && canal_debug && canal_debug->miembros)
 		ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
-	return protocolo->parsea(sck, data, strlen(data));
+	return protocolo->parsea(sck, data, len);
 }
 SOCKFUNC(CierraIrcd)
 {
@@ -329,7 +329,7 @@ Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *ser
 		cl->ident = strdup(ident);
 	if (host)
 		cl->host = strdup(host);
-	cl->rvhost = cl->host; /* suponemos que ya es host, si no lo fuera, lo obtendríamos más tarde */
+	//cl->rvhost = cl->host; /* suponemos que ya es host, si no lo fuera, lo obtendríamos más tarde */
 	//if (EsIp(host)) /* es ip, la resolvemos */
 	//	ResuelveHost(&cl->rvhost, cl->host);
 	if (ip)
@@ -622,7 +622,7 @@ void DistribuyeMe(Cliente *me)
  
 char *MascaraIrcd(char *mascara)
 {
-	buf[0] = '\0';
+	static char buf[BUFSIZE];
 	if (!strchr(mascara, '@'))
 	{
 		if (!strchr(mascara, '.'))
@@ -762,8 +762,8 @@ void LiberaMemoriaCliente(Cliente *cl)
 		cl->sig->prev = cl->prev;
 	Free(cl->nombre);
 	Free(cl->ident);
-	if (cl->rvhost != cl->host) /* hay que liberarlo */
-		Free(cl->rvhost);
+	//if (cl->rvhost != cl->host) /* hay que liberarlo */
+	//	Free(cl->rvhost);
 	if (cl->ip != cl->host)
 		Free(cl->ip);
 	Free(cl->host);

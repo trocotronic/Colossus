@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.3 2007-01-18 14:24:22 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.4 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -317,7 +317,6 @@ SOCKFUNC(CierraComp)
 	unlink(comps[i].ruta);
 	rename(comps[i].tmp, comps[i].ruta);
 	unlink(comps[i].tmp);
-	setfilemodtime(comps[i].ruta, comps[i].ts);
 	ircfree(comps[i].ruta);
 	ircfree(comps[i].tmp);
 	bzero(&comps[i], sizeof(Componente));
@@ -328,14 +327,13 @@ SOCKFUNC(CierraComp)
 	}
 	return 0;
 }
-int InsertaComponente(char *ruta, time_t ts)
+int InsertaComponente(char *ruta)
 {
 	if (componentes == MAX_COMP)
 		return 0;
 	if ((comps[componentes].sck = SockOpenEx("colossus.redyc.com", 80, AbreComp, LeeComp, NULL, CierraComp, 30, 30, OPT_BIN | OPT_NORECVQ)))
 	{
 		comps[componentes].ruta = strdup(ruta);
-		comps[componentes].ts = ts;
 		componentes++;
 		Info("Actualizando %s...", strrchr(ruta, '/')+1);
 	}
@@ -360,9 +358,9 @@ SOCKFUNC(ACRead)
 	if (*data == '#')
 	{
 		int fd;
-		char *c;
+		char *c, *d;
 		struct stat sb;
-		time_t t;
+		u_long t;
 		c = strchr(data++, ' ');
 		*c++ = '\0';
 		if ((fd = open(data, O_RDONLY|O_BINARY)) < 0)
@@ -373,15 +371,19 @@ SOCKFUNC(ACRead)
 			return 1;
 		}
 		t = atoul(c);
-		if (sb.st_mtime != t)
+		c = (char *)Malloc(sizeof(char) * (sb.st_size + 1));
+		read(fd, c, sb.st_size);
+		c[sb.st_size] = '\0';
+		if (t != Crc32(c, sb.st_size))
 		{
-			InsertaComponente(data, t);
+			InsertaComponente(data);
 #ifdef _WIN32
-			c = strrchr(data, '.');
-			strcpy(c, ".pdb");
-			InsertaComponente(data, t);
+			d = strrchr(data, '.');
+			strcpy(d, ".pdb");
+			InsertaComponente(data);
 #endif
 		}
+		Free(c);
 		close(fd);
 	}
 	return 0;

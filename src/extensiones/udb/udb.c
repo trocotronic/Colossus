@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.20 2007-01-18 14:44:45 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.21 2007-02-02 17:43:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -784,7 +784,7 @@ int UdbOptimiza()
 		return 1;
 	for (i = 0; i < BDD_TOTAL; i++)
 	{
-		if ((aux = CogeDeId(i)))
+		if ((aux = CogeDeId(i)) && (aux->gmt + 86400) < hora)
 		{
 			EnviaAServidor(":%s DB * OPT %c %lu", me.nombre, aux->letra, hora);
 			OptimizaBloque(aux);
