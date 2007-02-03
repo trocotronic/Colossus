@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.9 2006-12-23 00:32:25 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.10 2007-02-03 22:57:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -16,7 +16,8 @@ int NumRows(SQLRes);
 SQLRow FetchRow(SQLRes);
 void Descarga();
 void CargaTablas();
-int fila = 0;
+int GetErrno();
+int fila = 0, err = 0;
 int Carga()
 {
 	char port[6];
@@ -96,6 +97,7 @@ int Carga()
 	sql->FreeRes = FreeRes;
 	sql->NumRows = NumRows;
 	sql->Escapa = Escapa;
+	sql->GetErrno = GetErrno;
 	PQsetClientEncoding(postgres, "LATIN1");
 	ircsprintf(sql->servinfo, "PostGreSQL %s", PQparameterStatus(postgres, "server_version"));
 	CargaTablas();
@@ -116,9 +118,10 @@ SQLRes Query(const char *query)
 		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
-	switch(PQresultStatus(resultado))
+	switch((err = PQresultStatus(resultado)))
 	{
 		case PGRES_TUPLES_OK:
+			err = 0;
 			if (PQntuples(resultado) > 0)
 			{
 				fila = 0; /* preparamos para la primera fila */
@@ -215,4 +218,8 @@ char *Escapa(const char *item)
 	PQescapeString(tmp, item, strlen(item));
 	pthread_mutex_unlock(&mutex);
 	return tmp;
+}
+int GetErrno()
+{
+	return err;
 }

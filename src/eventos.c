@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.3 2007-02-03 13:25:59 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.4 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -240,15 +240,16 @@ int CargaCache()
 {
 	if (!SQLEsTabla(SQL_CACHE))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"valor varchar(255) default NULL, "
   			"hora int4 default '0', "
   			"owner int4 default '0', "
   			"tipo text default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, SQL_CACHE))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CACHE);
+			");", PREFIJO, SQL_CACHE);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CACHE);
 	}
 	else
 	{

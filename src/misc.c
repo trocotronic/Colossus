@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.7 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.8 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -406,7 +406,9 @@ void Alerta(char err, char *error, ...)
 	}
 #endif
 }
+#ifdef NOCORE
 #define DEBUG
+#endif
 void Debug(char *formato, ...)
 {
 #ifndef DEBUG

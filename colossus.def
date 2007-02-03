@@ -179,6 +179,7 @@ EXPORTS
 	ircsprintf
 	ircvsprintf
 	linkado
+	mainversion
 	margv
 	match
 	me

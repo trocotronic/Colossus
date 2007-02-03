@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.97 2007-02-02 18:05:27 Trocotronic Exp $ 
+ * $Id: main.c,v 1.98 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -42,6 +42,8 @@ extern void CpuId();
  * @cat: Programa
  !*/
 int refrescando = 0;
+
+int mainversion = COLOSSUS_VERINT;	
 
 #ifdef _WIN32
 LPCSTR cmdLine;

@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.11 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.12 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,6 +13,7 @@ extern const char *ErrorDl(void);
 #endif
 
 SQL sql = NULL;
+void SetSQLErrno();
 
 void LiberaSQL()
 {
@@ -58,6 +59,7 @@ int CargaSQL(char *sqlf)
 		Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", archivo, irc_dlerror());
 		return 4;
 	}
+	SetSQLErrno();
 	return 0;
 }
 
@@ -122,6 +124,7 @@ int SQLEsCampo(char *tabla, char *campo)
 SQLRes SQLQuery(const char *query, ...)
 {
 	va_list vl;
+	SQLRes res;
 	char buf[BUFSIZE];
 	va_start(vl, query);
 	ircvsprintf(buf, query, vl);
@@ -129,7 +132,9 @@ SQLRes SQLQuery(const char *query, ...)
 #ifdef DEBUG
 	Debug("SQL Query: %s", buf);
 #endif
-	return sql->Query(buf);
+	res = sql->Query(buf);
+	SetSQLErrno();
+	return res;
 }
 
 /*!
@@ -142,7 +147,9 @@ SQLRes SQLQuery(const char *query, ...)
  
 char *SQLEscapa(const char *item)
 {
-	return sql->Escapa(item);
+	char *esc = sql->Escapa(item);
+	SetSQLErrno();
+	return esc;
 }
 
 /*!
@@ -155,6 +162,7 @@ char *SQLEscapa(const char *item)
 void SQLCargaTablas()
 {
 	sql->CargaTablas();
+	SetSQLErrno();
 }
 
 /*!
@@ -167,6 +175,7 @@ void SQLCargaTablas()
 void SQLFreeRes(SQLRes res)
 {
 	sql->FreeRes(res);
+	SetSQLErrno();
 }
 
 /*!
@@ -179,7 +188,9 @@ void SQLFreeRes(SQLRes res)
  
 SQLRow SQLFetchRow(SQLRes res)
 {
-	return sql->FetchRow(res);
+	SQLRow row = sql->FetchRow(res);
+	SetSQLErrno();
+	return row;
 }
 
 /*!
@@ -202,6 +213,7 @@ char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
 	if (campo)
 		cam_corr = SQLEscapa(campo);
 	res = SQLQuery("SELECT %s from %s%s where LOWER(item)='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, strtolower(reg_corr));
+	SetSQLErrno();
 	Free(reg_corr);
 	if (campo)
 		Free(cam_corr);
@@ -260,6 +272,7 @@ void SQLInserta(char *tabla, char *registro, char *campo, char *valor, ...)
 	Free(reg_c);
 	Free(cam_c);
 	ircfree(val_c);
+	SetSQLErrno();
 }
 
 /*!
@@ -282,6 +295,7 @@ void SQLBorra(char *tabla, char *registro)
 	}
 	else
 		SQLQuery("DELETE from %s%s", PREFIJO, tabla);
+	SetSQLErrno();
 }
 
 /*!
@@ -294,5 +308,13 @@ void SQLBorra(char *tabla, char *registro)
  
 int SQLNumRows(SQLRes res)
 {
-	return sql->NumRows(res);
+	int rows = sql->NumRows(res);
+	SetSQLErrno();
+	return rows;
+}
+
+void SetSQLErrno()
+{
+	if (sql->GetErrno)
+		sql->_errno = sql->GetErrno();
 }

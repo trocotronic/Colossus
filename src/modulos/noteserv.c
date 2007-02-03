@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.3 2007-02-03 13:26:00 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.4 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -423,6 +423,11 @@ int MOD_CARGA(NoteServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	//mod->activo = 1;
 	if (mod->config)
 	{
@@ -661,14 +666,15 @@ int ESSigSQL()
 {
 	if (!SQLEsTabla(ES_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255), "
   			"fecha int4, "
   			"avisar int4, "
   			"nota varchar(255), "
   			"KEY item (item) "
-			");", PREFIJO, ES_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, ES_SQL);
+			");", PREFIJO, ES_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, ES_SQL);
 	}
 	SQLCargaTablas();
 	return 0;

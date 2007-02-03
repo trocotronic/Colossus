@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.4 2007-02-03 13:25:59 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.5 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -65,6 +65,11 @@ int MOD_CARGA(LogServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	//mod->activo = 1;
 	if (mod->config)
 	{
@@ -438,14 +443,15 @@ int LSSigSQL()
 {
 	if (!SQLEsTabla(LS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"email varchar(255) default NULL, "
   			"solicitud int4, "
   			"solicitante varchar(255) default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, LS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
+			");", PREFIJO, LS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
 	}
 	SQLCargaTablas();
 	return 1;

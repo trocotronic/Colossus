@@ -1,5 +1,5 @@
 /*
- * $Id: sql.h,v 1.3 2006-02-17 19:19:02 Trocotronic Exp $ 
+ * $Id: sql.h,v 1.4 2007-02-03 22:57:28 Trocotronic Exp $ 
  */
 
 typedef char ** SQLRow;
@@ -16,9 +16,11 @@ typedef struct _sql {
 	int (*Carga)();
 	void (*Descarga)();
 	void (*CargaTablas)();
+	int (*GetErrno)();
 	char servinfo[128];
 	char clientinfo[128];
 	char *tablas[MAX_TAB][MAX_TAB]; /* la posicion [x][0] siempre contendrá el nombre de la tabla */
+	int _errno;
 }*SQL;
 
 extern MODVAR SQL sql;

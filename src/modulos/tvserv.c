@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.21 2007-02-03 13:26:00 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.22 2007-02-03 22:57:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -339,6 +339,11 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	mod->activo = 1;
 	if (mod->config)
 	{
@@ -1369,34 +1374,37 @@ int TSSigSQL()
 {
 	if (!SQLEsTabla(TS_TV))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
   			"programacion text default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, TS_TV))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
+			");", PREFIJO, TS_TV);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
 	}
 	if (!SQLEsTabla(TS_HO))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
   			"prediccion text default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, TS_HO))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
+			");", PREFIJO, TS_HO);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
 	}
 	if (!SQLEsTabla(TS_LI))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
   			"puntos int2 default '0', "
   			"division int2 default '0', "
   			"KEY item (item) "
-			");", PREFIJO, TS_LI))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
+			");", PREFIJO, TS_LI);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
 	}
 	SQLCargaTablas();
 	return 1;

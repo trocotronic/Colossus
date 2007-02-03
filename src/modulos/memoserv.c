@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.29 2007-02-03 13:25:59 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.30 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -66,6 +66,11 @@ int MOD_CARGA(MemoServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -848,27 +853,29 @@ int MSSigSQL()
 {
 	if (!SQLEsTabla(MS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"mensaje text, "
   			"para varchar(255), "
   			"de varchar(255), "
   			"fecha int4 default '0', "
   			"leido int4 default '0', "
   			"KEY para (para) "
-			");", PREFIJO, MS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SQL);
+			");", PREFIJO, MS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SQL);
 	}
 	if (!SQLEsTabla(MS_SET))
 	{
 		SQLRes res;
 		SQLRow row;
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"opts varchar(255) default NULL, "
   			"limite int4 default '%i', "
   			"KEY item (item) "
-			");", PREFIJO, MS_SET, memoserv->def))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
+			");", PREFIJO, MS_SET, memoserv->def);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{
 			while ((row = SQLFetchRow(res)))

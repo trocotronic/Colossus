@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.10 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.11 2007-02-03 22:57:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -21,6 +21,7 @@ int NumRows(SQLRes);
 SQLRow FetchRow(SQLRes);
 void Descarga();
 void CargaTablas();
+int GetErrno();
 #ifdef _WIN32
 struct errentry 
 {
@@ -130,7 +131,8 @@ int Carga()
 		{
 			char tmp[128];
 			ircsprintf(tmp, "CREATE DATABASE IF NOT EXISTS %s", conf_db->bd);
-			if (SQLQuery(tmp))
+			SQLQuery(tmp);
+			if (sql->_errno)
 			{
 				Alerta(FERR, "Ha sido imposible crear la base de datos\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
 				return -3;
@@ -161,6 +163,7 @@ int Carga()
 	sql->FreeRes = FreeRes;
 	sql->NumRows = NumRows;
 	sql->Escapa = Escapa;
+	sql->GetErrno = GetErrno;
 	ircsprintf(sql->servinfo, "MySQL %s", mysql_get_server_info(mysql));
 	ircsprintf(sql->clientinfo, "MySQL %s", mysql_get_client_info());
 	if ((c = strchr(sql->servinfo, '-')))
@@ -278,4 +281,8 @@ char *Escapa(const char *item)
 	mysql_real_escape_string(mysql, tmp, item, strlen(item));
 	pthread_mutex_unlock(&mutex);
 	return tmp;
+}
+int GetErrno()
+{
+	return mysql_errno(mysql);
 }

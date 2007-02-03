@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.4 2007-02-03 13:25:59 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.5 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -36,6 +36,11 @@ int MOD_CARGA(GameServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	//mod->activo = 1;
 	if (mod->config)
 	{
@@ -139,12 +144,13 @@ int GSSigSQL()
 {
 	if (kyrhos && !SQLEsTabla(GS_KYRHOS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255), "
 			"pos int, "
 			"KEY item (item) "
-			");", PREFIJO, GS_KYRHOS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
+			");", PREFIJO, GS_KYRHOS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
 	}
 	SQLCargaTablas();
 	return 0;

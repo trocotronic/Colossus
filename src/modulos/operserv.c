@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.39 2007-02-03 13:26:00 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.40 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -94,6 +94,11 @@ int MOD_CARGA(OperServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -1066,31 +1071,34 @@ int OSSigSQL()
 {
 	if (!SQLEsTabla(OS_NOTICIAS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"n SERIAL, "
   			"bot text, "
   			"noticia text, "
   			"fecha int4 default '0' "
-			");", PREFIJO, OS_NOTICIAS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
+			");", PREFIJO, OS_NOTICIAS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_NOTICIAS);
 	}
 	if (!SQLEsTabla(OS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"nivel varchar(255) default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, OS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_SQL);
+			");", PREFIJO, OS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_SQL);
 	}
 	if (!SQLEsTabla(OS_AKILL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
 			"motivo varchar(255) default NULL, "
 			"KEY item (item) "
-			");", PREFIJO, OS_AKILL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
+			");", PREFIJO, OS_AKILL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
 	}
 	SQLCargaTablas();
 	OSCargaNoticias();

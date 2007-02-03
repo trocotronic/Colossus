@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.10 2007-02-03 13:26:00 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.11 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -97,6 +97,11 @@ int MOD_CARGA(NewsServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	mod->activo = 1;
 	if (mod->config)
 	{
@@ -695,12 +700,13 @@ int WSSigSQL()
 {
 	if (!SQLEsTabla(WS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255), "
   			"servicios int4, "
   			"KEY item (item) "
-			");", PREFIJO, WS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, WS_SQL);
+			");", PREFIJO, WS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, WS_SQL);
 	}
 	SQLCargaTablas();
 	return 1;

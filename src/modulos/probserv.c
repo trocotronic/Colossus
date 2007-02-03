@@ -33,6 +33,11 @@ int MOD_CARGA(ProbServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	if (!mod->config)
 	{
 		Error("[%s] Falta especificar archivo de configuración para %s", mod->archivo, MOD_INFO(ProbServ).nombre);
@@ -134,12 +139,13 @@ int PBSSigSQL()
 {
 	if (!SQLEsTabla(PBS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"campo1 varchar(255) default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, PBS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, PBS_SQL);
+			");", PREFIJO, PBS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, PBS_SQL);
 	}
 	SQLCargaTablas();
 	return 0;

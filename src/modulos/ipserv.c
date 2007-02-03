@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.29 2007-02-03 13:25:59 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.30 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -58,6 +58,11 @@ int MOD_CARGA(IpServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -338,22 +343,24 @@ int ISSigSQL()
 {
 	if (!SQLEsTabla(IS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"ip varchar(255) default NULL, "
   			"caduca int4 default '0', "
   			"KEY item (item) "
-			");", PREFIJO, IS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_SQL);
+			");", PREFIJO, IS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_SQL);
 	}
 	if (!SQLEsTabla(IS_CLONS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"clones varchar(255) default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, IS_CLONS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
+			");", PREFIJO, IS_CLONS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
 	}
 	SQLCargaTablas();
 	return 0;

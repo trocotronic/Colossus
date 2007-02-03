@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.44 2007-02-03 13:25:59 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.45 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -135,6 +135,11 @@ int MOD_CARGA(ChanServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -2312,7 +2317,7 @@ int CSSigSQL()
 {
 	if (!SQLEsTabla(CS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"n SERIAL, "
   			"item varchar(255), "
 			"founder varchar(255), "
@@ -2332,8 +2337,9 @@ int CSSigSQL()
   			"email varchar(255), "
   			"marcas text, "
   			"KEY item (item) "
-			");", PREFIJO, CS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
+			");", PREFIJO, CS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
 	}
 	else
 	{
@@ -2348,33 +2354,36 @@ int CSSigSQL()
 	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, CS_SQL);
 	if (!SQLEsTabla(CS_TOK))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
 			"nick varchar(255) default NULL, "
 			"hora int4 default '0', "
 			"KEY item (item) "
-			");", PREFIJO, CS_TOK))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
+			");", PREFIJO, CS_TOK);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
 	}
 	if (!SQLEsTabla(CS_FORBIDS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"motivo varchar(255) default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, CS_FORBIDS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
+			");", PREFIJO, CS_FORBIDS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
 	}
 	if (!SQLEsTabla(CS_ACCESS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"canal varchar(255) default NULL, "
   			"nick varchar(255) default NULL, "
   			"nivel int8 default '0', "
   			"automodos varchar(32) default NULL, "
   			"KEY canal (canal) "
-			");", PREFIJO, CS_ACCESS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
+			");", PREFIJO, CS_ACCESS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
 		else
 		{
 			SQLRes res;
@@ -2427,14 +2436,15 @@ int CSSigSQL()
 	//	SQLQuery("ALTER TABLE %s%s CHANGE automodos automodos VARCHAR(32) NOT NULL", PREFIJO, CS_ACCESS);
 	if (!SQLEsTabla(CS_AKICKS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"canal varchar(255) default NULL, "
   			"mascara varchar(255) default NULL, "
   			"motivo varchar(255) default '0', "
   			"autor varchar(64) default NULL, "
   			"KEY canal (canal) "
-			");", PREFIJO, CS_AKICKS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
+			");", PREFIJO, CS_AKICKS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
 		else
 		{
 			SQLRes res;

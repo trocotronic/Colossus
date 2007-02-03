@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.46 2007-02-03 13:26:00 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.47 2007-02-03 22:57:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -108,6 +108,11 @@ int MOD_CARGA(NickServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
+	if (mainversion != COLOSSUS_VERINT)
+	{
+		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
+		return 1;
+	}
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -591,13 +596,14 @@ BOTFUNC(NSRegister)
 	}
 	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
-	if (!SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
+	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
 			PREFIJO, NS_SQL,
 			cl->nombre, pass ? MDString(pass, 0) : "null",
 			mail, cl->info,
 			cl->ident, cl->host,
 			opts, nickserv->opts & NS_SMAIL ? 0 : time(0),
-			time(0), time(0)))
+			time(0), time(0));
+	if (sql->_errno)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible insertar tu nick en la base de datos. Vuelve a probarlo.");
 		return 1;
@@ -1137,7 +1143,7 @@ int NSSigSQL()
 {
 	if (!SQLEsTabla(NS_SQL))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"n SERIAL, "
   			"item varchar(255), "
   			"pass varchar(255), "
@@ -1155,8 +1161,9 @@ int NSSigSQL()
   			"swhois text, "
   			"marcas text, "
   			"KEY item (item) "
-			");", PREFIJO, NS_SQL))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
+			");", PREFIJO, NS_SQL);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
 	}
 	else
 	{
@@ -1178,12 +1185,13 @@ int NSSigSQL()
 	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);
 	if (!SQLEsTabla(NS_FORBIDS))
 	{
-		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"motivo varchar(255) default NULL, "
   			"KEY item (item) "
-			");", PREFIJO, NS_FORBIDS))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
+			");", PREFIJO, NS_FORBIDS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}
 	SQLCargaTablas();
 	umodreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
