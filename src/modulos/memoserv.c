@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.28 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.29 2007-02-03 13:25:59 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -854,7 +854,7 @@ int MSSigSQL()
   			"de varchar(255), "
   			"fecha int4 default '0', "
   			"leido int4 default '0', "
-  			"KEY `para` (`para`) "
+  			"KEY para (para) "
 			");", PREFIJO, MS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SQL);
 	}
@@ -866,7 +866,7 @@ int MSSigSQL()
   			"item varchar(255) default NULL, "
   			"opts varchar(255) default NULL, "
   			"limite int4 default '%i', "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, MS_SET, memoserv->def))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))

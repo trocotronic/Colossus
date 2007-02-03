@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.38 2007-01-18 14:31:10 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.39 2007-02-03 13:26:00 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1079,7 +1079,7 @@ int OSSigSQL()
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"nivel varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, OS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_SQL);
 	}
@@ -1088,7 +1088,7 @@ int OSSigSQL()
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
 			"motivo varchar(255) default NULL, "
-			"KEY `item` (`item`) "
+			"KEY item (item) "
 			");", PREFIJO, OS_AKILL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
 	}

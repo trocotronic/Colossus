@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.43 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.44 2007-02-03 13:25:59 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -2331,7 +2331,7 @@ int CSSigSQL()
   			"url varchar(255), "
   			"email varchar(255), "
   			"marcas text, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, CS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
 	}
@@ -2341,18 +2341,18 @@ int CSSigSQL()
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, CS_SQL);
 		if (!SQLEsCampo(CS_SQL, "suspend"))
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN suspend text", PREFIJO, CS_SQL);
-		SQLQuery("ALTER TABLE `%s%s` CHANGE `item` `item` VARCHAR( 255 )", PREFIJO, CS_SQL);
+		SQLQuery("ALTER TABLE %s%s CHANGE item item VARCHAR( 255 )", PREFIJO, CS_SQL);
 	}
-	//SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, CS_SQL);
-	SQLQuery("ALTER TABLE `%s%s` DROP INDEX `item`", PREFIJO, CS_SQL);
-	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, CS_SQL);
+	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, CS_SQL);
+	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, CS_SQL);
+	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, CS_SQL);
 	if (!SQLEsTabla(CS_TOK))
 	{
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255) default NULL, "
 			"nick varchar(255) default NULL, "
 			"hora int4 default '0', "
-			"KEY `item` (`item`) "
+			"KEY item (item) "
 			");", PREFIJO, CS_TOK))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
 	}
@@ -2361,7 +2361,7 @@ int CSSigSQL()
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"motivo varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, CS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
 	}
@@ -2372,7 +2372,7 @@ int CSSigSQL()
   			"nick varchar(255) default NULL, "
   			"nivel int8 default '0', "
   			"automodos varchar(32) default NULL, "
-  			"KEY `canal` (`canal`) "
+  			"KEY canal (canal) "
 			");", PREFIJO, CS_ACCESS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
 		else
@@ -2432,7 +2432,7 @@ int CSSigSQL()
   			"mascara varchar(255) default NULL, "
   			"motivo varchar(255) default '0', "
   			"autor varchar(64) default NULL, "
-  			"KEY `canal` (`canal`) "
+  			"KEY canal (canal) "
 			");", PREFIJO, CS_AKICKS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
 		else

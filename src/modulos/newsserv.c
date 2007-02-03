@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.9 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.10 2007-02-03 13:26:00 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -698,7 +698,7 @@ int WSSigSQL()
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255), "
   			"servicios int4, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, WS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, WS_SQL);
 	}

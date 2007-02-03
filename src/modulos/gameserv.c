@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.3 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.4 2007-02-03 13:25:59 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -142,7 +142,7 @@ int GSSigSQL()
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255), "
 			"pos int, "
-			"KEY `item` (`item`) "
+			"KEY item (item) "
 			");", PREFIJO, GS_KYRHOS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
 	}

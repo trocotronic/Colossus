@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.45 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.46 2007-02-03 13:26:00 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1154,7 +1154,7 @@ int NSSigSQL()
   			"killtime int2 default '0', "
   			"swhois text, "
   			"marcas text, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, NS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
 	}
@@ -1171,17 +1171,17 @@ int NSSigSQL()
 		}
 		if (!SQLEsCampo(NS_SQL, "marcas"))
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, NS_SQL);
-		SQLQuery("ALTER TABLE `%s%s` CHANGE `item` `item` VARCHAR( 255 )", PREFIJO, NS_SQL);
+		SQLQuery("ALTER TABLE %s%s CHANGE item item VARCHAR( 255 )", PREFIJO, NS_SQL);
 	}	
-	//SQLQuery("ALTER TABLE `%s%s` ADD PRIMARY KEY(`n`)", PREFIJO, NS_SQL);
-	SQLQuery("ALTER TABLE `%s%s` DROP INDEX `item`", PREFIJO, NS_SQL);
-	SQLQuery("ALTER TABLE `%s%s` ADD INDEX ( `item` ) ", PREFIJO, NS_SQL);
+	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, NS_SQL);
+	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, NS_SQL);
+	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);
 	if (!SQLEsTabla(NS_FORBIDS))
 	{
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"motivo varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, NS_FORBIDS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}

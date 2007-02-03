@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.28 2007-01-18 14:44:45 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.29 2007-02-03 13:25:59 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -342,7 +342,7 @@ int ISSigSQL()
   			"item varchar(255) default NULL, "
   			"ip varchar(255) default NULL, "
   			"caduca int4 default '0', "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, IS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_SQL);
 	}
@@ -351,7 +351,7 @@ int ISSigSQL()
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"clones varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, IS_CLONS))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
 	}

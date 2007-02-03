@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.20 2007-01-18 12:43:56 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.21 2007-02-03 13:26:00 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1373,7 +1373,7 @@ int TSSigSQL()
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
   			"programacion text default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, TS_TV))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
 	}
@@ -1383,7 +1383,7 @@ int TSSigSQL()
   			"item varchar(255) default NULL, "
   			"fecha varchar(255) default NULL, "
   			"prediccion text default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, TS_HO))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
 	}
@@ -1394,7 +1394,7 @@ int TSSigSQL()
   			"fecha varchar(255) default NULL, "
   			"puntos int2 default '0', "
   			"division int2 default '0', "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, TS_LI))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
 	}

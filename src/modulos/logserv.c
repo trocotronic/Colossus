@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.3 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.4 2007-02-03 13:25:59 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -443,7 +443,7 @@ int LSSigSQL()
   			"email varchar(255) default NULL, "
   			"solicitud int4, "
   			"solicitante varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, LS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
 	}

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.31 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.32 2007-02-03 13:26:00 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -420,7 +420,7 @@ int PSSigSQL()
 	{
 		if (SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
-  			"KEY `item` (`item`) "
+  			"KEY item (item) "
 			");", PREFIJO, XS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, XS_SQL);
 	}

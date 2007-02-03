@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.10 2007-01-18 14:48:13 Trocotronic Exp $
+## $Id: Makefile.in,v 1.11 2007-02-03 13:26:00 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/parseconf.h \
@@ -20,8 +20,8 @@ postgresql.so: postgresql.c $(INCLUDES) postgresql.o
 postgresql.o: postgresql.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) @POSTGREHEAD@ -c postgresql.c
 sqlite.so: sqlite.c $(INCLUDES) sqlite.o
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o sqlite.so sqlite.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -lsqlite3 -o sqlite.so sqlite.c
 sqlite.o: sqlite.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -c sqlite.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -lsqlite3 -c sqlite.c
 clean:
 	$(RM) -f *.o *.so *~ core
