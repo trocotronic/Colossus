@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.34 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.35 2007-02-03 12:27:34 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -24,7 +24,7 @@ void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
 void LiberaSock(Sock *);
-#define DEBUG
+//#define DEBUG
 
 /*
  * resolv
