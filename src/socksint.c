@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.4 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.5 2007-02-10 18:46:41 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -68,7 +68,8 @@ int SiguienteTAsync(int fuerza)
 #ifdef _WIN32
 		ChkBtCon(SockIrcd ? 1 : 0, 0);
 #else
-		AbreSockIrcd();
+		if (!SockIrcd)
+			AbreSockIrcd();
 #endif
 	}
 	else

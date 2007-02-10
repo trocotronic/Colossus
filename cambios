@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.52 2007-02-10 14:57:12 Trocotronic Exp $
+ * $Id: cambios,v 1.53 2007-02-10 18:46:41 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -451,3 +451,5 @@
 030207507 - Arreglado un pequeño fallo que mostraba basura al ejecutar un comando de ChanServ, aviso de Marquitox (#0000229).
 090207508 - Arreglado un fallo con la caducidad de los tokens.
 100207509 - Arreglado un fallo al escribir el pid, aviso de ReCoRD (#0000233).
+100207510 - Cambiado el sistema de ejecutar señales.
+100207511 - Arreglado un fallo al refrescar varias veces el programa.
