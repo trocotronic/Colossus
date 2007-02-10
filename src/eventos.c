@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.4 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.5 2007-02-10 16:54:30 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -76,6 +76,58 @@ int BorraSenyal(int senyal, int (*func)())
 		prev = aux;
 	}
 	return 0;
+}
+#define DEBUG
+void LlamaSenyal(int s, int params, ...)
+{
+	va_list va;
+	void *arg[8];
+	int i;
+	Senyal *aux;
+	if (params > 8)
+		return;
+	va_start(va, params);
+	for (i = 0; i < params; i++)
+		arg[i] = va_arg(va, void *);
+#ifdef DEBUG
+	Debug("Ejecutando senyal %i", s);
+#endif
+	for (aux = senyals[s]; aux; aux = aux->sig)
+	{
+		if (aux->func)
+		{
+			switch(params)
+			{
+				case 0:
+					aux->func();
+					break;
+				case 1:
+					aux->func(arg[0]);
+					break;
+				case 2:
+					aux->func(arg[0], arg[1]);
+					break;
+				case 3:
+					aux->func(arg[0], arg[1], arg[2]);
+					break;
+				case 4:
+					aux->func(arg[0], arg[1], arg[2], arg[3]);
+					break;
+				case 5:
+					aux->func(arg[0], arg[1], arg[2], arg[3], arg[4]);
+					break;
+				case 6:
+					aux->func(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5]);
+					break;
+				case 7:
+					aux->func(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6]);
+					break;
+				case 8:
+					aux->func(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], arg[6], arg[7]);
+					break;
+			}
+		}
+	}
 }
 
 /*!

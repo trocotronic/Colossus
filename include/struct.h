@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.77 2007-02-03 22:57:28 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.78 2007-02-10 16:54:23 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -275,12 +275,7 @@ extern MODVAR Senyal *senyals[MAXSIGS];
 #define InsertaSenyal(x,y) InsertaSenyalEx(x,y,FIN)
 extern void InsertaSenyalEx(int, int (*)(), int);
 extern int BorraSenyal(int, int (*)());
-#define Senyal(s) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(); } while(0)
-#define Senyal1(s,x) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x); } while(0)
-#define Senyal2(s,x,y) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y); } while(0)
-#define Senyal3(s,x,y,z) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z); } while(0)
-#define Senyal4(s,x,y,z,t) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t); } while(0)
-#define Senyal5(s,x,y,z,t,u) do { Senyal *aux; for (aux = senyals[s]; aux; aux = aux->sig) if (aux->func) aux->func(x,y,z,t,u); } while(0)
+extern void LlamaSenyal(int, int, ...);
 
 /* timers */
 typedef struct _timer
