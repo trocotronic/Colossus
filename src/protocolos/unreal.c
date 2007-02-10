@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.42 2007-01-18 14:31:10 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.43 2007-02-10 14:57:12 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -924,8 +924,8 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 		}
 	}
 	para[++i] = NULL;
-	//for (params = 0; params < i; params++)
-	//	Debug("parv[%i] = %s", params, para[params]);
+//	for (params = 0; params < i; params++)
+//		Debug("parv[%i] = %s", params, para[params]);
 	if (comd)
 	{
 		if (comd->cuando == INI)

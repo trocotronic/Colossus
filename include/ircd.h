@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.31 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.32 2007-02-10 14:57:13 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -11,7 +11,7 @@ extern SOCKFUNC(CierraIrcd);
 extern SOCKFUNC(ProcesaSmtp);
 
 #define IRCFUNC(x) int (x)(Sock *sck, Cliente *cl, char *parv[], int parc)
-#define MAXMODULOS 256
+#define MAXMODULOS 32
 #define MAX_FUN 32
 #define TCLIENTE 1
 #define TSERVIDOR 2

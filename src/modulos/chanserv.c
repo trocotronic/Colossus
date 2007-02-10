@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.45 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.46 2007-02-10 14:57:12 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1007,8 +1007,7 @@ BOTFUNC(CSModos)
 	char flag, modo = ADD;
 	if (params < 4)
 	{
-		ircsprintf(buf, "%s #canal {+|-}flag parámetros", strtoupper(param[0]));
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, buf);
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal {+|-}flag");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -1999,7 +1998,7 @@ BOTFUNC(CSRegister)
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
-				if ((atol(row[2]) + 24 * chanserv->vigencia) < time(0))
+				if ((atol(row[2]) + 3600 * chanserv->vigencia) < time(0))
 				{
 					ircsprintf(buf, "El token %s ha caducado.", tok);
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);

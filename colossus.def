@@ -158,7 +158,6 @@ EXPORTS
 	chrcat
 	chrremove
 	clientes
-	comandos
 	conf_db
 	conf_httpd
 	conf_log

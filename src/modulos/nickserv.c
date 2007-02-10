@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.47 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.48 2007-02-10 14:57:12 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -609,8 +609,8 @@ BOTFUNC(NSRegister)
 		return 1;
 	}
 	if (nickserv->opts & NS_SMAIL)
-		Email(mail, "Nueva contraseña", "Debido al registro de tu nick, se ha generado una contraseña totalmente segura.\r\n"
-		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(cl->nombre), nickserv->hmod->nick, conf_set->red);
+		Email(mail, "Nueva contraseña", "Debido al registro del nick %s, se ha generado una contraseña totalmente segura.\r\n"
+		"A partir de ahora, la clave de %s es:\r\n\r\n%s\r\n\r\nPuede cambiarla mediante el comando /msg %s SET pass.\r\n\r\nGracias por utilizar los servicios de %s.", cl->nombre, NSRegeneraClave(cl->nombre), nickserv->hmod->nick, conf_set->red);
 	else if (umodreg)
 		ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", umodreg->flag);
 	if (!IsOper(cl))

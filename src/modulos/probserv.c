@@ -1,10 +1,11 @@
-
+	
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include "modulos/probserv.h"
 
 ProbServ *probserv = NULL;
+char *tabla = NULL;
 
 BOTFUNC(PBSHelp);
 BOTFUNC(PBSSql);
@@ -80,6 +81,14 @@ int MOD_DESCARGA(ProbServ)()
 }
 int PBSTest(Conf *config, int *errores)
 {
+	int i, error_parcial = 0;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "funcion"))
+			error_parcial += TestComMod(config->seccion[i], probserv_coms, 1);
+	}
+	*errores += error_parcial;
+	return error_parcial;
 	return 0;
 }
 void PBSSet(Conf *config, Modulo *mod)
@@ -91,6 +100,8 @@ void PBSSet(Conf *config, Modulo *mod)
 	{
 		if (!strcmp(config->seccion[i]->item, "funciones"))
 			ProcesaComsMod(config->seccion[i], mod, probserv_coms);
+		if (!strcmp(config->seccion[i]->item, "tabla"))
+			ircstrdup(tabla, config->seccion[i]->valor);
 	}
 	InsertaSenyal(SIGN_SQL, PBSSigSQL);
 	BotSet(probserv);

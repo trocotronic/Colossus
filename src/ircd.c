@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.47 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.48 2007-02-10 14:57:12 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -43,7 +43,6 @@ char reset = 0;
 SOCKFUNC(EscuchaAbre);
 Canal *canal_debug = NULL;
 Protocolo *protocolo = NULL;
-Comando *comandos = NULL;
 char modebuf[BUFSIZE], parabuf[BUFSIZE];
 Tkl *tklines[TKL_MAX];
 time_t tping;
@@ -52,26 +51,12 @@ Timer *timerping = NULL, *timerircd = NULL;
 Comando *BuscaComando(char *accion)
 {
 	Comando *aux;
-	for (aux = comandos; aux; aux = aux->sig)
+	for (aux = protocolo->coms; aux; aux = aux->sig)
 	{
 		if (!strcmp(aux->cmd, accion) || !strcmp(aux->tok, accion))
 			return aux;
 	}
 	return NULL;
-}
-char *Token(char *msg)
-{
-	Comando *com;
-	if ((com = BuscaComando(msg)))
-		return com->tok;
-	return msg;
-}
-char *Cmd(char *tok)
-{
-	Comando *com;
-	if ((com = BuscaComando(tok)))
-		return com->cmd;
-	return tok;
 }
 void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, int params)
 {
@@ -95,7 +80,7 @@ void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, int params
 	com->funcion[com->funciones++] = func;
 	com->params = params;
 	com->cuando = cuando;
-	AddItem(com, comandos);
+	AddItem(com, protocolo->coms);
 }
 int BorraComando(char *cmd, IRCFUNC(*func))
 {
@@ -112,9 +97,10 @@ int BorraComando(char *cmd, IRCFUNC(*func))
 					com->funcion[i] = com->funcion[i+1];
 					i++;
 				}
+				com->funcion[i] = NULL;
 				if (!--com->funciones)
 				{
-					BorraItem(com, comandos);
+					BorraItem(com, protocolo->coms);
 					Free(com->cmd);
 					Free(com->tok);
 					Free(com);

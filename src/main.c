@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.98 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: main.c,v 1.99 2007-02-10 14:57:12 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -303,7 +303,6 @@ int main(int argc, char *argv[])
 		return 1;
 	DistribuyeConfiguracion(&config);
 	DistribuyeMe(&me);	
-	EscribePid();
 #ifndef _WIN32
 	if (sql && sql->clientinfo)
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
@@ -380,6 +379,7 @@ int main(int argc, char *argv[])
 #ifndef _WIN32
 	if (!nofork && fork())
 		exit(0);
+	EscribePid();
 #else
 	EscuchaIrcd();
 	return 0;

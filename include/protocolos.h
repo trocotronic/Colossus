@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.11 2007-01-18 13:54:59 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.12 2007-02-10 14:57:13 Trocotronic Exp $ 
  */
  
 #include "modulos.h"
@@ -7,7 +7,7 @@ typedef struct _extension Extension;
 typedef struct _proto Protocolo;
 typedef int (*Ext_Func)(Modulo *, Cliente *, char *[], int, char *[], int);
 #define EXTFUNC(x) int (x)(Modulo *mod, Cliente *cl, char *parv[], int parc, char *param[], int params)
-#define MAXMOD 64
+#define MAXMOD 32
 typedef struct _com
 {
 	char *msg;
@@ -45,7 +45,7 @@ struct _proto
 	SOCKFUNC(*parsea);
 	mTab umodos[MAXMOD];
 	mTab cmodos[MAXMOD];
-	int (*comandos[26])();
+	int (*comandos[32])();
 	char *modcl;
 	char *modmk;
 	char *modpm1;
@@ -55,6 +55,7 @@ struct _proto
 	int modos;
 	char *modcanales;
 	char *modusers;
+	Comando *coms;
 };
 	
 extern MODVAR Protocolo *protocolo;
