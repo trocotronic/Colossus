@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.5 2007-02-10 16:54:30 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.6 2007-02-10 16:56:11 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -77,7 +77,6 @@ int BorraSenyal(int senyal, int (*func)())
 	}
 	return 0;
 }
-#define DEBUG
 void LlamaSenyal(int s, int params, ...)
 {
 	va_list va;

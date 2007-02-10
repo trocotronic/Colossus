@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.30 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.31 2007-02-10 16:54:31 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -485,7 +485,7 @@ int ISProcIps(Proc *proc)
 		while ((row = SQLFetchRow(res)))
 		{
 			SQLBorra(IS_SQL, row[0]);
-			Senyal1(IS_SIGN_DROP, row[0]);
+			LlamaSenyal(IS_SIGN_DROP, 1, row[0]);
 		}
 		proc->proc += 30;
 		SQLFreeRes(res);

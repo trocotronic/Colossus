@@ -847,7 +847,7 @@ IRCFUNC(m_eos)
 		EnviaAServidor("%s %s", me.trio, TOK_EOB_ACK);
 		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, abs(microtime() - tburst));
 		intentos = 0;
-		Senyal(SIGN_EOS);
+		LlamaSenyal(SIGN_EOS, 0);
 #ifdef _WIN32		
 		ChkBtCon(1, 0);
 #endif		
@@ -1158,7 +1158,7 @@ IRCFUNC(m_rehash)
 IRCFUNC(sincroniza)
 {
 	tburst = microtime();
-	Senyal(SIGN_SYNCH);
+	LlamaSenyal(SIGN_SYNCH, 0);
 	return 0;
 }
 IRCFUNC(m_burst)

@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.46 2007-02-10 14:57:12 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.47 2007-02-10 16:54:30 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -2028,7 +2028,7 @@ BOTFUNC(CSRegister)
 					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", cmodreg->flag);
 				ProtFunc(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
 			}
-			Senyal1(CS_SIGN_REG, param[1]);
+			LlamaSenyal(CS_SIGN_REG, 1, param[1]);
 			Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);
 		}
 		else
@@ -2523,7 +2523,7 @@ int CSBaja(char *canal, int opt)
 	strlcpy(canalw, strtolower(canal), sizeof(canalw));
 	SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, canalw);
 	SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, canalw);
-	Senyal1(CS_SIGN_DROP, canal);
+	LlamaSenyal(CS_SIGN_DROP, 1, canal);
 	SQLBorra(CS_SQL, canal);
 	return 0;
 }

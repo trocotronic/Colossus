@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.48 2007-02-10 14:57:12 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.49 2007-02-10 16:54:31 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -616,7 +616,7 @@ BOTFUNC(NSRegister)
 	if (!IsOper(cl))
 		InsertaCache(CACHE_ULTIMO_REG, usermask, 3600 * nickserv->min_reg, nickserv->hmod->id, "%lu", time(0));
 	Responde(cl, CLI(nickserv), "Tu nick ha sido registrado bajo la cuenta \00312%s\003.", mail);
-	Senyal1(NS_SIGN_REG, cl->nombre);
+	LlamaSenyal(NS_SIGN_REG, 1, cl->nombre);
 	EOI(nickserv, 1);
 	return 0;
 }
@@ -649,7 +649,7 @@ BOTFUNC(NSIdentify)
 		if (umodreg)
 			ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", umodreg->flag);
 		Responde(cl, CLI(nickserv), "Ok \00312%s\003, bienvenid@ a casa :)", cl->nombre);
-		Senyal1(NS_SIGN_IDOK, cl);
+		LlamaSenyal(NS_SIGN_IDOK, 1, cl);
 	}
 	else
 	{
@@ -715,7 +715,7 @@ int NSBaja(char *nick, int opt)
 	if (!opt && (opts & NS_OPT_NODROP))
 		return 1;
 	al = BuscaCliente(nick);
-	Senyal1(NS_SIGN_DROP, nick);
+	LlamaSenyal(NS_SIGN_DROP, 1, nick);
 	if (al)
 		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
 	SQLBorra(NS_SQL, nick);
@@ -1090,7 +1090,7 @@ int NSCmdUmode(Cliente *cl, char *modos)
 	//if (conf_set->modos && conf_set->modos->usuarios)
 	//	ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), conf_set->modos->usuarios);
 	if (umodreg && strchr(modos, umodreg->flag) && (cl->modos & UMODE_REGNICK))
-		Senyal1(NS_SIGN_IDOK, cl);
+		LlamaSenyal(NS_SIGN_IDOK, 1, cl);
 	return 0;
 }
 /* si nuevo es NULL, es un cliente nuevo. si no, es un cambio de nick */
@@ -1135,7 +1135,7 @@ int NSCmdPostNick(Cliente *cl, int nuevo)
 			}
 		}
 		else
-			Senyal1(NS_SIGN_IDOK, cl);
+			LlamaSenyal(NS_SIGN_IDOK, 1, cl);
 	}		
 	return 0;
 }

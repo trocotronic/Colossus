@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.99 2007-02-10 14:57:12 Trocotronic Exp $ 
+ * $Id: main.c,v 1.100 2007-02-10 16:54:30 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -149,14 +149,15 @@ VOIDSIG Refresca()
 	DetieneMDS();
 	DescargaExtensiones(protocolo);
 	DescargaModulos();
-	DescargaProtocolo();
+	if (!SockIrcd)
+		DescargaProtocolo();
 	DescargaConfiguracion();
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		CierraColossus(-1);
 	DistribuyeConfiguracion(&config);
 	if (!SockIrcd)
 		DistribuyeMe(&me);
-	Senyal(SIGN_SQL);
+	LlamaSenyal(SIGN_SQL, 0);
 	SiguienteTAsync(1);
 #ifdef POSIX_SIGNALS
 	act.sa_handler = Refresca;
@@ -171,8 +172,8 @@ VOIDSIG Refresca()
 #endif
 	if (SockIrcd)
 	{
-		Senyal(SIGN_SYNCH);
-		Senyal(SIGN_EOS);
+		LlamaSenyal(SIGN_SYNCH, 0);
+		LlamaSenyal(SIGN_EOS, 0);
 	}
 	refrescando = 0;
 }
@@ -344,8 +345,8 @@ int main(int argc, char *argv[])
 	margv = argv;
 #endif
 	CargaCache();
-	Senyal(SIGN_STARTUP);
-	Senyal(SIGN_SQL);
+	LlamaSenyal(SIGN_STARTUP, 0);
+	LlamaSenyal(SIGN_SQL, 0);
 	pthread_mutex_init(&mutex, NULL);
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);

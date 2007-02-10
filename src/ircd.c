@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.48 2007-02-10 14:57:12 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.49 2007-02-10 16:54:30 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -772,7 +772,7 @@ void LiberaMemoriaCanal(Canal *cn)
 	MallaParam *paux, *ptmp;
 	LinkCliente *aux, *tmp;
 	Mascara *kaux, *ktmp;
-	Senyal1(SIGN_CDESTROY, cn);
+	LlamaSenyal(SIGN_CDESTROY, 1, cn);
 	BorraCanalDeHash(cn, cn->nombre, cTab);
 	if (cn->prev)
 		cn->prev->sig = cn->sig;

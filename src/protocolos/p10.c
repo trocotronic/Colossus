@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.31 2007-01-18 14:36:46 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.32 2007-02-10 16:54:31 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -332,7 +332,7 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 	}
 	else
 		EnviaAServidor("%s %s %s :%s Usuario desconectado.", bl->trio, TOK_KILL, cl->trio, me.nombre);
-	Senyal2(SIGN_QUIT, cl, buf);
+	LlamaSenyal(SIGN_QUIT, 2, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->chan, cl);
 	LiberaMemoriaCliente(cl);
@@ -858,7 +858,7 @@ IRCFUNC(m_eos)
 		EnviaAServidor("%s %s", me.trio, TOK_EOB_ACK);
 		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, abs(microtime() - tburst));
 		intentos = 0;
-		Senyal(SIGN_EOS);
+		LlamaSenyal(SIGN_EOS, 0);
 #ifdef _WIN32		
 		ChkBtCon(1, 0);
 #endif		
@@ -878,7 +878,7 @@ IRCFUNC(m_msg)
 		parv[2]++;
 	if (*parv[1] == '#')
 	{
-		Senyal3(SIGN_CMSG, cl, BuscaCanal(parv[1]), parv[2]);
+		LlamaSenyal(SIGN_CMSG, 3, cl, BuscaCanal(parv[1]), parv[2]);
 		return 1;
 	}
 	strlcpy(par, parv[2], sizeof(par));
@@ -947,7 +947,7 @@ IRCFUNC(m_msg)
 			resp = 1;
 		}
 	}
-	Senyal4(SIGN_PMSG, cl, bl, parv[2], resp);
+	LlamaSenyal(SIGN_PMSG, 4, cl, bl, parv[2], resp);
 	return 0;
 }
 IRCFUNC(m_whois)
@@ -994,17 +994,17 @@ IRCFUNC(m_nick)
 			p_kill(al, &me, "Nick protegido.");
 			ReconectaBot(parv[1]);
 		}
-		Senyal2(SIGN_POST_NICK, cl, 0);
+		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
 		if (parc > 9)
-			Senyal2(SIGN_UMODE, cl, parv[6]);
+			LlamaSenyal(SIGN_UMODE, 2, cl, parv[6]);
 	}
 	else
 	{
-		Senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		LlamaSenyal(SIGN_PRE_NICK, 2, cl, parv[1]);
 		if (strcasecmp(parv[1], cl->nombre))
 			ProcesaModosCliente(cl, "-r");
 		CambiaNick(cl, parv[1]);
-		Senyal2(SIGN_POST_NICK, cl, 1);
+		LlamaSenyal(SIGN_POST_NICK, 2, cl, 1);
 	}
 	return 0;
 }
@@ -1016,14 +1016,14 @@ IRCFUNC(m_topic)
 		cn = InfoCanal(parv[1], !0);
 		ircstrdup(cn->topic, parv[2]);
 		cn->ntopic = cl;
-		Senyal3(SIGN_TOPIC, cl, cn, parv[2]);
+		LlamaSenyal(SIGN_TOPIC, 3, cl, cn, parv[2]);
 	}
 	return 0;
 }
 IRCFUNC(m_quit)
 {
 	LinkCanal *lk;
-	Senyal2(SIGN_QUIT, cl, parv[1]);
+	LlamaSenyal(SIGN_QUIT, 2, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->chan, cl);
 	LiberaMemoriaCliente(cl);
@@ -1078,7 +1078,7 @@ IRCFUNC(m_part)
 {
 	Canal *cn;
 	cn = BuscaCanal(parv[1]);
-	Senyal3(SIGN_PART, cl, cn, parv[2]);
+	LlamaSenyal(SIGN_PART, 3, cl, cn, parv[2]);
 	BorraCanalDeCliente(cl, cn);
 	BorraClienteDeCanal(cn, cl);
 	return 0;
@@ -1089,14 +1089,14 @@ IRCFUNC(m_mode)
 	if ((bl = BuscaCliente(parv[1])))
 	{
 		ProcesaModosCliente(bl, parv[2]);
-		Senyal2(SIGN_UMODE, bl, parv[2]);
+		LlamaSenyal(SIGN_UMODE, 2, bl, parv[2]);
 	}
 	else
 	{
 		Canal *cn;
 		cn = InfoCanal(parv[1], !0);
 		ProcesaModo(cl, cn, parv + 2, parc - 2);
-		Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
+		LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	}
 	return 0;
 }
@@ -1107,7 +1107,7 @@ IRCFUNC(m_kick)
 	if (!(al = BuscaCliente(parv[2])))
 		return 1;
 	cn = InfoCanal(parv[1], 0);
-	Senyal4(SIGN_KICK, cl, al, cn, parv[3]);
+	LlamaSenyal(SIGN_KICK, 4, cl, al, cn, parv[3]);
 	BorraCanalDeCliente(al, cn);
 	BorraClienteDeCanal(cn, al);
 	if (EsBot(al))
@@ -1185,7 +1185,7 @@ IRCFUNC(m_away)
 		ircstrdup(cl->away, parv[1]);
 	else if (parc == 1)
 		ircfree(cl->away);
-	Senyal2(SIGN_AWAY, cl, parv[1]);
+	LlamaSenyal(SIGN_AWAY, 2, cl, parv[1]);
 	return 0;
 }
 IRCFUNC(m_rehash)
@@ -1197,7 +1197,7 @@ IRCFUNC(m_rehash)
 IRCFUNC(sincroniza)
 {
 	tburst = microtime();
-	Senyal(SIGN_SYNCH);
+	LlamaSenyal(SIGN_SYNCH, 0);
 	EnviaAServidor("%s %s", me.trio, TOK_EOB);
 	return 0;
 }
@@ -1216,7 +1216,7 @@ IRCFUNC(m_burst)
 			if (strchr(parv[i], 'l'))
 				params++;
 			ProcesaModo(cl, cn, parv + i, params);
-			Senyal4(SIGN_MODE, cl, cn, parv + i, params);
+			LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + i, params);
 		}
 		else if (*parv[i] == '%')
 		{
@@ -1271,7 +1271,7 @@ IRCFUNC(m_burst)
 					ProcesaModo(cl, cn, arr, j);
 					for (c = &mod[0], j = 1; *c; c++)
 						arr[j++] = al->nombre;
-					Senyal4(SIGN_MODE, cl, cn, arr, j);
+					LlamaSenyal(SIGN_MODE, 4, cl, cn, arr, j);
 				}
 			}
 			Free(users);
@@ -1432,5 +1432,5 @@ void EntraCliente(Cliente *cl, char *canal)
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);
-	Senyal2(SIGN_JOIN, cl, cn);
+	LlamaSenyal(SIGN_JOIN, 2, cl, cn);
 }

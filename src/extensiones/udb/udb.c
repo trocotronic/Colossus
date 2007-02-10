@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.21 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.22 2007-02-10 16:54:30 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -97,7 +97,7 @@ int p_svsmode_U(Cliente *cl, Cliente *bl, char *modos, ...)
 	va_end(vl);
 	ProcesaModosCliente(cl, modos);
 	EnviaAServidor(":%s %s %s %s %lu", bl->nombre, TOK_SVS3MODE, cl->nombre, buf, time(0));
-	Senyal2(SIGN_UMODE, cl, modos);
+	LlamaSenyal(SIGN_UMODE, 2, cl, modos);
 	return 0;
 }
 int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
@@ -671,7 +671,7 @@ IRCFUNC(m_sjoin_U)
 			arr[i] = NULL;
 			ProcesaModo(cl, cn, arr, i);
 			if (al)
-				Senyal4(SIGN_MODE, al, cn, arr, i);
+				LlamaSenyal(SIGN_MODE, 4, al, cn, arr, i);
 		}
 	}
 	if (creacion < cn->creacion) /* debemos quitar todo lo nuestro */
@@ -742,7 +742,7 @@ IRCFUNC(m_sjoin_U)
 	if (parc > 4 && creacion <= cn->creacion) /* hay modos */
 	{
 		ProcesaModo(cl, cn, parv + 3, parc - 4);
-		Senyal4(SIGN_MODE, cl, cn, parv + 3, parc - 4);
+		LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 3, parc - 4);
 	}
 	return 0;
 }

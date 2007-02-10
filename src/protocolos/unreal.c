@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.43 2007-02-10 14:57:12 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.44 2007-02-10 16:54:31 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -256,7 +256,7 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 	va_end(vl);
 	ProcesaModosCliente(cl, buf);
 	EnviaAServidor(":%s %s %s %s %lu", bl->nombre, TOK_SVS2MODE, cl->nombre, buf, time(0));
-	Senyal2(SIGN_UMODE, cl, buf);
+	LlamaSenyal(SIGN_UMODE, 2, cl, buf);
 	return 0;
 }
 int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
@@ -359,7 +359,7 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 	}
 	else
 		EnviaAServidor(":%s %s %s :Usuario desconectado.", bl->nombre, TOK_KILL, cl->nombre);
-	Senyal2(SIGN_QUIT, cl, buf);
+	LlamaSenyal(SIGN_QUIT, 2, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->chan, cl);
 	LiberaMemoriaCliente(cl);
@@ -837,7 +837,7 @@ void PROT_INICIA(Unreal)()
 		ircfree(aux);
 	}
 	servidores = NULL;
-	Senyal(SIGN_SOCKOPEN);
+	LlamaSenyal(SIGN_SOCKOPEN, 0);
 	EnviaAServidor("PROTOCTL NICKv2 VHP VL TOKEN UMODE2 NICKIP SJOIN SJ3 NS SJB64 TKLEXT");
 #ifdef USA_ZLIB
 	if (conf_server->compresion)
@@ -964,7 +964,7 @@ IRCFUNC(m_msg)
 		parv[2]++;
 	if (*parv[1] == '#')
 	{
-		Senyal3(SIGN_CMSG, cl, BuscaCanal(parv[1]), parv[2]);
+		LlamaSenyal(SIGN_CMSG, 3, cl, BuscaCanal(parv[1]), parv[2]);
 		return 1;
 	}
 	strlcpy(par, parv[2], sizeof(par));
@@ -1033,7 +1033,7 @@ IRCFUNC(m_msg)
 			resp = 1;
 		}
 	}
-	Senyal4(SIGN_PMSG, cl, bl, parv[2], resp);
+	LlamaSenyal(SIGN_PMSG, 4, cl, bl, parv[2], resp);
 	return 0;
 }
 IRCFUNC(m_whois)
@@ -1085,13 +1085,13 @@ IRCFUNC(m_nick)
 			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, &me, "Nick protegido.");
 			ReconectaBot(parv[1]);
 		}
-		Senyal2(SIGN_POST_NICK, cl, 0);
+		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
 		if (parc > 10)
-			Senyal2(SIGN_UMODE, cl, parv[8]);
+			LlamaSenyal(SIGN_UMODE, 2, cl, parv[8]);
 	}
 	else
 	{
-		Senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		LlamaSenyal(SIGN_PRE_NICK, 2, cl, parv[1]);
 		if (strcasecmp(parv[1], cl->nombre))
 		{
 			ProcesaModosCliente(cl, "-r");
@@ -1099,7 +1099,7 @@ IRCFUNC(m_nick)
 		}
 		else
 			CambiaNick(cl, parv[1]);
-		Senyal2(SIGN_POST_NICK, cl, 1);
+		LlamaSenyal(SIGN_POST_NICK, 2, cl, 1);
 	}
 	return 0;
 }
@@ -1118,13 +1118,13 @@ IRCFUNC(m_topic)
 		ircstrdup(cn->topic, parv[4]);
 		cn->ntopic = cl;
 	}
-	Senyal3(SIGN_TOPIC, cl, cn, parc == 6 ? parv[5] : parv[4]);
+	LlamaSenyal(SIGN_TOPIC, 3, cl, cn, parc == 6 ? parv[5] : parv[4]);
 	return 0;
 }
 IRCFUNC(m_quit)
 {
 	LinkCanal *lk;
-	Senyal2(SIGN_QUIT, cl, parv[1]);
+	LlamaSenyal(SIGN_QUIT, 2, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->chan, cl);
 	LiberaMemoriaCliente(cl);
@@ -1136,7 +1136,7 @@ IRCFUNC(m_kill)
 	if ((al = BuscaCliente(parv[1])))
 	{
 		LinkCanal *lk;
-		Senyal2(SIGN_QUIT, al, parv[1]);
+		LlamaSenyal(SIGN_QUIT, 2, al, parv[1]);
 		for (lk = al->canal; lk; lk = lk->sig)
 			BorraClienteDeCanal(lk->chan, al);
 		LiberaMemoriaCliente(al);
@@ -1174,7 +1174,7 @@ IRCFUNC(m_part)
 {
 	Canal *cn;
 	cn = BuscaCanal(parv[1]);
-	Senyal3(SIGN_PART, cl, cn, parv[2]);
+	LlamaSenyal(SIGN_PART, 3, cl, cn, parv[2]);
 	BorraCanalDeCliente(cl, cn);
 	BorraClienteDeCanal(cn, cl);
 	return 0;
@@ -1190,7 +1190,7 @@ IRCFUNC(m_mode)
 		strlcat(modebuf, protocolo->modcanales, sizeof(modebuf));
 	if (modebuf[0] != '\0')
 		ProtFunc(P_MODO_CANAL)(&me, cn, "%s %s", modebuf, parabuf);
-	Senyal4(SIGN_MODE, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
+	LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	return 0;
 }
 IRCFUNC(m_sjoin)
@@ -1252,7 +1252,7 @@ IRCFUNC(m_sjoin)
 			arr[i] = NULL;
 			ProcesaModo(cl, cn, arr, i);
 			if (al)
-				Senyal4(SIGN_MODE, al, cn, arr, i);
+				LlamaSenyal(SIGN_MODE, 4, al, cn, arr, i);
 		}
 	}
 	if (creacion < cn->creacion) /* debemos quitar todo lo nuestro */
@@ -1323,7 +1323,7 @@ IRCFUNC(m_sjoin)
 	if (parc > 4 && creacion <= cn->creacion) /* hay modos */
 	{
 		ProcesaModo(cl, cn, parv + 3, parc - 4);
-		Senyal4(SIGN_MODE, cl, cn, parv + 3, parc - 4);
+		LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 3, parc - 4);
 	}	
 	return 0;
 }
@@ -1334,7 +1334,7 @@ IRCFUNC(m_kick)
 	if (!(al = BuscaCliente(parv[2])))
 		return 1;
 	cn = InfoCanal(parv[1], 0);
-	Senyal4(SIGN_KICK, cl, al, cn, parv[3]);
+	LlamaSenyal(SIGN_KICK, 4, cl, al, cn, parv[3]);
 	BorraCanalDeCliente(al, cn);
 	BorraClienteDeCanal(cn, al);
 	if (EsBot(al))
@@ -1448,7 +1448,7 @@ IRCFUNC(m_squit)
 IRCFUNC(m_umode)
 {
 	ProcesaModosCliente(cl, parv[1]);
-	Senyal2(SIGN_UMODE, cl, parv[1]);
+	LlamaSenyal(SIGN_UMODE, 2, cl, parv[1]);
 	return 0;
 }
 IRCFUNC(m_error)
@@ -1462,7 +1462,7 @@ IRCFUNC(m_away)
 		ircstrdup(cl->away, parv[1]);
 	else if (parc == 1)
 		ircfree(cl->away);
-	Senyal2(SIGN_AWAY, cl, parv[1]);
+	LlamaSenyal(SIGN_AWAY, 2, cl, parv[1]);
 	return 0;
 }
 IRCFUNC(m_105)
@@ -1518,7 +1518,7 @@ IRCFUNC(m_eos)
 	{
 		EnviaAServidor(":%s %s", me.nombre, TOK_VERSION);
 		EnviaAServidor(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
-		Senyal(SIGN_EOS);
+		LlamaSenyal(SIGN_EOS, 0);
 #ifdef _WIN32
 		ChkBtCon(1, 0);
 #endif		
@@ -1574,7 +1574,7 @@ IRCFUNC(m_module)
 IRCFUNC(sincroniza)
 {
 	tburst = microtime();
-	Senyal1(SIGN_SYNCH, cl);
+	LlamaSenyal(SIGN_SYNCH, 1, cl);
 	return 0;
 }
 IRCFUNC(m_432)
@@ -1866,7 +1866,7 @@ void EntraCliente(Cliente *cl, char *canal)
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);
-	Senyal2(SIGN_JOIN, cl, cn);
+	LlamaSenyal(SIGN_JOIN, 2, cl, cn);
 }
 
 /* ':' and '#' and '&' and '+' and '@' must never be in this table. */

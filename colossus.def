@@ -91,6 +91,7 @@ EXPORTS
 	LiberaMemoriaCliente
 	LiberaMemoriaConfiguracion
 	ListaDescrips
+	LlamaSenyal
 	LlamaSenyalExt
 	Loguea
 	MDString

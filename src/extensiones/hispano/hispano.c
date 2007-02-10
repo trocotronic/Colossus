@@ -50,16 +50,16 @@ IRCFUNC(m_nick)
 			ProtFunc(P_QUIT_USUARIO_REMOTO)(al, &me, "Nick protegido.");
 			ReconectaBot(parv[1]);
 		}
-		Senyal2(SIGN_POST_NICK, al, 0);
-		Senyal2(SIGN_UMODE, al, parv[6]);
+		LlamaSenyal(SIGN_POST_NICK, 2, al, 0);
+		LlamaSenyal(SIGN_UMODE, 2, al, parv[6]);
 	}
 	else
 	{
-		Senyal2(SIGN_PRE_NICK, cl, parv[1]);
+		LlamaSenyal(SIGN_PRE_NICK, 2, cl, parv[1]);
 		if (strcasecmp(parv[1], cl->nombre))
 			ProcesaModosCliente(cl, "-r");
 		CambiaNick(cl, parv[1]);
-		Senyal2(SIGN_POST_NICK, cl, 1);
+		LlamaSenyal(SIGN_POST_NICK, 2, cl, 1);
 	}
 	return 0;
 }
