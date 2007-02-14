@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.12 2007-02-10 16:54:30 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.13 2007-02-14 15:31:51 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -42,7 +42,10 @@ int CargaProtocolo(Conf *config)
 	SOCKFUNC(*parsea);
 	ProtInfo *inf;
 	if (SockIrcd && protocolo)
+	{
+		CargaExtensiones(protocolo);
 		return 0;
+	}
 	if ((prot = CopiaDll(config->data, archivo, tmppath)))
 	{
 		irc_dlsym(prot, "Prot_Carga", mod_carga);

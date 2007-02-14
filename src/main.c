@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.101 2007-02-14 15:21:05 Trocotronic Exp $ 
+ * $Id: main.c,v 1.102 2007-02-14 15:31:51 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -147,8 +147,7 @@ VOIDSIG Refresca()
 	Info("Refrescando servicios...");
 	refrescando = 1;
 	DetieneMDS();
-	if (!SockIrcd)
-		DescargaExtensiones(protocolo);
+	DescargaExtensiones(protocolo);
 	DescargaModulos();
 	if (!SockIrcd)
 		DescargaProtocolo();
