@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.15 2007-01-18 14:07:55 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.16 2007-02-14 15:02:49 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -282,6 +282,7 @@ int EPhp(u_long len, char *res, HHead *hh)
 {
 	hh->noclosesock = 0;
 	EnviaRespuesta(hh, 200, -1, NULL, len, res);
+	Free(res);
 	return 0;
 }
 void ProcesaHHead(HHead *hh, Sock *sck)

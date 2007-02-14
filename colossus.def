@@ -101,6 +101,7 @@ EXPORTS
 	ModosAFlags
 	ModuloEsResidente
 	MuestraAyudaComando
+	Mx
 	NTL_tolower_tab
 	NTL_toupper_tab
 	NuevoCliente

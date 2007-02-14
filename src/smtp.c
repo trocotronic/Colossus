@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.24 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.25 2007-02-14 15:02:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -327,74 +327,42 @@ char *getmx(char *dest)
 #define SDK
 char *Mx(char *dominio)
 {
-#if defined(_WIN32) && defined(SDK)
-	HMODULE api;
-#endif
-	char *cache, *host;
-	if (!dominio)
-		return NULL;
-	if ((cache = CogeCache(CACHE_MX, dominio, 0)))
-		return cache;
 #ifdef _WIN32
- #ifdef SDK
-	if (VerInfo.dwMajorVersion == 5)
-	{
-		if ((api = LoadLibrary("modulos/mx.dll")))
-		{
-			char *(*mx)(char *);
-			if ((mx = (char * (*)(char *))GetProcAddress(api, "MX")))
-			{
-				host = (mx)(dominio);
-				if (host)
-				{
-					FreeLibrary(api);
-					InsertaCache(CACHE_MX, dominio, 86400, 0, host);
-					return host;
-				}
-			}
-		}
-	}
- #else
-	HANDLE hStdin, hStdout;
-	DWORD btr, btw;
-	char orden[512];
-	static char host[512];
+	int len;
+	char *res;
+	static char ret[128];
+#endif
+	char *host = NULL;
 	if (!dominio)
 		return NULL;
-	bzero(host, 512);
-	hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-	hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	ircsprintf(orden, "nslookup -type=mx %s", dominio);
-	if (CreatePipe(&hStdout, &hStdin, NULL, 0))
-	{
-		int i;
-		WriteFile(hStdin, orden, strlen(orden), &btw, NULL);
-		for (;;)
-		{
-			if (!(i =ReadFile(hStdout, host, 512, &btr, NULL)) || !btr)
-				break;
-		//	Debug("%s %i %i", host, i, btr);
-		}
-		/*while ((fgets(buf, BUFSIZE, pp)))
-		{
-			char *mx;
-			strtok(buf, "=");
-			strtok(NULL, "=");
-			if ((mx = strtok(NULL,"\n")))
-			{
-				_pclose(pp);
-				strlcpy(host, ++mx, sizeof(host));
-				SQLInserta(SQL_CACHE, dominio, "valor", host);
-				SQLInserta(SQL_CACHE, dominio, "hora", "%lu", time(0));
-				return host;
-			}
-		}
-		_pclose(pp);*/
-	}
- #endif
+	if ((host = CogeCache(CACHE_MX, dominio, 0)))
+		return host;
+#ifdef _WIN32
+ 	ircsprintf(buf, "-type=mx %s", dominio);
+ 	if (!EjecutaComandoSinc("nslookup", buf, &len, &res))
+ 	{
+ 		char *t;
+ 		int prev = 9999, pref;
+ 		for (t = strtok(res, "\r\n"); t; t = strtok(NULL, "\r\n"))
+ 		{
+ 			if (sscanf(t, "%*s\tMX preference = %i, mail exchanger = %s", &pref, buf))
+ 			{
+ 				if (pref < prev)
+ 				{
+ 					strlcpy(ret, buf, sizeof(ret));
+ 					host = ret;
+ 					prev = pref;
+ 				}
+ 			}
+ 		}
+ 		Free(res);
+ 		if (host)
+ 			InsertaCache(CACHE_MX, dominio, 86400, 0, host);
+ 		return host;
+ 	}
 #else
-	host = getmx(dominio);
-	InsertaCache(CACHE_MX, dominio, 86400, 0, host);
+	if ((host = getmx(dominio)))
+		InsertaCache(CACHE_MX, dominio, 86400, 0, host);
 	return host;
 #endif
 	return (conf_smtp ? conf_smtp->host : NULL);

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.49 2007-02-10 16:54:31 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.50 2007-02-14 15:02:50 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -574,7 +574,7 @@ BOTFUNC(NSRegister)
 		pass = param[1];
 	}
 	/* comprobamos su email */
-	if (!(dominio = strchr(mail, '@')) || !gethostbyname(dominio+1))
+	if (!(dominio = strchr(mail, '@')) || !Mx(dominio+1))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una cuenta de email válida.");
 		return 1;

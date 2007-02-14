@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.47 2007-02-10 16:54:30 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.48 2007-02-14 15:02:50 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -318,7 +318,7 @@ char *CSEsFundador_cache(Cliente *al, char *canal)
 	return NULL;
 }
 /* hace un empaquetamiento de los users de una determinada lista. No olvidar hacer Free() */
-Cliente **CSEmpaquetaClientes(Canal *cn, LinkCliente *lista, u_char opers)
+Cliente **CSEmpaquetaClientes(Canal *cn, LinkCliente *lista, u_int opers)
 {
 	Cliente **al;
 	LinkCliente *lk;
@@ -1946,6 +1946,11 @@ BOTFUNC(CSRegister)
 		if (IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está registrado.");
+			return 1;
+		}
+		if (*param[1] != '#')
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "El nombre de canal debe empezar por #.");
 			return 1;
 		}
 		if (!IsOper(cl))
