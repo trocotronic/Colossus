@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.102 2007-02-14 15:31:51 Trocotronic Exp $ 
+ * $Id: main.c,v 1.103 2007-02-14 16:14:48 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -149,8 +149,7 @@ VOIDSIG Refresca()
 	DetieneMDS();
 	DescargaExtensiones(protocolo);
 	DescargaModulos();
-	if (!SockIrcd)
-		DescargaProtocolo();
+	DescargaProtocolo();
 	DescargaConfiguracion();
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		CierraColossus(-1);

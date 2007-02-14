@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.40 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.41 2007-02-14 16:14:48 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -532,8 +532,8 @@ BOTFUNC(OSRestart)
 BOTFUNC(OSRehash)
 {
 	Refresca();
-	EOI(operserv, 3);
-	return 0;
+	//EOI(operserv, 3); *** PROHIBIDO ***
+	return -1; /* stop stop stop. paramos todo lo que venga a continuación */
 }
 /*
 BOTFUNC(OSBackup)

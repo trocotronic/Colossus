@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.32 2007-02-10 16:54:31 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.33 2007-02-14 16:14:48 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -947,7 +947,8 @@ IRCFUNC(m_msg)
 			resp = 1;
 		}
 	}
-	LlamaSenyal(SIGN_PMSG, 4, cl, bl, parv[2], resp);
+	if (resp >= 0)
+		LlamaSenyal(SIGN_PMSG, 4, cl, bl, parv[2], resp);
 	return 0;
 }
 IRCFUNC(m_whois)
