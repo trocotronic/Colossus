@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.19 2007-02-18 19:12:10 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.20 2007-02-18 19:38:51 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -414,7 +414,7 @@ SOCKFUNC(LeeHTTPD)
 		{
 			if ((e = strchr(c, '\n')))
 			{
-				if (e == c)
+				if (e == c || e == c+1)
 					goto fin;
 				*e = '\0';
 				if (*(e-1) == '\r')
