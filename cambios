@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.54 2007-02-14 15:02:49 Trocotronic Exp $
+ * $Id: cambios,v 1.55 2007-02-18 18:58:53 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -456,3 +456,4 @@
 100207512 - Arreglado un fallo al refrescar varias veces el programa.
 100207513 - Arreglado un fallo al refrescar el programa en Linux, aivos de ReCoRD (#0000234).
 110207514 - Añadida comprobación para que los nombres de canales empiecen por #, aviso de ReCoRD (#0000230).
+160207515 - Arreglado un mensaje de OperServ con el SETUDB.

@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.8 2007-01-18 14:34:37 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.9 2007-02-18 18:58:53 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -142,8 +142,8 @@ BOTFUNCHELP(OSHSetUDB)
 		Responde(cl, CLI(operserv), "Este servidor recibirá todos los cambios de modos realizados por UDB sobre un usuario.");
 		Responde(cl, CLI(operserv), "En general no necesitará esta opción, salvo que decida conectar un servidor no-UDB y quiera procesar este tipo de datos.");
 		Responde(cl, CLI(operserv), "Por ejemplo, si quiere unir a la red un servidor de estadísticas, puede serle útil esta opción.");
+		Responde(cl, CLI(operserv), "NOTA: NO UTILICE ESTA OPCIÓN CON UN SERVIDOR UNREALIRCD O CON COLOSSUS.");
 		Responde(cl, CLI(operserv), " ");
-		Responde(cl, CLI(operserv), "Si utiliza este comando sobre un servidor que ya es debug, se le quitará esta opción. Si no es debug, se le añadirá.");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312SERVER-DEBUG nombre.del.servidor ON|OFF");
 	}
 	else if (!strcasecmp(param[2], "CLIENTES"))
@@ -339,7 +339,7 @@ BOTFUNC(OSRestaurar)
 					Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este punto de restauración no existe");
 					return 1;
 				case -3:
-					Responde(cl, CLI(operserv), OS_ERR_EMPT,"Ha ocurrido un error grave (zInflate)");
+					Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error grave (zInflate)");
 					return 1;
 			}
 		}
@@ -402,17 +402,13 @@ BOTFUNC(OSSetUDB)
 				val = bloq->data_long;
 		}
 		if (!strcasecmp(param[3], "ON"))
-		{
 			PropagaRegistro("L::%s::O %c%lu", param[2], CHAR_NUM, val | opt);
-			Responde(cl, CLI(operserv), "Se ha añadido el servidor \00312%s\003 como servidor debug", param[2]);
-		}
 		else if (!strcasecmp(param[3], "OFF"))
 		{
 			if (val & ~opt)
 				PropagaRegistro("L::%s::O %c%lu", param[2], CHAR_NUM, val & ~opt);
 			else
 				PropagaRegistro("L::%s::O", param[2]);
-			Responde(cl, CLI(operserv), "Se ha quitado el servidor \00312%s\003 como servidor debug", param[2]);
 		}
 		else
 		{
