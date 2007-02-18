@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.18 2007-02-18 19:06:22 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.19 2007-02-18 19:12:10 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -208,7 +208,7 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 	}
 	strlcat(tbuf, "\r\n", sizeof(tbuf));
 	SockWrite(hh->sck, tbuf);
-	if (data)
+	if (data && bytes)
 		SockWriteBin(hh->sck, bytes, data);
 	SockClose(hh->sck, LOCAL);
 }
