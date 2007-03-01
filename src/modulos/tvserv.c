@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.22 2007-02-03 22:57:28 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.23 2007-03-01 15:30:23 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -928,7 +928,9 @@ SOCKFUNC(TSLeeTv)
 	}
 	else if (imp && !strcmp(data, "\t"))
 	{
-		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, cadenas[dts->numero].nombre, tsf, txt[0] == ' ' ? &txt[1] : &txt[0]);
+		char *m_c = SQLEscapa(txt[0] == ' ' ? &txt[1] : &txt[0]);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_TV, cadenas[dts->numero].nombre, tsf, m_c);
+		Free(m_c);
 		Responde(dts->cl, CLI(tvserv), txt[0] == ' ' ? &txt[1] : &txt[0]);
 		imp = 0;
 	}
@@ -954,7 +956,7 @@ SOCKFUNC(TSLeeHoroscopo)
 	static char txt[BUFSIZE], tmp[BUFSIZE], *tsf;
 	static int salud = 0, dinero = 0, amor = 0, cat = 0;
 	DataSock *dts;
-	char *c;
+	char *c, *m_c;
 	if (!(dts = BuscaCola(sck)))
 		return 1;
 	if ((c = strstr(data, "d><f")))
@@ -970,7 +972,9 @@ SOCKFUNC(TSLeeHoroscopo)
 		strlcat(txt, tmp, sizeof(txt));
 		if (strstr(data, "</center>"))
 		{
-			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, txt);
+			m_c = SQLEscapa(txt);
+			SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, m_c);
+			Free(m_c);
 			Responde(dts->cl, CLI(tvserv), txt);
 			cat = 0;
 		}
@@ -983,11 +987,13 @@ SOCKFUNC(TSLeeHoroscopo)
 		amor = StrCount(data, "amor.gif");
 	else if (!strcmp(data, "</td></tr><tr><td>"))
 	{
+		m_c = SQLEscapa(txt);
 		ircsprintf(txt, "Salud: \00312%s\003 - Dinero: \00312", Repite('*', salud));
 		strlcat(txt, Repite('*', dinero), sizeof(txt));
 		strlcat(txt, "\003 - Amor: \00312", sizeof(txt));
 		strlcat(txt, Repite('*', amor), sizeof(txt));
-		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, txt);
+		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, m_c);
+		Free(m_c);
 		salud = dinero = amor = 0;
 		SockClose(sck, LOCAL);
 		Responde(dts->cl, CLI(tvserv), txt);

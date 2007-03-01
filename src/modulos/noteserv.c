@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.4 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.5 2007-03-01 15:30:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -534,6 +534,7 @@ BOTFUNC(ESEntrada)
 {
 	int dia, mes, ano, hora = 0, min = 0, avisa = 0, pm = 1;
 	time_t tt;
+	char *m_c;
 	if (params < 2)
 	{
 		Responde(cl, CLI(noteserv), ES_ERR_PARA, fc->com, "[dd/mm/yy [hh:mm]] [nº] nota");
@@ -561,7 +562,9 @@ BOTFUNC(ESEntrada)
 	}
 	tt = CreaTime(dia, mes, ano, hora, min);
 	avisa = atoi(param[pm]);
-	SQLQuery("INSERT INTO %s%s (item,fecha,avisar,nota) VALUES ('%s',%lu,%lu,'%s')", PREFIJO, ES_SQL, cl->nombre, tt, tt-avisa, Unifica(param, params, avisa? pm+1 : pm, -1));
+	m_c = SQLEscapa(Unifica(param, params, avisa? pm+1 : pm, -1));
+	SQLQuery("INSERT INTO %s%s (item,fecha,avisar,nota) VALUES ('%s',%lu,%lu,'%s')", PREFIJO, ES_SQL, cl->nombre, tt, tt-avisa, m_c);
+	Free(m_c);
 	Responde(cl, CLI(noteserv), "Se ha añadido esta entrada correctamente.");
 	return 0;
 }

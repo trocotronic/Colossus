@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.51 2007-02-14 15:15:21 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.52 2007-03-01 15:30:22 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -532,8 +532,7 @@ BOTFUNC(NSHelp)
 BOTFUNC(NSRegister)
 {
 	u_int i, opts;
-	char *dominio;
-	char *mail, *pass, *usermask;
+	char *dominio, *mail, *pass, *usermask, *m_c;
 	SQLRes res = NULL;
 	usermask = strchr(cl->mask, '!') + 1;
 	if (strlen(cl->nombre) > (u_int)(protocolo->nicklen - 7)) /* 6 minimo de contraseña +1 de los ':' */
@@ -596,13 +595,15 @@ BOTFUNC(NSRegister)
 	}
 	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
+	m_c = SQLEscapa(cl->info);
 	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
 			PREFIJO, NS_SQL,
 			cl->nombre, pass ? MDString(pass, 0) : "null",
-			mail, cl->info,
+			mail, m_c,
 			cl->ident, cl->host,
 			opts, nickserv->opts & NS_SMAIL ? 0 : time(0),
 			time(0), time(0));
+	Free(m_c);
 	if (sql->_errno)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible insertar tu nick en la base de datos. Vuelve a probarlo.");

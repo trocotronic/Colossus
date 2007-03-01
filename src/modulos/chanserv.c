@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.48 2007-02-14 15:02:50 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.49 2007-03-01 15:30:22 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1510,11 +1510,13 @@ BOTFUNC(CSAkick)
 	else if (params > 3)
 	{
 		Cliente *al;
-		char *motivo = Unifica(param, params, 3, -1);
+		char *motivo = Unifica(param, params, 3, -1), *m_c;
+		m_c = SQLEscapa(motivo);
 		SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')", 
 			PREFIJO, CS_AKICKS,
 			param[1], param[2], 
-			motivo, cl->nombre);
+			m_c, cl->nombre);
+		Free(m_c);
 		if ((al = BuscaCliente(param[2])))
 			ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
 		Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2]);
@@ -2459,16 +2461,17 @@ int CSSigSQL()
 				{
 					if (!BadPtr(row[1]))
 					{
-						char *tok, *mo, *au;
+						char *tok, *mo, *au, *m_c;
 						for (tok = strtok(row[1], "\1"); tok; tok = strtok(NULL, "\1"))
 						{
 							mo = strtok(NULL, "\1");
+							m_c = SQLEscapa(mo);
 							au = strtok(NULL, "\t");
 							SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')", 
 								PREFIJO, CS_AKICKS,
 								row[0], tok,
-								mo, au);
-						
+								m_c, au);
+							Free(m_c);
 						}
 					}
 				}

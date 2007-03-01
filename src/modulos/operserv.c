@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.41 2007-02-14 16:14:48 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.42 2007-03-01 15:30:22 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -281,6 +281,7 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 	Cliente *cl = NULL;
 	Noticia *gn = NULL;
 	time_t aux;
+	char *m_c, *bot = NULL;
 	if (gnoticias == MAXNOT)
 		return 0;
 	if (!id && !(gn = OSEsBotNoticia(botname)))
@@ -295,9 +296,11 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 	not->cl = cl ? cl : NULL;
 	if (!id)
 	{
-		char *bot = strdup(strtolower(botname));
-		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, noticia, aux);
-		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(noticia), bot);
+		bot = strdup(strtolower(botname));
+		m_c = SQLEscapa(noticia);
+		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, m_c, aux);
+		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(m_c), bot);
+		Free(m_c);
 		row = SQLFetchRow(res);
 		not->id = atoi(row[0]);
 		SQLFreeRes(res);
@@ -831,7 +834,7 @@ BOTFUNC(OSNoticias)
 	{
 		SQLRes res;
 		SQLRow row;
-		char *noticia, *bot;
+		char *noticia, *bot, *m_c;
 		if (params < 4)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "ADD botname noticia");
@@ -839,8 +842,10 @@ BOTFUNC(OSNoticias)
 		}
 		noticia = Unifica(param, params, 3, -1);
 		bot = strdup(strtolower(param[2]));
-		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, param[2], noticia, time(0));
-		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(noticia), bot);
+		m_c = SQLEscapa(noticia);
+		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, param[2], m_c, time(0));
+		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(m_c), bot);
+		Free(m_c);
 		row = SQLFetchRow(res);
 		OSCargaNoticia(atoi(row[0]));
 		SQLFreeRes(res);

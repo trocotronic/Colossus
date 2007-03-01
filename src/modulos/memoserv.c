@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.30 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.31 2007-03-01 15:30:22 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -807,12 +807,14 @@ int MSSend(char *para, char *de, char *mensaje)
 {
 	int opts = 0;
 	Cliente *al;
-	char *regopts;
+	char *regopts, *m_c;
 	if (para && de && mensaje)
 	{
 		if (!IsChanReg(para) && !IsReg(para))
 			return 1;
-		SQLQuery("INSERT into %s%s (para,de,fecha,mensaje) values ('%s','%s','%lu','%s')", PREFIJO, MS_SQL, para, de, time(0), mensaje);
+		m_c = SQLEscapa(mensaje);
+		SQLQuery("INSERT into %s%s (para,de,fecha,mensaje) values ('%s','%s','%lu','%s')", PREFIJO, MS_SQL, para, de, time(0), m_c);
+		Free(m_c);
 		if (!(regopts = SQLCogeRegistro(MS_SET, para, "opts")))
 			return 1;
 		opts = atoi(regopts);
