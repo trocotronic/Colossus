@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.10 2007-02-03 22:57:28 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.11 2007-03-01 15:35:54 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -114,7 +114,7 @@ SQLRes Query(const char *query)
 	pthread_mutex_lock(&mutex);
 	if (!(resultado = PQexec(postgres, query)))
 	{
-		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%s]\n", query, PQerrorMessage(postgres));
+		Info("SQL ha detectado un error.\n[Backup Buffer: %s]\n[%s]\n", query, PQerrorMessage(postgres));
 		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
@@ -133,7 +133,7 @@ SQLRes Query(const char *query)
 			Info("Sintaxis SQL incorrecta.\n[%s]", query);
 			break;
 		case PGRES_FATAL_ERROR:
-			Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%s]\n", query, PQerrorMessage(postgres));
+			Info("SQL ha detectado un error.\n[Backup Buffer: %s]\n[%s]\n", query, PQerrorMessage(postgres));
 			break;
 		case PGRES_EMPTY_QUERY:
 		case PGRES_COMMAND_OK:

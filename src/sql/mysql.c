@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.11 2007-02-03 22:57:28 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.12 2007-03-01 15:35:54 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -193,7 +193,7 @@ SQLRes Query(const char *query)
 		Carga();
 	if (mysql_query(mysql, query) < 0)
 	{
-		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
+		Info("SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
 		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
@@ -210,7 +210,7 @@ SQLRes Query(const char *query)
 	}
 	else if (mysql_errno(mysql))
 	{
-		Alerta(FADV, "SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
+		Info("SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
 		pthread_mutex_unlock(&mutex);
 		return NULL;
 	}
