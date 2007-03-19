@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.5 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.6 2007-03-19 19:16:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -262,13 +262,13 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 {
 	if ((helpchan && helpchan == cn) || (!strcmp(cn->nombre, helpserv->canal)))
 	{
-		char canalw[256], nickw[256];
+		char *c_c, *n_c;
 		if (!helpchan)
 			helpchan = BuscaCanal(helpserv->canal);
-		strlcpy(canalw, strtolower(cn->nombre), sizeof(canalw));
-		strlcpy(nickw, strtolower(cl->nombre), sizeof(nickw));
-		if (!SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, canalw, nickw) &&
-			!SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND LOWER(founder)='%s'", PREFIJO, CS_SQL, canalw, nickw))
+		c_c = SQLEscapa(strtolower(cn->nombre));
+		n_c = SQLEscapa(strtolower(cl->nombre));
+		if (!SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, c_c, n_c) &&
+			!SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND LOWER(founder)='%s'", PREFIJO, CS_SQL, c_c, n_c))
 		{
 			Responde(cl, CLI(helpserv), "Para poder hablar en este canal deberás hacer un test y responderlo correctamente.");
 			Responde(cl, CLI(helpserv), "Si lo superas tendrás +v en este canal automáticamente.");
@@ -276,6 +276,8 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 			ircsprintf(tokbuf, "%s?%s?%s", cl->nombre, cl->ip, "aquellos ojos verdes");
 			Responde(cl, CLI(helpserv), "La dirección es \00312http://%s%s/%s?u=%s&c=%X", conf_httpd->url, conf_httpd->puerto != 80 ? buf : "", helpserv->url_test, cl->nombre, Crc32(tokbuf, strlen(tokbuf)));
 		}
+		Free(c_c);
+		Free(n_c);
 	}
 	return 0;
 }

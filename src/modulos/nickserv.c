@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.52 2007-03-01 15:30:22 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.53 2007-03-19 19:16:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -795,10 +795,10 @@ BOTFUNC(NSInfo)
 	SQLFreeRes(res);
 	if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
 	{
-		char nickw[256];
-		strlcpy(nickw, strtolower(param[1]), sizeof(nickw));
+		char *n_c;
+		n_c = SQLEscapa(strtolower(param[1]));
 		Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
-		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, nickw)))
+		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, n_c)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
@@ -811,7 +811,7 @@ BOTFUNC(NSInfo)
 			}
 			SQLFreeRes(res);
 		}
-		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, nickw)))
+		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, n_c)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
@@ -821,6 +821,7 @@ BOTFUNC(NSInfo)
 			}
 			SQLFreeRes(res);
 		}
+		Free(n_c);
 	}
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.6 2007-02-10 16:56:11 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.7 2007-03-19 19:16:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -127,6 +127,7 @@ void LlamaSenyal(int s, int params, ...)
 			}
 		}
 	}
+	va_end(va);
 }
 
 /*!

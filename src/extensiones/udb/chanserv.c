@@ -125,8 +125,10 @@ void CSPropagaCanal(char *canal)
 {
 	SQLRes res;
 	SQLRow row;
-	char *modos, *c;
-	res = SQLQuery("SELECT founder,modos,topic,pass from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(canal));
+	char *modos, *c, *c_c;
+	c_c = SQLEscapa(strtolower(canal));
+	res = SQLQuery("SELECT founder,modos,topic,pass from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, c_c);
+	Free(c_c);
 	if (!res)
 		return;
 	row = SQLFetchRow(res);
