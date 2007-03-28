@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.8 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.9 2007-03-28 19:03:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -439,6 +439,15 @@ void Debug(char *formato, ...)
 #endif
 #endif
 }
+#ifndef _WIN32
+int Pregunta(char *preg)
+{
+	fprintf(stderr, "%s (s/n)\n", preg);
+	if (getc(stdin) == 's')
+		return 1;
+	return 0;
+}
+#endif
 
 /*!
  * @desc: Guarda en el archivo .log los datos especificados, según se haya especificado en la configuración del programa.
