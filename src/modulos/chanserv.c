@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.50 2007-03-19 19:16:36 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.51 2007-04-04 18:59:02 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -288,8 +288,8 @@ void CSDebug(char *canal, char *formato, ...)
 		va_start(vl, formato);
 		ircvsprintf(buf, formato, vl);
 		va_end(vl);
-		cn = BuscaCanal(canal);
-		ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), buf);
+		if ((cn = BuscaCanal(canal)))
+			ProtFunc(P_NOTICE)((Cliente *)cn, CLI(chanserv), buf);
 	}
 }
 DLLFUNC int CSEsFundador(Cliente *al, char *canal)
@@ -306,6 +306,8 @@ DLLFUNC int CSEsFundador(Cliente *al, char *canal)
 char *CSEsFundador_cache(Cliente *al, char *canal)
 {
 	char *cache;
+	if (!al)
+		return NULL;
 	if ((cache = CogeCache(CACHE_FUNDADORES, al->nombre, chanserv->hmod->id)))
 	{
 		char *tok;
@@ -954,7 +956,11 @@ BOTFUNC(CSInvite)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	cn = BuscaCanal(param[1]);
+	if (!(cn = BuscaCanal(param[1])))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal está vacío.");
+		return 1;
+	}
 	ProtFunc(P_INVITE)(al ? al : cl, CLI(chanserv), cn);
 	Responde(cl, CLI(chanserv), "El usuario \00312%s\003 ha sido invitado a \00312%s\003.", params == 3 ? param[2] : parv[0], param[1]);
 	CSDebug(param[1], "%s invita a %s", parv[0], params == 3 ? param[2] : parv[0]); 
@@ -985,7 +991,7 @@ BOTFUNC(CSKick)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no existe.");
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_RMO))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_RMO))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1025,7 +1031,7 @@ BOTFUNC(CSModos)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no existe.");
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_RMO))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_RMO))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1092,7 +1098,7 @@ BOTFUNC(CSClear)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_RES))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_RES))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1240,7 +1246,7 @@ BOTFUNC(CSOpts)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_SET))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_SET))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1479,7 +1485,7 @@ BOTFUNC(CSAkick)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_ACK))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_ACK))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1557,7 +1563,7 @@ BOTFUNC(CSAccess)
 		SQLRes res;
 		SQLRow row;
 		char *c_c;
-		if (!CSTieneNivel(parv[0], param[1], CS_LEV_LIS))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_LIS))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
@@ -1599,7 +1605,7 @@ BOTFUNC(CSAccess)
 		SQLRow row;
 		char f = ADD, *modos = NULL, autof[256], *c_c, *n_c;
 		u_long prev = 0L;
-		if (!CSTieneNivel(parv[0], param[1], CS_LEV_EDT))
+		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_EDT))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
@@ -1767,19 +1773,17 @@ BOTFUNC(CSJb)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(parv[0], param[1], CS_LEV_JOB))
+	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_JOB))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	cn = BuscaCanal(param[1]);
-	if (cn)
+	if ((cn = BuscaCanal(param[1])))
 	{
 		Modulo *ex;
 		for (ex = modulos; ex; ex = ex->sig)
 		{
-			bl = BuscaCliente(ex->nick);
-			if (EsLink(cn->miembro, bl) && !ModuloEsResidente(ex, param[1]))
+			if ((bl = BuscaCliente(ex->nick)) && EsLink(cn->miembro, bl) && !ModuloEsResidente(ex, param[1]))
 				SacaBot(bl, cn->nombre, "Cambiando bots");
 		}
 	}
@@ -1788,8 +1792,8 @@ BOTFUNC(CSJb)
 		Modulo *ex;
 		if ((ex = BuscaModulo(param[i], modulos)))
 		{
-			bl = BuscaCliente(ex->nick);
-			EntraBot(bl, param[1]);
+			if ((bl = BuscaCliente(ex->nick)))
+				EntraBot(bl, param[1]);
 			bots |= ex->id;
 		}
 	}
@@ -2048,9 +2052,8 @@ BOTFUNC(CSRegister)
 		{
 			Canal *cn;
 			registrar:
-			cn = BuscaCanal(param[1]);
 			SQLInserta(CS_SQL, param[1], "registro", "%i", time(0));
-			if (cn)
+			if ((cn = BuscaCanal(param[1])))
 			{
 				if (RedOverride)
 					EntraBot(CLI(chanserv), cn->nombre);
@@ -2528,8 +2531,7 @@ int CSSigEOS()
 			{
 				if ((bjoins & ex->id) && !ModuloEsResidente(ex, row[0]))
 				{
-					bl = BuscaCliente(ex->nick);
-					if (bl)
+					if ((bl = BuscaCliente(ex->nick)))
 						EntraBot(bl, row[0]);
 				}
 			}

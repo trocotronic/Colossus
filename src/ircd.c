@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.49 2007-02-10 16:54:30 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.50 2007-04-04 18:59:01 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -300,10 +300,10 @@ Cliente *BuscaCliente(char *nick)
  
 Canal *BuscaCanal(char *canal)
 {
-	Canal *an = NULL;
+	Canal *cn = NULL;
 	if (canal)
-		an = BuscaCanalEnHash(canal, cTab);
-	return an;
+		cn = BuscaCanalEnHash(canal, cTab);
+	return cn;
 }
 Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *server, char *vhost, char *umodos, char *info)
 {
@@ -397,30 +397,27 @@ MallaParam *BuscaMallaParam(Canal *cn, char flag)
 	}
 	return NULL;
 }
-Canal *InfoCanal(char *canal, int crea)
+Canal *CreaCanal(char *canal)
 {
 	Canal *cn = NULL;
+	char *c;
 	if ((cn = BuscaCanal(canal)))
 		return cn;
-	if (crea)
-	{
-		char *c;
-		cn = BMalloc(Canal);
-		cn->nombre = strdup(canal);
-		if (canales)
-			canales->prev = cn;
-		for (c = protocolo->modcl; !BadPtr(c); c++)
-			AddItem(CreaMallaCliente(*c), cn->mallacl);
-		for (c = protocolo->modmk; !BadPtr(c); c++)
-			AddItem(CreaMallaMascara(*c), cn->mallamk);
-		for (c = protocolo->modpm1; !BadPtr(c); c++)
-			AddItem(CreaMallaParam(*c), cn->mallapm);
-		for (c = protocolo->modpm2; !BadPtr(c); c++)
-			AddItem(CreaMallaParam(*c), cn->mallapm);
-		cn->creacion = time(0);
-		AddItem(cn, canales);
-		InsertaCanalEnHash(cn, canal, cTab);
-	}
+	cn = BMalloc(Canal);
+	cn->nombre = strdup(canal);
+	if (canales)
+		canales->prev = cn;
+	for (c = protocolo->modcl; !BadPtr(c); c++)
+		AddItem(CreaMallaCliente(*c), cn->mallacl);
+	for (c = protocolo->modmk; !BadPtr(c); c++)
+		AddItem(CreaMallaMascara(*c), cn->mallamk);
+	for (c = protocolo->modpm1; !BadPtr(c); c++)
+		AddItem(CreaMallaParam(*c), cn->mallapm);
+	for (c = protocolo->modpm2; !BadPtr(c); c++)
+		AddItem(CreaMallaParam(*c), cn->mallapm);
+	cn->creacion = time(0);
+	AddItem(cn, canales);
+	InsertaCanalEnHash(cn, canal, cTab);
 	return cn;
 }
 void InsertaCanalEnCliente(Cliente *cl, Canal *cn)
@@ -637,12 +634,14 @@ char *MascaraIrcd(char *mascara)
 void EntraBot(Cliente *bl, char *canal)
 {
 	Canal *cn;
-	cn = InfoCanal(canal, !0);
-	InsertaCanalEnCliente(bl, cn);
-	InsertaClienteEnCanal(cn, bl);
-	ProtFunc(P_JOIN_USUARIO_LOCAL)(bl, cn);
-	if (conf_set->opts & AUTOBOP)
-		ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
+	if ((cn = CreaCanal(canal)))
+	{
+		InsertaCanalEnCliente(bl, cn);
+		InsertaClienteEnCanal(cn, bl);
+		ProtFunc(P_JOIN_USUARIO_LOCAL)(bl, cn);
+		if (conf_set->opts & AUTOBOP)
+			ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
+	}
 }
 
 /*!
@@ -656,10 +655,12 @@ void EntraBot(Cliente *bl, char *canal)
 void SacaBot(Cliente *bl, char *canal, char *motivo)
 {
 	Canal *cn;
-	cn = InfoCanal(canal, 0);
-	BorraCanalDeCliente(bl, cn);
-	BorraClienteDeCanal(cn, bl);
-	ProtFunc(P_PART_USUARIO_LOCAL)(bl, cn, motivo);
+	if ((cn = BuscaCanal(canal)))
+	{
+		BorraCanalDeCliente(bl, cn);
+		BorraClienteDeCanal(cn, bl);
+		ProtFunc(P_PART_USUARIO_LOCAL)(bl, cn, motivo);
+	}
 }
 
 /*!

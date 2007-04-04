@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.60 2007-03-28 19:03:34 Trocotronic Exp $
+ * $Id: cambios,v 1.61 2007-04-04 18:59:01 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -462,3 +462,6 @@
 190307518 - Mejoradas las sentencias SQL con escapes.
 280307519 - Arreglado un fallo al resolver un símbolo en MySQL, aviso de ReCoRD (#0000247).
 210307520 - *** Vigésima release pública: 1.9 ***
+040407521 - Arreglado un cuelgue, aviso de ReCoRD (#0000251).
+040407522 - Añadidas varias comprobaciones para evitar cuelgues.
+050407523 - *** Vigésimaprimera release pública: 1.9a ***

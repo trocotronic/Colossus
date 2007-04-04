@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.22 2007-02-10 16:54:30 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.23 2007-04-04 18:59:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -618,7 +618,7 @@ IRCFUNC(m_sjoin_U)
 	Canal *cn = NULL;
 	char *q, *p, tmp[BUFSIZE], mod[8];
 	time_t creacion;
-	cn = InfoCanal(parv[2], !0);
+	cn = CreaCanal(parv[2]);
 	creacion = base64dec(parv[1]);
 	strlcpy(tmp, parv[parc-1], sizeof(tmp));
 	for (p = tmp; (q = strchr(p, ' ')); p = q)

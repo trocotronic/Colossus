@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.32 2007-02-10 14:57:13 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.33 2007-04-04 18:59:01 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -199,7 +199,7 @@ extern int BorraComando(char *, IRCFUNC(*));
 extern Comando *BuscaComando(char *);
 extern Cliente *BuscaCliente(char *);
 extern Canal *BuscaCanal(char *);
-extern Canal *InfoCanal(char *, int);
+extern Canal *CreaCanal(char *);
 extern void EnviaAServidor(char *, ...);
 extern void Responde(Cliente *, Cliente *, char *, ...);
 Cliente *NuevoCliente(char *, char *, char *, char *, char *, char *, char *, char *);

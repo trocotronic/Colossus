@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.53 2007-03-19 19:16:36 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.54 2007-04-04 18:59:02 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -715,9 +715,8 @@ int NSBaja(char *nick, int opt)
 	int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
 	if (!opt && (opts & NS_OPT_NODROP))
 		return 1;
-	al = BuscaCliente(nick);
 	LlamaSenyal(NS_SIGN_DROP, 1, nick);
-	if (al)
+	if ((al = BuscaCliente(nick)))
 		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
 	SQLBorra(NS_SQL, nick);
 	return 0;
@@ -772,8 +771,7 @@ BOTFUNC(NSInfo)
 	if (!(opts & NS_OPT_TIME) || (!comp && IsId(cl)) || IsOper(cl))
 	{
 		Cliente *al;
-		al = BuscaCliente(param[1]);
-		if (al && IsId(al))
+		if ((al = BuscaCliente(param[1])) && IsId(al))
 			Responde(cl, CLI(nickserv), "Este usuario está conectado. Utiliza /WHOIS %s para más información.", param[1]);
 		else
 		{

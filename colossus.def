@@ -44,6 +44,7 @@ EXPORTS
 	Crc32
 	CreaAlias
 	CreaBot
+	CreaCanal
 	CreaExtension
 	CreaHDir
 	Debug
@@ -71,7 +72,6 @@ EXPORTS
 	HashCanal
 	HashCliente
 	Info
-	InfoCanal
 	IniciaCrono
 	IniciaProceso
 	InsertaMascara

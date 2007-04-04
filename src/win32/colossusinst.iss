@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.23 2007-03-21 17:01:19 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.24 2007-04-04 18:59:02 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.9
+AppVerName=Colossus 1.9a
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.redyc.com/
 AppSupportURL=http://www.redyc.com/

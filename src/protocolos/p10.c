@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.33 2007-02-14 16:14:48 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.34 2007-04-04 18:59:02 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -219,10 +219,14 @@ DLLFUNC int BorraClienteDeNumerico(Cliente *us, char *clave, Hash *tabla)
 }
 char *p_trio(Cliente *cl)
 {
+	if (!cl)
+		return NULL;
 	return cl->trio;
 }
 int p_umode(Cliente *cl, char *modos)
 {
+	if (!cl)
+		return 1;
 	ProcesaModosCliente(cl, modos);
 	return 0;
 }
@@ -230,6 +234,8 @@ int p_svsmode(Cliente *cl, Cliente *bl, char *modos, ...)
 {
 	char buf[BUFSIZE];
 	va_list vl;
+	if (!cl || !bl)
+		return 1;
 	va_start(vl, modos);
 	ircvsprintf(buf, modos, vl);
 	va_end(vl);
@@ -249,7 +255,7 @@ int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
 {
 	char buf[BUFSIZE], *copy;
 	va_list vl;
-	if (!cn)
+	if (!cn || !cl)
 		return 0;
 	va_start(vl, modos);
 	ircvsprintf(buf, modos, vl);
@@ -262,16 +268,22 @@ int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
 }
 int p_nick(Cliente *cl, char *nuevo)
 {
+	if (!cl)
+		return 1;
 	EnviaAServidor("%s %s %s", cl->trio, TOK_NICK, nuevo);
 	return 0;
 }
 int p_join(Cliente *bl, Canal *cn)
 {
+	if (!bl || !cn)
+		return 1;
 	EnviaAServidor("%s %s %s", bl->trio, TOK_JOIN, cn->nombre);
 	return 0;
 }
 int p_part(Cliente *bl, Canal *cn, char *motivo, ...)
 {
+	if (!bl || !cn)
+		return 1;
 	if (motivo)
 	{
 		char buf[BUFSIZE];
@@ -287,6 +299,8 @@ int p_part(Cliente *bl, Canal *cn, char *motivo, ...)
 }
 int p_svspart(Cliente *cl, Canal *cn, char *motivo, ...)
 {
+	if (!cl || !cn)
+		return 1;
 	if (motivo)
 	{
 		va_list vl;
@@ -301,6 +315,8 @@ int p_svspart(Cliente *cl, Canal *cn, char *motivo, ...)
 int p_quit(Cliente *bl, char *motivo, ...)
 {
 	LinkCanal *lk;
+	if (!bl)
+		return 1;
 	if (motivo)
 	{
 		char buf[BUFSIZE];
@@ -321,6 +337,8 @@ int p_quit(Cliente *bl, char *motivo, ...)
 int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 {
 	LinkCanal *lk;
+	if (!cl || !bl)
+		return 1;
 	if (motivo)
 	{
 		char buf[BUFSIZE];
@@ -342,6 +360,8 @@ int p_nuevonick(Cliente *al)
 {
 	char *modos, ipb64[8];
 	struct in_addr tmp;
+	if (!al)
+		return 1;
 	tmp.s_addr = 893387572;
 	inttobase64(ipb64, ntohl(tmp.s_addr), 6);
 	ircfree(al->trio);
@@ -380,6 +400,8 @@ int p_gline(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *m
 }
 void p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
 {
+	if (!cl || !bl || !cn)
+		return;
 	if (motivo)
 	{
 		char buf[BUFSIZE];
@@ -394,7 +416,7 @@ void p_kick_vl(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, va_list *vl)
 }
 int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
-	if (!cl || !cn)
+	if (!cl || !cn || !bl)
 		return 1;
 	if (EsServidor(cl) || EsBot(cl))
 		return 1;
@@ -413,6 +435,8 @@ int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 }
 int p_topic(Cliente *bl, Canal *cn, char *topic)
 {
+	if (!cn)
+		return 1;
 	if (!cn->topic || strcmp(cn->topic, topic))
 	{
 		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_TOPIC, cn->nombre, topic);
@@ -434,6 +458,8 @@ int p_notice(Cliente *cl, Cliente *bl, char *mensaje, ...)
 }
 int p_invite(Cliente *cl, Cliente *bl, Canal *cn)
 {
+	if (!cl || !bl || !cn)
+		return 1;
 	EnviaAServidor("%s %s %s %s", bl->trio, TOK_INVITE, cl->trio, cn->nombre);
 	return 0;
 }
@@ -714,8 +740,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 			if (!(p = strchr(p, ' ')))
 				return -1;
 			*p++ = '\0';
-			cl = BuscaCliente(para[0]);
-			if (!cl)
+			if (!(cl = BuscaCliente(para[0])))
 			{
 				while (*p == ' ')
 					p++;
@@ -744,12 +769,11 @@ SOCKFUNC(PROT_PARSEA(P10))
 				cl = linkado;
 			else
 			{
-				cl = BuscaClienteNumerico(npref, NULL);
 				do
 				{
 					++p;
 				} while (*p != ' ' && *p);
-				if (!cl)
+				if (!(cl = BuscaClienteNumerico(npref, NULL)))
 				{
 					while (*p == ' ')
 						p++;
@@ -884,8 +908,7 @@ IRCFUNC(m_msg)
 	strlcpy(par, parv[2], sizeof(par));
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
-	bl = BuscaClienteNumerico(parv[1], NULL);
-	if (!bl)
+	if (!(bl = BuscaClienteNumerico(parv[1], NULL)))
 		return 1; /* algo passa! */
 	if (!strcasecmp(param[0], "\1PING"))
 	{
@@ -1014,7 +1037,7 @@ IRCFUNC(m_topic)
 	Canal *cn = NULL;
 	if (parc == 3)
 	{
-		cn = InfoCanal(parv[1], !0);
+		cn = CreaCanal(parv[1]);
 		ircstrdup(cn->topic, parv[2]);
 		cn->ntopic = cl;
 		LlamaSenyal(SIGN_TOPIC, 3, cl, cn, parv[2]);
@@ -1095,7 +1118,7 @@ IRCFUNC(m_mode)
 	else
 	{
 		Canal *cn;
-		cn = InfoCanal(parv[1], !0);
+		cn = CreaCanal(parv[1]);
 		ProcesaModo(cl, cn, parv + 2, parc - 2);
 		LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	}
@@ -1107,7 +1130,8 @@ IRCFUNC(m_kick)
 	Cliente *al;
 	if (!(al = BuscaCliente(parv[2])))
 		return 1;
-	cn = InfoCanal(parv[1], 0);
+	if (!(cn = BuscaCanal(parv[1])))
+		return 1;
 	LlamaSenyal(SIGN_KICK, 4, cl, al, cn, parv[3]);
 	BorraCanalDeCliente(al, cn);
 	BorraClienteDeCanal(cn, al);
@@ -1171,8 +1195,8 @@ IRCFUNC(m_server)
 IRCFUNC(m_squit)
 {
 	Cliente *al;
-	al = BuscaCliente(parv[1]);
-	LiberaMemoriaCliente(al);
+	if ((al = BuscaCliente(parv[1])))
+		LiberaMemoriaCliente(al);
 	return 0;
 }
 IRCFUNC(m_error)
@@ -1206,7 +1230,7 @@ IRCFUNC(m_burst)
 {
 	int i;
 	Canal *cn;
-	cn = InfoCanal(parv[1], !0);
+	cn = CreaCanal(parv[1]);
 	for (i = 3; i < parc; i++)
 	{
 		if (*parv[i] == '+') /* hay modos */
@@ -1259,20 +1283,22 @@ IRCFUNC(m_burst)
 						d++;
 					}
 				}
-				al = BuscaClienteNumerico(p, NULL);
-				EntraCliente(al, parv[1]);
-				if (mod[0])
+				if ((al = BuscaClienteNumerico(p, NULL)))
 				{
-					char *c, *arr[4];
-					int j = 0;
-					arr[j++] = mod;
-					for (c = &mod[0]; *c; c++)
-						arr[j++] = p;
-					arr[j] = NULL;
-					ProcesaModo(cl, cn, arr, j);
-					for (c = &mod[0], j = 1; *c; c++)
-						arr[j++] = al->nombre;
-					LlamaSenyal(SIGN_MODE, 4, cl, cn, arr, j);
+					EntraCliente(al, parv[1]);
+					if (mod[0])
+					{
+						char *c, *arr[4];
+						int j = 0;
+						arr[j++] = mod;
+						for (c = &mod[0]; *c; c++)
+							arr[j++] = p;
+						arr[j] = NULL;
+						ProcesaModo(cl, cn, arr, j);
+						for (c = &mod[0], j = 1; *c; c++)
+							arr[j++] = al->nombre;
+						LlamaSenyal(SIGN_MODE, 4, cl, cn, arr, j);
+					}
 				}
 			}
 			Free(users);
@@ -1416,7 +1442,7 @@ void ProcesaModos(Canal *cn, char *modos)
 void EntraCliente(Cliente *cl, char *canal)
 {
 	Canal *cn = NULL;
-	cn = InfoCanal(canal, !0);
+	cn = CreaCanal(canal);
 	if (!cn->miembros)
 	{
 		if (conf_set->debug && !strcmp(canal, conf_set->debug))

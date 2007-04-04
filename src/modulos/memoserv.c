@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.31 2007-03-01 15:30:22 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.32 2007-04-04 18:59:02 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -827,8 +827,7 @@ int MSSend(char *para, char *de, char *mensaje)
 		{
 			if (opts & MS_OPT_NEW)
 			{
-				al = BuscaCliente(para);
-				if (al && IsId(al))
+				if ((al = BuscaCliente(para)) && IsId(al))
 				{
 					if (!al->away || !(opts & MS_OPT_AWY))
 							MSNotifica(al);
