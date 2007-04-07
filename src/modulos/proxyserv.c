@@ -1,7 +1,11 @@
 /*
- * $Id: proxyserv.c,v 1.34 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.35 2007-04-07 19:34:19 Trocotronic Exp $ 
  */
 
+#ifndef _WIN32
+#include <netdb.h>
+#include <arpa/inet.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
