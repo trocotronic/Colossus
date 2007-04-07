@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.36 2007-04-07 19:37:52 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.37 2007-04-07 19:42:55 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -591,7 +591,7 @@ SOCKFUNC(PSAbre)
 		{
 			u_long laddr;
 			laddr = htonl(inet_addr(proxyserv->scan_ip));
-			sprintf(buf, "%c%c%c%c%c%c%c%c", 
+			sprintf(buf, "%c%c%c%c%c%c%c%c%c", 
 				4, 1,
 				(((u_short)proxyserv->scan_puerto)>>8) & 0xFF,
 				((u_short)proxyserv->scan_puerto) & 0xFF,
