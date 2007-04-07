@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.35 2007-04-07 19:34:19 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.36 2007-04-07 19:37:52 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -608,8 +608,8 @@ SOCKFUNC(PSAbre)
 				5, 1, 0, 1,
 				(char) (laddr >> 24) & 0xFF, (char) (laddr >> 16) & 0xFF,
               		(char) (laddr >> 8) & 0xFF, (char) laddr & 0xFF,
-              		(((u_short) proxyserv->puerto) >> 8) & 0xFF,
-              		(((u_short) proxyserv->puerto) & 0xFF));
+              		(((u_short) proxyserv->scan_puerto) >> 8) & 0xFF,
+              		(((u_short) proxyserv->scan_puerto) & 0xFF));
 			send(sck->pres, buf, 10, 0);
 		}
 		else if (ppt->tipo & XS_T_ROUTER)
