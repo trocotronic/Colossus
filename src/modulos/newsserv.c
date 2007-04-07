@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.11 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.12 2007-04-07 19:32:17 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -97,11 +97,11 @@ int MOD_CARGA(NewsServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	if (mainversion != COLOSSUS_VERINT)
+	/*if (mainversion != COLOSSUS_VERINT)
 	{
 		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
 		return 1;
-	}
+	}*/
 	mod->activo = 1;
 	if (mod->config)
 	{
