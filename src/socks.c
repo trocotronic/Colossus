@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.36 2007-02-03 12:30:55 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.37 2007-04-11 15:52:32 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -519,7 +519,8 @@ void CierraSocks()
 		if (ListaSocks.socket[i] && ListaSocks.socket[i]->pres >= 0)
 		{
 			CLOSE_SOCK(ListaSocks.socket[i]->pres);
-			ListaSocks.socket[i]->pres = -2;
+			if (ListaSocks.socket[i])
+				ListaSocks.socket[i]->pres = -2;
 		}
 	}
 	ListaSocks.tope = -1;

@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.5 2007-02-10 18:46:41 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.6 2007-04-11 15:52:32 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -71,6 +71,15 @@ int SiguienteTAsync(int fuerza)
 		if (!SockIrcd)
 			AbreSockIrcd();
 #endif
+		if (refrescando)
+		{
+			if (SockIrcd)
+			{
+				LlamaSenyal(SIGN_SYNCH, 0);
+				LlamaSenyal(SIGN_EOS, 0);
+			}
+			refrescando = 0;
+		}
 	}
 	else
 		tasyncs[i++]();

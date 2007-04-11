@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.103 2007-02-14 16:14:48 Trocotronic Exp $ 
+ * $Id: main.c,v 1.104 2007-04-11 15:52:32 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -157,7 +157,6 @@ VOIDSIG Refresca()
 	if (!SockIrcd)
 		DistribuyeMe(&me);
 	LlamaSenyal(SIGN_SQL, 0);
-	SiguienteTAsync(1);
 #ifdef POSIX_SIGNALS
 	act.sa_handler = Refresca;
 	act.sa_flags = 0;
@@ -169,12 +168,7 @@ VOIDSIG Refresca()
 	(void)signal(SIGHUP, s_rehash);
   #endif
 #endif
-	if (SockIrcd)
-	{
-		LlamaSenyal(SIGN_SYNCH, 0);
-		LlamaSenyal(SIGN_EOS, 0);
-	}
-	refrescando = 0;
+	SiguienteTAsync(1);
 }
 VOIDSIG Reinicia()
 {

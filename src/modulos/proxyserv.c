@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.37 2007-04-07 19:42:55 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.38 2007-04-11 15:52:32 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -465,6 +465,7 @@ void CompruebaProxy(Proxy *px)
 {
 	int i, tipo = 0;
 	char psbuf[128], ptbuf[128];
+	Debug("%i", px->escaneados);
 	if (px->escaneados == proxyserv->puertos)
 	{
 		psbuf[0] = ptbuf[0] = '\0';
