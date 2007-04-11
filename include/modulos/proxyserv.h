@@ -1,8 +1,7 @@
 /*
- * $Id: proxyserv.h,v 1.9 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: proxyserv.h,v 1.10 2007-04-11 20:13:13 Trocotronic Exp $ 
  */
 
-#define XS_MAX_PORTS 32
 #define MAX_PATRON 16
 
 typedef struct _xs ProxyServ;
@@ -10,10 +9,10 @@ struct _xs
 {
 	struct _puerto
 	{
+		struct _puerto *sig;
 		int puerto; /* puertos a escanear */
 		int tipo;
-	}puerto[XS_MAX_PORTS];
-	int puertos;
+	}*puerto;
 	int tiempo;
 	int maxlist;
 	char *scan_ip;
@@ -22,6 +21,7 @@ struct _xs
 	char *patron[MAX_PATRON];
 	unsigned detalles:1;
 	unsigned opm:1;
+	unsigned fsal:1;
 	Modulo *hmod;
 };
 
@@ -46,12 +46,13 @@ struct _proxy
 {
 	struct _proxy *sig;
 	char *host;
-	PPuerto *puerto[XS_MAX_PORTS];
+	PPuerto *puerto;
 	int escaneados;
 	int puertos;
 };
 struct _pprox
 {
+	struct _pprox *sig;
 	Sock *sck;
 	int puerto;
 	int tipo;

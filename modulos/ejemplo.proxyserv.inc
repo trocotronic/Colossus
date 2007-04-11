@@ -6,7 +6,7 @@ ProxyServ {
 	tiempo "minutos";
 	
 	/*
-	 * Máximo de entradas a mostrar cuando se listen los hosts permitidos. Se utiliza para no floodear.
+	 * Máximo de entradas a mostrar cuando se listen los hosts permitidos mediante el comando HOST. Se utiliza para no floodear.
 	 * Valor: Número entero positivo mayor que cero.
 	 */
 	maxlist "30";
@@ -32,7 +32,14 @@ ProxyServ {
 	 * Puertos a escanear y, si se prefiere, verificar un protocolo.
 	 * Si no se especifica un protocolo, sólo dará positivo en caso de que el puerto esté abierto.
 	 * Si se especifica un protocolo, se mirará que, además de que esté abierto, también responda al protocolo especificado.
-	 * Protocolos soportados: HTTP, SOCKS4, SOCKS5, ROUTER, WINGATE, POST, GET
+	 * Protocolos soportados: 
+	 * 	- HTTP: Protocolo Proxy estándar vía CONNECT. Es el más común.
+	 *	- SOCKS4
+	 *	- SOCKS5
+	 * 	- ROUTER: Routers pirateados.
+	 *	- WINGATE
+	 *	- POST: Protocolo Proxy vía POST.
+	 *	- GET: Protocolo Proxy vía GET.
 	 * En caso de que algún dé positivo, el usuario será GLINEado.
 	 * NOTA: No abusar de los puertos, puesto que ralentiza el programa notablemente.
 	 */
@@ -79,6 +86,12 @@ ProxyServ {
 	 * Con este parámetro activo, se mirará si la IP que se conecta es un proxy o no mediante el sistema OPM.
 	 */
 	lista_online;
+	
+	/*
+	 * Con este parámetro activo, se forzará la desconexión del proxy nada más detectarlo. Acelera el proceso pero aporta menos información. 
+	 * Es útil si está el parámetro quits_detallados desactivado.
+	 */
+	forzar_salida;
 };
 
 /*

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.38 2007-04-11 15:52:32 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.39 2007-04-11 20:13:13 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -52,7 +52,7 @@ int PSTest(Conf *, int *);
 
 ModInfo MOD_INFO(ProxyServ) = {
 	"ProxyServ" ,
-	0.9 ,
+	0.11 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com"
 };
@@ -101,14 +101,12 @@ int MOD_CARGA(ProxyServ)(Modulo *mod)
 int MOD_DESCARGA(ProxyServ)()
 {
 	Proxy *px;
+	PPuerto *ppx;
 	int i;
 	for (px = proxys; px; px = px->sig)
 	{
-		for (i = 0; i < px->puertos; i++)
-		{
-			if (px->puerto[i])
-				SockClose(px->puerto[i]->sck, LOCAL);
-		}
+		for (ppx = px->puerto; ppx; ppx = ppx->sig)
+				SockClose(ppx->sck, LOCAL);
 	}
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
 	BorraSenyal(SIGN_SQL, PSSigSQL);
@@ -209,9 +207,9 @@ int PSTest(Conf *config, int *errores)
 void PSSet(Conf *config, Modulo *mod)
 {
 	int i, p, q = 0;
+	struct _puerto *ppt;
 	if (!proxyserv)
 		proxyserv = BMalloc(ProxyServ);
-	proxyserv->puertos = 0;
 	proxyserv->maxlist = 30;
 	proxyserv->tiempo = 3600;
 	proxyserv->detalles = 0;
@@ -231,19 +229,20 @@ void PSSet(Conf *config, Modulo *mod)
 				SetComMod(config->seccion[i], mod, proxyserv_coms);
 			else if (!strcmp(config->seccion[i]->item, "puertos"))
 			{
-				for (p = 0; p < config->seccion[i]->secciones && p < XS_MAX_PORTS; p++)
+				for (p = 0; p < config->seccion[i]->secciones; p++)
 				{
-					proxyserv->puerto[proxyserv->puertos].puerto = atoi(config->seccion[i]->seccion[p]->item);
-					proxyserv->puerto[proxyserv->puertos].tipo = XS_T_ABIERTO;
+					ppt = BMalloc(struct _puerto);
+					ppt->puerto = atoi(config->seccion[i]->seccion[p]->item);
+					ppt->tipo = XS_T_ABIERTO;
 					if (config->seccion[i]->seccion[p]->data)
 					{
 						char *tok;
-						proxyserv->puerto[proxyserv->puertos].tipo = 0;
+						ppt->tipo = 0;
 						strlcpy(tokbuf, config->seccion[i]->seccion[p]->data, sizeof(tokbuf));
 						for (tok = strtok(tokbuf, ","); tok; tok = strtok(NULL, ","))
-							proxyserv->puerto[proxyserv->puertos].tipo |= BuscaOpt(tok, TiposProxy);
+							ppt->tipo |= BuscaOpt(tok, TiposProxy);
 					}
-					proxyserv->puertos++;
+					AddItem(ppt, proxyserv->puerto);
 				}
 			}
 			else if (!strcmp(config->seccion[i]->item, "maxlist"))
@@ -268,6 +267,8 @@ void PSSet(Conf *config, Modulo *mod)
 				proxyserv->detalles = 1;
 			else if (!strcmp(config->seccion[i]->item, "lista_online"))
 				proxyserv->opm = 1;
+			else if (!strcmp(config->seccion[i]->item, "forzar_salida"))
+				proxyserv->fsal = 1;
 		}
 	}
 	else
@@ -372,7 +373,8 @@ int PSCmdNick(Cliente *cl, int nuevo)
 void PSEscanea(char *host)
 {
 	Proxy *px;
-	int i;
+	PPuerto *ppx;
+	struct _puerto *ppt;
 	if (!strncmp("192.168", host, 7) || !strcmp("127.0.0.1", host))
 		return;
 	if (proxyserv->opm && EsIp(host))
@@ -406,20 +408,25 @@ void PSEscanea(char *host)
 			return;
 		}
 	}
-	px = BMalloc(Proxy);
-	for (i = 0; i < proxyserv->puertos; i++)
+	for (px = proxys; px; px = px->sig)
 	{
-		px->puerto[i] = BMalloc(PPuerto);
-		if ((px->puerto[i]->sck = SockOpenEx(host, proxyserv->puerto[i].puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
+		if (!strcmp(px->host, host))
+			return;
+	}
+	px = BMalloc(Proxy);
+	for (ppt = proxyserv->puerto; ppt; ppt = ppt->sig)
+	{
+		ppx = BMalloc(PPuerto);
+		if ((ppx->sck = SockOpenEx(host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
 		{
-			px->puerto[i]->puerto = proxyserv->puerto[i].puerto;
-			px->puerto[i]->tipo = proxyserv->puerto[i].tipo;
+			ppx->puerto = ppt->puerto;
+			ppx->tipo = ppt->tipo;
 			px->puertos++;
+			AddItem(ppx, px->puerto);
 		}
 		else
-			ircfree(px->puerto[i--]);
+			ircfree(ppx);
 	}
-	px->puerto[i] = NULL;
 	px->host = strdup(host);
 	AddItem(px, proxys);
 }
@@ -461,19 +468,20 @@ int PSSigSynch()
 		ircstrdup(proxyserv->scan_ip, me.ip);
 	return 0;
 }
-void CompruebaProxy(Proxy *px)
+void CompruebaProxy(Proxy *px, int forzar)
 {
 	int i, tipo = 0;
 	char psbuf[128], ptbuf[128];
-	Debug("%i", px->escaneados);
-	if (px->escaneados == proxyserv->puertos)
+	PPuerto *ppx, *tmp;
+	if ((proxyserv->fsal && forzar) || px->escaneados == px->puertos)
 	{
 		psbuf[0] = ptbuf[0] = '\0';
-		for (i = 0; i < px->puertos; i++)
+		for (ppx = px->puerto; ppx; ppx = tmp)
 		{
-			if (px->puerto[i] && px->puerto[i]->proxy)
+			tmp = ppx->sig;
+			if (ppx->proxy)
 			{
-				switch (px->puerto[i]->proxy)
+				switch (ppx->proxy)
 				{
 					case XS_T_HTTP:
 						if (!(tipo & XS_T_HTTP))
@@ -527,22 +535,22 @@ void CompruebaProxy(Proxy *px)
 					default:
 						tipo |= XS_T_ABIERTO;
 				}
-				ircsprintf(buf, ",%i", px->puerto[i]->puerto);
+				ircsprintf(buf, ",%i", ppx->puerto);
 				strlcat(ptbuf, buf, sizeof(ptbuf));
 			}
-			Free(px->puerto[i]);
+			Free(ppx);
 		}
 		if (tipo)
 		{
-			char motivo[300];
+			char motivo[BUFSIZE];
 			if (proxyserv->detalles)
 				ircsprintf(motivo, "Posible PROXY %s ilegal (%s)", !BadPtr(psbuf) ? &psbuf[1]: "", &ptbuf[1]);
 			else
 				strlcpy(motivo, "Posible PROXY ilegal", sizeof(motivo));
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);
 		}
-		else
-			InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
+		//else
+		//	InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
 		BorraItem(px, proxys);
 		Free(px->host);
 		Free(px);
@@ -561,34 +569,34 @@ Proxy *BuscaProxy(Sock *sck)
 PPuerto *BuscaPPuerto(Sock *sck)
 {
 	Proxy *px;
+	PPuerto *ppx;
 	if ((px = BuscaProxy(sck)))
 	{
-		int i;
-		for (i = 0; i < px->puertos; i++)
+		for (ppx = px->puerto; px; ppx = ppx->sig)
 		{
-			if (px->puerto[i] && px->puerto[i]->puerto == sck->puerto)
-				return px->puerto[i];
+			if (ppx->puerto == sck->puerto)
+				return ppx;
 		}
 	}
 	return NULL;
 }
 SOCKFUNC(PSAbre)
 {
-	PPuerto *ppt;
-	if ((ppt = BuscaPPuerto(sck)))
+	PPuerto *ppx;
+	if ((ppx = BuscaPPuerto(sck)))
 	{
-		ppt->abierto = 1;
-		if (ppt->tipo & XS_T_ABIERTO)
+		ppx->abierto = 1;
+		if (ppx->tipo & XS_T_ABIERTO)
 		{
-			ppt->proxy = XS_T_ABIERTO;
-			SockClose(ppt->sck, LOCAL);
+			ppx->proxy = XS_T_ABIERTO;
+			SockClose(ppx->sck, LOCAL);
 		}
-		else if (ppt->tipo & XS_T_HTTP)
+		else if (ppx->tipo & XS_T_HTTP)
 		{
 			SockWrite(sck, "CONNECT %s:%i HTTP/1.0", proxyserv->scan_ip, proxyserv->scan_puerto);
 			SockWrite(sck, "");
 		}
-		else if (ppt->tipo & XS_T_SOCKS4)
+		else if (ppx->tipo & XS_T_SOCKS4)
 		{
 			u_long laddr;
 			laddr = htonl(inet_addr(proxyserv->scan_ip));
@@ -600,7 +608,7 @@ SOCKFUNC(PSAbre)
 				(char) (laddr >> 8) & 0xFF, (char) laddr & 0xFF, 0);
 			send(sck->pres, buf, 8, 0);
 		}
-		else if (ppt->tipo & XS_T_SOCKS5)
+		else if (ppx->tipo & XS_T_SOCKS5)
 		{
 			u_long laddr;
 			laddr = htonl(inet_addr(proxyserv->scan_ip));
@@ -613,14 +621,14 @@ SOCKFUNC(PSAbre)
               		(((u_short) proxyserv->scan_puerto) & 0xFF));
 			send(sck->pres, buf, 10, 0);
 		}
-		else if (ppt->tipo & XS_T_ROUTER)
+		else if (ppx->tipo & XS_T_ROUTER)
 		{
 			SockWrite(sck, "cisco");
 			SockWrite(sck, "telnet %s %i", proxyserv->scan_ip, proxyserv->scan_puerto);
 		}
-		else if (ppt->tipo & XS_T_WINGATE)
+		else if (ppx->tipo & XS_T_WINGATE)
 			SockWrite(sck, "%s:%i", proxyserv->scan_ip, proxyserv->scan_puerto);
-		else if (ppt->tipo & XS_T_POST)
+		else if (ppx->tipo & XS_T_POST)
 		{
 			SockWrite(sck, "POST http://%s:%d/ HTTP/1.0", proxyserv->scan_ip, proxyserv->scan_puerto);
 			SockWrite(sck, "Content-type: text/plain");
@@ -628,7 +636,7 @@ SOCKFUNC(PSAbre)
 			SockWrite(sck, "");
 			SockWrite(sck, "quit");
 		}
-		else if (ppt->tipo & XS_T_GET)
+		else if (ppx->tipo & XS_T_GET)
 		{
 			SockWrite(sck, "GET http://colossus.redyc.com/chkproxy.txt HTTP/1.0");
 			SockWrite(sck, "");
@@ -638,12 +646,12 @@ SOCKFUNC(PSAbre)
 }
 SOCKFUNC(PSLee)
 {
-	PPuerto *ppt;
-	if ((ppt = BuscaPPuerto(sck)))
+	PPuerto *ppx;
+	if ((ppx = BuscaPPuerto(sck)))
 	{
 		int i;
-		ppt->bytes += len;
-		if (ppt->bytes > 1024)
+		ppx->bytes += len;
+		if (ppx->bytes > 1024)
 		{
 			SockClose(sck, LOCAL);
 			return 1;
@@ -652,20 +660,20 @@ SOCKFUNC(PSLee)
 		{
 			if (strstr(data, proxyserv->patron[i]))
 			{
-				if (ppt->tipo & XS_T_HTTP)
-					ppt->proxy = XS_T_HTTP;
-				else if (ppt->tipo & XS_T_SOCKS4)
-					ppt->proxy = XS_T_SOCKS4;
-				else if (ppt->tipo & XS_T_SOCKS5)
-					ppt->proxy = XS_T_SOCKS5;
-				else if (ppt->tipo & XS_T_ROUTER)
-					ppt->proxy = XS_T_ROUTER;
-				else if (ppt->tipo & XS_T_WINGATE)
-					ppt->proxy = XS_T_WINGATE;
-				else if (ppt->tipo & XS_T_POST)
-					ppt->proxy = XS_T_POST;
-				else if (ppt->tipo & XS_T_GET)
-					ppt->proxy = XS_T_GET;
+				if (ppx->tipo & XS_T_HTTP)
+					ppx->proxy = XS_T_HTTP;
+				else if (ppx->tipo & XS_T_SOCKS4)
+					ppx->proxy = XS_T_SOCKS4;
+				else if (ppx->tipo & XS_T_SOCKS5)
+					ppx->proxy = XS_T_SOCKS5;
+				else if (ppx->tipo & XS_T_ROUTER)
+					ppx->proxy = XS_T_ROUTER;
+				else if (ppx->tipo & XS_T_WINGATE)
+					ppx->proxy = XS_T_WINGATE;
+				else if (ppx->tipo & XS_T_POST)
+					ppx->proxy = XS_T_POST;
+				else if (ppx->tipo & XS_T_GET)
+					ppx->proxy = XS_T_GET;
 				SockClose(sck, LOCAL);
 				break;
 			}
@@ -675,34 +683,34 @@ SOCKFUNC(PSLee)
 }
 SOCKFUNC(PSFin)
 {
-	PPuerto *ppt;
+	PPuerto *ppx;
 	Proxy *px;
-	if ((px = BuscaProxy(sck)) && (ppt = BuscaPPuerto(sck)))
+	if ((px = BuscaProxy(sck)) && (ppx = BuscaPPuerto(sck)))
 	{
-		if (ppt->tipo & XS_T_ABIERTO)
-			ppt->tipo &= ~XS_T_ABIERTO;
-		else if (ppt->tipo & XS_T_HTTP)
-			ppt->tipo &= ~XS_T_HTTP;
-		else if (ppt->tipo & XS_T_SOCKS4)
-			ppt->tipo &= ~XS_T_SOCKS4;
-		else if (ppt->tipo & XS_T_SOCKS5)
-			ppt->tipo &= ~XS_T_SOCKS5;
-		else if (ppt->tipo & XS_T_ROUTER)
-			ppt->tipo &= ~XS_T_ROUTER;
-		else if (ppt->tipo & XS_T_WINGATE)
-			ppt->tipo &= ~XS_T_WINGATE;
-		else if (ppt->tipo & XS_T_POST)
-			ppt->tipo &= ~XS_T_POST;
-		else if (ppt->tipo & XS_T_GET)
-			ppt->tipo &= ~XS_T_GET;
-		if (!ppt->tipo || ppt->proxy || !ppt->abierto)
+		if (ppx->tipo & XS_T_ABIERTO)
+			ppx->tipo &= ~XS_T_ABIERTO;
+		else if (ppx->tipo & XS_T_HTTP)
+			ppx->tipo &= ~XS_T_HTTP;
+		else if (ppx->tipo & XS_T_SOCKS4)
+			ppx->tipo &= ~XS_T_SOCKS4;
+		else if (ppx->tipo & XS_T_SOCKS5)
+			ppx->tipo &= ~XS_T_SOCKS5;
+		else if (ppx->tipo & XS_T_ROUTER)
+			ppx->tipo &= ~XS_T_ROUTER;
+		else if (ppx->tipo & XS_T_WINGATE)
+			ppx->tipo &= ~XS_T_WINGATE;
+		else if (ppx->tipo & XS_T_POST)
+			ppx->tipo &= ~XS_T_POST;
+		else if (ppx->tipo & XS_T_GET)
+			ppx->tipo &= ~XS_T_GET;
+		if (!ppx->tipo || ppx->proxy || !ppx->abierto)
 		{
 			px->escaneados++;
-			ppt->sck = NULL;
-			CompruebaProxy(px);
+			ppx->sck = NULL;
+			CompruebaProxy(px, ppx->proxy);
 		}
 		else
-			ppt->sck = SockOpenEx(sck->host, ppt->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ);
+			ppx->sck = SockOpenEx(sck->host, ppx->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ);
 	}
 	return 0;
 }
