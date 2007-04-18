@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.50 2007-04-04 18:59:01 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.51 2007-04-18 17:49:44 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -114,15 +114,18 @@ int BorraComando(char *cmd, IRCFUNC(*func))
 int MiraPings()
 {
 	time_t ahora = time(0);
-	if (!tping && (SockIrcd->recibido + 120) < ahora)
+	if (SockIrcd)
 	{
-		protocolo->comandos[P_PING]();
-		tping = ahora;
+		if (!tping && (SockIrcd->recibido + 120) < ahora)
+		{
+			protocolo->comandos[P_PING]();
+			tping = ahora;
+		}
+		else if (tping && (SockIrcd->recibido + 120 + 30) < ahora) /* 30 segs para responder el ping */
+			SockClose(SockIrcd, REMOTO);
+		else if (tping <= SockIrcd->recibido)
+			tping = 0;
 	}
-	else if (tping && (SockIrcd->recibido + 120 + 30) < ahora) /* 30 segs para responder el ping */
-		SockClose(SockIrcd, REMOTO);
-	else if (tping <= SockIrcd->recibido)
-		tping = 0;
 	return 0;
 }
 VOIDSIG AbreSockIrcd()
