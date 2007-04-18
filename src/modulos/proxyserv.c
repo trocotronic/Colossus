@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.39 2007-04-11 20:13:13 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.40 2007-04-18 17:49:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -102,7 +102,6 @@ int MOD_DESCARGA(ProxyServ)()
 {
 	Proxy *px;
 	PPuerto *ppx;
-	int i;
 	for (px = proxys; px; px = px->sig)
 	{
 		for (ppx = px->puerto; ppx; ppx = ppx->sig)
@@ -470,7 +469,7 @@ int PSSigSynch()
 }
 void CompruebaProxy(Proxy *px, int forzar)
 {
-	int i, tipo = 0;
+	int tipo = 0;
 	char psbuf[128], ptbuf[128];
 	PPuerto *ppx, *tmp;
 	if ((proxyserv->fsal && forzar) || px->escaneados == px->puertos)
@@ -549,8 +548,8 @@ void CompruebaProxy(Proxy *px, int forzar)
 				strlcpy(motivo, "Posible PROXY ilegal", sizeof(motivo));
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);
 		}
-		//else
-		//	InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
+		else
+			InsertaCache(CACHE_PROXY, px->host, 86400, proxyserv->hmod->id, px->host);
 		BorraItem(px, proxys);
 		Free(px->host);
 		Free(px);
