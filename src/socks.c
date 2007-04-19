@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.38 2007-04-19 13:49:30 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.39 2007-04-19 18:43:59 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -676,21 +676,25 @@ void EnviaCola(Sock *sck)
 }
 int LeeMensaje(Sock *sck)
 {
+	char lee[SOCKBUF];
+	int len = 0;
 	if (EsCerr(sck))
 		return -3;
 	SET_ERRNO(0);
 #ifdef USA_SSL
 	if (EsSSL(sck))
-		sck->pos = SSLSockRead(sck, sck->buffer, sizeof(sck->buffer)-1);
+		len = SSLSockRead(sck, lee, sizeof(lee)-1);
 	else
 #endif
-	sck->pos = READ_SOCK(sck->pres, sck->buffer, sizeof(sck->buffer)-1);
-	if (sck->pos < 0 && ERRNO == P_EWOULDBLOCK)
+	len = READ_SOCK(sck->pres, lee, sizeof(lee)-1);
+	if (len < 0 && ERRNO == P_EWOULDBLOCK)
 		return 1;
-	if (sck->pos > 0)
+	if (len > 0)
 	{
 		if (EsNoRecvQ(sck))
 		{
+			sck->pos = MIN(len, sizeof(sck->buffer)-1);
+			memcpy(sck->buffer, lee, sck->pos);
 			if (!(sck->opts & OPT_BIN))
 				sck->buffer[sck->pos] = '\0';
 			if (sck->readfunc)
@@ -699,9 +703,9 @@ int LeeMensaje(Sock *sck)
 			sck->buffer[0] = '\0';
 		}
 		else
-			Encola(sck->recvQ, sck->buffer, sck->pos);
+			Encola(sck->recvQ, lee, len);
 	}
-	return sck->pos;
+	return len;
 }
 int CreaMensaje(Sock *sck, char *msg, int len)
 {
