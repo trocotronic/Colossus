@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.12 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.13 2007-05-14 18:28:42 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -362,6 +362,12 @@ void XMLCALL xmlData(Rss *rs, const char *s, int len)
 int DescargaRSS()
 {
 	int i;
+	SQLRes *res;
+	if (!(res = SQLQuery("SELECT * FROM %s%s", PREFIJO, WS_SQL)) || !SQLNumRows(res))
+	{
+		SQLFreeRes(res);
+		return 0;
+	}
 	for (i = 0; i < MAX_RSS; i++)
 	{
 		Rss *tmp;

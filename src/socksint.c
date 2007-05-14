@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.6 2007-04-11 15:52:32 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.7 2007-05-14 18:28:42 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -201,22 +201,20 @@ SOCKFUNC(ActivoCierra)
 }
 int ActivaModulos()
 {
-	Modulo *mod;
+	Modulo *mod, *tmp;
 	MDS *mds = NULL;
 	int inf = 1;
 	if (sgn.mds)
 		DetieneMDS();
-	for (mod = modulos; mod; mod = mod->sig)
+	for (mod = modulos; mod; mod = tmp)
 	{
+		tmp = mod->sig;
 		if (mod->activo)
 		{
 			if (!mod->serial)
 			{
-				Modulo *tmp;
-				tmp = mod->sig;
 				Info("Introduzca la clave de acceso para el módulo %s", mod->info->nombre);
 				DescargaModulo(mod);
-				mod = tmp;
 			}
 			else
 			{

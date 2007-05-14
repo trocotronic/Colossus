@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.62 2007-04-11 15:52:32 Trocotronic Exp $
+ * $Id: cambios,v 1.63 2007-05-14 18:28:41 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -467,3 +467,4 @@
 050407523 - *** Vigésimaprimera release pública: 1.9a ***
 110407524 - Arreglado un cuelgue al refrescar que raras veces se daba.
 110407525 - Arreglado un cuelgue al refrescar con servicios descargados.
+110507526 - Arreglado un cuelgue al cargar módulos.
