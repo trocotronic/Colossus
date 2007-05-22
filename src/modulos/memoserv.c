@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.32 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.33 2007-05-22 14:20:33 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -488,16 +488,18 @@ BOTFUNC(MSDel)
 	else
 	{
 		int max = atoi(no);
-		char *paralow = strtolower(para);
+		char *paralow = strtolower(para), *m_m;
 		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, paralow)))
 		{
 			for(i = 0; (row = SQLFetchRow(res)); i++)
 			{
 				if (max == (i + 1))
 				{
-					SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, paralow, row[0], row[1], row[2]);
+					m_m = SQLEscapa(row[1]);
+					SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, paralow, row[0], m_m, row[2]);
 					Responde(cl, CLI(memoserv), "El mensaje \00312%s\003 ha sido borrado.", no);
 					SQLFreeRes(res);
+					Free(m_m);
 					return 0;
 				}
 			}
