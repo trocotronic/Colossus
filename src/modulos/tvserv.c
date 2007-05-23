@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.27 2007-05-23 19:58:33 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.28 2007-05-23 22:54:18 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1011,6 +1011,7 @@ SOCKFUNC(TSLeeTiempo)
 	DataSock *dts;
 	Cliente *cl;
 	static int dia = 0, sig = 0;
+	static char snd[512];
 	int numero;
 	if (!(dts = BuscaCola(sck)))
 		return 1;
@@ -1096,42 +1097,46 @@ SOCKFUNC(TSLeeTiempo)
 			return 1;
 		}
 	}
-	else if (!strstr(data, "cabecera_4\"><h2>"))
-		sig = 1;
-	else if (sig)
+	else if (strstr(data, " <font size=\"1"))
 	{
-		char *tok, *c, *d;
-		for (tok = strstr(data, "<tr"); tok; tok = strstr(tok, "<tr"))
+		while (*data == ' ' || *data == '\t')
+			data++;
+		TSQuitaTags(data, tmp);
+		Responde(cl, CLI(tvserv), tmp);
+		sig = 1;
+	}
+	else if (strstr(data, "cabecera_4\"><h2>"))
+	{
+		if (sig)
 		{
-			if ((c = strstr(tok, "</tr>")))
-				*c = '\0';
-			if ((d = strstr(tok, "<strong>")))
-			{
-				*(d+7) = ' ';
-				*(d+6) = '>';
-			}
-			TSQuitaTags(tok, tmp);
-			Responde(cl, CLI(tvserv), tmp);
-			if (!c)
-				break;
-			tok = c+1;
-			if (!strncmp(tok+12, "<font size", 10))
-			{
-				tok += 12;
-				c = strstr(tok, "</font");
-				*c = '\0';
-				TSQuitaTags(tok, tmp);
-				Responde(cl, CLI(tvserv), tmp);
-				tok = c+1;
-			}	
-		}
-		if (c)
-		{
-			dia = sig = 0;
+			dia = 0;
 			if (!IsOper(cl))
 				InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
 			SockClose(sck, LOCAL);
 		}
+		else
+		{
+			while (*data == ' ' || *data == '\t')
+				data++;
+			TSQuitaTags(data, tmp);
+			Responde(cl, CLI(tvserv), tmp);
+		}
+	}
+	else if (strstr(data, "<td width=\"6"))
+	{
+		while (*data == ' ' || *data == '\t')
+				data++;
+		TSQuitaTags(data, tmp);
+		strncpy(snd, tmp, sizeof(snd));
+	}
+	else if (strstr(data, "<td width=\"4"))
+	{
+		while (*data == ' ' || *data == '\t')
+				data++;
+		TSQuitaTags(data, tmp);
+		strlcat(snd, ": ", sizeof(snd));
+		strlcat(snd, tmp, sizeof(snd));
+		Responde(cl, CLI(tvserv), snd);
 	}
 	return 0;
 }
