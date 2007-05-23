@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.26 2007-05-23 19:49:13 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.27 2007-05-23 19:58:33 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1096,12 +1096,12 @@ SOCKFUNC(TSLeeTiempo)
 			return 1;
 		}
 	}
-	else if (!strncmp("<!-- M", data, 6))
+	else if (!strstr(data, "cabecera_4\"><h2>"))
 		sig = 1;
 	else if (sig)
 	{
 		char *tok, *c, *d;
-		for (tok = strstr(data, "<tr>"); tok; tok = strstr(tok, "<tr>"))
+		for (tok = strstr(data, "<tr"); tok; tok = strstr(tok, "<tr"))
 		{
 			if ((c = strstr(tok, "</tr>")))
 				*c = '\0';
