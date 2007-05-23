@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.25 2007-05-23 19:46:42 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.26 2007-05-23 19:49:13 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1047,7 +1047,8 @@ SOCKFUNC(TSLeeTiempo)
 				Responde(cl, CLI(tvserv), "Se han encontrado varias coincidencias. Use /msg %s TIEMPO <nº> '%s'", CLI(tvserv)->nombre, strchr(dts->query, '=')+1);
 				for (c = data, i = 1; (c = strstr(c, ".html")); i++)
 				{
-					c += 7;
+					c = strstr(c, "'>");
+					c += 2;
 					if ((d = strstr(c, "</a>")))
 					{
 						*d = '\0';
