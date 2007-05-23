@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.24 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.25 2007-05-23 19:46:42 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1020,9 +1020,9 @@ SOCKFUNC(TSLeeTiempo)
 	{
 		int regs;
 		TSQuitaTags(data, tmp);
-		sscanf(tmp, "Número de registros encontrados: %i", &regs);
-		c = strstr(data, "f'>");
-		c += 4;
+		sscanf(tmp, "Número de resultados encontrados: %i", &regs);
+		c = strstr(data, "jo'>");
+		c += 5;
 		if (regs == 1)
 		{
 			if ((c = strchr(c, '\'')))
