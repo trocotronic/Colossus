@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.80 2007-04-04 18:59:01 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.81 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -250,13 +250,15 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  		- SIGN_AWAY (Cliente *cl, char *mensaje): El cliente <i>cl</i> se pone away con el mensaje <i>mensaje</i>. Si mensaje apunta a NULL, el cliente regresa de away.
  		- SIGN_PART (Cliente *cl, Canal *cn, char *mensaje): El cliente <i>cl</i> abandona el canal <i>cn</i> con el mensaje <i>mensaje</i>. Si no hay mensaje, apunta a NULL.
  		- SIGN_STARTUP (): Se ha cargado el programa. Sólo se ejecuta una vez.
- 		- SIGN_SOCKOPEN (): Se ha establecido la conexión con el ircd. Todavía no se han mandado datos.
+ 		- SIGN_SOCKOPEN (): Se ha establecido la conexión con el ircd. Todavía no se han mandado datos. Se llama antes de mandar PROTOCTL.
  		- SIGN_CDESTROY (Canal *cn): Se borra este canal de la memoria. Se ha vaciado el canal.
  		- SIGN_CMSG (Cliente *cl, Canal *cn, char *msg): El cliente <i>cl</i> envía el mensaje <i>msg</i> al canal <i>cn</i>.
  		- SIGN_PMSG (Cliente *cl, Cliente *bl, char *msg, int respuesta): El cliente <i>cl</i> envía el mensaje <i>msg</i> al bot <i>bl</i>.
  			El valor respuesta toma el valor de respuesta del bot anfitrión. Si es 0, el bot anfitrión ha ejecutado el comando correctamente. 
  			Si es 1, el bot anfitrión ha emitido algún error y ha abortado. Si es -1, no existe bot anfitrión.
  			NOTA: esta señal se ejecuta <u>después</u> de haber ejecutado la función del bot anfitrión, en el caso de que hubiera.
+ 		- SIGN_SERVER (Cliente *cl, int primer): Se ha conectado un servidor nuevo. Si es el primer link, primero vale 1.
+ 		- SIGN_SOCKCLOSE (): La conexión con el ircd se ha perdido.
  *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
  		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
  * @ex: 	int Umodos(Cliente *, char *);
@@ -472,6 +474,9 @@ extern char *chrcat(char *, char);
 #ifdef NEED_STRNCASECMP
 extern int strncasecmp(const char *, const char *, int);
 #endif
+#ifdef NEED_STRISTR
+extern const char *stristr(const char *, const char *);
+#endif
 /* definiciones de cache */
 extern char *CogeCache(char *, char *, int);
 extern void InsertaCache(char *, char *, int, int, char *, ...);
@@ -495,6 +500,7 @@ Item *del_item(Item *, Item **, int);
 #define AddItem(item, lista) add_item((Item *)item, (Item **)&lista)
 #define BorraItem(item, lista) del_item((Item *)item, (Item **)&lista, 0)
 #define LiberaItem(item, lista) del_item((Item *)item, (Item **)&lista, 1)
+
 char *Repite(char, int);
 
 extern int b64_encode(char const *, size_t, char *, size_t);
@@ -504,7 +510,8 @@ extern char *base64_decode(char *);
 
 extern char *Encripta(char *, char *);
 extern char *Desencripta(char *, char *);
-extern time_t GMTime();
+extern MODVAR int t_off;
+#define GMTime() (time(0) + t_off)
 typedef int (*ECmdFunc)(u_long, char *, void *);
 extern int EjecutaComandoSinc(char *, char *, u_long *, char **);
 extern int EjecutaComandoASinc(char *, char *, ECmdFunc, void *);

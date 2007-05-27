@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.39 2007-04-19 18:43:59 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.40 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -402,7 +402,7 @@ void SockWriteBin(Sock *sck, u_long len, char *data)
 }
 
 /*!
- * @desc: Escribe datos en una conexión a partir de una lista de argumentos.
+ * @desc: Escribe datos en una conexión a partir de una lista de argumentos. Al final se añade \r\n
  * @params: $sck [in] Conexión a la que se desean enviar datos.
  	    $formato [in] Cadena con formato que se desea enviar.
  	    $vl [in] Lista de argumentos.
@@ -416,7 +416,7 @@ void SockWriteVL(Sock *sck, char *formato, va_list vl)
 }
 
 /*!
- * @desc: Escribe datos en una conexión a partir de una cadena y argumentos variables.
+ * @desc: Escribe datos en una conexión a partir de una cadena y argumentos variables. Al final se añade \r\n.
  * @params: $sck [in] Conexión a la que se desean enviar datos.
  	    $formato [in] Cadena con formato que se desea enviar.
  	    $... [in] Argumentos variables según cadena con formato.

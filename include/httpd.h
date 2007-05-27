@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.h,v 1.2 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: httpd.h,v 1.3 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #define HTTP_GET 1
@@ -38,6 +38,6 @@ struct _hdir
 	HDIRFUNC(*func);
 };
 
-extern HDir *CreaHDir(char *, char *, HDIRFUNC(*));
+extern HDir *CreaHDir(char *, HDIRFUNC(*));
 extern int BorraHDir(HDir *);
 extern char *BuscaTipo(char *);

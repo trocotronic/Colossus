@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.34 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.35 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1166,7 +1166,7 @@ IRCFUNC(m_server)
 {
 	Cliente *al;
 	char numeric[3];
-	int i = 0;
+	int i = 0, prim = 0;
 	if (!cl && atoi(parv[5] + 1) < 10)
 	{
 		Alerta(FERR, "Version IRCU incorrecta. Sólo funciona con versiones de P10");
@@ -1187,9 +1187,11 @@ IRCFUNC(m_server)
 	{
 		linkado = al;
 		sincroniza(sck, al, parv, parc);
+		prim = 1;
 	}
 	else
 		Loguea(LOG_SERVER, "Servidor %s (%s)", al->nombre, al->info);
+	LlamaSenyal(SIGN_SERVER, 2, al, prim);
 	return 0;
 }
 IRCFUNC(m_squit)

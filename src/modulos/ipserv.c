@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.31 2007-02-10 16:54:31 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.32 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -24,14 +24,14 @@ BOTFUNCHELP(ISHTemphost);
 BOTFUNC(ISClones);
 BOTFUNCHELP(ISHClones);
 
-int ISSigSQL	();
 DLLFUNC int ISSigIdOk 		(Cliente *);
 char *ISMakeVirtualhost 	(Cliente *, int);
 DLLFUNC int ISSigUmode		(Cliente *, char *);
 DLLFUNC int ISSigNick		(Cliente *, int);	
 int ISSigDrop	(char *);
 int ISSigEOS	();
-
+int ISSigSQL	();
+int ISSigSockClose	();
 int ISProcIps	(Proc *);
 
 
@@ -102,6 +102,7 @@ int MOD_DESCARGA(IpServ)()
 	BorraSenyal(SIGN_SQL, ISSigSQL);
 	BorraSenyal(NS_SIGN_DROP, ISSigDrop);
 	BorraSenyal(SIGN_EOS, ISSigEOS);
+	BorraSenyal(SIGN_SOCKCLOSE, ISSigSockClose);
 	DetieneProceso(ISProcIps);
 	BotUnset(ipserv);
 	return 0;
@@ -157,7 +158,7 @@ void ISSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SQL, ISSigSQL);
 	InsertaSenyal(NS_SIGN_DROP, ISSigDrop);
 	InsertaSenyal(SIGN_EOS, ISSigEOS);
-	IniciaProceso(ISProcIps);
+	InsertaSenyal(SIGN_SOCKCLOSE, ISSigSockClose);
 	BotSet(ipserv);
 }
 BOTFUNCHELP(ISHSetipv)
@@ -407,6 +408,12 @@ int ISSigDrop(char *nick)
 int ISSigEOS()
 {
 	ISCompruebaCifrado();
+	IniciaProceso(ISProcIps);
+	return 0;
+}
+int ISSigSockClose()
+{
+	DetieneProceso(ISProcIps);
 	return 0;
 }
 char *CifraIpTEA(char *ipreal)

@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.6 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.7 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -37,6 +37,8 @@ int LSSigSQL	();
 int LSSigEOS	();
 int LSSigCDestroy(Canal *);
 int LSSigCDrop(char *);
+int LSSigSynch	();
+int LSSigSockClose	();
 int LSCmdJoin(Cliente *, Canal *);
 int LSCmdCMsg(Cliente *, Canal *, char *);
 int MiraCaducados();
@@ -101,7 +103,6 @@ int MOD_CARGA(LogServ)(Modulo *mod)
 	else
 		LSSet(NULL, mod);
 	timercaduca = IniciaCrono(0, 86400, MiraCaducados, NULL);
-	timeranuncia = IniciaCrono(0, 7200, AnunciaLogueo, NULL);
 	return errores;
 }
 int MOD_DESCARGA(LogServ)()
@@ -120,6 +121,7 @@ int MOD_DESCARGA(LogServ)()
 	BorraSenyal(SIGN_CMSG, LSCmdCMsg);
 	BorraSenyal(SIGN_EOS, MiraCaducados);
 	BorraSenyal(CS_SIGN_DROP, LSSigCDrop);
+	BorraSenyal(SIGN_SOCKCLOSE, LSSigSockClose);
 	ApagaCrono(timercaduca);
 	ApagaCrono(timeranuncia);
 	BotUnset(logserv);
@@ -166,6 +168,7 @@ void LSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_EOS, MiraCaducados);
 	InsertaSenyal(CS_SIGN_DROP, LSSigCDrop);
 	InsertaSenyal(SIGN_EOS, LSSigEOS);
+	InsertaSenyal(SIGN_SOCKCLOSE, LSSigSockClose);
 	BotSet(logserv);
 	mkdir(DIR_LOGS, 0600);
 }
@@ -550,5 +553,13 @@ int LSSigEOS()
 			IniciaLogueo(BuscaCanal(row[0]));
 	}
 	SQLFreeRes(res);
+	if (!timeranuncia)
+		timeranuncia = IniciaCrono(0, 7200, AnunciaLogueo, NULL);
+	return 0;
+}
+int LSSigSockClose()
+{
+	ApagaCrono(timeranuncia);
+	timeranuncia = NULL;
 	return 0;
 }

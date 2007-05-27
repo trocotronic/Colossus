@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.9 2007-01-18 14:34:37 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.10 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -33,6 +33,8 @@ EXTFUNC(ISClones_U);
 int ISSigEOS_U	();
 int ISSigVDrop	(char *);
 int ISCompruebaCifrado_U();
+int ISSigSynch_U();
+int ISSigSockClose_U();
 int (*issigumode)();
 int (*issigidok)();
 int (*issignick)();
@@ -79,7 +81,8 @@ void CargaIpServ(Extension *ext)
 	InsertaSenyal(IS_SIGN_DROP, ISSigVDrop);
 	InsertaSenyalExt(1, ISSetipv_U, ext);
 	InsertaSenyalExt(3, ISClones_U, ext);
-	timercif = IniciaCrono(0, 86400, ISCompruebaCifrado_U, NULL);
+	InsertaSenyal(SIGN_SYNCH, ISSigSynch_U);
+	InsertaSenyal(SIGN_SOCKCLOSE, ISSigSockClose_U);
 	/*InsertaSenyalExt(16, CSLiberar, ext);
 	InsertaSenyalExt(17, CSForbid, ext);
 	InsertaSenyalExt(18, CSUnforbid, ext);
@@ -94,6 +97,8 @@ void DescargaIpServ(Extension *ext)
 	BorraSenyal(IS_SIGN_DROP, ISSigVDrop);
 	BorraSenyalExt(1, ISSetipv_U, ext);
 	BorraSenyalExt(3, ISClones_U, ext);
+	BorraSenyal(SIGN_SYNCH, ISSigSynch_U);
+	BorraSenyal(SIGN_SOCKCLOSE, ISSigSockClose_U);
 	ApagaCrono(timercif);
 }
 BOTFUNCHELP(ISHSet)
@@ -269,5 +274,17 @@ int ISCompruebaCifrado_U()
 int ISSigVDrop (char *nick)
 {
 	PropagaRegistro("N::%s::V", nick);
+	return 0;
+}
+int ISSigSynch_U()
+{
+	if (!timercif)
+		timercif = IniciaCrono(0, 86400, ISCompruebaCifrado_U, NULL);
+	return 0;
+}
+int ISSigSockClose_U()
+{
+	ApagaCrono(timercif);
+	timercif = NULL;
 	return 0;
 }

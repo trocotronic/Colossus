@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.7 2007-03-19 19:16:36 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.8 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -167,20 +167,9 @@ Timer *IniciaCrono(u_int veces, u_int cada, int (*func)(), void *args)
 int ApagaCrono(Timer *timer)
 {
 	Timer *aux, *prev = NULL;
-	for (aux = timers; aux; aux = aux->sig)
-	{
-		if (aux == timer)
-		{
-			if (prev)
-				prev->sig = aux->sig;
-			else
-				timers = aux->sig;
-			Free(aux);
-			return 1;
-		}
-		prev = aux;
-	}
-	return 0;
+	if (!timer)
+		return 0;
+	return (LiberaItem(timer, timers) ? 1 : 0);
 }
 void CompruebaCronos()
 {

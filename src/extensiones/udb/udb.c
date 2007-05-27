@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.23 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.24 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -60,6 +60,7 @@ int SigPreNick(Cliente *, char *);
 int SigPostNick_U(Cliente *, int);
 int SigSynch();
 int SigSockOpen();
+int SigSockClose();
 u_long UMODE_SUSPEND;
 u_long UMODE_PRIVDEAF;
 u_long UMODE_SHOWIP;
@@ -129,10 +130,6 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 		}
 	}
 	IniciaUDB();
-	if (opts & UDB_AUTOOPT)
-		timeropt = IniciaCrono(0, 86400, UdbOptimiza, NULL);
-	if (opts & UDB_AUTOBCK)
-		timerbck = IniciaCrono(0, 86400, UdbBackup, NULL);
 	p_svsmode_r = (int(*)(Cliente *, Cliente *, char *, ...))protocolo->comandos[P_MODO_USUARIO_REMOTO];
 	protocolo->comandos[P_MODO_USUARIO_REMOTO] = (int(*)())p_svsmode_U;
 	InsertaComando(MSG_DB, TOK_DB, m_db, INI, 5);
@@ -150,6 +147,7 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 	InsertaSenyalEx(SIGN_POST_NICK, SigPostNick_U, INI);
 	InsertaSenyal(SIGN_SYNCH, SigSynch);
 	InsertaSenyal(SIGN_SOCKOPEN, SigSockOpen);
+	InsertaSenyal(SIGN_SOCKCLOSE, SigSockClose);
 	InsertaModoProtocolo('S', &UMODE_SUSPEND, protocolo->umodos);
 	InsertaModoProtocolo('D', &UMODE_PRIVDEAF, protocolo->umodos);
 	InsertaModoProtocolo('X', &UMODE_SHOWIP, protocolo->umodos);
@@ -749,8 +747,26 @@ IRCFUNC(m_sjoin_U)
 int SigSynch()
 {
 	UDBloq *aux;
+	if ((opts & UDB_AUTOOPT) && !timeropt)
+		timeropt = IniciaCrono(0, 86400, UdbOptimiza, NULL);
+	if ((opts & UDB_AUTOBCK) && !timerbck)
+		timerbck = IniciaCrono(0, 86400, UdbBackup, NULL);
 	for (aux = ultimo; aux; aux = aux->sig)
 		EnviaAServidor(":%s DB %s INF %c %lX %lu", me.nombre, linkado->nombre, aux->letra, aux->crc32, aux->gmt);
+	return 0;
+}
+int SigSockClose()
+{
+	if (opts & UDB_AUTOOPT)
+	{
+		ApagaCrono(timeropt);
+		timeropt = NULL;
+	}
+	if (opts & UDB_AUTOBCK)
+	{
+		ApagaCrono(timerbck);
+		timerbck = NULL;
+	}
 	return 0;
 }
 void UdbDaleCosas(Cliente *cl)

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.54 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.55 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -55,7 +55,8 @@ int NSCmdPostNick 	(Cliente *, int);
 int NSCmdUmode		(Cliente *, char *);
 int NSSigQuit 		(Cliente *, char *);
 int NSSigIdOk 		(Cliente *);
-int NSSigStartUp 	();
+int NSSigSockClose	();
+int NSSigSynch		();
 int NSKillea		(char *);
 
 int NSDropanicks	(Proc *);
@@ -152,8 +153,8 @@ int MOD_DESCARGA(NickServ)()
 	BorraSenyal(SIGN_SQL, NSSigSQL);
 	BorraSenyal(SIGN_QUIT, NSSigQuit);
 	BorraSenyal(NS_SIGN_IDOK, NSSigIdOk);
-	//BorraSenyal(SIGN_STARTUP, NSSigStartUp);
-	DetieneProceso(NSDropanicks);
+	BorraSenyal(SIGN_SOCKCLOSE, NSSigSockClose);
+	BorraSenyal(SIGN_SYNCH, NSSigSynch);
 	BotUnset(nickserv);
 	return 0;
 }
@@ -244,8 +245,8 @@ void NSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SQL, NSSigSQL);
 	InsertaSenyal(SIGN_QUIT, NSSigQuit);
 	InsertaSenyal(NS_SIGN_IDOK, NSSigIdOk);
-	//InsertaSenyal(SIGN_STARTUP, NSSigStartUp);
-	IniciaProceso(NSDropanicks);
+	InsertaSenyal(SIGN_SOCKCLOSE, NSSigSockClose);
+	InsertaSenyal(SIGN_SYNCH, NSSigSynch);
 	BotSet(nickserv);
 }
 KillUser *InsertaKillUser(Cliente *cl, int kill)
@@ -267,13 +268,14 @@ KillUser *BuscaKillUser(Cliente *cl)
 	}
 	return NULL;
 }
-int BorraKillUser(Cliente *cl)
+int BorraKillUser(Cliente *cl, int apaga)
 {
 	KillUser *ku;
 	if ((ku = BuscaKillUser(cl)))
 	{
 		Free(ku->timer->args);
-		ApagaCrono(ku->timer);
+		if (apaga)
+			ApagaCrono(ku->timer);
 		LiberaItem(ku, killusers);
 	}
 	return 0;
@@ -1103,7 +1105,7 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 			if (IsId(cl))
 				SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
 			else
-				BorraKillUser(cl);
+				BorraKillUser(cl, 1);
 		}
 	}
 	return 0;
@@ -1165,7 +1167,7 @@ int NSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
 	}
-	else
+	/*else
 	{
 		if (!SQLEsCampo(NS_SQL, "killtime"))
 		{
@@ -1182,7 +1184,7 @@ int NSSigSQL()
 	}	
 	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, NS_SQL);
-	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);
+	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);*/
 	if (!SQLEsTabla(NS_FORBIDS))
 	{
 		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
@@ -1214,7 +1216,7 @@ int NSSigIdOk(Cliente *cl)
 		SQLInserta(NS_SQL, cl->nombre, "id", "%i", time(0));
 		SQLInserta(NS_SQL, cl->nombre, "host", "%s@%s", cl->ident, cl->host);
 		SQLInserta(NS_SQL, cl->nombre, "gecos", cl->info);
-		BorraKillUser(cl);
+		BorraKillUser(cl, 1);
 		if ((swhois = SQLCogeRegistro(NS_SQL, cl->nombre, "swhois")))
 			ProtFunc(P_WHOIS_ESPECIAL)(cl, swhois);
 		cl->nivel |= N1;
@@ -1224,12 +1226,16 @@ int NSSigIdOk(Cliente *cl)
 int NSKillea(char *quien)
 {
 	Cliente *al;
-	if ((al = BuscaCliente(quien)) && !IsId(al))
+	if ((al = BuscaCliente(quien)))
 	{
-		if (nickserv->opts & NS_PROT_KILL)
-			ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Protección de NICK.");
-		else
-			NSCambiaInv(al);
+		if (!IsId(al))
+		{
+			if (nickserv->opts & NS_PROT_KILL)
+				ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(nickserv), "Protección de NICK.");
+			else
+				NSCambiaInv(al);
+		}
+		BorraKillUser(al, 0);
 	}
 	Free(quien);
 	return 0;
@@ -1259,11 +1265,6 @@ int NSDropanicks(Proc *proc)
 		proc->proc += 30;
 		SQLFreeRes(res);
 	}
-	return 0;
-}
-int NSSigStartUp()
-{
-	
 	return 0;
 }
 int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
@@ -1397,5 +1398,22 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 	}
 	if ((al = BuscaCliente(nick)) != cl)
 		Responde(al, CLI(nickserv), "%s ha ejecutado \"\00312%s\003\" sobre ti.", cl->nombre, strtoupper(Unifica(param, params, 0, -1)));
+	return 0;
+}
+int NSSigSynch()
+{
+	IniciaProceso(NSDropanicks);
+	return 0;
+}
+int NSSigSockClose()
+{
+	KillUser *ku, *sig;
+	for (ku = killusers; ku; ku = sig)
+	{
+		sig = ku->sig;
+		ApagaCrono(ku->timer);
+		Free(ku);
+	}
+	DetieneProceso(NSDropanicks);
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.33 2007-05-22 14:20:33 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.34 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -879,17 +879,20 @@ int MSSigSQL()
 			");", PREFIJO, MS_SET, memoserv->def);
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
-		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
+		else
 		{
-			while ((row = SQLFetchRow(res)))
-				SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
-			SQLFreeRes(res);
-		}
-		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
-		{
-			while ((row = SQLFetchRow(res)))
-				SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
-			SQLFreeRes(res);
+			if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
+			{
+				while ((row = SQLFetchRow(res)))
+					SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
+				SQLFreeRes(res);
+			}
+			if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
+			{
+				while ((row = SQLFetchRow(res)))
+					SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
+				SQLFreeRes(res);
+			}
 		}
 	}
 	SQLCargaTablas();

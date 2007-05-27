@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.64 2007-05-22 14:20:33 Trocotronic Exp $
+ * $Id: cambios,v 1.65 2007-05-27 19:14:36 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -469,3 +469,6 @@
 110407525 - Arreglado un cuelgue al refrescar con servicios descargados.
 110507526 - Arreglado un cuelgue al cargar módulos.
 220507527 - Arreglado un fallo al borrar mensajes de MemoServ.
+270507528 - Añadidos un par de signals.
+270507529 - Corregidos todos los módulos para apagar sus respectivos cronómetros cuando se cierre la conexión.
+270507530 - Añadida una rutina para devolver el GMTime.

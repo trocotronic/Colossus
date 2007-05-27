@@ -198,10 +198,12 @@ EXPORTS
 	sql
 	str_replace
 	strcopia
+	stristr
 	strlcat
 	strlcpy
 	strtolower
 	strtoupper
+	t_off
 	tea
 	timers
 	tklines

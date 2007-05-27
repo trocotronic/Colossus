@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.23 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.24 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -403,7 +403,7 @@ void ListaDescrips(Modulo *mod, Cliente *cl)
 	int i;
 	for (i = 0; i < mod->comandos; i++)
 	{
-		if (TieneNivel(cl, mod->comando[i]->com, mod, NULL))
+		if (mod->comando[i]->func_help && TieneNivel(cl, mod->comando[i]->com, mod, NULL))
 			Responde(cl, mod->cl, "\00312%s\003 %s", mod->comando[i]->com, mod->comando[i]->descrip);
 	}
 }

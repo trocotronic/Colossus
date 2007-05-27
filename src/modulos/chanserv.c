@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.51 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.52 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -65,7 +65,8 @@ int CSSigSQL	();
 int CSSigEOS	();
 int CSSigSynch	();
 int CSSigPreNick (Cliente *, char *);
-int CSSigStartUp ();
+int CSSigSockOpen	();
+int CSSigSockClose	();
 
 ProcFunc(CSDropachans);
 int CSDropanick(char *);
@@ -183,7 +184,7 @@ int MOD_DESCARGA(ChanServ)()
 	BorraSenyal(SIGN_SYNCH, CSSigSynch);
 	BorraSenyal(SIGN_PRE_NICK, CSSigPreNick);
 	BorraSenyal(SIGN_QUIT, CSSigPreNick);
-	//BorraSenyal(SIGN_STARTUP, CSSigStartUp);
+	BorraSenyal(SIGN_SOCKCLOSE, CSSigSockClose);
 	DetieneProceso(CSDropachans);
 	BotUnset(chanserv);
 	return 0;
@@ -268,8 +269,7 @@ void CSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SYNCH, CSSigSynch);
 	InsertaSenyal(SIGN_PRE_NICK, CSSigPreNick);
 	InsertaSenyal(SIGN_QUIT, CSSigPreNick);
-	//InsertaSenyal(SIGN_STARTUP, CSSigStartUp);
-	IniciaProceso(CSDropachans);
+	InsertaSenyal(SIGN_SOCKCLOSE, CSSigSockClose);
 	BotSet(chanserv);
 	//CargaExtensiones(mod);
 }
@@ -2377,7 +2377,7 @@ int CSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
 	}
-	else
+	/*else
 	{
 		if (!SQLEsCampo(CS_SQL, "marcas"))
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, CS_SQL);
@@ -2387,7 +2387,7 @@ int CSSigSQL()
 	}
 	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, CS_SQL);
 	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, CS_SQL);
-	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, CS_SQL);
+	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, CS_SQL);*/
 	if (!SQLEsTabla(CS_TOK))
 	{
 		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
@@ -2420,7 +2420,7 @@ int CSSigSQL()
 			");", PREFIJO, CS_ACCESS);
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
-		else
+		/*else
 		{
 			SQLRes res;
 			SQLRow row;
@@ -2466,7 +2466,7 @@ int CSSigSQL()
 				SQLFreeRes(res);
 			}
 			SQLQuery("ALTER TABLE %s%s DROP accesos", PREFIJO, CS_SQL);
-		}
+		}*/
 	}
 	//else
 	//	SQLQuery("ALTER TABLE %s%s CHANGE automodos automodos VARCHAR(32) NOT NULL", PREFIJO, CS_ACCESS);
@@ -2481,7 +2481,7 @@ int CSSigSQL()
 			");", PREFIJO, CS_AKICKS);
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
-		else
+		/*else
 		{
 			SQLRes res;
 			SQLRow row;
@@ -2508,7 +2508,7 @@ int CSSigSQL()
 			}
 			SQLFreeRes(res);
 			SQLQuery("ALTER TABLE %s%s DROP akick", PREFIJO, CS_SQL);
-		}
+		}*/
 	}
 	SQLCargaTablas();
 	cmodreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
@@ -2718,10 +2718,11 @@ int CSSigSynch()
 			SQLFreeRes(res);
 		}
 	}
+	IniciaProceso(CSDropachans);
 	return 0;
 }
-int CSSigStartUp()
+int CSSigSockClose()
 {
-	
+	DetieneProceso(CSDropachans);
 	return 0;
 }

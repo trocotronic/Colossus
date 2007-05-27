@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.h,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: helpserv.h,v 1.2 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 typedef struct _hs HelpServ;

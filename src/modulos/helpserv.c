@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.7 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.8 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -79,7 +79,7 @@ int MOD_CARGA(HelpServ)(Modulo *mod)
 	{
 		InsertaSenyal(SIGN_JOIN, HSCmdJoin);
 		InsertaSenyal(SIGN_CDESTROY, HSSigCDestroy);
-		if (!(hdtest = CreaHDir("C:/Colossus", "/html", LeeHDir)))
+		if (!(hdtest = CreaHDir("/html", LeeHDir)))
 			errores++;
 	}
 	helpchan = BuscaCanal(helpserv->canal);
@@ -169,9 +169,12 @@ int HSQuitaBan(char *b)
 {
 	if (!b)
 		return 1;
-	if (!helpchan)
-		helpchan = BuscaCanal(helpserv->canal);
-	ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, b);
+	if (SockIrcd)
+	{
+		if (!helpchan)
+			helpchan = BuscaCanal(helpserv->canal);
+		ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, b);
+	}
 	Free(b);
 	return 0;
 }

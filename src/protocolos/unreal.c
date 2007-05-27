@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.46 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.47 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1401,6 +1401,7 @@ IRCFUNC(m_server)
 	Cliente *al;
 	LinkCliente *aux;
 	char *protocol, *opts, *numeric, *inf;
+	int prim = 0;
 	protocol = opts = numeric = inf = NULL;
 	strlcpy(tokbuf, parv[parc - 1], sizeof(tokbuf));
 	protocol = strtok(tokbuf, "-");
@@ -1450,9 +1451,11 @@ IRCFUNC(m_server)
 #endif
 		linkado = al;
 		sincroniza(sck, al, parv, parc);
+		prim = 1;
 	}
 	else
 		Loguea(LOG_SERVER, "Servidor %s (%s)", al->nombre, al->info);
+	LlamaSenyal(SIGN_SERVER, 2, al, prim);
 	return 0;
 }
 IRCFUNC(m_squit)

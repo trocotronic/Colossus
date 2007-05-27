@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.6 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.7 2007-05-27 19:14:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -21,6 +21,8 @@ BOTFUNCHELP(ESHVer);
 void ESSet(Conf *, Modulo *);
 int ESTest(Conf *, int *);
 int ESSigSQL		();
+int ESSigSockClose	();
+int ESSigSynch	();
 int CompruebaNotas();
 
 Timer *timercomp = NULL;
@@ -463,6 +465,8 @@ int MOD_CARGA(NoteServ)(Modulo *mod)
 int MOD_DESCARGA(NoteServ)()
 {
 	BorraSenyal(SIGN_SQL, ESSigSQL);
+	BorraSenyal(SIGN_SOCKCLOSE, ESSigSockClose);
+	BorraSenyal(SIGN_SYNCH, ESSigSynch);
 	ApagaCrono(timercomp);
 	BotUnset(noteserv);
 	return 0;
@@ -502,7 +506,8 @@ void ESSet(Conf *config, Modulo *mod)
 	else
 		ProcesaComsMod(NULL, mod, noteserv_coms);
 	InsertaSenyal(SIGN_SQL, ESSigSQL);
-	timercomp = IniciaCrono(0, 60, CompruebaNotas, NULL);
+	InsertaSenyal(SIGN_SOCKCLOSE, ESSigSockClose);
+	InsertaSenyal(SIGN_SYNCH, ESSigSynch);
 	BotSet(noteserv);
 }
 time_t CreaTime(int dia, int mes, int ano, int hora, int min)
@@ -716,5 +721,17 @@ int CompruebaNotas()
 		SQLFreeRes(res);
 	}
 	SQLQuery("UPDATE %s%s SET avisar=0 WHERE (avisar < %lu AND avisar > 0)", PREFIJO, ES_SQL, t);
+	return 0;
+}
+int ESSigSockClose()
+{
+	ApagaCrono(timercomp);
+	timercomp = NULL;
+	return 0;
+}
+int ESSigSynch()
+{
+	if (!timercomp)
+		timercomp = IniciaCrono(0, 60, CompruebaNotas, NULL);
 	return 0;
 }

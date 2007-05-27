@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.51 2007-04-18 17:49:44 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.52 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -146,6 +146,7 @@ VOIDSIG AbreSockIrcd()
 		IrcdEscucha = NULL;
 	}
 	tping = 0;
+	timerircd = NULL;
 }
 void EscuchaIrcd()
 {
@@ -166,8 +167,10 @@ SOCKFUNC(IniciaIrcd)
 	ChkBtCon(1, 1);
 #endif
 	ApagaCrono(timerircd);
+	timerircd = NULL;
+	intentos = 0;
 	canales = NULL;
-	if (protocolo->comandos[P_PING])
+	if (ProtFunc(P_PING) && !timerping)
 		timerping = IniciaCrono(0, 1, MiraPings, NULL);
 	protocolo->inicia();
 	return 0;
@@ -190,6 +193,7 @@ SOCKFUNC(CierraIrcd)
 	Cliente *al, *aux;
 	Canal *cn, *caux;
 	Modulo *mod;
+	LlamaSenyal(SIGN_SOCKCLOSE, 0);
 	for (al = clientes; al; al = aux)
 	{
 		aux = al->sig;
@@ -206,7 +210,7 @@ SOCKFUNC(CierraIrcd)
 	linkado = NULL;
 	for (mod = modulos; mod; mod = mod->sig)
 		mod->cl = NULL;
-	if (protocolo->comandos[P_PING])
+	if (ProtFunc(P_PING))
 		ApagaCrono(timerping);
 	if (reset)
 	{
@@ -226,7 +230,7 @@ SOCKFUNC(CierraIrcd)
 #endif
 			intentos = 0;
 		}
-		else
+		else if (!timerircd)
 			timerircd = IniciaCrono(1, conf_set->reconectar.intervalo, (int(*)())AbreSockIrcd, NULL);
 	}
 #ifdef _WIN32

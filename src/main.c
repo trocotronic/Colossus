@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.104 2007-04-11 15:52:32 Trocotronic Exp $ 
+ * $Id: main.c,v 1.105 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -27,6 +27,8 @@ pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 Sock *SockActual;
 Senyal *senyals[MAXSIGS];
 char tokbuf[BUFSIZE];
+/* gmt offset */
+int t_off = 0;
 #ifdef USA_CONSOLA
 char conbuf[128];
 HANDLE hStdin;
@@ -207,6 +209,7 @@ int main(int argc, char *argv[])
 	struct sigaction act;
 #endif
 	char nofork = 0;
+	time_t t;
 	iniciado = time(0);
 #ifndef _WIN32
 	if (getpgid(LeePid()) != -1)
@@ -215,7 +218,7 @@ int main(int argc, char *argv[])
 	ListaSocks.abiertos = ListaSocks.tope = 0;
 	for (i = 0; i < MAXSOCKS; i++)
 		ListaSocks.socket[i] = NULL;
-	memset(senyals, (int)NULL, sizeof(senyals));
+	bzero(senyals, sizeof(senyals));
 	mkdir("tmp", 0700);
 	getcwd(spath, sizeof(spath));
 #ifdef FORCE_CORE
@@ -286,13 +289,14 @@ int main(int argc, char *argv[])
 		cTab[i].item = NULL;
 		cTab[i].items = 0;
 	}
+	t = time(0);
+	t_off = -(t - mktime(gmtime(&t)));
 	bzero(tklines, sizeof(tklines));
 	/* las primeras señales deben ser del núcleo */
 	InsertaSenyal(SIGN_SYNCH, EntraBots);
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
 	InsertaSenyal(SIGN_POST_NICK, SigPostNick);
 	InsertaSenyal(SIGN_CDESTROY, SigCDestroy);
-	
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);

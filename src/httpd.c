@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.20 2007-02-18 19:38:51 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.21 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -17,6 +17,7 @@ HHead *httpcons[MAX_CON];
 HDir *hdirs = NULL;
 char *fecha_fmt = "%a, %d %b %Y %H:%M:%S GMT";
 char *fecha_sfmt = "%s %u %s %u %u:%u:%u GMT";
+char lpath[PMAX];
 
 Opts herrores[] = {
 	{ 100 , "Continue" } ,
@@ -229,14 +230,13 @@ void EnviaError(HHead *hh, u_int num, char *texto)
 	ircsprintf(tbuf, msg, num, errmsg, errmsg, texto, COLOSSUS_VERSION, conf_httpd->url, conf_httpd->puerto);
 	EnviaRespuesta(hh, num, -1, errmsg, 0, tbuf);
 }
-HDir *CreaHDir(char *carpeta, char *ruta, HDIRFUNC(*func))
+HDir *CreaHDir(char *ruta, HDIRFUNC(*func))
 {
 	HDir *hd;
-	if (!carpeta || !ruta || !func)
+	if (!ruta || !func)
 		return NULL;
 	hd = BMalloc(HDir);
 	hd->ruta = strdup(ruta);
-	hd->carpeta = strdup(carpeta);
 	hd->func = func;
 	AddItem(hd, hdirs);
 	return hd;
@@ -244,7 +244,6 @@ HDir *CreaHDir(char *carpeta, char *ruta, HDIRFUNC(*func))
 int BorraHDir(HDir *hd)
 {
 	ircfree(hd->ruta);
-	ircfree(hd->carpeta);
 	if (LiberaItem(hd, hdirs))
 		return 1;
 	return 0;
@@ -309,7 +308,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 			{
 				u_long len = 0;
 				char *p = NULL, f[PMAX], servars[BUFSIZE];
-				ircsprintf(f, "%s%s/%s", hd->carpeta, hd->ruta, hh->archivo);
+				ircsprintf(f, "%s%s/%s", lpath, hd->ruta, hh->archivo);
 				ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
 				ircsprintf(buf, "-f %s %s %s %s", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
 				if (!EsArchivo(f))
@@ -516,10 +515,18 @@ SOCKFUNC(CierraHTTPD)
 int IniciaHTTPD()
 {
 	int i;
+	char *c, *d = lpath;
 	for (i = 0; i < MAX_CON; i++)
 		httpcons[i] = NULL;
 	if (!(listen_httpd = SockListenEx(conf_httpd->puerto, AbreHTTPD, LeeHTTPD, NULL, CierraHTTPD, OPT_NORECVQ)))
 		return 1;
+	for (c = SPATH; !BadPtr(c); c++)
+	{
+		if (*c == '\\')
+			*d++ = '/';
+		else
+			*d++ = *c;
+	}
 	return 0;
 }
 int DetieneHTTPD()

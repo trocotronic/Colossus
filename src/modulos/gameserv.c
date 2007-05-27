@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.6 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.7 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -24,6 +24,7 @@ int GSTest(Conf *, int *);
 int GSSigEOS();
 int GSSigSQL();
 int GSSigPMsg(Cliente *, Cliente *, char *, int);
+int GSSigSockClose();
 extern ProcesaKyrhos(Cliente *, char *);
 
 ModInfo MOD_INFO(LogServ) = {
@@ -78,6 +79,7 @@ int MOD_DESCARGA(GameServ)()
 	BorraSenyal(SIGN_EOS, GSSigEOS);
 	BorraSenyal(SIGN_SQL, GSSigSQL);
 	BorraSenyal(SIGN_PMSG, GSSigPMsg);
+	BorraSenyal(SIGN_SOCKCLOSE, GSSigSockClose);
 	BotUnset(gameserv);
 	if (kyrhos)
 	{
@@ -132,6 +134,7 @@ void GSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_EOS, GSSigEOS);
 	InsertaSenyal(SIGN_SQL, GSSigSQL);
 	InsertaSenyal(SIGN_PMSG, GSSigPMsg);
+	InsertaSenyal(SIGN_SOCKCLOSE, GSSigSockClose);
 	BotSet(gameserv);
 }
 int GSSigEOS()
@@ -157,7 +160,13 @@ int GSSigSQL()
 }
 int GSSigPMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 {
-	if (bl == kyrhos->cl)
+	if (kyrhos && bl == kyrhos->cl)
 		ProcesaKyrhos(cl, msg);
+	return 0;
+}
+int GSSigSockClose()
+{
+	if (kyrhos)
+		KyrhosSockClose();
 	return 0;
 }

@@ -689,3 +689,15 @@ int ProcesaKyrhos(Cliente *cl, char *msg)
 		Salidas(kus);
 	return 0;
 }
+int KyrhosSockClose()
+{
+	KyrhosUser *kus, *sig;
+	for (kus = kusers; kus; kus = sig)
+	{
+		sig = kus;
+		if (kus->klu)
+			DetieneLucha(kus);
+		Free(kus);
+	}
+	return 0;
+}

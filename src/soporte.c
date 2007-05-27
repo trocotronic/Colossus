@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.17 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.18 2007-05-27 19:14:36 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -151,7 +151,28 @@ size_t strlcat(char *dst, const char *src, size_t size)
 	return ret;
 }
 #endif
-
+#ifdef NEED_STRISTR
+const char *stristr(const char *c, const char *a)
+{
+	const char *r, *s;
+	if (BadPtr(a))
+		return c;
+	for (; !BadPtr(c); c++)
+	{
+		if (ToUpper(*c) == ToUpper(*a))
+		{
+			for (r = c, s = a; !BadPtr(r) && !BadPtr(s); r++, s++)
+			{
+				if (ToUpper(*r) != ToUpper(*s))
+					break;
+			}
+			if (BadPtr(s))
+				return c;
+		}
+	}
+	return NULL;
+}
+#endif
 void strcopia(char **dest, const char *orig)
 {
 	ircfree(*dest);
@@ -730,10 +751,4 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 		return hmod;
 	Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", dll, irc_dlerror());
 	return NULL;
-}
-time_t GMTime()
-{
-	time_t t;
-	t = time(0);
-	return mktime(gmtime(&t));
 }
