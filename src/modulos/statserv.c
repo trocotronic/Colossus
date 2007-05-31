@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.22 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.23 2007-05-31 23:28:00 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -312,6 +312,7 @@ int SSTest(Conf *, int *);
 int SSRefrescaCl(Cliente *);
 int SSSigSQL();
 int SSSigEOS();
+int SSSigSockClose();
 HDIRFUNC(LeeHDir);
 int SSCmdPostNick(Cliente *, int);
 int SSCmdQuit(Cliente *, char *);
@@ -393,6 +394,7 @@ int MOD_DESCARGA(StatServ)()
 	BorraSenyal(SIGN_SQUIT, SSCmdSquit);
 	BorraSenyal(SIGN_RAW, SSCmdRaw);
 	BorraSenyal(SIGN_EOS, SSSigEOS);
+	BorraSenyal(SIGN_SOCKCLOSE, SSSigSockClose);
 	BorraComando(MSG_RPONG, SSReplyPing);
 	DetieneProceso(SSTemplates);
 	BotUnset(statserv);
@@ -471,6 +473,7 @@ void SSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SQUIT, SSCmdSquit);
 	InsertaSenyal(SIGN_RAW, SSCmdRaw);
 	InsertaSenyal(SIGN_EOS, SSSigEOS);
+	InsertaSenyal(SIGN_SOCKCLOSE, SSSigSockClose);
 	InsertaComando(MSG_RPONG, TOK_RPONG, SSReplyPing, INI, MAXPARA);
 	IniciaProceso(SSTemplates);
 	BotSet(statserv);
@@ -1010,6 +1013,53 @@ int SSSigSQL()
 	}
 	SQLCargaTablas();
 	return 1;
+}
+int SSSigSockClose()
+{
+	StsServ *stsserv, *ssig;
+	StsChar *sts, *stsig;
+	ListCl *lc, *lcsig;
+	for (stsserv = stats.stsserv; stsserv; stsserv = ssig)
+	{
+		ssig = stsserv->sig;
+		ApagaCrono(stsserv->crono);
+		Free(stsserv->version);
+		Free(stsserv);
+	}
+	for (sts = stats.stsver; sts; sts = stsig)
+	{
+		stsig = sts->sig;
+		Free(sts->item);
+		if (sts->valor)
+			Free(sts->valor);
+		Free(sts);
+	}
+	for (sts = stats.ststld; sts; sts = stsig)
+	{
+		stsig = sts->sig;
+		Free(sts->item);
+		if (sts->valor)
+			Free(sts->valor);
+		Free(sts);
+	}
+	for (lc = stats.stsopers; lc; lc = lcsig)
+	{
+		lcsig = lc->sig;
+		Free(lc);
+	}
+	for (lc = cltld; lc; lc = lcsig)
+	{
+		lcsig = lc->sig;
+		Free(lc);
+	}
+	for (lc = clver; lc; lc = lcsig)
+	{
+		lcsig = lc->sig;
+		Free(lc);
+	}
+	bzero(&stats, sizeof(stats));
+	cltld = clver = NULL;
+	return 0;
 }
 void ParseaTemplate(char *f)
 {
