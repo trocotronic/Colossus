@@ -28,6 +28,7 @@ EXPORTS
 	BuscaModoProtocolo
 	BuscaModulo
 	BuscaNivel
+	BuscaNivelNum
 	BuscaOpt
 	BuscaOptItem
 	BuscaOptNiv
@@ -97,6 +98,7 @@ EXPORTS
 	MDString
 	MascaraIrcd
 	MascaraTKL
+	MideDuracion
 	ModoAFlag
 	ModosAFlags
 	ModuloEsResidente
@@ -194,6 +196,7 @@ EXPORTS
 	protocolo
 	refrescando
 	senyals
+	servidores
 	spath
 	sql
 	str_replace

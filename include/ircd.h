@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.34 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.35 2007-05-31 23:06:36 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -291,6 +291,8 @@ extern char *TipoMascara(char *, int);
 #define SIGN_PMSG 17
 #define SIGN_SERVER 18
 #define SIGN_SOCKCLOSE 19
+#define SIGN_SQUIT 20
+#define SIGN_RAW 21
 
 /*!
  * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.
@@ -326,6 +328,7 @@ extern char backupbuf[BUFSIZE];
 extern Cliente *CreaBot(char *, char *, char *, char *, char *);
 extern MODVAR Cliente *clientes;
 extern MODVAR Canal *canales;
+extern MODVAR LinkCliente *servidores;
 extern MODVAR Sock *SockIrcd;
 extern MODVAR Sock *IrcdEscucha;
 extern SOCKFUNC(EscuchaAbre);

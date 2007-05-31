@@ -1,7 +1,13 @@
 /*
- * $Id: statserv.c,v 1.21 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.22 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
+#ifdef _WIN32
+#include <sys/timeb.h>
+#else
+#include <time.h>
+#include <sys/time.h>
+#endif
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -13,10 +19,19 @@ StatServ *statserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, statserv->hmod, NULL)
 HDir *hdtest = NULL;
 ListCl *cltld = NULL, *clver = NULL;
+char *fecha_fmt = "%a, %d %b %Y %H:%M:%S GMT";
+char *hora_fmt = "%H:%M:%S GMT";
+char *sem_fmt = "%a, %H:%M:%S GMT";
+char *diasem_fmt = "%a %d, %H:%M:%S GMT";
 BOTFUNC(SSReplyVer);
+BOTFUNC(SSHelp);
+BOTFUNC(SSStats);
+BOTFUNCHELP(SSHStats);
 
 static bCom statserv_coms[] = {
 	{ "\1VERSION" , SSReplyVer , N0 , "Respuesta reply" , NULL } ,
+	{ "HELP" , SSHelp , N0 , "Muestra la ayuda" , NULL } ,
+	{ "STATS" , SSStats , N0 , "Muestra las estadísticas globales de la red" , SSHStats } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 char *vers[] = {
@@ -288,11 +303,15 @@ char *tlds[] = {
 	"vhost", "Nonexistant/virtual host",
 	NULL
 };
+char *templates[MAX_TEMPLATES];
 
+#define MSG_RPONG "RPONG"
+#define TOK_RPONG "AN"
 void SSSet(Conf *, Modulo *);
 int SSTest(Conf *, int *);
-int SSLaguea(Cliente *);
+int SSRefrescaCl(Cliente *);
 int SSSigSQL();
+int SSSigEOS();
 HDIRFUNC(LeeHDir);
 int SSCmdPostNick(Cliente *, int);
 int SSCmdQuit(Cliente *, char *);
@@ -300,6 +319,13 @@ int SSCmdUmode(Cliente *, char *);
 int SSCmdJoin(Cliente *, Canal *);
 int SSCmdDestroyChan(Canal *);
 int SSCmdServer(Cliente *, int);
+int SSCmdSquit(Cliente *);
+int SSCmdRaw(Cliente *, char **, int, int);
+IRCFUNC(SSReplyPing);
+int SSRefresca(int);
+StsChar *InsertaSts(char *, char *, StsChar **);
+StsChar *BuscaSts(char *, StsChar *);
+int SSTemplates(Proc *);
 
 ModInfo MOD_INFO(StatServ) = {
 	"StatServ" ,
@@ -344,13 +370,17 @@ int MOD_CARGA(StatServ)(Modulo *mod)
 		SSSet(NULL, mod);
 	if (conf_httpd)
 	{
-		if (!(hdtest = CreaHDir("/html", LeeHDir)))
+		ircsprintf(buf, "/%s", MOD_INFO(StatServ).nombre);
+		if (!(hdtest = CreaHDir(buf, LeeHDir)))
 			errores++;
 	}
 	return errores;
 }
 int MOD_DESCARGA(StatServ)()
 {
+	StsServ *sts;
+	for (sts = stats.stsserv; sts; sts = sts->sig)
+		ApagaCrono(sts->crono);
 	if (conf_httpd)
 		BorraHDir(hdtest);
 	BorraSenyal(SIGN_SQL, SSSigSQL);
@@ -360,6 +390,11 @@ int MOD_DESCARGA(StatServ)()
 	BorraSenyal(SIGN_JOIN, SSCmdJoin);
 	BorraSenyal(SIGN_CDESTROY, SSCmdDestroyChan);
 	BorraSenyal(SIGN_SERVER, SSCmdServer);
+	BorraSenyal(SIGN_SQUIT, SSCmdSquit);
+	BorraSenyal(SIGN_RAW, SSCmdRaw);
+	BorraSenyal(SIGN_EOS, SSSigEOS);
+	BorraComando(MSG_RPONG, SSReplyPing);
+	DetieneProceso(SSTemplates);
 	BotUnset(statserv);
 	return 0;
 }
@@ -369,16 +404,24 @@ int SSTest(Conf *config, int *errores)
 	Conf *eval;
 	if ((eval = BuscaEntrada(config, "funcion")))
 		error_parcial += TestComMod(eval, statserv_coms, 1);
-	if (!(eval = BuscaEntrada(config, "canal_soporte")))
+	if (!(eval = BuscaEntrada(config, "refresco")))
 	{
-		Error("[%s:%s] No se encuentra la directriz canal_soporte.", config->archivo, config->item);
+		Error("[%s:%s] No se encuentra la directriz refresco.]\n", config->archivo, config->item);
 		error_parcial++;
 	}
 	else
 	{
-		if (BadPtr(eval->data))
+		if (atoi(eval->data) < 60)
 		{
-			Error("[%s:%s::%s::%i] La directriz canal_soporte esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			Error("[%s:%s::%i] La directriz refresco debe ser superior a 60 segundos.]\n", config->archivo, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if ((eval = BuscaEntrada(config, "template")))
+	{
+		if (!EsArchivo(eval->data))
+		{
+			Error("[%s:%s::%s::%i] No se encuentra el template %s.]\n", config->archivo, eval->item, eval->item, eval->linea, eval->data);
 			error_parcial++;
 		}
 	}
@@ -387,7 +430,7 @@ int SSTest(Conf *config, int *errores)
 }
 void SSSet(Conf *config, Modulo *mod)
 {
-	int i, p;
+	int i, p, j = 0;
 	if (!statserv)
 	{
 		statserv = BMalloc(StatServ);
@@ -409,10 +452,15 @@ void SSSet(Conf *config, Modulo *mod)
 						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
 				}
 			}
+			else if (!strcmp(config->seccion[i]->item, "refresco"))
+				statserv->refresco = atoi(config->seccion[i]->data);
+			else if (j < MAX_TEMPLATES && !strcmp(config->seccion[i]->item, "template"))
+				ircstrdup(templates[j++], config->seccion[i]->data);
 		}
 	}
 	else
 		ProcesaComsMod(NULL, mod, statserv_coms);
+	templates[j] = NULL;
 	InsertaSenyal(SIGN_SQL, SSSigSQL);
 	InsertaSenyal(SIGN_POST_NICK, SSCmdPostNick);
 	InsertaSenyal(SIGN_QUIT, SSCmdQuit);
@@ -420,11 +468,26 @@ void SSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_JOIN, SSCmdJoin);
 	InsertaSenyal(SIGN_CDESTROY, SSCmdDestroyChan);
 	InsertaSenyal(SIGN_SERVER, SSCmdServer);
+	InsertaSenyal(SIGN_SQUIT, SSCmdSquit);
+	InsertaSenyal(SIGN_RAW, SSCmdRaw);
+	InsertaSenyal(SIGN_EOS, SSSigEOS);
+	InsertaComando(MSG_RPONG, TOK_RPONG, SSReplyPing, INI, MAXPARA);
+	IniciaProceso(SSTemplates);
 	BotSet(statserv);
 }
 HDIRFUNC(LeeHDir)
 {
-	return -1;
+	char *c;
+	int i;
+	for (i = 0; templates[i]; i++)
+	{
+		if ((c = strchr(templates[i], '/')) && !strcasecmp(hh->archivo, c+1))
+		{
+			*errmsg = "Acceso denegado";
+			return 403;
+		}
+	}
+	return 200;
 }
 char *BuscaTld(char *tld)
 {
@@ -501,53 +564,220 @@ int BorraCl(Cliente *cl, ListCl **l)
 	}
 	return 0;
 }
-		
-#define CogeSInt(x, y) do { ircsprintf(max, "%s_%s", b, x); y = CogeInt(max); }while(0)
-#define ActualizaSInt(x, y) do { ircsprintf(max, "%s_%s", b, x); ActualizaInt(max, y); }while(0)
-void ActualizaStats(char *b)
+StsServ *BuscaServ(Cliente *cl)
 {
-	u_int u, umax;
-	time_t t = GMTime(), tcur;
-	struct tm *l = localtime(&t), *lcur;
-	char max[16];
-	if (*b == 'u')
-		u = ++stats.users;
-	else if (*b == 'c')
-		u = ++stats.chans;
-	else if (*b == 's')
-		u = ++stats.servs;
-	else if (*b == 'o')
-		u = ++stats.opers;
-	CogeSInt("max", umax);
-	if (umax < u)
+	StsServ *sts;
+	for (sts = stats.stsserv; sts; sts = sts->sig)
 	{
-		ActualizaSInt("max", u);
-		ActualizaSInt("curmax", t);
+		if (sts->cl == cl)
+			return sts;
 	}
-	CogeSInt("hoy", umax);
-	CogeSInt("curhoy", tcur);
-	lcur = localtime(&tcur);
-	if (umax < u || !(GetYear(lcur) == GetYear(l) && GetMon(lcur) == GetMon(l) && GetDay(lcur) == GetDay(l)))
+	return NULL;
+}
+int SSCmdPostNick(Cliente *cl, int nuevo)
+{
+	if (!nuevo)
 	{
-		ActualizaSInt("hoy", u);
-		ActualizaSInt("curhoy", t);
+		char *c;
+		if ((c = strrchr(cl->host, '.')))
+		{
+			ListCl *lcl;
+			StsChar *sts;
+			StsServ *stsserv;
+			c++;
+			sts = InsertaSts(c, BuscaTld(c), &(stats.ststld));
+			sts->users++;
+			lcl = InsertaCl(cl, sts, &cltld);
+			if (IsOper(cl) && !BuscaCl(cl, stats.stsopers))
+			{
+				InsertaCl(cl, NULL, &(stats.stsopers));
+				SSRefresca(OPERS);
+			}
+			if ((stsserv = BuscaServ(cl->server)) && (++stsserv->users > stsserv->max_users))
+				stsserv->max_users = stsserv->users;
+		}
+		SSRefresca(USERS);
+		ProtFunc(P_MSG_VL)(cl, CLI(statserv), 1, "\1VERSION\1", NULL);
 	}
-	CogeSInt("sem", umax);
-	CogeSInt("cursem", tcur);
-	lcur = localtime(&tcur);
-	if (umax < u || !(GetYear(lcur) == GetYear(l) && GetMon(lcur) == GetMon(l) && GetWeek(lcur) == GetWeek(l)))
+	return 0;
+}
+int SSCmdQuit(Cliente *cl, char *motivo)
+{
+	ListCl *stcl, *prev = NULL;
+	StsServ *sts;
+	stats.users--;
+	BorraCl(cl, &cltld);
+	BorraCl(cl, &clver);
+	if (IsOper(cl) && BorraCl(cl, &(stats.stsopers)))
+		stats.opers--;
+	if ((sts = BuscaServ(cl->server)))
+		sts->users--;
+	return 0;
+}
+int SSCmdUmode(Cliente *cl, char *umodes)
+{
+	if (strchr(umodes, 'o'))
 	{
-		ActualizaSInt("sem", u);
-		ActualizaSInt("cursem", t);
+		if (IsOper(cl))
+		{
+			if (!BuscaCl(cl, stats.stsopers))
+			{
+				InsertaCl(cl, NULL, &(stats.stsopers));
+				SSRefresca(OPERS);
+			}
+		}
+		else if (BorraCl(cl, &(stats.stsopers)))
+			stats.opers--;
 	}
-	CogeSInt("mes", umax);
-	CogeSInt("curmes", tcur);
-	lcur = localtime(&tcur);
-	if (umax < u || !(GetYear(lcur) == GetYear(l) && GetMon(lcur) == GetMon(l)))
+	return 0;
+}
+int SSCmdJoin(Cliente *cl, Canal *cn)
+{
+	if (!cl || cn->miembros == 1)
+		SSRefresca(CHANS);
+	return 0;
+}
+int SSCmdDestroyChan(Canal *cn)
+{
+	stats.chans--;
+	return 0;
+}
+int SSCmdServer(Cliente *cl, int primero)
+{
+	StsServ *sts = BMalloc(StsServ);
+	char *n = CLI(statserv)->nombre;
+	sts->cl = cl;
+	AddItem(sts, stats.stsserv);
+	EnviaAServidor(":%s VERSION :%s", n, cl->nombre);
+	EnviaAServidor(":%s LUSERS :%s", n, cl->nombre);
+	EnviaAServidor(":%s STATS u %s", n, cl->nombre);
+	SSRefrescaCl(cl);
+	sts->crono = IniciaCrono(0, statserv->refresco, SSRefrescaCl, cl);
+	SSRefresca(SERVS);
+	return 0;
+}
+int SSRefrescaCl(Cliente *cl)
+{
+#ifdef _WIN32
+	struct _timeb tv;
+	_ftime(&tv);
+	EnviaAServidor(":%s RPING %s %s %lu %lu :%lu", me.nombre, cl->nombre, CLI(statserv)->nombre, tv.time, tv.millitm, clock());
+#else
+	struct timeval tv;
+	gettimeofday(&tv, NULL);
+	EnviaAServidor(":%s RPING %s %s %lu %lu :%lu", me.nombre, cl->nombre, CLI(statserv)->nombre, tv.tv_sec, tv.tv_usec, clock());
+#endif
+	return 0;
+}
+int SSCmdSquit(Cliente *cl)
+{
+	StsServ *sts;
+	if ((sts = BuscaServ(cl)))
 	{
-		ActualizaSInt("mes", u);
-		ActualizaSInt("curmes", t);
+		stats.servs--;
+		Free(sts->version);
+		ApagaCrono(sts->crono);
+		LiberaItem(sts, stats.stsserv);
 	}
+	return 0;
+}
+int SSCmdRaw(Cliente *cl, char *parv[], int parc, int raw)
+{
+	switch (raw)
+	{
+		case 242:
+		{
+			StsServ *sts;
+			int d = 0, h = 0, m = 0, s = 0;
+			if ((sts = BuscaServ(cl)) && sscanf(parv[2], "%*s %*s %i %*s %i:%i:%i", &d, &h, &m, &s))
+				sts->uptime = GMTime() - (d*86400+h*3600+m*60+s);
+			break;
+		}
+		case 265:
+		{
+			StsServ *sts;
+			char *c;
+			int max;
+			if ((sts = BuscaServ(cl)) && (c = strrchr(parv[2], ' ')) && (max = atoi(c+1)) > sts->max_users)
+				sts->max_users = max;
+			break;
+		}
+		case 351:
+		{
+			StsServ *sts;
+			if ((sts = BuscaServ(cl)))
+				ircstrdup(sts->version, parv[2]);
+			break;
+		}
+	}
+	return 0;
+}
+int SSRefresca(int val)
+{
+	SQLRes res;
+	SQLRow row;
+	time_t t = GMTime();
+	struct tm *l = localtime(&t);
+	ircsprintf(buf, "%02u-%02u-%02u", l->tm_year+1900, l->tm_mon+1, l->tm_mday);
+	if (!(val & NO_INC))
+	{
+		if (val & USERS)
+			stats.users++;
+		if (val & CHANS)
+			stats.chans++;
+		if (val & SERVS)
+			stats.servs++;
+		if (val & OPERS)
+			stats.opers++;
+	}
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE dia='%s'", PREFIJO, SS_SQL, buf)))
+	{
+		int ok = 0;
+		row = SQLFetchRow(res);
+		if ((val & USERS) && stats.users > atoi(row[1]))
+		{
+			ircsprintf(row[1], "%u", stats.users);
+			ircsprintf(row[2], "%lu", t);
+			ok = 1;
+		}
+		if ((val & CHANS) && stats.chans > atoi(row[3]))
+		{
+			ircsprintf(row[3], "%u", stats.chans);
+			ircsprintf(row[4], "%lu", t);
+			ok = 1;
+		}
+		if ((val & SERVS) && stats.servs > atoi(row[5]))
+		{
+			ircsprintf(row[5], "%u", stats.servs);
+			ircsprintf(row[6], "%lu", t);
+			ok = 1;
+		}
+		if ((val & OPERS) && stats.opers > atoi(row[7]))
+		{
+			ircsprintf(row[7], "%u", stats.opers);
+			ircsprintf(row[8], "%lu", t);
+			ok = 1;
+		}
+		if (ok)
+			SQLQuery("UPDATE %s%s SET users=%s, users_time=%s, canales=%s, canales_time=%s, servers=%s, servers_time=%s, opers=%s, opers_time=%s WHERE dia='%s'",
+				PREFIJO, SS_SQL, row[1], row[2], row[3], row[4],
+				row[5], row[6], row[7], row[8], row[0]);
+	}
+	else
+	{
+		SQLQuery("INSERT INTO %s%s (dia, users, users_time, canales, canales_time, servers, servers_time, opers, opers_time) VALUES "
+			"('%s', %u, %lu, %u, %lu, %u, %lu, %u, %lu)",
+			PREFIJO, SS_SQL, buf, 
+			stats.users, t, stats.chans, t, stats.servs, t, stats.opers, t);
+	}
+	return 0;
+}
+IRCFUNC(SSReplyPing)
+{
+	StsServ *sts;
+	if ((sts = BuscaServ(cl)))
+		sts->lag = (clock() - atoi(parv[5]))*1000/CLOCKS_PER_SEC;
+	return 0;
 }
 BOTFUNC(SSReplyVer)
 {
@@ -566,84 +796,197 @@ BOTFUNC(SSReplyVer)
 	}
 	return 0;
 }
-int SSCmdPostNick(Cliente *cl, int nuevo)
+BOTFUNC(SSHelp)
 {
-	if (!nuevo)
+	return 0;
+}
+BOTFUNC(SSStats)
+{
+	if (params < 2)
 	{
-		char *c;
-		if ((c = strrchr(cl->host, '.')))
+		char timebuf[128];
+		time_t ut, ct, st, ot;
+		u_int u, c, s, o;
+		SQLRes res;
+		SQLRow row;
+		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE DATE(CURDATE())=DATE(dia)", PREFIJO, SS_SQL)))
+			SSRefresca(USERS|CHANS|SERVS|OPERS|NO_INC);
+		else
+			SQLFreeRes(res);
+		Responde(cl, CLI(statserv), "Estadísticas totales:");
+		res = SQLQuery("SELECT MAX(users), users_time FROM %s%s GROUP BY users ORDER BY users DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		u = atoi(row[0]);
+		ut = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), fecha_fmt, localtime(&ut));
+		Responde(cl, CLI(statserv), "Usuarios en la red: \00312%u\003 - Máximo: \00312%u\003 - Fecha: \00312%s", stats.users, u, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(canales), canales_time FROM %s%s GROUP BY canales ORDER BY canales DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		c = atoi(row[0]);
+		ct = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), fecha_fmt, localtime(&ct));
+		Responde(cl, CLI(statserv), "Canales en la red: \00312%u\003 - Máximo: \00312%u\003 - Fecha: \00312%s", stats.chans, c, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(servers), servers_time FROM %s%s GROUP BY servers ORDER BY servers DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		s = atoi(row[0]);
+		st = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), fecha_fmt, localtime(&st));
+		Responde(cl, CLI(statserv), "Servidores en la red: \00312%u\003 - Máximo: \00312%u\003 - Fecha: \00312%s", stats.servs, s, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(opers), opers_time FROM %s%s GROUP BY opers ORDER BY opers DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		o = atoi(row[0]);
+		ot = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), fecha_fmt, localtime(&ot));
+		Responde(cl, CLI(statserv), "Operadores en la red: \00312%u\003 - Máximo: \00312%u\003 - Fecha: \00312%s", stats.opers, o, timebuf);
+		SQLFreeRes(res);
+		Responde(cl, CLI(statserv), " ");
+		Responde(cl, CLI(statserv), "Estadísticas diarias:");
+		res = SQLQuery("SELECT * FROM %s%s WHERE DATE(CURDATE())=DATE(dia)", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		ut = atoi(row[2]);
+		strftime(timebuf, sizeof(timebuf), hora_fmt, localtime(&ut));
+		Responde(cl, CLI(statserv), "Máximo usuarios: \00312%s\003 - Hora: \00312%s", row[1], timebuf);
+		ct = atoi(row[4]);
+		strftime(timebuf, sizeof(timebuf), hora_fmt, localtime(&ct));
+		Responde(cl, CLI(statserv), "Máximo canales: \00312%s\003 - Hora: \00312%s", row[3], timebuf);
+		st = atoi(row[6]);
+		strftime(timebuf, sizeof(timebuf), hora_fmt, localtime(&st));
+		Responde(cl, CLI(statserv), "Máximo servidores: \00312%s\003 - Hora: \00312%s", row[5], timebuf);
+		ot = atoi(row[8]);
+		strftime(timebuf, sizeof(timebuf), hora_fmt, localtime(&ot));
+		Responde(cl, CLI(statserv), "Máximo operadores: \00312%s\003 - Hora: \00312%s", row[7], timebuf);
+		SQLFreeRes(res);
+		Responde(cl, CLI(statserv), " ");
+		Responde(cl, CLI(statserv), "Estadísticas semanales:");
+		res = SQLQuery("SELECT MAX(users), users_time FROM %s%s WHERE WEEK(CURDATE())=WEEK(dia) GROUP BY users ORDER BY users DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		u = atoi(row[0]);
+		ut = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), sem_fmt, localtime(&ut));
+		Responde(cl, CLI(statserv), "Máximo usuarios: \00312%u\003 - Día y hora: \00312%s", u, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(canales), canales_time FROM %s%s WHERE WEEK(CURDATE())=WEEK(dia) GROUP BY canales ORDER BY canales DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		c = atoi(row[0]);
+		ct = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), sem_fmt, localtime(&ct));
+		Responde(cl, CLI(statserv), "Máximo canales: \00312%u\003 - Día y hora: \00312%s", c, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(servers), servers_time FROM %s%s WHERE WEEK(CURDATE())=WEEK(dia) GROUP BY servers ORDER BY servers DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		s = atoi(row[0]);
+		st = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), sem_fmt, localtime(&st));
+		Responde(cl, CLI(statserv), "Máximo servidores: \00312%u\003 - Día y hora: \00312%s", s, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(opers), opers_time FROM %s%s WHERE WEEK(CURDATE())=WEEK(dia) GROUP BY opers ORDER BY opers DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		o = atoi(row[0]);
+		ot = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), sem_fmt, localtime(&ot));
+		Responde(cl, CLI(statserv), "Máximo operadores: \00312%u\003 - Día y hora: \00312%s", o, timebuf);
+		SQLFreeRes(res);
+		Responde(cl, CLI(statserv), " ");
+		Responde(cl, CLI(statserv), "Estadísticas mensuales:");
+		res = SQLQuery("SELECT MAX(users), users_time FROM %s%s WHERE MONTH(CURDATE())=MONTH(dia) GROUP BY users ORDER BY users DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		u = atoi(row[0]);
+		ut = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), diasem_fmt, localtime(&ut));
+		Responde(cl, CLI(statserv), "Máximo usuarios: \00312%u\003 - Día y hora: \00312%s", u, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(canales), canales_time FROM %s%s WHERE MONTH(CURDATE())=MONTH(dia) GROUP BY canales ORDER BY canales DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		c = atoi(row[0]);
+		ct = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), diasem_fmt, localtime(&ct));
+		Responde(cl, CLI(statserv), "Máximo canales: \00312%u\003 - Día y hora: \00312%s", c, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(servers), servers_time FROM %s%s WHERE MONTH(CURDATE())=MONTH(dia) GROUP BY servers ORDER BY servers DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		s = atoi(row[0]);
+		st = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), diasem_fmt, localtime(&st));
+		Responde(cl, CLI(statserv), "Máximo servidores: \00312%u\003 - Día y hora: \00312%s", s, timebuf);
+		SQLFreeRes(res);
+		res = SQLQuery("SELECT MAX(opers), opers_time FROM %s%s WHERE MONTH(CURDATE())=MONTH(dia) GROUP BY opers ORDER BY opers DESC", PREFIJO, SS_SQL);
+		row = SQLFetchRow(res);
+		o = atoi(row[0]);
+		ot = atoi(row[1]);
+		strftime(timebuf, sizeof(timebuf), diasem_fmt, localtime(&ot));
+		Responde(cl, CLI(statserv), "Máximo operadores: \00312%u\003 - Día y hora: \00312%s", o, timebuf);
+		SQLFreeRes(res);
+	}
+	else if (!strcasecmp(param[1], "SERVERS") || !strcasecmp(param[1], "SERVIDORES"))
+	{
+		StsServ *sts;
+		char timebuf[128];
+		time_t t;
+		Duracion d;
+		for (sts = stats.stsserv; sts; sts = sts->sig)
 		{
-			ListCl *lcl;
-			StsChar *sts;
-			c++;
-			sts = InsertaSts(c, BuscaTld(c), &(stats.ststld));
-			sts->users++;
-			lcl = InsertaCl(cl, sts, &cltld);
-			if (IsOper(cl))
-			{
-				InsertaCl(cl, NULL, &(stats.stsopers));
-				ActualizaStats("opers");
-			}	
+			Responde(cl, CLI(statserv), "Servidor: \00312%s", sts->cl->nombre);
+			Responde(cl, CLI(statserv), "Información: \00312%s", sts->cl->info);
+			Responde(cl, CLI(statserv), "Usuarios: \00312%u\003 - Máximo: \00312%u", sts->users, sts->max_users);
+			Responde(cl, CLI(statserv), "Lag: %\00312%.3f segs", (double)sts->lag/1000);
+			Responde(cl, CLI(statserv), "Versión del servidor: \00312%s", sts->version);
+			t = GMTime() - sts->uptime;
+			MideDuracion(t, &d);
+			Responde(cl, CLI(statserv), "Uptime: \00312%u días, %02u:%02u:%02u", d.sems*7+d.dias, d.horas, d.mins, d.segs);
+			Responde(cl, CLI(statserv), " ");
 		}
-		ActualizaStats("users");
-		ProtFunc(P_MSG_VL)(cl, CLI(statserv), 1, "\1VERSION\1", NULL);
 	}
-	return 0;
-}
-int SSCmdQuit(Cliente *cl, char *motivo)
-{
-	ListCl *stcl, *prev = NULL;
-	stats.users--;
-	BorraCl(cl, &cltld);
-	BorraCl(cl, &clver);
-	if (IsOper(cl) && BorraCl(cl, &(stats.stsopers)))
-		stats.opers--;
-	return 0;
-}
-int SSCmdUmode(Cliente *cl, char *umodes)
-{
-	if (strchr(umodes, 'o'))
+	else if (!strcasecmp(param[1], "OPERS") || !strcasecmp(param[1], "OPERADORES"))
 	{
-		if (IsOper(cl))
+		ListCl *lc;
+		for (lc = stats.stsopers; lc; lc = lc->sig)
 		{
-			InsertaCl(cl, NULL, &(stats.stsopers));
-			ActualizaStats("opers");
+			Responde(cl, CLI(statserv), "Operador: \00312%s", lc->cl->nombre);
+			if (lc->cl->away)
+				Responde(cl, CLI(statserv), "Está ausente: \00312%s", lc->cl->away);
+			Responde(cl, CLI(statserv), " ");
 		}
-		else if (BorraCl(cl, &(stats.stsopers)))
-			stats.opers--;
 	}
-	return 0;
-}
-int SSCmdJoin(Cliente *cl, Canal *cn)
-{
-	if (cn->miembros == 1)
-		stats.chans++;
-	return 0;
-}
-int SSCmdDestroyChan(Canal *cn)
-{
-	stats.chans--;
-	return 0;
-}
-int SSCmdServer(Cliente *cl, int primero)
-{
-	StsServ *sts = BMalloc(StsServ);
-	char *n = CLI(statserv)->nombre;
-	sts->cl = cl;
-	EnviaAServidor(":%s VERSION :%s", n, cl->nombre);
-	EnviaAServidor(":%s LUSERS :%s", n, cl->nombre);
-	EnviaAServidor(":%s STATS u %s", n, cl->nombre);
-	if (ProtFunc(P_LAG))
+	else if (!strcasecmp(param[1], "VERS") || !strcasecmp(param[1], "VERSIONES"))
 	{
-		ProtFunc(P_LAG)(cl, CLI(statserv));
-		sts->crono = IniciaCrono(0, statserv->laguea, SSLaguea, cl);
+		StsChar *sts;
+		for (sts = stats.stsver; sts; sts = sts->sig)
+			Responde(cl, CLI(statserv), "\00312%s\003 - Usuarios: \00312%u", sts->item, sts->users);
 	}
-	ActualizaStats("servers");
+	else if (!strcasecmp(param[1], "TLDS"))
+	{
+		StsChar *sts;
+		for (sts = stats.ststld; sts; sts = sts->sig)
+			Responde(cl, CLI(statserv), "Dominio: \00312.%s\003 - Lugar: \00312%s\003 Usuarios: \00312%u", sts->item, sts->valor, sts->users);
+	}
+	else
+		Responde(cl, CLI(statserv), SS_ERR_EMPT, "Opción incorrecta");	
 	return 0;
 }
-int SSLaguea(Cliente *cl)
+BOTFUNCHELP(SSHStats)
 {
-	ProtFunc(P_LAG)(cl, CLI(statserv));
+	return 0;
+}
+int SSSigEOS()
+{
+	if (refrescando)
+	{
+		Cliente *cl;
+		Canal *cn;
+		LinkCliente *lk;
+		for (lk = servidores; lk; lk = lk->sig)
+			SSCmdServer(lk->user, 0);
+		for (cn = canales; cn; cn = cn->sig)
+			SSCmdJoin(NULL, cn);
+		for (cl = clientes; cl; cl = cl->sig)
+		{
+			if (EsCliente(cl))
+				SSCmdPostNick(cl, 0);
+		}
+	}
 	return 0;
 }
 int SSSigSQL()
@@ -651,48 +994,214 @@ int SSSigSQL()
 	if (!SQLEsTabla(SS_SQL))
 	{
 		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-			"item varchar(255) default NULL, "
-  			"valor varchar(255) NOT NULL default '0', "
-			"KEY item (item) "
+			"dia date default NULL, "
+  			"users int, "
+  			"users_time int, "
+  			"canales int, "
+  			"canales_time int, "
+  			"servers int, "
+  			"servers_time int, "
+  			"opers int, "
+  			"opers_time int, "
+			"KEY dia (dia) "
 			");", PREFIJO, SS_SQL);
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
-		else
-		{
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_max");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_hoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_sem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_mes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_curmax");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_curhoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_cursem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "users_curmes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_max");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_hoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_sem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_mes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_curmax");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_curhoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_cursem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "canales_curmes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_max");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_hoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_sem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_mes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_curmax");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_curhoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_cursem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "servers_curmes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_max");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_hoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_sem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_mes");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_curxmax");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_curoy");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_cursem");
-			SQLQuery("INSERT into %s%s (item) values ('%s')", PREFIJO, SS_SQL, "opers_curmes");
-		}
 	}
 	SQLCargaTablas();
 	return 1;
+}
+void ParseaTemplate(char *f)
+{
+	char *c, *d, *p = NULL, *s, *e, *g;
+	int fdout;
+	u_long len = 0;
+	SQLRes res;
+	SQLRow row;
+#ifdef _WIN32
+	HANDLE fdin, mp;
+#else
+	int fdin;
+	struct stat sb;
+#endif
+	strncpy(buf, f, sizeof(buf));
+	if ((c = strrchr(buf, '.')))
+		*c = '\0';
+#ifdef _WIN32					
+	if ((fdin = CreateFile(f, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
+#else
+	if ((fdin = open(f, O_RDONLY)) == -1)
+#endif
+		return;
+#ifdef _WIN32
+					
+	len = GetFileSize(fdin, NULL);
+	if (!(mp = CreateFileMapping(fdin, NULL, PAGE_READONLY|SEC_COMMIT, 0, len, NULL)))
+	{
+		CloseHandle(fdin);
+		return;
+	}
+	if (!(p = MapViewOfFile(mp, FILE_MAP_READ, 0, 0, 0)))
+	{
+		CloseHandle(mp);
+		CloseHandle(fdin);
+		return;
+	}
+	if ((fdout = open(buf, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1)
+	{
+		CloseHandle(mp);
+		CloseHandle(fdin);
+		return;
+	}
+#else	
+	if (fstat(fdin, &sb) == -1)
+	{
+		close(fd);
+		return;
+	}
+	if (sb.st_mtime <= hh->lmod)
+	{
+		close(fdin);
+		return;
+	}
+	len = sb.st_size;
+	if (!(p = mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0)))
+	{
+		close(fdin);
+		return;
+	}
+	if ((fdout = open(buf, O_WRONLY | O_CREAT, 0600)) == -1)
+	{
+		munmap(p, len);
+		close(fdin);
+		return;
+	}
+#endif
+	s = p;
+	while ((c = strchr(s, '@')))
+	{
+		write(fdout, s, c-s);
+		if (*(c-1) == '\\')
+		{
+			s = c+1;
+			continue;
+		}
+		c++;
+		if (!(d = strchr(c, '@')))
+			break;
+		if (!strncmp(c, "USERS_CUR", d-c))
+		{
+			ircsprintf(buf, "%u", stats.users);
+			write(fdout, buf, strlen(buf));
+		}
+		else if (!strncmp(c, "CHANS_CUR", d-c))
+		{
+			ircsprintf(buf, "%u", stats.chans);
+			write(fdout, buf, strlen(buf));
+		}
+		else if (!strncmp(c, "SERVS_CUR", d-c))
+		{
+			ircsprintf(buf, "%u", stats.servs);
+			write(fdout, buf, strlen(buf));
+		}
+		else if (!strncmp(c, "OPERS_CUR", d-c))
+		{
+			ircsprintf(buf, "%u", stats.opers);
+			write(fdout, buf, strlen(buf));
+		}
+		else if (!strncmp(c, "VERSIONS_INICIO", d-c))
+		{
+			StsChar *sts;
+			char *e, *f = 0;
+			c += d-c+1;
+			e = c;
+			for (sts = stats.stsver; sts; sts = sts->sig)
+			{
+				while ((f = strchr(e, '@')))
+				{
+					write(fdout, e, f-e);
+					if (*(f-1) == '\\')
+					{
+						e = f+1;
+						continue;
+					}
+					f++;
+					if (!(d = strchr(f, '@')))
+						break;
+					if (!strncmp(f, "VERSIONS_NOMBRE", d-f))
+						write(fdout, sts->item, strlen(sts->item));
+					else if (!strncmp(f, "VERSIONS_VALOR", d-f))
+					{
+						ircsprintf(buf, "%u", sts->users);
+						write(fdout, buf, strlen(buf));
+					}
+					else if (!strncmp(f, "VERSIONS_FIN", d-f))
+						break;
+					e = d+1;
+				}
+				e = c;
+			}
+		}
+		else if (!strncmp(c, "TLDS_INICIO", d-c))
+		{
+			StsChar *sts;
+			char *e, *f = 0;
+			c += d-c+1;
+			e = c;
+			for (sts = stats.ststld; sts; sts = sts->sig)
+			{
+				while ((f = strchr(e, '@')))
+				{
+					write(fdout, e, f-e);
+					if (*(f-1) == '\\')
+					{
+						e = f+1;
+						continue;
+					}
+					f++;
+					if (!(d = strchr(f, '@')))
+						break;
+					if (!strncmp(f, "TLDS_NOMBRE", d-f))
+						write(fdout, sts->item, strlen(sts->item));
+					else if (!strncmp(f, "TLDS_VALOR", d-f))
+					{
+						ircsprintf(buf, "%u", sts->users);
+						write(fdout, buf, strlen(buf));
+					}
+					else if (!strncmp(f, "TLDS_FIN", d-f))
+						break;
+					e = d+1;
+				}
+				e = c;
+			}
+		}
+		s = d+1;
+	}		
+	write(fdout, s, p+len-s);
+#ifdef _WIN32
+	UnmapViewOfFile(p);
+	CloseHandle(mp);
+	CloseHandle(fdin);
+#else
+	munmap(p, len);
+	close(fdin);
+#endif
+	close(fdout);
+}
+int SSTemplates(Proc *proc)
+{
+	char *c, *d, *e, *f;
+	time_t t = time(0);
+	if (proc->time + statserv->refresco < t)
+	{
+		if (!templates[proc->proc])
+		{
+			proc->proc = 0;
+			proc->time = t;
+			return 1;
+		}
+		ParseaTemplate(templates[proc->proc]);
+		proc->proc++;
+	}
+	return 0;
 }

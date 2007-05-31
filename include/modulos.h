@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.18 2007-01-18 13:54:59 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.19 2007-05-31 23:06:36 Trocotronic Exp $ 
  */
 
 #ifndef _modulos_
@@ -184,6 +184,7 @@ typedef struct _nivel
 extern u_int InsertaNivel(char *, char *);
 extern void DescargaNiveles();
 extern Nivel *BuscaNivel(char *);
+extern Nivel *BuscaNivelNum(int);
 extern int nivs;
 extern Nivel *niveles[MAX_NIVS];
 

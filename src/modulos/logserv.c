@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.7 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.8 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -119,7 +119,7 @@ int MOD_DESCARGA(LogServ)()
 	BorraSenyal(SIGN_JOIN, LSCmdJoin);
 	BorraSenyal(SIGN_CDESTROY, LSSigCDestroy);
 	BorraSenyal(SIGN_CMSG, LSCmdCMsg);
-	BorraSenyal(SIGN_EOS, MiraCaducados);
+	BorraSenyal(SIGN_EOS, LSSigEOS);
 	BorraSenyal(CS_SIGN_DROP, LSSigCDrop);
 	BorraSenyal(SIGN_SOCKCLOSE, LSSigSockClose);
 	ApagaCrono(timercaduca);
@@ -165,7 +165,6 @@ void LSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_JOIN, LSCmdJoin);
 	InsertaSenyal(SIGN_CDESTROY, LSSigCDestroy);
 	InsertaSenyal(SIGN_CMSG, LSCmdCMsg);
-	InsertaSenyal(SIGN_EOS, MiraCaducados);
 	InsertaSenyal(CS_SIGN_DROP, LSSigCDrop);
 	InsertaSenyal(SIGN_EOS, LSSigEOS);
 	InsertaSenyal(SIGN_SOCKCLOSE, LSSigSockClose);
@@ -547,12 +546,13 @@ int LSSigEOS()
 {
 	SQLRes res;
 	SQLRow row;
+	MiraCaducados();
 	if ((res = SQLQuery("SELECT * FROM %s%s", PREFIJO, LS_SQL)))
 	{
 		while ((row = SQLFetchRow(res)))
 			IniciaLogueo(BuscaCanal(row[0]));
+		SQLFreeRes(res);
 	}
-	SQLFreeRes(res);
 	if (!timeranuncia)
 		timeranuncia = IniciaCrono(0, 7200, AnunciaLogueo, NULL);
 	return 0;

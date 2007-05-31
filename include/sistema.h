@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.19 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.20 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -185,3 +185,24 @@ extern char *strtolower(char *);
 extern char *strtoupper(char *);
 extern size_t strlcpy(char *, const char *, size_t);
 extern size_t strlcat(char *, const char *, size_t);
+
+typedef struct _duracion Duracion;
+/*!
+ * @desc: Es un recurso de duración.
+ * @params: $sems Semanas.
+ 	    $dias Días.
+ 	    $horas Horas.
+ 	    $mins Minutos.
+ 	    $segs Segundos.
+ * @ver: MideDuracion
+ * @cat: Programa
+ !*/
+struct _duracion
+{
+	u_int sems;
+	u_int dias;
+	u_int horas;
+	u_int mins;
+	u_int segs;
+};
+extern int MideDuracion(u_int, Duracion *);

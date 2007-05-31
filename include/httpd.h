@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.h,v 1.3 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: httpd.h,v 1.4 2007-05-31 23:06:36 Trocotronic Exp $ 
  */
 
 #define HTTP_GET 1
@@ -7,7 +7,7 @@
 #define HTTP_HEAD 3
 #define HTTP_DESC 4
 
-#define MAX_CON 16
+#define MAX_CON 32
 
 typedef struct _hhead HHead;
 typedef struct _hdir HDir;

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.52 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.53 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -37,6 +37,7 @@ Cliente *linkado = NULL;
 int intentos = 0;
 Cliente *clientes = NULL;
 Canal *canales = NULL;
+LinkCliente *servidores = NULL;
 char **margv;
 Sock *SockIrcd = NULL, *IrcdEscucha = NULL;
 char reset = 0;
@@ -47,11 +48,12 @@ char modebuf[BUFSIZE], parabuf[BUFSIZE];
 Tkl *tklines[TKL_MAX];
 time_t tping;
 Timer *timerping = NULL, *timerircd = NULL;
+Comando *coms = NULL;
 
 Comando *BuscaComando(char *accion)
 {
 	Comando *aux;
-	for (aux = protocolo->coms; aux; aux = aux->sig)
+	for (aux = coms; aux; aux = aux->sig)
 	{
 		if (!strcmp(aux->cmd, accion) || !strcmp(aux->tok, accion))
 			return aux;
@@ -80,7 +82,7 @@ void InsertaComando(char *cmd, char *tok, IRCFUNC(*func), int cuando, int params
 	com->funcion[com->funciones++] = func;
 	com->params = params;
 	com->cuando = cuando;
-	AddItem(com, protocolo->coms);
+	AddItem(com, coms);
 }
 int BorraComando(char *cmd, IRCFUNC(*func))
 {
@@ -100,7 +102,7 @@ int BorraComando(char *cmd, IRCFUNC(*func))
 				com->funcion[i] = NULL;
 				if (!--com->funciones)
 				{
-					BorraItem(com, protocolo->coms);
+					BorraItem(com, coms);
 					Free(com->cmd);
 					Free(com->tok);
 					Free(com);

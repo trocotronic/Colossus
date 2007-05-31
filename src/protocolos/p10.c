@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.35 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.36 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -720,7 +720,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 {
 	char *p, *para[MAXPARA + 1], sender[HOSTLEN + 1], *s;
 	Comando *comd = NULL;
-	int i, j, params;
+	int i, j, params, raw;
 	Cliente *cl = NULL;
 	para[0] = (linkado ? linkado->nombre : NULL);
 	for (p = data; *p == ' '; p++);
@@ -794,7 +794,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 	if (s)
 		*s++ = '\0';
 	comd = BuscaComando(p);
-	params = (comd ? comd->params : 0);
+	params = (comd ? comd->params : MAXPARA);
 	i = 0;
 	if (s)
 	{
@@ -840,6 +840,8 @@ SOCKFUNC(PROT_PARSEA(P10))
 			}
 		}
 	}
+	if ((raw = atoi(p))) /* es numerico */
+		LlamaSenyal(SIGN_RAW, 4, cl, para, i, raw);
 	return 0;
 }
 char *militime_float(char* start)
@@ -880,7 +882,7 @@ IRCFUNC(m_eos)
 	if (cl == linkado)
 	{
 		EnviaAServidor("%s %s", me.trio, TOK_EOB_ACK);
-		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, abs(microtime() - tburst));
+		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, (double)((clock() - tburst)/CLOCKS_PER_SEC));
 		intentos = 0;
 		LlamaSenyal(SIGN_EOS, 0);
 #ifdef _WIN32		
@@ -959,9 +961,9 @@ IRCFUNC(m_msg)
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
 			resp = func->func(cl, parv, parc, param, params, func);
-		else
+		else if (EsCliente(cl))
 		{
-			if (!ex && !EsServidor(cl))
+			if (!ex)
 				Responde(cl, bl, ERR_DESC);
 			else if (cl->nivel & N1)
 				Responde(cl, bl, ERR_FORB);
@@ -1198,7 +1200,10 @@ IRCFUNC(m_squit)
 {
 	Cliente *al;
 	if ((al = BuscaCliente(parv[1])))
+	{
+		LlamaSenyal(SIGN_SQUIT, 1, al);
 		LiberaMemoriaCliente(al);
+	}
 	return 0;
 }
 IRCFUNC(m_error)
@@ -1223,7 +1228,7 @@ IRCFUNC(m_rehash)
 }
 IRCFUNC(sincroniza)
 {
-	tburst = microtime();
+	tburst = clock();
 	LlamaSenyal(SIGN_SYNCH, 0);
 	EnviaAServidor("%s %s", me.trio, TOK_EOB);
 	return 0;

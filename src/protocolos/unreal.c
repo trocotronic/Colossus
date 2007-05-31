@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.47 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.48 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -28,7 +28,6 @@ double tburst;
 char *autousers = NULL;
 char *autoopers = NULL;
 #define NOSERVDEOP 0x40
-LinkCliente *servidores = NULL;
 long base64dec(char *);
 char *base64enc(long);
 int norekill = 0;
@@ -236,6 +235,16 @@ char *EncodeIP(char *ip)
 	cp = (u_char *)ia.s_addr;
 	b64_encode((char *)&cp, sizeof(struct in_addr), buf, 25);
 	return buf;
+}
+Cliente *BuscaNumerico(int num)
+{
+	LinkCliente *lk;
+	for (lk = servidores; lk; lk = lk->sig)
+	{
+		if (lk->user->numeric == num)
+			return lk->user;
+	}
+	return NULL;
 }
 int p_msg_vl(Cliente *, Cliente *, u_int, char *, va_list *);
 char *p_trio(Cliente *cl)
@@ -880,7 +889,7 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 {
 	char *p, *para[MAXPARA + 1], sender[HOSTLEN + 1], *s;
 	u_char tpref = 0;
-	int params, i, j;
+	int params, i, j, raw;
 	Comando *comd = NULL;
 	Cliente *cl = linkado;
 	para[0] = (linkado ? linkado->nombre : NULL);
@@ -902,17 +911,8 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 			if (tpref)
 			{
 				int numeric;
-				LinkCliente *aux;
 				numeric = base64dec(sender);
-				for (aux = servidores; aux; aux = aux->sig)
-				{
-					if (aux->user->numeric == numeric)
-					{
-						cl = aux->user;
-						break;
-					}
-				}
-				if (cl)
+				if ((cl = BuscaNumerico(numeric)))
 					para[0] = cl->nombre;
 			}
 			else
@@ -931,7 +931,7 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 	if (s)
 		*s++ = '\0';
 	comd = BuscaComando(p);
-	params = (comd ? comd->params : 0);
+	params = (comd ? comd->params : MAXPARA);
 	i = 0;
 	if (s)
 	{
@@ -954,8 +954,8 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 		}
 	}
 	para[++i] = NULL;
-//	for (params = 0; params < i; params++)
-//		Debug("parv[%i] = %s", params, para[params]);
+//	for (j = 0; j < i; j++)
+//		Debug("parv[%i] = %s", j, para[j]);
 	if (comd)
 	{
 		if (comd->cuando == INI)
@@ -979,6 +979,8 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 			}
 		}
 	}
+	if ((raw = atoi(p))) /* es numerico */
+		LlamaSenyal(SIGN_RAW, 4, cl, para, i, raw);
 	return 0;
 }
 IRCFUNC(m_msg)
@@ -1051,9 +1053,9 @@ IRCFUNC(m_msg)
 		}
 		if ((func = TieneNivel(cl, param[0], mod, &ex)))
 			resp = func->func(cl, parv, parc, param, params, func);
-		else
+		else if (EsCliente(cl))
 		{
-			if (!ex && !EsServidor(cl))
+			if (!ex)
 				Responde(cl, bl, ERR_DESC);
 			else if (cl->nivel & N1)
 				Responde(cl, bl, ERR_FORB);
@@ -1086,15 +1088,18 @@ IRCFUNC(m_nick)
 {
 	if (parc > 3)
 	{
-		Cliente *cl = NULL;
+		Cliente *cl = NULL, *al = NULL;
+		char *serv = parv[6];
+		if (IsDigit(*parv[6]) && (al = BuscaNumerico(atoi(parv[6]))))
+			serv = al->nombre;
 		if (parc == 8) /* NICKv1 */
-			cl = NuevoCliente(parv[1], parv[4], parv[5], NULL, parv[6], parv[6], NULL, parv[7]);
+			cl = NuevoCliente(parv[1], parv[4], parv[5], NULL, serv, parv[6], NULL, parv[7]);
 		else if (parc == 9) /* nickv1 también (¿?) */
-			cl = NuevoCliente(parv[1], parv[4], parv[5], NULL, parv[6], parv[6], NULL, parv[8]);
+			cl = NuevoCliente(parv[1], parv[4], parv[5], NULL, serv, parv[6], NULL, parv[8]);
 		else if (parc == 11) /* NICKv2 */
-			cl = NuevoCliente(parv[1], parv[4], parv[5], NULL, parv[6], parv[9], parv[8], parv[10]);
+			cl = NuevoCliente(parv[1], parv[4], parv[5], NULL, serv, parv[9], parv[8], parv[10]);
 		else if (parc == 12) /* NICKIP */
-			cl = NuevoCliente(parv[1], parv[4], parv[5], DecodeIP(parv[10]), parv[6], parv[9], parv[8], parv[11]);
+			cl = NuevoCliente(parv[1], parv[4], parv[5], DecodeIP(parv[10]), serv, parv[9], parv[8], parv[11]);
 		else /* protocolo desconocido !! */
 		{
 			Loguea(LOG_ERROR, "Protocolo para nicks desconocido (%s)", backupbuf);
@@ -1464,6 +1469,7 @@ IRCFUNC(m_squit)
 	LinkCliente *aux, *prev = NULL;
 	if ((al = BuscaCliente(parv[1])))
 	{
+		LlamaSenyal(SIGN_SQUIT, 1, al);
 		LiberaMemoriaCliente(al);
 		for (aux = servidores; aux; aux = aux->sig)
 		{
@@ -1553,7 +1559,7 @@ IRCFUNC(m_eos)
 	if (cl == linkado)
 	{
 		EnviaAServidor(":%s %s", me.nombre, TOK_VERSION);
-		EnviaAServidor(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, abs(microtime() - tburst));
+		EnviaAServidor(":%s %s :Sincronización realizada en %.3f segs", me.nombre, TOK_WALLOPS, (double)((clock() - tburst)/CLOCKS_PER_SEC));
 		LlamaSenyal(SIGN_EOS, 0);
 #ifdef _WIN32
 		ChkBtCon(1, 0);
@@ -1609,7 +1615,7 @@ IRCFUNC(m_module)
 }
 IRCFUNC(sincroniza)
 {
-	tburst = microtime();
+	tburst = clock();
 	LlamaSenyal(SIGN_SYNCH, 1, cl);
 	return 0;
 }

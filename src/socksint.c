@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.7 2007-05-14 18:28:42 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.8 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -245,10 +245,8 @@ int ActivaModulos()
 			}
 		}
 	}
-#ifndef _WIN32
 	if (inf)
 		SiguienteTAsync(0);
-#endif
   	return 0;
 }
 void DetieneMDS()

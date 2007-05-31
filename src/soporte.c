@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.18 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.19 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -751,4 +751,24 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 		return hmod;
 	Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", dll, irc_dlerror());
 	return NULL;
+}
+/*!
+ * @desc: Calcula la duración a partir de los segundos dados en un formato legible. Rellena una estructura de tipo <i>Duracion</i> que contiene de forma legible la duración indicada.
+ * @params: $segs [in] Segundos totales de la duración.
+ 		$d [out] Estructura rellenada que contiene los segundos desglosados en semanas, días, horas, minutos y segundos.
+ * @cat: Programa
+ * @sntx: void Free(void *x)
+ !*/
+int MideDuracion(u_int segs, Duracion *d)
+{
+	d->sems = segs/604800;
+	segs %= 604800;
+	d->dias = segs/86400;
+	segs %= 86400;
+	d->horas = segs/3600;
+	segs %= 3600;
+	d->mins = segs/60;
+	segs %= 60;
+	d->segs = segs;
+	return 0;
 }

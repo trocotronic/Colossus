@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.21 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.22 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -92,8 +92,25 @@ char *BuscaTipo(char *ext)
 		ext++;
 	if (!strncmp(ext, "php", 3))
 		return "text/html";
-	if (RegOpenKeyEx(HKEY_CLASSES_ROOT, "MIME\\Database\\Content Type", 0, KEY_READ, &hk) == ERROR_SUCCESS)
+	ircsprintf(buf, "SOFTWARE\\Classes\\.%s", ext);
+	if (RegOpenKey(HKEY_LOCAL_MACHINE, buf, &hk) == ERROR_SUCCESS)
 	{
+		for (j = 0; RegEnumValue(hk, j, item, &sitem, NULL, NULL, tmp, &stmp) != ERROR_NO_MORE_ITEMS; j++)
+		{
+			sitem = sizeof(item);
+			stmp = sizeof(valor);
+			if (!strcmp(item, "Content Type"))
+			{
+				k = 1;
+				break;
+			}
+		}
+		RegCloseKey(hk);
+		if (k)
+			return tmp;
+	}
+	return "text/plain";
+	/*{
 		for (i = 0; RegEnumKey(hk, i, tmp, stmp) != ERROR_NO_MORE_ITEMS; i++)
 		{
 			if (RegOpenKeyEx(hk, tmp, 0, KEY_READ, &hks) == ERROR_SUCCESS)
@@ -118,7 +135,7 @@ char *BuscaTipo(char *ext)
 	RegCloseKey(hk);
 	if (!k)
 		return "text/plain";
-	return tmp;
+	return tmp;*/
 #else
 	FILE *fp;
 	char tmp[BUFSIZE], *tp, *e, *c;
@@ -189,7 +206,7 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 			"Content-Type: %s\r\n";
 		sprintf(buf, msg, bytes, BuscaTipo(hh->ext));
 		strlcat(tbuf, buf, sizeof(tbuf));
-		if (conf_httpd->max_age < 0 || (num != 200 && num != 300) || (hh->ext && !strncasecmp(hh->ext, "php", 3)))
+		if (conf_httpd->max_age < 0 || (num != 200 && num != 300) || (hh->ext && strncasecmp(hh->ext, "htm", 3)))
 			strlcat(tbuf, "Cache-Control: no-cache,no-store\r\n", sizeof(tbuf));
 		else
 		{
@@ -207,7 +224,7 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 			}
 		}
 	}
-	strlcat(tbuf, "\r\n", sizeof(tbuf));
+	//strlcat(tbuf, "\r\n", sizeof(tbuf));
 	SockWrite(hh->sck, tbuf);
 	if (data && bytes)
 		SockWriteBin(hh->sck, bytes, data);
@@ -224,7 +241,7 @@ void EnviaError(HHead *hh, u_int num, char *texto)
 			"<p>%s</p>\n"
 			"<hr>\n"
 			"<address>Servidor %s en %s Puerto %i</address>\n"
-			"</body></html>", *errmsg;
+			"</body></html>\n", *errmsg;
 	if (!(errmsg = BuscaOptItem(num, herrores)))
 		errmsg = "Desconocido";
 	ircsprintf(tbuf, msg, num, errmsg, errmsg, texto, COLOSSUS_VERSION, conf_httpd->url, conf_httpd->puerto);
@@ -282,7 +299,7 @@ int EPhp(u_long len, char *res, HHead *hh)
 	hh->noclosesock = 0;
 	EnviaRespuesta(hh, 200, -1, NULL, len, res);
 	Free(res);
-	SockClose(hh->sck, LOCAL);
+	//SockClose(hh->sck, LOCAL);
 	return 0;
 }
 void ProcesaHHead(HHead *hh, Sock *sck)
@@ -292,7 +309,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 	char *errmsg = NULL, *data = NULL;
 	for (hd = hdirs; hd; hd = hd->sig)
 	{
-		if (!strcmp(hh->ruta, hd->ruta))
+		if (!strncmp(hh->ruta, hd->ruta, strlen(hd->ruta)))
 		{
 			num = hd->func(hh, hd, &errmsg, &data);
 			break;
@@ -308,9 +325,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 			{
 				u_long len = 0;
 				char *p = NULL, f[PMAX], servars[BUFSIZE];
-				ircsprintf(f, "%s%s/%s", lpath, hd->ruta, hh->archivo);
-				ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
-				ircsprintf(buf, "-f %s %s %s %s", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
+				ircsprintf(f, "%s%s/%s", lpath, hh->ruta, hh->archivo);
 				if (!EsArchivo(f))
 				{
 					EnviaError(hh, 404, "La página que solicita no existe.");
@@ -318,8 +333,13 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 				}
 				if (!strncasecmp(hh->ext, "php", 3))
 				{
-					hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
-					EjecutaComandoASinc(conf_httpd->php, buf, (ECmdFunc) EPhp, hh);
+					ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
+					ircsprintf(buf, "-f %s %s %s %s", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
+					//hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
+					EjecutaComandoSinc(conf_httpd->php, buf, &len, &p);
+					EnviaRespuesta(hh, 200, time(0), NULL, len, p);
+					Free(p);
+					//EjecutaComandoASinc(conf_httpd->php, buf, (ECmdFunc) EPhp, hh);
 				}
 				else
 				{
@@ -527,6 +547,7 @@ int IniciaHTTPD()
 		else
 			*d++ = *c;
 	}
+	strlcat(d, "/html/", sizeof(lpath));
 	return 0;
 }
 int DetieneHTTPD()

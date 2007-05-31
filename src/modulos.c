@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.24 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.25 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -439,6 +439,16 @@ Nivel *BuscaNivel(char *nombre)
 	for (i = 0; i < nivs; i++)
 	{
 		if (!strcasecmp(niveles[i]->nombre, nombre))
+			return niveles[i];
+	}
+	return NULL;
+}
+Nivel *BuscaNivelNum(int niv)
+{
+	int i;
+	for (i = 0; i < nivs; i++)
+	{
+		if (niveles[i]->nivel == niv)
 			return niveles[i];
 	}
 	return NULL;

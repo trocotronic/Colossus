@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.8 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.9 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -79,7 +79,8 @@ int MOD_CARGA(HelpServ)(Modulo *mod)
 	{
 		InsertaSenyal(SIGN_JOIN, HSCmdJoin);
 		InsertaSenyal(SIGN_CDESTROY, HSSigCDestroy);
-		if (!(hdtest = CreaHDir("/html", LeeHDir)))
+		ircsprintf(buf, "/%s", MOD_INFO(HelpServ).nombre);
+		if (!(hdtest = CreaHDir(buf, LeeHDir)))
 			errores++;
 	}
 	helpchan = BuscaCanal(helpserv->canal);

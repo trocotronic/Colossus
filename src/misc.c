@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.9 2007-03-28 19:03:34 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.10 2007-05-31 23:06:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -39,6 +39,7 @@ BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr)
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
    	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo)))
    		return 0;
+   	WaitForSingleObject(piProcInfo.hProcess, INFINITE);
 	CloseHandle(piProcInfo.hProcess);
 	CloseHandle(piProcInfo.hThread);
 	return bFuncRetn;
@@ -74,7 +75,7 @@ int EjecutaCmd(ECmd *ecmd)
 	*res = '\0';
 	for (i = 1;;) 
 	{ 
-		if(!ReadFile(hChildStdoutRd, chBuf, sizeof(chBuf)-1, &dwRead, NULL) || dwRead == 0) 
+		if (!ReadFile(hChildStdoutRd, chBuf, sizeof(chBuf)-1, &dwRead, NULL) || dwRead == 0) 
 			break;
 		chBuf[dwRead] = '\0';
 		libres -= dwRead;
@@ -88,6 +89,10 @@ int EjecutaCmd(ECmd *ecmd)
 		}
 		strlcat(res, chBuf, t);
      }
+     if (!CloseHandle(hChildStdinRd))
+		return 4;
+	if (!CloseHandle(hChildStdoutRd))
+		return 5;
      if (ecmd->func)
      	ecmd->func(len, res, ecmd->v);
      else
