@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.23 2007-05-31 23:28:00 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.24 2007-06-01 10:52:25 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -555,7 +555,7 @@ int BorraCl(Cliente *cl, ListCl **l)
 		if (lcl->cl == cl)
 		{
 			if (lcl->sts)
-				lcl->sts--;
+				lcl->sts->users--;
 			if (prev)
 				prev->sig = lcl->sig;
 			else
