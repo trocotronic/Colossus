@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.23 2007-05-31 23:38:13 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.24 2007-06-01 13:50:04 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -548,7 +548,7 @@ int IniciaHTTPD()
 			*d++ = *c;
 	}
 	*d = '\0';
-	strlcat(d, "/html/", sizeof(lpath));
+	strlcat(d, "/html", sizeof(lpath));
 	return 0;
 }
 int DetieneHTTPD()
