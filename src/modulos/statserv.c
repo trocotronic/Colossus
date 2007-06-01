@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.24 2007-06-01 10:52:25 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.25 2007-06-01 12:47:48 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -787,15 +787,21 @@ BOTFUNC(SSReplyVer)
 	ListCl *lcl;
 	StsChar *sts;
 	int i;
-	for (i = 0; vers[i]; i++)
+	if (!BuscaCl(cl, clver))
 	{
-		if (stristr(parv[2], vers[i]))
+		for (i = 0; vers[i]; i++)
 		{
-			sts = InsertaSts(vers[i], NULL, &(stats.stsver));
-			sts->users++;
-			lcl = InsertaCl(cl, sts, &clver);
-			return 0;
+			if (stristr(parv[2], vers[i]))
+			{
+				sts = InsertaSts(vers[i], NULL, &(stats.stsver));
+				sts->users++;
+				lcl = InsertaCl(cl, sts, &clver);
+				return 0;
+			}
 		}
+		sts = InsertaSts("(desconocido)", NULL, &(stats.stsver));
+		sts->users++;
+		lcl = InsertaCl(cl, sts, &clver);
 	}
 	return 0;
 }
@@ -1219,6 +1225,62 @@ void ParseaTemplate(char *f)
 						write(fdout, buf, strlen(buf));
 					}
 					else if (!strncmp(f, "TLDS_FIN", d-f))
+						break;
+					e = d+1;
+				}
+				e = c;
+			}
+		}
+		else if (!strncmp(c, "SERVERS_INICIO", d-c))
+		{
+			StsServ *sts;
+			char *e, *f = 0;
+			c += d-c+1;
+			e = c;
+			for (sts = stats.stsserv; sts; sts = sts->sig)
+			{
+				while ((f = strchr(e, '@')))
+				{
+					write(fdout, e, f-e);
+					if (*(f-1) == '\\')
+					{
+						e = f+1;
+						continue;
+					}
+					f++;
+					if (!(d = strchr(f, '@')))
+						break;
+					if (!strncmp(f, "SERVERS_NOMBRE", d-f))
+						write(fdout, sts->cl->nombre, strlen(sts->cl->nombre));
+					else if (!strncmp(f, "SERVERS_INFO", d-f))
+						write(fdout, sts->cl->info, strlen(sts->cl->info));
+					else if (!strncmp(f, "SERVERS_USERS", d-f))
+					{
+						ircsprintf(buf, "%u", sts->users);
+						write(fdout, buf, strlen(buf));
+					}
+					else if (!strncmp(f, "SERVERS_LAG", d-f))
+					{
+						ircsprintf(buf, "%.3f", (double)sts->lag/1000);
+						write(fdout, buf, strlen(buf));
+					}
+					else if (!strncmp(f, "SERVERS_VERSION", d-f))
+					{
+						char *v = sts->version;
+						if (!v)
+							v = "(no definida)";
+						write(fdout, v, strlen(v));
+					}
+					else if (!strncmp(f, "SERVERS_UPTIME", d-f))
+					{
+						time_t t;
+						Duracion d;
+						t = GMTime() - sts->uptime;
+						MideDuracion(t, &d);
+						ircsprintf(buf, "%u días, %02u:%02u:%02u", d.sems*7+d.dias, d.horas, d.mins, d.segs);
+						write(fdout, buf, strlen(buf));
+					}
+					else if (!strncmp(f, "SERVERS_FIN", d-f))
 						break;
 					e = d+1;
 				}
