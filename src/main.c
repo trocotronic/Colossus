@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.105 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: main.c,v 1.106 2007-06-02 15:50:29 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -290,6 +290,7 @@ int main(int argc, char *argv[])
 		cTab[i].items = 0;
 	}
 	t = time(0);
+	srand(t);
 	t_off = -(t - mktime(gmtime(&t)));
 	bzero(tklines, sizeof(tklines));
 	/* las primeras señales deben ser del núcleo */

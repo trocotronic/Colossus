@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.13 2007-06-02 12:53:02 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.14 2007-06-02 15:50:29 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -13,8 +13,8 @@ WIN32_FIND_DATA FindFileData;
 #include <arpa/inet.h>
 #endif
 #include <sys/stat.h>
+extern pthread_mutex_t mutex;
 
-#define TBLOQ 4096
 typedef struct _ecmd
 {
 	char *cmd;
@@ -39,7 +39,7 @@ HANDLE CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
    	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo)))
    		return 0;
-   	WaitForSingleObject(piProcInfo.hProcess, 10000);
+   	WaitForSingleObject(piProcInfo.hProcess, INFINITE);
 	CloseHandle(piProcInfo.hProcess);
 	CloseHandle(piProcInfo.hThread);
 	return piProcInfo.hProcess;
@@ -77,21 +77,26 @@ int EjecutaCmd(ECmd *ecmd)
 	HANDLE hChildStdoutRd, hProc;
 	SECURITY_ATTRIBUTES saAttr; 
    	DWORD dwRead;
-   	char *res, tmp[BUFSIZE];
+   	char *res, tmp[BUFSIZE], name[BUFSIZE];
    	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL;
-	hChildStdoutRd = CreateFile("tmp/output.tmp", GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, &saAttr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	do {
+		ircsprintf(name, "tmp/output%lu.tmp", Aleatorio(0, 99999));
+		hChildStdoutRd = CreateFile(name, GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, &saAttr, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+	}while (hChildStdoutRd == INVALID_HANDLE_VALUE && GetLastError() == ERROR_ALREADY_EXISTS);
 	ircsprintf(tmp, "%s %s", ecmd->cmd, ecmd->params);
-	if (!(hProc = CreateChildProcess(tmp, NULL, hChildStdoutRd)))
-		return 3;
-	SetFilePointer(hChildStdoutRd, 0, NULL, FILE_BEGIN);
-	dwRead = GetFileSize(hChildStdoutRd, NULL);
-	res = (char *)Malloc(sizeof(char) * dwRead);
-	ReadFile(hChildStdoutRd, res, sizeof(char) * dwRead, &dwRead, NULL);
-	if (!CloseHandle(hChildStdoutRd))
-		return 5;
-	DeleteFile("tmp/output.tmp");
+	if ((hProc = CreateChildProcess(tmp, NULL, hChildStdoutRd)))
+	{
+		SetFilePointer(hChildStdoutRd, 0, NULL, FILE_BEGIN);
+		dwRead = GetFileSize(hChildStdoutRd, NULL);
+		res = (char *)Malloc(sizeof(char) * dwRead);
+		ReadFile(hChildStdoutRd, res, sizeof(char) * dwRead, &dwRead, NULL);
+	}
+	CloseHandle(hChildStdoutRd);
+	do {
+		DeleteFile(name);
+	}while (GetLastError() == ERROR_SHARING_VIOLATION);
      if (ecmd->func)
      	ecmd->func(dwRead, res, ecmd->v);
      else
@@ -163,12 +168,15 @@ int EjecutaComandoASinc(char *cmd, char *params, ECmdFunc func, void *v)
 {
 	ECmd *ecmd;
 	pthread_t id;
+	int val;
 	ecmd = BMalloc(ECmd);
 	ecmd->cmd = cmd;
 	ecmd->params = params;
 	ecmd->func = func;
 	ecmd->v = v;
-	pthread_create(&id, NULL, (void *)EjecutaCmd, (void *)ecmd);
+	do {
+		val = pthread_create(&id, NULL, (void *)EjecutaCmd, (void *)ecmd);
+	}while (val == EAGAIN);
 	return 0;
 }
 /*!

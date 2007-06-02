@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.26 2007-06-02 12:52:59 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.27 2007-06-02 15:50:29 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -335,11 +335,17 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 				{
 					ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
 					ircsprintf(buf, "-f \"%s\" \"%s\" \"%s\" \"%s\"", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
-					EjecutaComandoSinc(conf_httpd->php, buf, &len, &p);
-					EnviaRespuesta(hh, 200, time(0), NULL, len, p);
-					Free(p);
-					//hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
-					//EjecutaComandoASinc(conf_httpd->php, buf, (ECmdFunc) EPhp, hh);
+					if (hh->asynch)
+					{
+						hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
+						EjecutaComandoASinc(conf_httpd->php, buf, (ECmdFunc) EPhp, hh);
+					}
+					else
+					{
+						EjecutaComandoSinc(conf_httpd->php, buf, &len, &p);
+						EnviaRespuesta(hh, 200, time(0), NULL, len, p);
+						Free(p);
+					}
 				}
 				else
 				{
@@ -518,7 +524,11 @@ SOCKFUNC(LeeHTTPD)
 	if (!BadPtr(c))
 		ircstrdup(hh->param_post, c);
 	if ((hh->viene_post && hh->metodo != HTTP_POST) || (hh->metodo == HTTP_POST && hh->param_post))
+	{
+		if ((hh->param_post && strstr(hh->param_post, "__ASYNCH__=1")) || (hh->param_get && strstr(hh->param_get, "__ASYNCH__=1")))
+			hh->asynch = 1;
 		ProcesaHHead(hh, sck); 
+	}
 	return 0;
 }
 SOCKFUNC(CierraHTTPD)

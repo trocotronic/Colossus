@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.h,v 1.4 2007-05-31 23:06:36 Trocotronic Exp $ 
+ * $Id: httpd.h,v 1.5 2007-06-02 15:50:29 Trocotronic Exp $ 
  */
 
 #define HTTP_GET 1
@@ -27,6 +27,7 @@ struct _hhead
 	char *ext;
 	time_t lmod;
 	unsigned noclosesock:1;
+	unsigned asynch:1;
 	unsigned viene_post:1;
 	u_int slot;
 };
