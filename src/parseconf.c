@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.29 2007-01-18 14:21:47 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.30 2007-06-02 12:12:55 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -244,6 +244,7 @@ int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 	{
 		if (avisa)
 			Alerta(FERR, "No se puede hacer fstat");
+		close(fp);
 		return -2;
 	}
 	if (!inode.st_size)

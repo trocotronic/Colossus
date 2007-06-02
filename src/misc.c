@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.11 2007-06-02 00:26:00 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.12 2007-06-02 12:12:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,7 +14,6 @@ WIN32_FIND_DATA FindFileData;
 #endif
 #include <sys/stat.h>
 
-#define TBLOQ 4096
 typedef struct _ecmd
 {
 	char *cmd;
@@ -45,14 +44,35 @@ HANDLE CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr
 }
 int EjecutaCmd(ECmd *ecmd)
 {
-	HANDLE hChildStdinRd, hChildStdinWr, hChildStdoutRd, hChildStdoutWr, hProc;
-	SECURITY_ATTRIBUTES saAttr; 
-   	DWORD dwRead;
-   	int i, libres = TBLOQ;
-   	u_long len = 0L;
-   	char chBuf[TBLOQ], *res;
-   	size_t t;
-   	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+   	char chBuf[BUFSIZE], *res;
+   	int fp;
+   	struct stat inode;
+   	ircsprintf(chBuf, "%s %s > tmp/output.tmp", ecmd->cmd, ecmd->params);
+   	system(chBuf);
+   	if ((fp = open("tmp/output.tmp", O_RDONLY|O_BINARY)) != -1)
+	{
+		if (fstat(fp, &inode) != -1)
+		{
+			res = (char *)Malloc(inode.st_size + 1);
+			res[inode.st_size] = '\0';
+			if (read(fp, res, inode.st_size) != inode.st_size)
+				ircfree(res);
+			if (ecmd->func)
+				ecmd->func(inode.st_size, res, ecmd->v);
+			else
+			{
+				if (ecmd->len)
+					*ecmd->len = inode.st_size;
+				if (ecmd->res)
+					*ecmd->res = res;
+			}
+		}
+		close(fp);
+	}
+	_unlink("tmp/output.tmp");
+	Free(ecmd);
+   	return 0;
+   	/*saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL;
 	if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &saAttr, 0))
@@ -61,7 +81,7 @@ int EjecutaCmd(ECmd *ecmd)
 	if (!CreatePipe(&hChildStdinRd, &hChildStdinWr, &saAttr, 0))
 		return 2;
 	SetHandleInformation(hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
-	ircsprintf(chBuf, "%s %s", ecmd->cmd, ecmd->params);
+	
 	if (!(hProc = CreateChildProcess(chBuf, hChildStdinRd, hChildStdoutWr)))
 		return 3;
 	//WriteFile(hChildStdinWr, params, strlen(params), &dwWritten, NULL);
@@ -102,7 +122,7 @@ int EjecutaCmd(ECmd *ecmd)
      		*ecmd->res = res;
      }
      Free(ecmd);
-     return 0;
+     return 0;*/
 }
 #else
 int EjecutaCmd(ECmd *ecmd)
