@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.25 2007-06-01 12:47:48 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.26 2007-06-02 22:31:53 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -606,11 +606,29 @@ int SSCmdPostNick(Cliente *cl, int nuevo)
 }
 int SSCmdQuit(Cliente *cl, char *motivo)
 {
-	ListCl *stcl, *prev = NULL;
+	ListCl *lcl;
 	StsServ *sts;
 	stats.users--;
-	BorraCl(cl, &cltld);
-	BorraCl(cl, &clver);
+	if ((lcl = BuscaCl(cl, cltld)))
+	{
+		if (lcl->sts)
+		{
+			ircfree(lcl->sts->item);
+			ircfree(lcl->sts->valor);
+			LiberaItem(lcl->sts, stats.ststld);
+		}
+		LiberaItem(lcl, cltld);
+	}
+	if ((lcl = BuscaCl(cl, clver)))
+	{
+		if (lcl->sts)
+		{
+			ircfree(lcl->sts->item);
+			ircfree(lcl->sts->valor);
+			LiberaItem(lcl->sts, stats.stsver);
+		}
+		LiberaItem(lcl, clver);
+	}
 	if (IsOper(cl) && BorraCl(cl, &(stats.stsopers)))
 		stats.opers--;
 	if ((sts = BuscaServ(cl->server)))
