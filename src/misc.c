@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.10 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.11 2007-06-02 00:26:00 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -25,13 +25,13 @@ typedef struct _ecmd
 	void *v;
 }ECmd;
 #ifdef _WIN32
-BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
+HANDLE CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
 { 
 	PROCESS_INFORMATION piProcInfo; 
 	STARTUPINFO siStartInfo;
-	BOOL bFuncRetn = FALSE; 
-	ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION) );
-	ZeroMemory( &siStartInfo, sizeof(STARTUPINFO) );
+	BOOL bFuncRetn = FALSE;
+	ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+	ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
 	siStartInfo.cb = sizeof(STARTUPINFO); 
 	siStartInfo.hStdError = hChildStdoutWr;
 	siStartInfo.hStdOutput = hChildStdoutWr;
@@ -39,19 +39,18 @@ BOOL CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr)
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
    	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo)))
    		return 0;
-   	WaitForSingleObject(piProcInfo.hProcess, INFINITE);
 	CloseHandle(piProcInfo.hProcess);
 	CloseHandle(piProcInfo.hThread);
-	return bFuncRetn;
+	return piProcInfo.hProcess;
 }
 int EjecutaCmd(ECmd *ecmd)
 {
-	HANDLE hChildStdinRd, hChildStdinWr, hChildStdoutRd, hChildStdoutWr;
+	HANDLE hChildStdinRd, hChildStdinWr, hChildStdoutRd, hChildStdoutWr, hProc;
 	SECURITY_ATTRIBUTES saAttr; 
    	DWORD dwRead;
    	int i, libres = TBLOQ;
    	u_long len = 0L;
-   	char chBuf[TBLOQ], *res; 
+   	char chBuf[TBLOQ], *res;
    	size_t t;
    	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
@@ -63,7 +62,7 @@ int EjecutaCmd(ECmd *ecmd)
 		return 2;
 	SetHandleInformation(hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
 	ircsprintf(chBuf, "%s %s", ecmd->cmd, ecmd->params);
-	if (!CreateChildProcess(chBuf, hChildStdinRd, hChildStdoutWr))
+	if (!(hProc = CreateChildProcess(chBuf, hChildStdinRd, hChildStdoutWr)))
 		return 3;
 	//WriteFile(hChildStdinWr, params, strlen(params), &dwWritten, NULL);
 	if (!CloseHandle(hChildStdinWr))

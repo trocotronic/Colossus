@@ -1,5 +1,5 @@
 /*
- * $Id: core.c,v 1.5 2007-01-18 14:04:34 Trocotronic Exp $ 
+ * $Id: core.c,v 1.6 2007-06-02 00:25:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -24,7 +24,7 @@ char *ExMalloc(size_t size, int bz, char *file, long line)
 #endif
 	if (!x)
 	{
-		Alerta(FERR,  "[%s:%i] Te has quedado sin memoria", file, line);
+		Alerta(FERR,  "[%s:%i] Te has quedado sin memoria (%lu)", file, line, size);
 		exit(-1);
 	}
 	if (bz)

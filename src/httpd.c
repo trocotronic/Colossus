@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.24 2007-06-01 13:50:04 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.25 2007-06-02 00:26:00 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -309,7 +309,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 	char *errmsg = NULL, *data = NULL;
 	for (hd = hdirs; hd; hd = hd->sig)
 	{
-		if (!strncmp(hh->ruta, hd->ruta, strlen(hd->ruta)))
+		if (hh->ruta && !strncmp(hh->ruta, hd->ruta, strlen(hd->ruta)))
 		{
 			num = hd->func(hh, hd, &errmsg, &data);
 			break;
@@ -334,7 +334,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 				if (!strncasecmp(hh->ext, "php", 3))
 				{
 					ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
-					ircsprintf(buf, "-f %s %s %s %s", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
+					ircsprintf(buf, "-f \"%s\" \"%s\" \"%s\" \"%s\"", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
 					//hh->noclosesock = 1; /* no cerramos el sock hasta que no recibamos respuesta */
 					EjecutaComandoSinc(conf_httpd->php, buf, &len, &p);
 					EnviaRespuesta(hh, 200, time(0), NULL, len, p);
