@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.12 2007-06-02 12:12:52 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.13 2007-06-02 12:53:02 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -14,6 +14,7 @@ WIN32_FIND_DATA FindFileData;
 #endif
 #include <sys/stat.h>
 
+#define TBLOQ 4096
 typedef struct _ecmd
 {
 	char *cmd;
@@ -38,16 +39,17 @@ HANDLE CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr
 	siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
    	if (!(bFuncRetn = CreateProcess(NULL, cmd, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &siStartInfo, &piProcInfo)))
    		return 0;
+   	WaitForSingleObject(piProcInfo.hProcess, 10000);
 	CloseHandle(piProcInfo.hProcess);
 	CloseHandle(piProcInfo.hThread);
 	return piProcInfo.hProcess;
 }
 int EjecutaCmd(ECmd *ecmd)
 {
-   	char chBuf[BUFSIZE], *res;
+	/*char chBuf[BUFSIZE], *res;
    	int fp;
    	struct stat inode;
-   	ircsprintf(chBuf, "%s %s > tmp/output.tmp", ecmd->cmd, ecmd->params);
+   	ircsprintf(chBuf, "@%s %s > tmp/output.tmp 2>NUL", ecmd->cmd, ecmd->params);
    	system(chBuf);
    	if ((fp = open("tmp/output.tmp", O_RDONLY|O_BINARY)) != -1)
 	{
@@ -71,58 +73,36 @@ int EjecutaCmd(ECmd *ecmd)
 	}
 	_unlink("tmp/output.tmp");
 	Free(ecmd);
-   	return 0;
-   	/*saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
+   	return 0;*/
+	HANDLE hChildStdoutRd, hProc;
+	SECURITY_ATTRIBUTES saAttr; 
+   	DWORD dwRead;
+   	char *res, tmp[BUFSIZE];
+   	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
 	saAttr.bInheritHandle = TRUE; 
 	saAttr.lpSecurityDescriptor = NULL;
-	if (!CreatePipe(&hChildStdoutRd, &hChildStdoutWr, &saAttr, 0))
-		return 1;
-	SetHandleInformation(hChildStdoutRd, HANDLE_FLAG_INHERIT, 0);
-	if (!CreatePipe(&hChildStdinRd, &hChildStdinWr, &saAttr, 0))
-		return 2;
-	SetHandleInformation(hChildStdinWr, HANDLE_FLAG_INHERIT, 0);
-	
-	if (!(hProc = CreateChildProcess(chBuf, hChildStdinRd, hChildStdoutWr)))
+	hChildStdoutRd = CreateFile("tmp/output.tmp", GENERIC_READ|GENERIC_WRITE, FILE_SHARE_READ|FILE_SHARE_WRITE, &saAttr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	ircsprintf(tmp, "%s %s", ecmd->cmd, ecmd->params);
+	if (!(hProc = CreateChildProcess(tmp, NULL, hChildStdoutRd)))
 		return 3;
-	//WriteFile(hChildStdinWr, params, strlen(params), &dwWritten, NULL);
-	if (!CloseHandle(hChildStdinWr))
-		return 4;
-	if (!CloseHandle(hChildStdoutWr))
-		return 5;
-	t = sizeof(char) * TBLOQ;
-	res = (char *)Malloc(t);
-	*res = '\0';
-	for (i = 1;;) 
-	{ 
-		if (!ReadFile(hChildStdoutRd, chBuf, sizeof(chBuf)-1, &dwRead, NULL) || dwRead == 0) 
-			break;
-		chBuf[dwRead] = '\0';
-		libres -= dwRead;
-		len += dwRead;
-		if (libres <= 1)
-		{
-			i++;
-			libres = TBLOQ;
-			t = sizeof(char) * TBLOQ * i;
-			res = (char *)realloc(res, t);
-		}
-		strlcat(res, chBuf, t);
-     }
-     if (!CloseHandle(hChildStdinRd))
-		return 4;
+	SetFilePointer(hChildStdoutRd, 0, NULL, FILE_BEGIN);
+	dwRead = GetFileSize(hChildStdoutRd, NULL);
+	res = (char *)Malloc(sizeof(char) * dwRead);
+	ReadFile(hChildStdoutRd, res, sizeof(char) * dwRead, &dwRead, NULL);
 	if (!CloseHandle(hChildStdoutRd))
 		return 5;
+	DeleteFile("tmp/output.tmp");
      if (ecmd->func)
-     	ecmd->func(len, res, ecmd->v);
+     	ecmd->func(dwRead, res, ecmd->v);
      else
      {
      	if (ecmd->len)
-     		*ecmd->len = len;
+     		*ecmd->len = dwRead;
      	if (ecmd->res)
      		*ecmd->res = res;
      }
      Free(ecmd);
-     return 0;*/
+     return 0;
 }
 #else
 int EjecutaCmd(ECmd *ecmd)
