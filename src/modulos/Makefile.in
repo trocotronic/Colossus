@@ -1,9 +1,10 @@
-## $Id: Makefile.in,v 1.10 2006-04-17 14:19:45 Trocotronic Exp $
+## $Id: Makefile.in,v 1.11 2007-06-03 18:31:25 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
 	../include/struct.h
 R_MODULES=chanserv.so nickserv.so memoserv.so operserv.so ipserv.so
+ALL_MODULES=$(R_MODULES) proxyserv.so smsserv.so tvserv.so newsserv.so logserv.so noteserv.so gameserv.so statserv.so
 COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o	
 MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@
@@ -31,21 +32,21 @@ memoserv.so: memoserv.c $(INCLUDES) memoserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO chanserv.o -o memoserv.so memoserv.c
 memoserv.o: memoserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c memoserv.c
-proxyserv.so: proxyserv.c $(INCLUDES) proxyserv.o
+proxyserv.so: proxyserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o proxyserv.so proxyserv.c
-proxyserv.o: proxyserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c proxyserv.c
-tvserv.so: tvserv.c $(INCLUDES) tvserv.o
+tvserv.so: tvserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o tvserv.so tvserv.c
-tvserv.o: tvserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c tvserv.c
-smsserv.so: smsserv.c $(INCLUDES) smsserv.o
+smsserv.so: smsserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o smsserv.so smsserv.c
-smsserv.o: smsserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c smsserv.c
-newsserv.so: newsserv.c $(INCLUDES) newsserv.o
+newsserv.so: newsserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o newsserv.so newsserv.c
-newsserv.o: newsserv.c $(INCLUDES)
-	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c newsserv.c
+logserv.so: logserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o logserv.so logserv.c
+noteserv.so: noteserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o noteserv.so noteserv.c
+statserv.so: statserv.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o statserv.so statserv.c
+gameserv.so: gameserv.c $(INCLUDES) kyrhos.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o gameserv.so gameserv.c kyrhos.c
 clean:
 	$(RM) -f *.o *.so *~ core
