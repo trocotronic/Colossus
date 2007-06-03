@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.14 2007-06-02 15:50:29 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.15 2007-06-03 18:34:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -110,6 +110,7 @@ int EjecutaCmd(ECmd *ecmd)
      return 0;
 }
 #else
+#define TBLOQ 4092
 int EjecutaCmd(ECmd *ecmd)
 {
 	FILE *fp;

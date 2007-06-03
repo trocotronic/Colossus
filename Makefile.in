@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.14 2006-12-23 00:32:23 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.15 2007-06-03 18:37:51 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -26,6 +26,9 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 modulo:
 	cd src; ${MAKE} ${MAKEARGS} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
 	$(CP) src/modulos/$(FUENTE).so modulos/$(FUENTE).so
+	
+modall:
+	cd src; ${MAKE} ${MAKEARGS} 'EXLIBS=${EXLIBS}' modall
 
 server:
 build:
