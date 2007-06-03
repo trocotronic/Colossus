@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.34 2007-06-03 18:37:51 Trocotronic Exp $
+## $Id: Makefile,v 1.35 2007-06-03 18:38:53 Trocotronic Exp $
 
 OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
 	misc.o modulos.o parseconf.o protocolos.o sql.o smtp.o socks.o socksint.o \
@@ -15,7 +15,7 @@ INCLUDES = ../include/ircd.h ../include/md5.h \
 all: build
 modulo:
 	cd modulos; ${MAKE} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
-modulo:
+modall:
 	cd modulos; ${MAKE} 'EXLIBS=${EXLIBS}' modall
 build: ircd mods prots sqldb exts
 ircd: $(OBJS)
