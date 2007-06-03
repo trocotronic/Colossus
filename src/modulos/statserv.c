@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.28 2007-06-03 18:55:40 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.29 2007-06-03 18:59:57 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1132,11 +1132,6 @@ void ParseaTemplate(char *f)
 		close(fdin);
 		return;
 	}
-	if (sb.st_mtime <= hh->lmod)
-	{
-		close(fdin);
-		return;
-	}
 	len = sb.st_size;
 	if (!(p = mmap(NULL, len, PROT_READ, MAP_SHARED, fdin, 0)))
 	{
@@ -1319,6 +1314,7 @@ void ParseaTemplate(char *f)
 }
 int SSTemplates(Proc *proc)
 {
+	time_t t = time(0);
 	if (proc->time + statserv->refresco < t)
 	{
 		if (!templates[proc->proc])
