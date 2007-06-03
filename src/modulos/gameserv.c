@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.7 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.8 2007-06-03 18:50:13 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -25,7 +25,6 @@ int GSSigEOS();
 int GSSigSQL();
 int GSSigPMsg(Cliente *, Cliente *, char *, int);
 int GSSigSockClose();
-extern ProcesaKyrhos(Cliente *, char *);
 
 ModInfo MOD_INFO(LogServ) = {
 	"GameServ" ,

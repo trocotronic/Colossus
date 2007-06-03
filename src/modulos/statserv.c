@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.27 2007-06-03 18:20:08 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.28 2007-06-03 18:55:40 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -7,6 +7,8 @@
 #else
 #include <time.h>
 #include <sys/time.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 #endif
 #include "struct.h"
 #include "ircd.h"
@@ -950,7 +952,6 @@ BOTFUNC(SSStats)
 	else if (!strcasecmp(param[1], "SERVERS") || !strcasecmp(param[1], "SERVIDORES"))
 	{
 		StsServ *sts;
-		char timebuf[128];
 		time_t t;
 		Duracion d;
 		for (sts = stats.stsserv; sts; sts = sts->sig)
@@ -1087,11 +1088,9 @@ int SSSigSockClose()
 }
 void ParseaTemplate(char *f)
 {
-	char *c, *d, *p = NULL, *s, *e, *g;
+	char *c, *d, *p = NULL, *s;
 	int fdout;
 	u_long len = 0;
-	SQLRes res;
-	SQLRow row;
 #ifdef _WIN32
 	HANDLE fdin, mp;
 #else
@@ -1130,7 +1129,7 @@ void ParseaTemplate(char *f)
 #else	
 	if (fstat(fdin, &sb) == -1)
 	{
-		close(fd);
+		close(fdin);
 		return;
 	}
 	if (sb.st_mtime <= hh->lmod)
@@ -1139,7 +1138,7 @@ void ParseaTemplate(char *f)
 		return;
 	}
 	len = sb.st_size;
-	if (!(p = mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0)))
+	if (!(p = mmap(NULL, len, PROT_READ, MAP_SHARED, fdin, 0)))
 	{
 		close(fdin);
 		return;
@@ -1320,8 +1319,6 @@ void ParseaTemplate(char *f)
 }
 int SSTemplates(Proc *proc)
 {
-	char *c, *d, *e, *f;
-	time_t t = time(0);
 	if (proc->time + statserv->refresco < t)
 	{
 		if (!templates[proc->proc])

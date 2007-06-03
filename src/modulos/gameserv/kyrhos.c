@@ -359,7 +359,7 @@ void Salidas(KyrhosUser *kus)
 }
 int FijarPos(KyrhosUser *kus, int pos)
 {
-	u_int nueva;
+	u_int nueva = 0;
 	KyrhosPos *p;
 	if (pos == P_NORTE)
 	{
@@ -394,7 +394,6 @@ int ProcesaKyrhos(Cliente *cl, char *msg)
 {
 	char *param[256], par[BUFSIZE];
 	int params, i;
-	u_int posprev = 0x0;
 	KyrhosUser *kus = NULL;
 	strlcpy(par, msg, sizeof(par));
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));

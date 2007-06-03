@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.9 2007-06-03 18:36:16 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.10 2007-06-03 18:57:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -364,7 +364,7 @@ SOCKFUNC(ACRead)
 	if (*data == '#')
 	{
 		int fd;
-		char *c
+		char *c;
 		struct stat sb;
 		u_long t;
 		c = strchr(data++, ' ');
