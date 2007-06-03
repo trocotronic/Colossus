@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.8 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.9 2007-06-03 18:45:55 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -512,7 +512,7 @@ int LSCmdCMsg(Cliente *cl, Canal *cn, char *msg)
 }
 int MiraCaducados()
 {
-	Directorio *dir;
+	Directorio dir;
 	if ((dir = AbreDirectorio(DIR_LOGS)))
 	{
 		char *nombre, tmptime[8];

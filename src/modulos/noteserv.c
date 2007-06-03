@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.7 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.8 2007-06-03 18:45:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -545,7 +545,7 @@ BOTFUNC(ESEntrada)
 		Responde(cl, CLI(noteserv), ES_ERR_PARA, fc->com, "[dd/mm/yy [hh:mm]] [nº] nota");
 		return 1;
 	}
-	if (sscanf(param[1], "%i/%i%/%i", &dia, &mes, &ano) != 3)
+	if (sscanf(param[1], "%i\/%i%\/%i", &dia, &mes, &ano) != 3)
 	{
 		struct tm *ttm;
 		time_t ahora = time(0);
@@ -582,7 +582,7 @@ BOTFUNC(ESSalida)
 		Responde(cl, CLI(noteserv), ES_ERR_PARA, fc->com, "dd/mm/yy [hh:mm]");
 		return 1;
 	}
-	if (sscanf(param[1], "%i/%i%/%i", &dia, &mes, &ano) != 3)
+	if (sscanf(param[1], "%i\/%i%\/%i", &dia, &mes, &ano) != 3)
 	{
 		Responde(cl, CLI(noteserv), ES_ERR_SNTX, "Formato de fecha incorrecto: dia/mes/año");
 		return 1;
@@ -627,7 +627,7 @@ BOTFUNC(ESVer)
 		ttm = localtime(&ahora);
 		tt = CreaTime(ttm->tm_mday, ttm->tm_mon+1, ttm->tm_year+1900, 0, 0);
 	}
-	else if (sscanf(param[1], "%i/%i%/%i", &dia, &mes, &ano) == 3)
+	else if (sscanf(param[1], "%i\/%i%\/%i", &dia, &mes, &ano) == 3)
 		tt = CreaTime(dia, mes, ano, 0, 0);
 	else
 	{
