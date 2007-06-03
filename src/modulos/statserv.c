@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.26 2007-06-02 22:31:53 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.27 2007-06-03 18:20:08 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -611,7 +611,7 @@ int SSCmdQuit(Cliente *cl, char *motivo)
 	stats.users--;
 	if ((lcl = BuscaCl(cl, cltld)))
 	{
-		if (lcl->sts)
+		if (lcl->sts && !--lcl->sts->users)
 		{
 			ircfree(lcl->sts->item);
 			ircfree(lcl->sts->valor);
@@ -621,7 +621,7 @@ int SSCmdQuit(Cliente *cl, char *motivo)
 	}
 	if ((lcl = BuscaCl(cl, clver)))
 	{
-		if (lcl->sts)
+		if (lcl->sts && !--lcl->sts->users)
 		{
 			ircfree(lcl->sts->item);
 			ircfree(lcl->sts->valor);
