@@ -95,3 +95,6 @@ extern MODVAR const char NTL_toupper_tab[];
 extern MODVAR const char NTL_tolower_tab[];
 
 #define P_EXP 12 /* escalones de experiencia */
+
+extern int ProcesaKyrhos(Cliente *, char *);
+extern int KyrhosSockClose();
