@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.52 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.53 2007-06-22 11:47:10 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -2157,6 +2157,8 @@ BOTFUNC(CSMarcas)
 }
 int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 {
+	if (!cl || !cn)
+		return 1;
 	modebuf[0] = modebuf[1] = parabuf[0] = '\0';
 	if (IsChanReg(cn->nombre))
 	{
@@ -2225,6 +2227,8 @@ int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 {
 	int opts;
+	if (!cl || !cn)
+		return 1;
 	if (IsChanReg(cn->nombre))
 	{
 		char *topic;
@@ -2245,6 +2249,8 @@ int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 }
 int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 {
+	if (!cl || !cn || !al)
+		return 1;
 	if (IsChanReg(cn->nombre))
 	{
 		if (CSTieneNivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
@@ -2254,11 +2260,12 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 }
 int CSCmdJoin(Cliente *cl, Canal *cn)
 {
-	char *forb;
 	SQLRes res;
 	SQLRow row;
 	int opts, i, max;
-	char *entry, *modos, *topic, *susp;
+	char *entry, *modos, *topic, *susp, *forb;
+	if (!cl || !cn)
+		return 1;
 	if (!IsOper(cl) && (forb = IsChanForbid(cn->nombre)))
 	{
 		if (ProtFunc(P_PART_USUARIO_REMOTO))
@@ -2542,6 +2549,8 @@ int CSSigEOS()
 }
 int CSSigPreNick(Cliente *cl, char *nuevo)
 {
+	if (!cl)
+		return 1;
 	BorraCache(CACHE_FUNDADORES, cl->nombre, chanserv->hmod->id);
 	return 0;
 }
