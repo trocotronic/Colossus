@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.30 2007-06-02 12:12:55 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.31 2007-06-22 11:47:47 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -759,7 +759,7 @@ void ConfServer(Conf *config)
 		{
 			for (p = 0; p < config->seccion[i]->secciones; p++)
 			{
-				if (!strcmp(config->seccion[i]->seccion[p]->item, "local"))
+				if (!strcmp(config->seccion[i]->seccion[p]->item, "puerto"))
 					conf_server->escucha = atoi(config->seccion[i]->seccion[p]->data);
 				else if (!strcmp(config->seccion[i]->seccion[p]->item, "enlace"))
 					ircstrdup(conf_server->bind_ip, config->seccion[i]->seccion[p]->data);
