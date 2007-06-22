@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.48 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.49 2007-06-22 11:47:32 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -999,11 +999,11 @@ IRCFUNC(m_msg)
 		LlamaSenyal(SIGN_CMSG, 3, cl, BuscaCanal(parv[1]), parv[2]);
 		return 1;
 	}
+	if (!(bl = BuscaCliente(parv[1])))
+		return 1; /* algo passa! */
 	strlcpy(par, parv[2], sizeof(par));
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
-	if (!(bl = BuscaCliente(parv[1])))
-		return 1; /* algo passa! */
 	if (!strcasecmp(param[0], "\1PING"))
 	{
 		EnviaAServidor(":%s %s %s :%s", parv[1], TOK_NOTICE, parv[0], parv[2]);
@@ -1071,8 +1071,7 @@ IRCFUNC(m_msg)
 IRCFUNC(m_whois)
 {
 	Modulo *mod;
-	mod = BuscaModulo(parv[1], modulos);
-	if (mod)
+	if ((mod = BuscaModulo(parv[1], modulos)))
 	{
 		EnviaAServidor(":%s 311 %s %s %s %s * :%s", me.nombre, parv[0], mod->nick, mod->ident, mod->host, mod->realname);
 		EnviaAServidor(":%s 312 %s %s %s :%s", me.nombre, parv[0], mod->nick, me.nombre, me.info);
@@ -1140,20 +1139,10 @@ IRCFUNC(m_nick)
 }
 IRCFUNC(m_topic)
 {
-	Canal *cn = NULL;
-	if (parc == 6)
-	{
-		cn = CreaCanal(parv[1]);
-		ircstrdup(cn->topic, parv[5]);
-		cn->ntopic = cl;
-	}
-	else if (parc == 5)
-	{
-		cn = CreaCanal(parv[1]);
-		ircstrdup(cn->topic, parv[4]);
-		cn->ntopic = cl;
-	}
-	LlamaSenyal(SIGN_TOPIC, 3, cl, cn, parc == 6 ? parv[5] : parv[4]);
+	Canal *cn = CreaCanal(parv[1]);
+	ircstrdup(cn->topic, parv[parc-1]);
+	cn->ntopic = cl;
+	LlamaSenyal(SIGN_TOPIC, 3, cl, cn, parv[parc-1]);
 	return 0;
 }
 IRCFUNC(m_quit)
