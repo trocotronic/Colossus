@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.29 2007-06-03 18:59:57 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.30 2007-06-23 09:00:55 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -833,11 +833,16 @@ BOTFUNC(SSStats)
 {
 	if (params < 2)
 	{
-		char timebuf[128];
+		char timebuf[128], *tz;
 		time_t ut, ct, st, ot;
 		u_int u, c, s, o;
 		SQLRes res;
 		SQLRow row;
+		res = SQLQuery("SELECT @@session.time_zone");
+		row = SQLRow(res);
+		tz = strdup(row[0]);
+		SQLFreeRes(res);
+		SQLQuery("SET time_zone = '+0:00'");
 		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE DATE(CURDATE())=DATE(dia)", PREFIJO, SS_SQL)))
 			SSRefresca(USERS|CHANS|SERVS|OPERS|NO_INC);
 		else
@@ -948,6 +953,8 @@ BOTFUNC(SSStats)
 		strftime(timebuf, sizeof(timebuf), diasem_fmt, localtime(&ot));
 		Responde(cl, CLI(statserv), "Máximo operadores: \00312%u\003 - Día y hora: \00312%s", o, timebuf);
 		SQLFreeRes(res);
+		SQLQuery("SET time_zone = '%s'", tz);
+		Free(tz);
 	}
 	else if (!strcasecmp(param[1], "SERVERS") || !strcasecmp(param[1], "SERVIDORES"))
 	{
