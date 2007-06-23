@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.30 2007-06-23 09:00:55 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.31 2007-06-23 09:02:17 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -839,7 +839,7 @@ BOTFUNC(SSStats)
 		SQLRes res;
 		SQLRow row;
 		res = SQLQuery("SELECT @@session.time_zone");
-		row = SQLRow(res);
+		row = SQLFetchRow(res);
 		tz = strdup(row[0]);
 		SQLFreeRes(res);
 		SQLQuery("SET time_zone = '+0:00'");
