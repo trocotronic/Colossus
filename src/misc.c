@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.16 2007-07-14 14:40:56 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.17 2007-07-14 15:28:23 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -11,6 +11,7 @@ WIN32_FIND_DATA FindFileData;
 #else
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #endif
 #include <sys/stat.h>
 extern pthread_mutex_t mutex;
