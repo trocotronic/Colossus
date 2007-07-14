@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.15 2007-06-03 18:34:48 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.16 2007-07-14 14:40:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -430,7 +430,7 @@ void Debug(char *formato, ...)
 	char debugbuf[8000];
 	va_list vl;
 #ifdef _WIN32
-	static HANDLE *conh = NULL;
+	static HANDLE conh = NULL;
 	DWORD len = 0;
 #endif
 	va_start(vl, formato);
@@ -441,12 +441,10 @@ void Debug(char *formato, ...)
 	if (!conh)
 	{
 		if (AllocConsole())
-		{
-			conh = (HANDLE *)malloc(sizeof(HANDLE));
-			*conh = GetStdHandle(STD_OUTPUT_HANDLE);
-		}
+			conh = GetStdHandle(STD_OUTPUT_HANDLE);
 	}
-	WriteFile(*conh, debugbuf, strlen(debugbuf), &len, NULL);
+	if (conh)
+		WriteFile(conh, debugbuf, strlen(debugbuf), &len, NULL);
 #else
 	fprintf(stderr, debugbuf);
 #endif

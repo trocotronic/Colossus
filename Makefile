@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.23 2007-05-31 23:06:36 Trocotronic Exp $
+## $Id: Makefile,v 1.24 2007-07-14 14:40:55 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-NOCORE=1
+#NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -353,8 +353,8 @@ src/protocolos/redhispana.dll: src/protocolos/redhispana.c $(INCLUDES)
 	-@copy src\protocolos\redhispana.pdb protocolos\redhispana.pdb >NUL
 
 src/sql/mysql.dll: src/sql/mysql.c $(INCLUDES)
-	$(CC) $(SQLCFLAGS) /I "C:\dev\mysql-5.0.37\include" src/sql/mysql.c \
-	$(SQLLFLAGS) /LIBPATH:"C:\dev\mysql-5.0.37\lib_release" mysqlclient.lib \
+	$(CC) $(SQLCFLAGS) /I "C:\dev\mysql-5.0.45\include" src/sql/mysql.c \
+	$(SQLLFLAGS) /LIBPATH:"C:\dev\mysql-5.0.45\lib_release" mysqlclient.lib \
 	zlib.lib taocrypt.lib yassl.lib \
 	user32.lib ws2_32.lib Advapi32.lib /NODEFAULTLIB:libcmt /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
 	-@copy src\sql\mysql.dll sql\mysql.dll >NUL

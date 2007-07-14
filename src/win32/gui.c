@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.21 2007-01-18 13:54:59 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.22 2007-07-14 14:40:56 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -110,9 +110,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		MessageBox(hWnd, "No se ha podido inicializar winsock.", "Error", MB_OK|MB_ICONERROR);
 		exit(-1);
 	}
+	ShowWindow(hWnd, SW_SHOW);
 	if (IniciaPrograma(__argc, __argv))
 		exit(-1);
-	ShowWindow(hWnd, SW_SHOW);
 	if ((hThreadPrincipal = (HANDLE)_beginthread(LoopPrincipal, 0, NULL)) < 0)
 	{
 		MessageBox(hWnd, "Ha sido imposible crear el thread.", "Error", MB_OK|MB_ICONERROR);
