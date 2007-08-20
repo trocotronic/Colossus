@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.53 2007-06-22 11:47:10 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.54 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -418,7 +418,7 @@ BOTFUNCHELP(CSHClear)
 	Responde(cl, CLI(chanserv), "\00312USERS\003 Expulsa a todos los usuarios del canal. Puede especificar un motivo.");
 	Responde(cl, CLI(chanserv), "\00312ACCESOS\003 Borra todos los accesos del canal.");
 	Responde(cl, CLI(chanserv), "\00312MODOS\003 Quita todos los modos del canal y lo deja en +nt.");
-	Responde(cl, CLI(chanserv), "\0012{modo}\003 Quita el estado de {modo} a todos los nicks del canal.");
+	Responde(cl, CLI(chanserv), "\00312{modo}\003 Quita el estado de {modo} a todos los nicks del canal.");
 	Responde(cl, CLI(chanserv), "Por ejemplo, CLEAR o quitaría el modo +o a todos los nicks del canal.");
 	if (IsOper(cl))
 	{

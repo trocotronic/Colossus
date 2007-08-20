@@ -2,10 +2,17 @@
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "modulos/gameserv.h"
 #include "modulos/gameserv/kyrhos.h"
 
 Kyrhos *kyrhos = NULL;
 KyrhosUser *kusers = NULL;
+
+int KyrhosSockClose();
+int KyrhosEOS();
+int KyrhosSQL();
+int KyrhosPMsg(Cliente *, Cliente *, char *, int);
+int ProcesaKyrhos(Cliente *, char *);
 
 #define P(x) Responde(kus->cl, kyrhos->cl, x)
 #define C0(x) (param [0] && !strcasecmp(param[0], x))
@@ -390,6 +397,12 @@ int FijarPos(KyrhosUser *kus, int pos)
 	kus->pos = p;
 	return 1;
 }
+int KyrhosPMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
+{
+	if (bl == kyrhos->cl)
+		ProcesaKyrhos(cl, msg);
+	return 0;
+}
 int ProcesaKyrhos(Cliente *cl, char *msg)
 {
 	char *param[256], par[BUFSIZE];
@@ -698,5 +711,52 @@ int KyrhosSockClose()
 			DetieneLucha(kus);
 		Free(kus);
 	}
+	return 0;
+}
+int KyrhosEOS()
+{
+	kyrhos->cl = CreaBot(kyrhos->nick ? kyrhos->nick : "Kyrhos", gameserv->hmod->ident, gameserv->hmod->host, "kdBq", "La sombra de Kyrhos");
+	return 0;
+}
+int KyrhosSQL()
+{
+	if (!SQLEsTabla(GS_KYRHOS))
+	{
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+			"item varchar(255), "
+			"pos int, "
+			"KEY item (item) "
+			");", PREFIJO, GS_KYRHOS);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
+	}
+	SQLCargaTablas();
+	return 0;
+}
+int KyrhosDescarga()
+{
+	ircfree(kyrhos->nick);
+	DesconectaBot(kyrhos->cl, "La sombra de Kyrhos");
+	kyrhos->cl = NULL;
+	BorraSenyal(SIGN_EOS, KyrhosEOS);
+	BorraSenyal(SIGN_SQL, KyrhosSQL);
+	BorraSenyal(SIGN_PMSG, KyrhosPMsg);
+	BorraSenyal(SIGN_SOCKCLOSE, KyrhosSockClose);
+	return 0;
+}
+int KyrhosParseaConf(Conf *cnf)
+{
+	int p;
+	if (!kyrhos)
+		kyrhos = BMalloc(Kyrhos);
+	for (p = 0; p < cnf->secciones; p++)
+	{
+		if (!strcmp(cnf->seccion[p]->item, "nick"))
+			ircstrdup(kyrhos->nick, cnf->seccion[p]->data);
+	}
+	InsertaSenyal(SIGN_EOS, KyrhosEOS);
+	InsertaSenyal(SIGN_SQL, KyrhosSQL);
+	InsertaSenyal(SIGN_PMSG, KyrhosPMsg);
+	InsertaSenyal(SIGN_SOCKCLOSE, KyrhosSockClose);
 	return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.20 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.21 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -194,7 +194,7 @@ typedef struct _duracion Duracion;
  	    $horas Horas.
  	    $mins Minutos.
  	    $segs Segundos.
- * @ver: MideDuracion
+ * @ver: MideDuracionEx MideDuracion
  * @cat: Programa
  !*/
 struct _duracion
@@ -205,4 +205,5 @@ struct _duracion
 	u_int mins;
 	u_int segs;
 };
-extern int MideDuracion(u_int, Duracion *);
+extern int MideDuracionEx(u_int, Duracion *);
+extern char *MideDuracion(u_int);

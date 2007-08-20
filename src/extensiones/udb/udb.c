@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.24 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.25 2007-08-20 01:46:25 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -191,6 +191,7 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 	BorraSenyal(SIGN_POST_NICK, SigPostNick_U);
 	BorraSenyal(SIGN_SYNCH, SigSynch);
 	BorraSenyal(SIGN_SOCKOPEN, SigSockOpen);
+	BorraSenyal(SIGN_SOCKCLOSE, SigSockClose);
 	protocolo->comandos[P_MODO_USUARIO_REMOTO] = (int(*)())p_svsmode_r;
 	opts = 0;
 	return 0;

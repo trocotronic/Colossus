@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.82 2007-07-14 14:40:56 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.83 2007-08-20 01:46:25 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -88,6 +88,19 @@ typedef struct _sock Sock;
  * @sntx: int MIN(int x, int y)
  !*/
 #define MIN(x,y) (x < y ? x : y)
+
+#endif
+
+#ifndef MAX
+/*!
+ * @desc: Devuelve el máximo de dos números.
+ * @params: $x [in] Primer número.
+ 	    $y [in] Segundo número.
+ * @ret: Devuelve el máximo de dos números.
+ * @cat: Programa
+ * @sntx: int MAX(int x, int y)
+ !*/
+#define MAX(x,y) (x < y ? y : x)
 
 #endif
 

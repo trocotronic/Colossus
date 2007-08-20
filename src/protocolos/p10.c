@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.36 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.37 2007-08-20 01:46:25 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -894,7 +894,7 @@ IRCFUNC(m_eos)
 IRCFUNC(m_msg)
 {
 	char *param[256], par[BUFSIZE];
-	int params, i, resp = -1;
+	int params, i, resp = 0;
 	Modulo *mod;
 	Cliente *bl;
 	strtok(parv[1], "@");

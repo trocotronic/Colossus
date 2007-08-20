@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.35 2007-05-31 23:06:36 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.36 2007-08-20 01:46:25 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -229,47 +229,47 @@ extern MODVAR Cliente me;
 #define IsReg(x) (x && SQLCogeRegistro(NS_SQL, x, NULL))
 /*!
  * @desc: Consulta si un usuario está identificado
- * @params: $nick [in] Nick del usuario.
- * @sntx: int IsId(char *nick)
+ * @params: $cl [in] Cliente
+ * @sntx: int IsId(Cliente *cl)
  * @ret: Devuelve 1 si está identificado; 0, si no.
  * @cat: IRCd
  !*/
 #define IsId(x) (x && (x->nivel & N1))
 /*!
  * @desc: Consulta si un usuario tiene el estado de root.
- * @params: $nick [in] Nick del usuario.
- * @sntx: int IsRoot(char *nick)
+ * @params: $cl [in] Cliente
+ * @sntx: int IsRoot(Cliente *cl)
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
 #define IsRoot(x) (x && (x->nivel & N5) && IsId(x))
 /*!
  * @desc: Consulta si un usuario tiene el estado de admin.
- * @params: $nick [in] Nick del usuario.
- * @sntx: int IsAdmin(char *nick)
+ * @params: $cl [in] Cliente
+ * @sntx: int IsAdmin(Cliente *cl)
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
 #define IsAdmin(x) (x && ((x->nivel & N4) || IsRoot(x)))
 /*!
  * @desc: Consulta si un usuario tiene el estado de oper.
- * @params: $nick [in] Nick del usuario.
- * @sntx: int IsOper(char *nick)
+ * @params: $cl [in] Cliente
+ * @sntx: int IsOper(Cliente *cl)
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
 #define IsOper(x) (x && ((x->nivel & N3) || IsAdmin(x)))
 /*!
  * @desc: Consulta si un usuario tiene el estado de preoper.
- * @params: $nick [in] Nick del usuario.
- * @sntx: int IsPreo(char *nick)
+ * @params: $cl [in] Cliente
+ * @sntx: int IsPreo(Cliente *cl)
  * @ret: Devuelve 1 tiene ese estado; 0, si no.
  * @cat: IRCd
  !*/
 #define IsPreo(x) (x && ((x->nivel & N2) || IsOper(x)))
 extern void ProcesaModosCliente(Cliente *, char *);
 extern char *MascaraIrcd(char *);
-extern void EntraBot(Cliente *, char *);
+extern Canal *EntraBot(Cliente *, char *);
 extern char *TipoMascara(char *, int);
 #define SIGN_SQL 0
 #define SIGN_UMODE 1

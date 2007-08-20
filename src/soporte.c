@@ -1,5 +1,5 @@
 /*
- * $Id: soporte.c,v 1.19 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.20 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -757,9 +757,8 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
  * @params: $segs [in] Segundos totales de la duración.
  		$d [out] Estructura rellenada que contiene los segundos desglosados en semanas, días, horas, minutos y segundos.
  * @cat: Programa
- * @sntx: void Free(void *x)
  !*/
-int MideDuracion(u_int segs, Duracion *d)
+int MideDuracionEx(u_int segs, Duracion *d)
 {
 	d->sems = segs/604800;
 	segs %= 604800;
@@ -771,4 +770,18 @@ int MideDuracion(u_int segs, Duracion *d)
 	segs %= 60;
 	d->segs = segs;
 	return 0;
+}
+/*!
+ * @desc: Calcula la duración a partir de los segundos dados en un formato legible.
+ * @params: $segs [in] Segundos totales de la duración.
+ * @cat: Programa
+ * @ret: Devuelve un puntero a char que contiene la duración de forma "%u días, %02u:%02u:%02u"
+ !*/
+char *MideDuracion(u_int segs)
+{
+	Duracion d;
+	static char tmp[64];
+	MideDuracionEx(segs, &d);
+	ircsprintf(tmp, "%u días, %02u:%02u:%02u", d.sems*7+d.dias, d.horas, d.mins, d.segs);
+	return tmp;
 }

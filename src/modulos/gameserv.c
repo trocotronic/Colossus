@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.8 2007-06-03 18:50:13 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.9 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -8,12 +8,15 @@
 #include "modulos.h"
 #include "protocolos.h"
 #include "modulos/gameserv.h"
+#ifdef BIDLE
+#include "modulos/gameserv/bidle.h"
+#endif
+#ifdef KYRHOS
 #include "modulos/gameserv/kyrhos.h"
+#endif
 
 GameServ *gameserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, gameserv->hmod, NULL)
-
-extern Kyrhos *kyrhos;
 
 static bCom gameserv_coms[] = {
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
@@ -75,16 +78,15 @@ int MOD_CARGA(GameServ)(Modulo *mod)
 }
 int MOD_DESCARGA(GameServ)()
 {
-	BorraSenyal(SIGN_EOS, GSSigEOS);
-	BorraSenyal(SIGN_SQL, GSSigSQL);
-	BorraSenyal(SIGN_PMSG, GSSigPMsg);
-	BorraSenyal(SIGN_SOCKCLOSE, GSSigSockClose);
 	BotUnset(gameserv);
+#ifdef KYRHOS
 	if (kyrhos)
-	{
-		ircfree(kyrhos->nick);
-		DesconectaBot(kyrhos->cl, "La sombra de Kyrhos");
-	}
+		KyrhosDescarga();
+#endif
+#ifdef BIDLE
+	if (bidle)
+		BidleDescarga();
+#endif
 	return 0;
 }
 int GSTest(Conf *config, int *errores)
@@ -117,55 +119,17 @@ void GSSet(Conf *config, Modulo *mod)
 						CreaAlias(config->seccion[i]->data, config->seccion[i]->seccion[p]->data, mod);
 				}
 			}
+#ifdef KYRHOS
 			else if (!strcmp(config->seccion[i]->item, "Kyrhos"))
-			{
-				kyrhos = BMalloc(Kyrhos);
-				for (p = 0; p < config->seccion[i]->secciones; p++)
-				{
-					if (!strcmp(config->seccion[i]->seccion[p]->item, "nick"))
-						ircstrdup(kyrhos->nick, config->seccion[i]->seccion[p]->data);
-				}
-			}
+				KyrhosParseaConf(config->seccion[i]);
+#endif
+#ifdef BIDLE
+			else if (!strcmp(config->seccion[i]->item, "Bidle"))
+				BidleParseaConf(config->seccion[i]);
+#endif
 		}
 	}
 	else
 		ProcesaComsMod(NULL, mod, gameserv_coms);
-	InsertaSenyal(SIGN_EOS, GSSigEOS);
-	InsertaSenyal(SIGN_SQL, GSSigSQL);
-	InsertaSenyal(SIGN_PMSG, GSSigPMsg);
-	InsertaSenyal(SIGN_SOCKCLOSE, GSSigSockClose);
 	BotSet(gameserv);
-}
-int GSSigEOS()
-{
-	if (kyrhos)
-		kyrhos->cl = CreaBot(kyrhos->nick ? kyrhos->nick : "Kyrhos", gameserv->hmod->ident, gameserv->hmod->host, "kdBq", "La sombra de Kyrhos");
-	return 0;
-}
-int GSSigSQL()
-{
-	if (kyrhos && !SQLEsTabla(GS_KYRHOS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-			"item varchar(255), "
-			"pos int, "
-			"KEY item (item) "
-			");", PREFIJO, GS_KYRHOS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
-	}
-	SQLCargaTablas();
-	return 0;
-}
-int GSSigPMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
-{
-	if (kyrhos && bl == kyrhos->cl)
-		ProcesaKyrhos(cl, msg);
-	return 0;
-}
-int GSSigSockClose()
-{
-	if (kyrhos)
-		KyrhosSockClose();
-	return 0;
 }

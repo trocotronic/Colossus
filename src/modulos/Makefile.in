@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.15 2007-06-03 18:50:46 Trocotronic Exp $
+## $Id: Makefile.in,v 1.16 2007-08-20 01:46:24 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -47,9 +47,11 @@ noteserv.so: noteserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o noteserv.so noteserv.c
 statserv.so: statserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o statserv.so statserv.c
-gameserv.so: gameserv.c $(INCLUDES) kyrhos.o
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o gameserv.so gameserv.c kyrhos.o
+gameserv.so: gameserv.c $(INCLUDES) kyrhos.o bidle.o
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o gameserv.so gameserv.c kyrhos.o bidle.o
 kyrhos.o: gameserv/kyrhos.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c gameserv/kyrhos.c
+bidle.o: gameserv/bidle.c $(INCLUDES)
+	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c gameserv/bidle.c
 clean:
 	$(RM) -f *.o *.so *~ core

@@ -1,5 +1,5 @@
 /*
- * $Id: sqlite.c,v 1.11 2007-03-01 15:35:54 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.12 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -19,6 +19,7 @@ SQLRow FetchRow(SQLRes);
 void Descarga();
 void CargaTablas();
 int GetErrno();
+void Seek(SQLRes, u_long);
 #ifdef _WIN32
 #define DB_PATH "sql\\sqlite\\"
 #else
@@ -43,6 +44,7 @@ int Carga()
 	sql->NumRows = NumRows;
 	sql->Escapa = Escapa;
 	sql->GetErrno = GetErrno;
+	sql->Seek = Seek;
 	ircsprintf(sql->servinfo, "SQLite %s", sqlite3_libversion());
 	ircsprintf(sql->clientinfo, "SQLite %s", sqlite3_libversion());
 	CargaTablas();
@@ -137,4 +139,10 @@ char *Escapa(const char *item)
 int GetErrno()
 {
 	return sqlite3_errcode(sqlite);
+}
+void Seek(SQLRes res, u_long off)
+{
+	u_int i;
+	sqlite3_reset((sqlite3_stmt *)res);
+	for (i = 0; i < off && sqlite3_step((sqlite3_stmt *)res) == SQLITE_ROW; i++);
 }

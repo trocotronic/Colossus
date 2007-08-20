@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.24 2007-07-14 14:40:55 Trocotronic Exp $
+## $Id: Makefile,v 1.25 2007-08-20 01:46:25 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-#NOCORE=1
+NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -322,10 +322,11 @@ src/modulos/noteserv.dll: src/modulos/noteserv.c $(INCLUDES) ./include/modulos/n
 	-@copy src\modulos\noteserv.dll modulos\noteserv.dll >NUL
 	-@copy src\modulos\noteserv.pdb modulos\noteserv.pdb >NUL
 
-GAMESERV_FILES=src/modulos/gameserv.c src/modulos/gameserv/kyrhos.c 
-src/modulos/gameserv.dll: $(INCLUDES) ./include/modulos/gameserv.h  ./include/modulos/gameserv/kyrhos.h $(GAMESERV_FILES)
+GAMESERV_FILES=src/modulos/gameserv.c src/modulos/gameserv/kyrhos.c src/modulos/gameserv/bidle.c
+JUEGOS=/D BIDLE
+src/modulos/gameserv.dll: $(INCLUDES) ./include/modulos/gameserv.h  ./include/modulos/gameserv/kyrhos.h ./include/modulos/gameserv/bidle.h $(GAMESERV_FILES)
 	$(CC) $(MODDBGCFLAG) $(CFLAGS) /Fesrc/modulos/gameserv/ $(INC_FILES) /Fosrc/modulos/gameserv/ \
-	/D ENLACE_DINAMICO /D MODULE_COMPILE $(GAMESERV_FILES) $(MODLFLAGS) /out:src/modulos/gameserv.dll
+	/D ENLACE_DINAMICO /D MODULE_COMPILE $(JUEGOS) $(GAMESERV_FILES) $(MODLFLAGS) /out:src/modulos/gameserv.dll
 	-@copy src\modulos\gameserv.dll modulos\gameserv.dll >NUL
 	-@copy src\modulos\gameserv.pdb modulos\gameserv.pdb >NUL
 	

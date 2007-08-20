@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.49 2007-06-22 11:47:32 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.50 2007-08-20 01:46:25 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -986,7 +986,7 @@ SOCKFUNC(PROT_PARSEA(Unreal))
 IRCFUNC(m_msg)
 {
 	char *param[256], par[BUFSIZE];
-	int params, i, resp = -1;
+	int params, i, resp = 0;
 	Modulo *mod;
 	Cliente *bl;
 	strtok(parv[1], "@");

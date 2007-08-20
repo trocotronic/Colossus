@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.13 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.14 2007-08-20 01:46:25 Trocotronic Exp $ 
  */
  
 #include "modulos.h"
@@ -55,6 +55,7 @@ struct _proto
 	int modos;
 	char *modcanales;
 	char *modusers;
+	unsigned eos:1;
 };
 	
 extern MODVAR Protocolo *protocolo;

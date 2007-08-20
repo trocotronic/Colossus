@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.31 2007-06-22 11:47:47 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.32 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1174,7 +1174,7 @@ int TestLog(Conf *config, int *errores)
 	short error_parcial = 0;
 	Conf *eval, *aux;
 	int i;
-	if ((eval = BuscaEntrada(config, "tamaño")))
+	if ((eval = BuscaEntrada(config, "tamaño")) || (eval = BuscaEntrada(config, "tamano")))
 	{
 		if (atoi(eval->data) < 0)
 		{
@@ -1220,7 +1220,7 @@ void ConfLog(Conf *config)
 	ircstrdup(conf_log->archivo, config->data);
 	for (i = 0; i < config->secciones; i++)
 	{
-		if (!strcmp(config->seccion[i]->item, "tamaño"))
+		if (!strcmp(config->seccion[i]->item, "tamaño") || !strcmp(config->seccion[i]->item, "tamano"))
 			conf_log->size = atoi(config->seccion[i]->data) * 1024;
 		else if (!strcmp(config->seccion[i]->item, "opciones"))
 		{

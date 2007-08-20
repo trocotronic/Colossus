@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.11 2007-03-01 15:35:54 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.12 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -17,6 +17,7 @@ SQLRow FetchRow(SQLRes);
 void Descarga();
 void CargaTablas();
 int GetErrno();
+void Seek(SQLRes, u_long);
 int fila = 0, err = 0;
 int Carga()
 {
@@ -98,6 +99,7 @@ int Carga()
 	sql->NumRows = NumRows;
 	sql->Escapa = Escapa;
 	sql->GetErrno = GetErrno;
+	sql->Seek = Seek;
 	PQsetClientEncoding(postgres, "LATIN1");
 	ircsprintf(sql->servinfo, "PostGreSQL %s", PQparameterStatus(postgres, "server_version"));
 	CargaTablas();
@@ -222,4 +224,8 @@ char *Escapa(const char *item)
 int GetErrno()
 {
 	return err;
+}
+void Seek(SQLRes res, u_long off)
+{
+	fila = off;
 }

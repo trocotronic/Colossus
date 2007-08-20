@@ -99,6 +99,7 @@ EXPORTS
 	MascaraIrcd
 	MascaraTKL
 	MideDuracion
+	MideDuracionEx
 	ModoAFlag
 	ModosAFlags
 	ModuloEsResidente
@@ -130,6 +131,7 @@ EXPORTS
 	SQLInserta
 	SQLNumRows
 	SQLQuery
+	SQLSeek
 	SacaBot
 	SetComMod
 	SockAccept

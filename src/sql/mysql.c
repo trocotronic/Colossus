@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.13 2007-04-04 18:59:02 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.14 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -22,6 +22,7 @@ SQLRow FetchRow(SQLRes);
 void Descarga();
 void CargaTablas();
 int GetErrno();
+void Seek(SQLRes, u_long);
 #ifdef _WIN32
 struct errentry 
 {
@@ -162,6 +163,7 @@ int Carga()
 	sql->NumRows = NumRows;
 	sql->Escapa = Escapa;
 	sql->GetErrno = GetErrno;
+	sql->Seek = Seek;
 	ircsprintf(sql->servinfo, "MySQL %s", mysql_get_server_info(mysql));
 	ircsprintf(sql->clientinfo, "MySQL %s", mysql_get_client_info());
 	if ((c = strchr(sql->servinfo, '-')))
@@ -283,4 +285,10 @@ char *Escapa(const char *item)
 int GetErrno()
 {
 	return mysql_errno(mysql);
+}
+void Seek(SQLRes res, u_long off)
+{
+	pthread_mutex_lock(&mutex);
+	mysql_data_seek(res, off);
+	pthread_mutex_unlock(&mutex);
 }

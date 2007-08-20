@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.31 2007-06-23 09:02:17 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.32 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -341,7 +341,7 @@ int MOD_CARGA(StatServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	//mod->activo = 1;
+	mod->activo = 1;
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))
@@ -960,7 +960,7 @@ BOTFUNC(SSStats)
 	{
 		StsServ *sts;
 		time_t t;
-		Duracion d;
+		char *d;
 		for (sts = stats.stsserv; sts; sts = sts->sig)
 		{
 			Responde(cl, CLI(statserv), "Servidor: \00312%s", sts->cl->nombre);
@@ -969,8 +969,8 @@ BOTFUNC(SSStats)
 			Responde(cl, CLI(statserv), "Lag: %\00312%.3f segs", (double)sts->lag/1000);
 			Responde(cl, CLI(statserv), "Versión del servidor: \00312%s", sts->version);
 			t = GMTime() - sts->uptime;
-			MideDuracion(t, &d);
-			Responde(cl, CLI(statserv), "Uptime: \00312%u días, %02u:%02u:%02u", d.sems*7+d.dias, d.horas, d.mins, d.segs);
+			d = MideDuracion(t);
+			Responde(cl, CLI(statserv), d);
 			Responde(cl, CLI(statserv), " ");
 		}
 	}
@@ -1293,11 +1293,10 @@ void ParseaTemplate(char *f)
 					else if (!strncmp(f, "SERVERS_UPTIME", d-f))
 					{
 						time_t t;
-						Duracion d;
+						char *d;
 						t = GMTime() - sts->uptime;
-						MideDuracion(t, &d);
-						ircsprintf(buf, "%u días, %02u:%02u:%02u", d.sems*7+d.dias, d.horas, d.mins, d.segs);
-						write(fdout, buf, strlen(buf));
+						d = MideDuracion(t);
+						write(fdout, d, strlen(d));
 					}
 					else if (!strncmp(f, "SERVERS_FIN", d-f))
 						break;

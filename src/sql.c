@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.12 2007-02-03 22:57:27 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.13 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -74,12 +74,15 @@ int SQLEsTabla(char *tabla)
 {
 	char buf[256];
 	int i = 0;
-	ircsprintf(buf, "%s%s", PREFIJO, tabla);
-	while (sql->tablas[i][0])
+	if (sql)
 	{
-		if (!strcasecmp(sql->tablas[i][0], buf))
-			return 1;
-		i++;
+		ircsprintf(buf, "%s%s", PREFIJO, tabla);
+		while (sql->tablas[i][0])
+		{
+			if (!strcasecmp(sql->tablas[i][0], buf))
+				return 1;
+			i++;
+		}
 	}
 	return 0;
 }
@@ -96,19 +99,22 @@ int SQLEsCampo(char *tabla, char *campo)
 {
 	char buf[256];
 	int i = 0, j;
-	ircsprintf(buf, "%s%s", PREFIJO, tabla);
-	while (sql->tablas[i][0])
+	if (sql)
 	{
-		if (!strcasecmp(sql->tablas[i][0], buf))
+		ircsprintf(buf, "%s%s", PREFIJO, tabla);
+		while (sql->tablas[i][0])
 		{
-			for (j = 1; sql->tablas[i][j]; j++)
+			if (!strcasecmp(sql->tablas[i][0], buf))
 			{
-				if (!strcasecmp(sql->tablas[i][j], campo))
-					return 1;
+				for (j = 1; sql->tablas[i][j]; j++)
+				{
+					if (!strcasecmp(sql->tablas[i][j], campo))
+						return 1;
+				}
+				return 0;
 			}
-			return 0;
+			i++;
 		}
-		i++;
 	}
 	return 0;
 }
@@ -124,16 +130,19 @@ int SQLEsCampo(char *tabla, char *campo)
 SQLRes SQLQuery(const char *query, ...)
 {
 	va_list vl;
-	SQLRes res;
+	SQLRes res = NULL;
 	char buf[BUFSIZE];
-	va_start(vl, query);
-	ircvsprintf(buf, query, vl);
-	va_end(vl);
+	if (sql)
+	{
+		va_start(vl, query);
+		ircvsprintf(buf, query, vl);
+		va_end(vl);
 #ifdef DEBUG
-	Debug("SQL Query: %s", buf);
+		Debug("SQL Query: %s", buf);
 #endif
-	res = sql->Query(buf);
-	SetSQLErrno();
+		res = sql->Query(buf);
+		SetSQLErrno();
+	}
 	return res;
 }
 
@@ -147,8 +156,12 @@ SQLRes SQLQuery(const char *query, ...)
  
 char *SQLEscapa(const char *item)
 {
-	char *esc = sql->Escapa(item);
-	SetSQLErrno();
+	char *esc = NULL;
+	if (sql)
+	{
+		esc = sql->Escapa(item);
+		SetSQLErrno();
+	}
 	return esc;
 }
 
@@ -161,8 +174,11 @@ char *SQLEscapa(const char *item)
  
 void SQLCargaTablas()
 {
-	sql->CargaTablas();
-	SetSQLErrno();
+	if (sql)
+	{
+		sql->CargaTablas();
+		SetSQLErrno();
+	}
 }
 
 /*!
@@ -174,8 +190,11 @@ void SQLCargaTablas()
  
 void SQLFreeRes(SQLRes res)
 {
-	sql->FreeRes(res);
-	SetSQLErrno();
+	if (sql)
+	{
+		sql->FreeRes(res);
+		SetSQLErrno();
+	}
 }
 
 /*!
@@ -188,8 +207,12 @@ void SQLFreeRes(SQLRes res)
  
 SQLRow SQLFetchRow(SQLRes res)
 {
-	SQLRow row = sql->FetchRow(res);
-	SetSQLErrno();
+	SQLRow row = NULL;
+	if (sql)
+	{
+		row = sql->FetchRow(res);
+		SetSQLErrno();
+	}
 	return row;
 }
 
@@ -214,9 +237,9 @@ char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
 		cam_corr = SQLEscapa(campo);
 	res = SQLQuery("SELECT %s from %s%s where LOWER(item)='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, strtolower(reg_corr));
 	SetSQLErrno();
-	Free(reg_corr);
+	ircfree(reg_corr);
 	if (campo)
-		Free(cam_corr);
+		ircfree(cam_corr);
 	if (!res)
 		return NULL;
 	row = SQLFetchRow(res);
@@ -269,8 +292,8 @@ void SQLInserta(char *tabla, char *registro, char *campo, char *valor, ...)
 	if (!SQLCogeRegistro(tabla, registro, NULL))
 		SQLQuery("INSERT INTO %s%s (item) values ('%s')", PREFIJO, tabla, reg_c);
 	SQLQuery("UPDATE %s%s SET %s='%s' where LOWER(item)='%s'", PREFIJO, tabla, cam_c, val_c ? val_c : "", strtolower(reg_c));
-	Free(reg_c);
-	Free(cam_c);
+	ircfree(reg_c);
+	ircfree(cam_c);
 	ircfree(val_c);
 	SetSQLErrno();
 }
@@ -291,7 +314,7 @@ void SQLBorra(char *tabla, char *registro)
 		reg_c = SQLEscapa(registro);
 		if (SQLCogeRegistro(tabla, registro, NULL))
 			SQLQuery("DELETE from %s%s where LOWER(item)='%s'", PREFIJO, tabla, strtolower(reg_c));
-		Free(reg_c);
+		ircfree(reg_c);
 	}
 	else
 		SQLQuery("DELETE from %s%s", PREFIJO, tabla);
@@ -308,13 +331,31 @@ void SQLBorra(char *tabla, char *registro)
  
 int SQLNumRows(SQLRes res)
 {
-	int rows = sql->NumRows(res);
-	SetSQLErrno();
+	int rows = 0;
+	if (sql)
+	{
+		rows = sql->NumRows(res);
+		SetSQLErrno();
+	}
 	return rows;
 }
-
 void SetSQLErrno()
 {
-	if (sql->GetErrno)
+	if (sql && sql->GetErrno)
 		sql->_errno = sql->GetErrno();
+}
+/*!
+ * @desc: Sitúa el puntero interno de un recurso SQLRes a la fila indicada.
+ * @params: $res [in] Recurso de privado SQL devuelto por SQLQuery.
+ 		$off [in] Número de fila a situar el puntero. Usar 0 para situarlo al principio. Este offset va desde 0 hasta SQLNumRows-1.
+ * @ver: SQLQuery SQLFetchRow SQLNumRows
+ * @cat: SQL
+ !*/
+void SQLSeek(SQLRes res, u_long off)
+{
+	if (sql)
+	{
+		sql->Seek(res, off);
+		SetSQLErrno();
+	}
 }

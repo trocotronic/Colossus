@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.53 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.54 2007-08-20 01:46:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -195,7 +195,6 @@ SOCKFUNC(CierraIrcd)
 	Cliente *al, *aux;
 	Canal *cn, *caux;
 	Modulo *mod;
-	LlamaSenyal(SIGN_SOCKCLOSE, 0);
 	for (al = clientes; al; al = aux)
 	{
 		aux = al->sig;
@@ -210,6 +209,7 @@ SOCKFUNC(CierraIrcd)
 	}
 	canales = NULL;
 	linkado = NULL;
+	LlamaSenyal(SIGN_SOCKCLOSE, 0);
 	for (mod = modulos; mod; mod = mod->sig)
 		mod->cl = NULL;
 	if (ProtFunc(P_PING))
@@ -640,9 +640,9 @@ char *MascaraIrcd(char *mascara)
  * @cat: Modulos
  !*/
  
-void EntraBot(Cliente *bl, char *canal)
+Canal *EntraBot(Cliente *bl, char *canal)
 {
-	Canal *cn;
+	Canal *cn = NULL;
 	if ((cn = CreaCanal(canal)))
 	{
 		InsertaCanalEnCliente(bl, cn);
@@ -651,6 +651,7 @@ void EntraBot(Cliente *bl, char *canal)
 		if (conf_set->opts & AUTOBOP)
 			ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
 	}
+	return cn;
 }
 
 /*!
@@ -1009,10 +1010,12 @@ void Responde(Cliente *cl, Cliente *bot, char *formato, ...)
 		ProtFunc(P_MSG_VL)(cl, bot, 0, formato, &vl);
 	va_end(vl);
 }
+/* Funcion llamada por SIGN_EOS */
 int EntraResidentes()
 {
 	char *canal;
 	Modulo *aux;
+	protocolo->eos = 1;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
 		if (!aux->activo)
@@ -1032,9 +1035,11 @@ int EntraResidentes()
 	}
 	return 0;
 }
+/* Funcion llamanda por SIGN_SYNCH */
 int EntraBots()
 {
 	Modulo *aux;
+	protocolo->eos = 0;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
 		if (!aux->activo && !BuscaCliente(aux->nick))
