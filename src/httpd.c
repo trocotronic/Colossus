@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.27 2007-06-02 15:50:29 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.28 2007-08-25 10:31:14 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -202,9 +202,17 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 	ircsprintf(tbuf, msg, num, errmsg, COLOSSUS_VERSION, timebuf);
 	if (num != 304)
 	{
-		msg = "Content-Length: %lu\r\n"
-			"Content-Type: %s\r\n";
-		sprintf(buf, msg, bytes, BuscaTipo(hh->ext));
+		if (hh->ext && !strncasecmp(hh->ext, "php", 3))
+		{
+			msg = "Content-Length: %lu\r\n";
+			sprintf(buf, msg, bytes);
+		}
+		else
+		{
+			msg = "Content-Length: %lu\r\n"
+				"Content-Type: %s\r\n";
+			sprintf(buf, msg, bytes, BuscaTipo(hh->ext));
+		}
 		strlcat(tbuf, buf, sizeof(tbuf));
 		if (conf_httpd->max_age < 0 || (num != 200 && num != 300) || (hh->ext && strncasecmp(hh->ext, "htm", 3)))
 			strlcat(tbuf, "Cache-Control: no-cache,no-store\r\n", sizeof(tbuf));
@@ -331,7 +339,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 					EnviaError(hh, 404, "La página que solicita no existe.");
 					break;
 				}
-				if (!strncasecmp(hh->ext, "php", 3))
+				if (conf_httpd->php && !strncasecmp(hh->ext, "php", 3))
 				{
 					ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
 					ircsprintf(buf, "-f \"%s\" \"%s\" \"%s\" \"%s\"", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);

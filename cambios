@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.70 2007-08-20 01:46:25 Trocotronic Exp $
+ * $Id: cambios,v 1.71 2007-08-25 10:31:14 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -481,3 +481,4 @@
 170807537 - Arreglado un cuelgue al producirse un error de carga del motor SQL, aviso de Marquitox (#0000268).
 180807538 - Se añade la posibilidad de usar la palabra "tamano" en el bloque log { } para evitar problemas con el charset, sugerencia de Marquitox (#0000267).
 190807539 - Añadida la interface SQLSeek para situar el puntero interno de un recurso SQLRes a la fila que se desee.
+220807540 - Se documenta el bloque httpd { } para poderlo usar en el futuro.

@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.11 2007-06-03 19:04:00 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.12 2007-08-25 10:31:14 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -408,7 +408,8 @@ SOCKFUNC(ACClose)
 }
 int ActualizaComponentes()
 {
-	if (conf_set->actualiza)
+	//if (conf_set->actualiza)
+	if (0)
 	{
 		bzero(comps, sizeof(Componente) * MAX_COMP);
 		if (!SockOpen("colossus.redyc.com", 80, ACOpen, ACRead, NULL, ACClose))

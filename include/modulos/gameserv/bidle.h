@@ -13,6 +13,24 @@ struct _bidle
 	int limit_pen;
 	char *canal;
 	char *topic;
+	int maxx;
+	int maxy;
+	int maxtop;
+	struct 
+	{
+		SQLRow row[4];
+		SQLRes res;
+		int rows;
+		time_t tiempo;
+		int x[2], y[2];
+		int tipo;
+		int fase;
+	}quest;
+	struct BidlePos
+	{
+		SQLRow user;
+		unsigned batallado:1;
+	}**pos;
 };
 typedef enum Penas { PEN_NICK = 0 , PEN_PART , PEN_QUIT , PEN_LOGOUT , PEN_KICK , PEN_MSG , PEN_QUEST }Penas;
 #define GS_BIDLE "bidle"
@@ -21,3 +39,6 @@ extern int ProcesaBidle(Cliente *, char *);
 extern int BidleSockClose();
 extern int BidleEOS();
 extern Bidle *bidle;
+
+#define BIDLE_ITEMS_POS 20
+#define BIDLE_ITEMS 10
