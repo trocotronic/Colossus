@@ -691,6 +691,8 @@ int BPen(Cliente *cl, Penas pena, char *msg)
 }
 int BAlea(u_int max)
 {
+	if (!max)
+		return 0;
 	return Aleatorio(0, max-1);
 }
 int BidleSum(char *user, int batalla)
@@ -713,18 +715,18 @@ int BidleSum(char *user, int batalla)
 		row = SQLFetchRow(res);
 		for (i = BIDLE_ITEMS_POS; i < BIDLE_ITEMS_POS+BIDLE_ITEMS; i++)
 			sum += atoi(row[i]);
+		SQLFreeRes(res);
 		if (batalla)
 		{
 			if (*row[3] == 'L')
-				return (int)1.1*sum;
+				return (int)(1.1*sum);
 			else if (*row[3] == 'O')
-				return (int)0.9*sum;
+				return (int)(0.9*sum);
 			else
 				return sum;
 		}
 		else
 			return sum;
-		SQLFreeRes(res);
 	}
 	return -1;
 }
@@ -754,7 +756,7 @@ int BidleComprueba()
 						val = (long)(bidle->base * pow(bidle->paso, val));
 					SQLInserta(GS_BIDLE, row[0], "sig", "%li", val);
 					BCMsg("%s, %s\xF, ha alcanzado el nivel %u! Próximo nivel en %s.", row[0], row[1], atoi(row[5])+1, BDura(val));
-					ircsprintf(row[8], "%li", val);
+					snprintf(row[8], 11, "%li", val);
 					BidleEncuentraItem(row);
 					BidleReta(row, NULL);
 				}

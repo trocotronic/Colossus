@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.9 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.10 2007-08-26 11:36:13 Trocotronic Exp $ 
  */
 
 #include <time.h>
@@ -124,7 +124,7 @@ void GSSet(Conf *config, Modulo *mod)
 				KyrhosParseaConf(config->seccion[i]);
 #endif
 #ifdef BIDLE
-			else if (!strcmp(config->seccion[i]->item, "Bidle"))
+			else if (!strcasecmp(config->seccion[i]->item, "Bidle"))
 				BidleParseaConf(config->seccion[i]);
 #endif
 		}
