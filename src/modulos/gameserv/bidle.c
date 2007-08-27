@@ -1012,7 +1012,7 @@ int BidleOscuridad()
 				else
 				{
 					BCMsg("%s ha intentado robar %s %s de %s. Pero se ha dado cuenta de que es de menor nivel y lo arroja a las tinieblas.",
-						plrs[val], items[val], row[1][0]);
+						row[0][0], plrs[val], items[val], row[1][0]);
 				}
 				SQLFreeRes(res[1]);
 			}
