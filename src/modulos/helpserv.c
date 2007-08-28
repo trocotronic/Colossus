@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.9 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.10 2007-08-28 20:32:35 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -185,7 +185,7 @@ HDIRFUNC(LeeHDir)
 		helpchan = BuscaCanal(helpserv->canal);
 	if (helpchan && hh->param_get)
 	{
-		char *user = NULL, *tok = NULL, *c, *d, a;
+		char *user = NULL, *tok = NULL, *c, *d, a, *n;
 		Cliente *al;
 		u_long crc32;
 		strlcpy(tokbuf, hh->param_get, sizeof(tokbuf));
@@ -196,6 +196,8 @@ HDIRFUNC(LeeHDir)
 				*errmsg = "Faltan parámetros";
 				return 400;
 			}
+			if (*c == 'n')
+				n = d+1;
 			if (*c == 'k' || *c == 'v' || *c == 'u')
 			{
 				a = *c;
@@ -243,12 +245,12 @@ HDIRFUNC(LeeHDir)
 					ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, tmp);
 					if (helpserv->castigo->minutos)
 					{
-						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban temporal %i minutos)", helpserv->castigo->minutos);
+						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban temporal %i minutos). Nota: %s", helpserv->castigo->minutos, n);
 						tmp[0] = '-';
 						IniciaCrono(1, helpserv->castigo->minutos*60, HSQuitaBan, strdup(tmp));
 					}
 					else
-						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban permanente)", helpserv->castigo->minutos);
+						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban permanente). Nota: %s", helpserv->castigo->minutos, n);
 				}
 				break;
 			}
@@ -276,9 +278,8 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 		{
 			Responde(cl, CLI(helpserv), "Para poder hablar en este canal deberás hacer un test y responderlo correctamente.");
 			Responde(cl, CLI(helpserv), "Si lo superas tendrás +v en este canal automáticamente.");
-			ircsprintf(buf, ":%i", conf_httpd->puerto);
 			ircsprintf(tokbuf, "%s?%s?%s", cl->nombre, cl->ip, "aquellos ojos verdes");
-			Responde(cl, CLI(helpserv), "La dirección es \00312http://%s%s/%s?u=%s&c=%X", conf_httpd->url, conf_httpd->puerto != 80 ? buf : "", helpserv->url_test, cl->nombre, Crc32(tokbuf, strlen(tokbuf)));
+			Responde(cl, CLI(helpserv), "La dirección es \00312%s?u=%s&c=%X", helpserv->url_test, cl->nombre, Crc32(tokbuf, strlen(tokbuf)));
 		}
 		Free(c_c);
 		Free(n_c);
