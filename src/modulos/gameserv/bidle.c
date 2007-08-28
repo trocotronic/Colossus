@@ -1292,7 +1292,7 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		{
 			sig = atol(oprow[8]);
 			inc = (long)((5+BAlea(20))*sig/100);
-			BCMsg("%s ha propinado un Golpe Crítico a %s! Se han añadido %s al reloj de %s.", mirow[0], opuser, BDura(inc));
+			BCMsg("%s ha propinado un Golpe Crítico a %s! Se han añadido %s al reloj de %s.", mirow[0], opuser, BDura(inc), opuser);
 			SQLInserta(GS_BIDLE, opuser, "sig", "%li", sig+inc);
 		}
 		else if (BAlea(25) < 1 && opuser != bidle->nick && atoi(mirow[5]) > 19)
