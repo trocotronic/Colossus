@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.10 2007-08-28 20:32:35 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.11 2007-08-28 20:33:54 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -279,7 +279,7 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 			Responde(cl, CLI(helpserv), "Para poder hablar en este canal deberás hacer un test y responderlo correctamente.");
 			Responde(cl, CLI(helpserv), "Si lo superas tendrás +v en este canal automáticamente.");
 			ircsprintf(tokbuf, "%s?%s?%s", cl->nombre, cl->ip, "aquellos ojos verdes");
-			Responde(cl, CLI(helpserv), "La dirección es \00312%s?u=%s&c=%X", helpserv->url_test, cl->nombre, Crc32(tokbuf, strlen(tokbuf)));
+			Responde(cl, CLI(helpserv), "La dirección es \00312%s&u=%s&c=%X", helpserv->url_test, cl->nombre, Crc32(tokbuf, strlen(tokbuf)));
 		}
 		Free(c_c);
 		Free(n_c);
