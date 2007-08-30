@@ -540,7 +540,8 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					return 1;
 				}
 				opt = strchr(msg, ' ')+1;
-				opt = strchr(opt, ' ');
+				if ((opt = strchr(opt, ' ')))
+					opt++; 
 				if (strcasecmp(acc, "CREAR"))
 				{
 					if (BadPtr(opt))
@@ -560,7 +561,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						return 1;
 					}
 					SQLInserta(GS_BIDLE, cl->nombre, "clan", opt);
-					SQLInserta(GS_BIDLE, cl->nombre, "clan", "%i", B_ISIN | B_FUND | B_RECV);
+					SQLInserta(GS_BIDLE, cl->nombre, "claner", "%i", B_ISIN | B_FUND | B_RECV);
 					Responde(cl, bl, "Se ha creado el clan \00312%s", opt);
 					BCMsg("%s ha sido escogido por los Dioses para tejer la estirpe del clan %s.", cl->nombre, opt);
 				}
@@ -583,7 +584,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						return 1;
 					}
 					SQLInserta(GS_BIDLE, cl->nombre, "clan", opt);
-					SQLInserta(GS_BIDLE, cl->nombre, "clan", "%i", B_PEND);
+					SQLInserta(GS_BIDLE, cl->nombre, "claner", "%i", B_PEND);
 					Responde(cl, bl, "Tu solicitud para ingresar al clan \00312%s\003 está pendiente de aprobación.", opt);
 					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i", PREFIJO, GS_BIDLE, opt, B_RECV)))
 					{
