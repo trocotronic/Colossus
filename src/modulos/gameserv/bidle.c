@@ -252,6 +252,12 @@ long BDato(char *item, char *campo)
 		return atol(cres);
 	return -1;
 }
+int BCuenta()
+{
+	time_t t = time(0);
+	struct tm *ttm = localtime(&t);
+	return ttm->tm_sec+ttm->tm_min*60+ttm->tm_hour*3600;
+}
 int BCMsg(char *msg, ...)
 {
 	if (bidle->cn && protocolo->eos)
@@ -755,6 +761,31 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					return 1;
 				}
 				
+			}
+			else if (!strcasecmp(com, "COMPRAR"))
+			{
+				char *opt = strtok(NULL, " ");
+				int i, nivel = BDato(cl->nombre, "nivel"), lvl;
+				if (BDato(cl->nombre, "online") != 1)
+				{
+					Responde(cl, bl, GS_ERR_EMPT, "No estás logueado.");
+					return 1;
+				}
+				if (BadPtr(opt))
+				{
+					Responde(cl, bl, "Puedes comprar los siguientes objetos al siguiente precio:");
+					for (i = 0; i < BIDLE_ITEMS; i++)
+					{
+						lvl = (int)(nivel * 1.5 * (1+(((nivel+i)%10)+1)/50));
+						if (!((nivel+i)%10))
+							Responde(cl, bl, "%c%s: nivel \00312%i\003, mejora \x2+%i\x2, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, (int)((((BCuenta()+nivel*100*i)%86400)*50*BidleSum(cl->nombre, 0))/8640000), lvl*bidle->paso_compra);
+						else
+							Responde(cl, bl, "%c%s: nivel \00312%i\003, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, lvl*bidle->paso_compra);
+					}
+				}
+			}
+			else if (!strcasecmp(com, "VENDER"))
+			{
 			}
 			else if (!strcasecmp(com, "HELP"))
 			{
