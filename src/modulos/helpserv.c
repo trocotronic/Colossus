@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.13 2007-08-30 13:34:49 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.14 2007-08-30 13:42:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -185,11 +185,11 @@ HDIRFUNC(LeeHDir)
 		helpchan = BuscaCanal(helpserv->canal);
 	if (helpchan && hh->param_get)
 	{
-		char *user = NULL, *tok = NULL, *c, *d, a, *nota = NULL;
+		char *user = NULL, *tok = NULL, *c, *d, a, *nota = NULL, pget[BUFSIZE];
 		Cliente *al;
 		u_long crc32;
-		strlcpy(tokbuf, hh->param_get, sizeof(tokbuf));
-		for (c = strtok(tokbuf, "&"); c; c = strtok(NULL, "&"))
+		strlcpy(pget, hh->param_get, sizeof(pget));
+		for (c = strtok(pget, "&"); c; c = strtok(NULL, "&"))
 		{
 			if (!(d = strchr(c, '=')))
 			{

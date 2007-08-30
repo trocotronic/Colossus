@@ -548,7 +548,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				opt = strchr(msg, ' ')+1;
 				if ((opt = strchr(opt, ' ')))
 					opt++; 
-				if (strcasecmp(acc, "CREAR"))
+				if (!strcasecmp(acc, "CREAR"))
 				{
 					if (BadPtr(opt))
 					{
@@ -571,7 +571,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "Se ha creado el clan \00312%s", opt);
 					BCMsg("%s ha sido escogido por los Dioses para tejer la estirpe del clan %s.", cl->nombre, opt);
 				}
-				else if (strcasecmp(acc, "ENTRAR"))
+				else if (!strcasecmp(acc, "ENTRAR"))
 				{
 					if (BadPtr(opt))
 					{
@@ -601,7 +601,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						SQLFreeRes(res);
 					}
 				}
-				else if (strcasecmp(acc, "ACEPTAR"))
+				else if (!strcasecmp(acc, "ACEPTAR"))
 				{
 					char *clan;
 					Cliente *al;
@@ -636,7 +636,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(al, bl, "Has sido aceptado en el clan \00312%s", clan);
 					Free(clan);
 				}
-				else if (strcasecmp(acc, "RECHAZAR"))
+				else if (!strcasecmp(acc, "RECHAZAR"))
 				{
 					char *clan;
 					Cliente *al;
@@ -671,7 +671,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(al, bl, "Has sido rechazado del clan \00312%s", clan);
 					Free(clan);
 				}
-				else if (strcasecmp(acc, "LISTAR"))
+				else if (!strcasecmp(acc, "LISTAR"))
 				{
 					char *clan;
 					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
@@ -692,7 +692,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					SQLFreeRes(res);
 					Free(clan);
 				}
-				else if (strcasecmp(acc, "CLANER"))
+				else if (!strcasecmp(acc, "CLANER"))
 				{
 					char *clan, *oc;
 					if (BadPtr(opt))
@@ -728,7 +728,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					SQLInserta(GS_BIDLE, opt, "claner", "%i", BDato(opt, "claner") | B_RECV);
 					SQLInserta(GS_BIDLE, cl->nombre, "claner", "%i", BDato(cl->nombre, "claner") & ~B_RECV);
 				}
-				else if (strcasecmp(acc, "SALIR"))
+				else if (!strcasecmp(acc, "SALIR"))
 				{
 					char *clan;
 					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
