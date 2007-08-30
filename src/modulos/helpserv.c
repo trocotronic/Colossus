@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.12 2007-08-30 10:20:52 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.13 2007-08-30 13:34:49 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -185,7 +185,7 @@ HDIRFUNC(LeeHDir)
 		helpchan = BuscaCanal(helpserv->canal);
 	if (helpchan && hh->param_get)
 	{
-		char *user = NULL, *tok = NULL, *c, *d, a, *n;
+		char *user = NULL, *tok = NULL, *c, *d, a, *nota = NULL;
 		Cliente *al;
 		u_long crc32;
 		strlcpy(tokbuf, hh->param_get, sizeof(tokbuf));
@@ -204,7 +204,7 @@ HDIRFUNC(LeeHDir)
 			else if (*c == 'c')
 				tok = d+1;
 			else if (*c == 'n')
-				n = d+1;
+				nota = d+1;
 		}
 		if ((a == 'v' || a == 'k') && (!tok || !user))
 		{
@@ -245,12 +245,12 @@ HDIRFUNC(LeeHDir)
 					ProtFunc(P_MODO_CANAL)(CLI(helpserv), helpchan, tmp);
 					if (helpserv->castigo->minutos)
 					{
-						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban temporal %i minutos). Nota: %s", helpserv->castigo->minutos, n);
+						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban temporal %i minutos). Nota: %s", helpserv->castigo->minutos, nota);
 						tmp[0] = '-';
 						IniciaCrono(1, helpserv->castigo->minutos*60, HSQuitaBan, strdup(tmp));
 					}
 					else
-						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban permanente). Nota: %s", helpserv->castigo->minutos, n);
+						ProtFunc(P_KICK)(al, CLI(helpserv), helpchan, "No has superado el test (ban permanente). Nota: %s", helpserv->castigo->minutos, nota);
 				}
 				break;
 			}

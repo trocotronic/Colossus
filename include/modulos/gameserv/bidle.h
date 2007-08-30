@@ -16,6 +16,8 @@ struct _bidle
 	int maxx;
 	int maxy;
 	int maxtop;
+	double paso_compra;
+	double paso_venda;
 	struct 
 	{
 		SQLRow row[4];

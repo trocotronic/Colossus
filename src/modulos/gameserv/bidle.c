@@ -69,6 +69,8 @@ int BidleParseaConf(Conf *cnf)
 	bidle->paso_pen = 1.14;
 	bidle->eventos = 5;
 	bidle->maxx = bidle->maxy = 500;
+	bidle->paso_venda = 0.8;
+	bidle->paso_compra = 1.2;
 	ircstrdup(bidle->nick, "bidle");
 	for (i = 0; i < cnf->secciones; i++)
 	{
@@ -98,6 +100,10 @@ int BidleParseaConf(Conf *cnf)
 			bidle->maxy = atoi(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "max_top"))	
 			bidle->maxtop = atoi(cnf->seccion[i]->data);
+		else if (!strcmp(cnf->seccion[i]->item, "paso_venda"))
+			bidle->paso_venda = atof(cnf->seccion[i]->data);
+		else if (!strcmp(cnf->seccion[i]->item, "paso_compra"))
+			bidle->paso_compra = atof(cnf->seccion[i]->data);
 	}
 	if ((60 % bidle->eventos))
 		bidle->eventos = 5;
@@ -460,7 +466,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				Responde(cl, bl, "%s, %s", user, row[1]);
 				Responde(cl, bl, "Nivel: %s", row[5]);
 				if (!BadPtr(row[2]))
-					Responde(cl, bl, "Pertenece al clan de %s", row[2]);
+					Responde(cl, bl, "Pertenece al clan %s", row[2]);
 				if (*row[3] != 'N')
 					Responde(cl, bl, "Es del lado de la %s", row[3]);
 				else
@@ -862,7 +868,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "\00312CLAN RECHAZAR nick\003 Rechaza la solicitud.");
 					Responde(cl, bl, "\00312CLAN LISTAR\003 Lista las solicitudes de ingreso pendientes.");
 					Responde(cl, bl, "\00312CLAN CLANER nick\003 Cambia el claner del clan.");
-					Responde(cl, bl, "\00312CLAN SALIR\003 Abandona el clan.");
+					Responde(cl, bl, "\00312CLAN SALIR\003 Abandona el clan o cancela tu solicitud.");
 				}
 				else if (!strcasecmp(para, "ADMIN") && BDato(cl->nombre, "admin") == 1)
 				{
