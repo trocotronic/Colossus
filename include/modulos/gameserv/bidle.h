@@ -42,3 +42,8 @@ extern Bidle *bidle;
 
 #define BIDLE_ITEMS_POS 20
 #define BIDLE_ITEMS 10
+
+#define B_PEND 0x1
+#define B_ISIN 0x2
+#define B_FUND 0x4
+#define B_RECV 0x8

@@ -151,7 +151,7 @@ int BidleSQL()
 		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255), "
 			"nombre varchar(255), "
-			"grupo varchar(255), "
+			"clan varchar(255), "
 			"lado varchar(32), "
 			"admin int, "
 			"nivel int, "
@@ -172,6 +172,9 @@ int BidleSQL()
 			"escudo varchar(32), "
 			"tunica varchar(32), "
 			"arma varchar(32), "
+			"oro int, "
+			"mejora int, "
+			"claner int, "
 			"PRIMARY KEY item (item) "
 			");", PREFIJO, GS_BIDLE);
 		if (sql->_errno)
@@ -204,6 +207,7 @@ int BidleDescarga()
 	for (i = 0; i < bidle->maxx; i++)
 		Free(bidle->pos[i]);
 	Free(bidle->pos);
+	ircfree(bidle);
 	return 0;
 }
 char *BDura(u_int segs)
@@ -294,8 +298,8 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				}
 				SQLQuery("INSERT INTO %s%s (item, nombre, lado, admin, nivel, online, idle, sig, x, y, "
 					"pen_msg, pen_nick, pen_part, pen_kick, pen_quit, pen_quest, pen_logout, creado, "
-					"lastlogin, amuleto, coraza, casco, botas, guantes, anillo, pantalones, escudo, tunica, arma) VALUES "
-					"('%s','%s','Neutral',%i,1,1,0,%i,%i,%i,0,0,0,0,0,0,0,%lu,%lu,0,0,0,0,0,0,0,0,0,0)",
+					"lastlogin, amuleto, coraza, casco, botas, guantes, anillo, pantalones, escudo, tunica, arma, oro, mejora,claner) VALUES "
+					"('%s','%s','Neutral',%i,1,1,0,%i,%i,%i,0,0,0,0,0,0,0,%lu,%lu,0,0,0,0,0,0,0,0,0,0,0,0,0)",
 					PREFIJO, GS_BIDLE, cl->nombre, nombre, IsAdmin(cl) ? 1 : 0, bidle->base, BAlea(bidle->maxx), BAlea(bidle->maxy), time(NULL), time(NULL));
 				Responde(cl, bl, "Ok, has sido dado de alta. Ahora mismo estás logueado.");
 				Responde(cl, bl, "Subirás de nivel dentro de %s", BDura(bidle->base));
@@ -456,7 +460,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				Responde(cl, bl, "%s, %s", user, row[1]);
 				Responde(cl, bl, "Nivel: %s", row[5]);
 				if (!BadPtr(row[2]))
-					Responde(cl, bl, "Pertenece al grupo de %s", row[2]);
+					Responde(cl, bl, "Pertenece al clan de %s", row[2]);
 				if (*row[3] != 'N')
 					Responde(cl, bl, "Es del lado de la %s", row[3]);
 				else
@@ -520,6 +524,231 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, "%s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
 				}
 			}
+			else if (!strcasecmp(com, "CLAN"))
+			{
+				char *acc = strtok(NULL, " "), *opt;
+				SQLRes res;
+				SQLRow row;
+				if (BDato(cl->nombre, "online") != 1)
+				{
+					Responde(cl, bl, GS_ERR_EMPT, "No estás logueado.");
+					return 1;
+				}
+				if (BadPtr(acc))
+				{
+					Responde(cl, bl, GS_ERR_PARA, "CLAN", "{CREAR|ENTRAR|ACEPTAR|RECHAZAR|LISTAR|SALIR|CLANER} [opción]");
+					return 1;
+				}
+				opt = strchr(msg, ' ')+1;
+				opt = strchr(opt, ' ');
+				if (strcasecmp(acc, "CREAR"))
+				{
+					if (BadPtr(opt))
+					{
+						Responde(cl, bl, GS_ERR_PARA, "CLAN", "CREAR nombre_clan");
+						return 1;
+					}
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s'", PREFIJO, GS_BIDLE, opt)))
+					{
+						SQLFreeRes(res);
+						Responde(cl, bl, GS_ERR_EMPT, "Este clan ya existe. Si quieres entrar, ejecuta el comando CLAN ENTRAR nombre_clan.");
+						return 1;
+					}
+					if (SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan"))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "Ya has ingresado o estás solicitando la entrada en un clan. Si quieres salir de este clan, ejecuta el comando CLAN SALIR nombre_clan");
+						return 1;
+					}
+					SQLInserta(GS_BIDLE, cl->nombre, "clan", opt);
+					SQLInserta(GS_BIDLE, cl->nombre, "clan", "%i", B_ISIN | B_FUND | B_RECV);
+					Responde(cl, bl, "Se ha creado el clan \00312%s", opt);
+					BCMsg("%s ha sido escogido por los Dioses para tejer la estirpe del clan %s.", cl->nombre, opt);
+				}
+				else if (strcasecmp(acc, "ENTRAR"))
+				{
+					if (BadPtr(opt))
+					{
+						Responde(cl, bl, GS_ERR_PARA, "CLAN", "ENTRAR nombre_clan");
+						return 1;
+					}
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s'", PREFIJO, GS_BIDLE, opt)))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "Este clan no existe. Si quieres crearlo, ejecuta el comando CLAN CREAR nombre_clan.");
+						return 1;
+					}
+					SQLFreeRes(res);
+					if (SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan"))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "Ya has ingresado o estás solicitando la entrada en un clan. Si quieres salir de este clan, ejecuta el comando CLAN SALIR nombre_clan");
+						return 1;
+					}
+					SQLInserta(GS_BIDLE, cl->nombre, "clan", opt);
+					SQLInserta(GS_BIDLE, cl->nombre, "clan", "%i", B_PEND);
+					Responde(cl, bl, "Tu solicitud para ingresar al clan \00312%s\003 está pendiente de aprobación.", opt);
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i", PREFIJO, GS_BIDLE, opt, B_RECV)))
+					{
+						Cliente *al;
+						row = SQLFetchRow(res);
+						if ((al = BuscaCliente(row[0])))
+							Responde(al, bl, "%s solicita entrar en el clan. Para aceptarlo, usa el comando CLAN ACEPTAR %s. Para rechazarlo, CLAN RECHAZAR %s.", cl->nombre, cl->nombre, cl->nombre);
+						SQLFreeRes(res);
+					}
+				}
+				else if (strcasecmp(acc, "ACEPTAR"))
+				{
+					char *clan;
+					Cliente *al;
+					if (BadPtr(opt))
+					{
+						Responde(cl, bl, GS_ERR_PARA, "CLAN", "ACEPTAR nick");
+						return 1;
+					}
+					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "No perteneces a ningún clan.");
+						return 1;
+					}
+					clan = strdup(clan);
+					if (!(BDato(cl->nombre, "claner") & B_RECV))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para ACEPTAR.");
+						return 1;
+					}
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, opt, clan, B_PEND)))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no ha solicitado la entrada al clan.");
+						return 1;
+					}
+					SQLFreeRes(res);
+					SQLInserta(GS_BIDLE, opt, "claner", "%i", B_ISIN);
+					Responde(cl, bl, "%s ha sido aceptado.", opt);
+					BCMsg("Los Dioses son benevolentes y han unido a %s al clan %s.", opt, clan);
+					if ((al = BuscaCliente(opt)))
+						Responde(al, bl, "Has sido aceptado en el clan \00312%s", clan);
+					Free(clan);
+				}
+				else if (strcasecmp(acc, "RECHAZAR"))
+				{
+					char *clan;
+					Cliente *al;
+					if (BadPtr(opt))
+					{
+						Responde(cl, bl, GS_ERR_PARA, "CLAN", "RECHAZAR nick");
+						return 1;
+					}
+					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "No perteneces a ningún clan.");
+						return 1;
+					}
+					clan = strdup(clan);
+					if (!(BDato(cl->nombre, "claner") & B_RECV))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para RECHAZAR.");
+						return 1;
+					}
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, opt, clan, B_PEND)))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no ha solicitado la entrada al clan.");
+						return 1;
+					}
+					SQLFreeRes(res);
+					SQLInserta(GS_BIDLE, opt, "claner", "0");
+					SQLInserta(GS_BIDLE, opt, "clan", NULL);
+					Responde(cl, bl, "%s ha sido rechazado.", opt);
+					if ((al = BuscaCliente(opt)))
+						Responde(al, bl, "Has sido rechazado del clan \00312%s", clan);
+					Free(clan);
+				}
+				else if (strcasecmp(acc, "LISTAR"))
+				{
+					char *clan;
+					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "No perteneces a ningún clan.");
+						return 1;
+					}
+					clan = strdup(clan);
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, clan, B_PEND)))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "No existen solicitudes pendientes.");
+						return 1;
+					}
+					Responde(cl, bl, "Solicitudes pendientes:");
+					while ((row = SQLFetchRow(res)))
+						Responde(cl, bl, row[0]);
+					SQLFreeRes(res);
+					Free(clan);
+				}
+				else if (strcasecmp(acc, "CLANER"))
+				{
+					char *clan, *oc;
+					if (BadPtr(opt))
+					{
+						Responde(cl, bl, GS_ERR_PARA, "CLAN", "CLANER nick");
+						return 1;
+					}
+					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "No perteneces a ningún clan.");
+						return 1;
+					}
+					clan = strdup(clan);
+					if (!(BDato(cl->nombre, "claner") & B_RECV))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para CLANER.");
+						return 1;
+					}
+					if (!strcasecmp(opt, cl->nombre))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "No puedes ponerte a ti mismo.");
+						return 1;
+					}
+					if (!(oc = SQLCogeRegistro(GS_BIDLE, opt, "clan")) || strcmp(clan, oc))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no pertenece a tu clan.");
+						return 1;
+					}
+					Responde(cl, bl, "\00312%s\003 inscrito como claner. Dejas de ser claner.", opt);
+					SQLInserta(GS_BIDLE, opt, "claner", "%i", BDato(opt, "claner") | B_RECV);
+					SQLInserta(GS_BIDLE, cl->nombre, "claner", "%i", BDato(cl->nombre, "claner") & ~B_RECV);
+				}
+				else if (strcasecmp(acc, "SALIR"))
+				{
+					char *clan;
+					if (!(clan = SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan")))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "No perteneces a ningún clan.");
+						return 1;
+					}
+					clan = strdup(clan);
+					if (BDato(cl->nombre, "claner") & B_RECV)
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "No puedes salir del clan mientras seas claner. Designa a otro como claner con el comando CLAN CLANER nick.");
+						return 1;
+					}
+					Responde(cl, bl, "Te retiras del clan \00312%s\003.", clan);
+					BCMsg("El clan %s quita un sello de su libro y llora la pérdida de %s.", clan, cl->nombre);
+					SQLInserta(GS_BIDLE, cl->nombre, "claner", "0");
+					SQLInserta(GS_BIDLE, cl->nombre, "clan", NULL);
+					Free(clan);
+				}
+				else
+				{
+					Responde(cl, bl, GS_ERR_PARA, "CLAN", "{CREAR|ENTRAR|ACEPTAR|RECHAZAR|LISTAR|SALIR|CLANER} [opción]");
+					return 1;
+				}
+				
+			}
 			else if (!strcasecmp(com, "HELP"))
 			{
 				char *para = strtok(NULL, " ");
@@ -552,6 +781,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "\00312INFO\003 Muestra tu información o de otro jugador, como el nivel, cuánto queda para subir al siguiente, la puntuación, etc.");
 					Responde(cl, bl, "\00312LADO\003 Fija el Lado al que perteneces.");
 					Responde(cl, bl, "\00312QUEST\003 Da información sobre la misión en curso.");
+					Responde(cl, bl, "\00312CLAN\003 Crea, solicita una invitación, acepta una invitación o abandona un clan.");
 					if (BDato(cl->nombre, "admin") == 1)
 					{
 						Responde(cl, bl, "\00312ADMIN\003 Añade o elimina jugadores para que puedan administrar el juego.");
@@ -560,6 +790,110 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					}
 					Responde(cl, bl, " ");
 					Responde(cl, bl, "Para más información, /msg %s HELP comando", bidle->nick);
+				}
+				else if (!strcasecmp(para, "ALTA"))
+				{
+					Responde(cl, bl, "\00312ALTA");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Te das de alta en el juego.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312ALTA descripción_del_personaje");
+				}
+				else if (!strcasecmp(para, "BAJA"))
+				{
+					Responde(cl, bl, "\00312BAJA");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Te das de baja del juego. Perderás toda la puntuación y no podrás recuperarla.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312BAJA");
+				}
+				else if (!strcasecmp(para, "LOGOUT"))
+				{
+					Responde(cl, bl, "\00312LOGOUT");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Te desconecta del juego. Este comando tiene una penalización.");
+					Responde(cl, bl, "Una vez desconectado no tendrás más penalizaciones.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312LOGOUT");
+				}
+				else if (!strcasecmp(para, "INFO"))
+				{
+					Responde(cl, bl, "\00312INFO");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Da información sobre un jugador o de ti mismo.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312INFO [nick]");
+				}
+				else if (!strcasecmp(para, "LADO"))
+				{
+					Responde(cl, bl, "\00312LADO");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Fija el lado al que perteneces.");
+					Responde(cl, bl, "Existen tres lados: Luz, Oscuridad y Neutral. Cada lado aporta ventajas e inconvenientes que ninguno da.");
+					Responde(cl, bl, "Por ejemplo, los de la Luz suben de nivel más rápido pero los de la Oscuridad pegan más fuerte.");
+					Responde(cl, bl, "Prueba el lado que más te favorezca.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312LADO {LUZ|OSCURIDAD|NEUTRAL}");
+				}
+				else if (!strcasecmp(para, "QUEST"))
+				{
+					Responde(cl, bl, "\00312QUEST");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Da información sobre la misión actual.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312QUEST");
+				}
+				else if (!strcasecmp(para, "CLAN"))
+				{
+					Responde(cl, bl, "\00312CLAN");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Gestiona el clan. Cuando un miembro del clan gana una lucha, todos los que forman parte del clan recibirán la misma bonificación. Lo mismo si pierde.");
+					Responde(cl, bl, "Así, cuantas más batallas ganen entre todos, más rápido subirán de nivel los del mismo clan.");
+					Responde(cl, bl, "Existen varios rangos:");
+					Responde(cl, bl, "- Miembro: miembro corriente.");
+					Responde(cl, bl, "- Patriarca: fundador del clan.");
+					Responde(cl, bl, "- Claner: se encarga de aceptar y rechazar las invitaciones. Cuando alguien solicite una invitación para ingresar, se le avisará y será él el que la acepte o no.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis:");
+					Responde(cl, bl, "\00312CLAN CREAR nombre_clan\003 Crea un nuevo clan en caso de que no exista.");
+					Responde(cl, bl, "\00312CLAN ENTRAR nombre_clan\003 Manda una solicitud para ingresar en el clan. El claner se encargará de aceptarla o no.");
+					Responde(cl, bl, "\00312CLAN ACEPTAR nick\003 Acepta un usuario que haya solicitado ingresar al clan.");
+					Responde(cl, bl, "\00312CLAN RECHAZAR nick\003 Rechaza la solicitud.");
+					Responde(cl, bl, "\00312CLAN LISTAR\003 Lista las solicitudes de ingreso pendientes.");
+					Responde(cl, bl, "\00312CLAN CLANER nick\003 Cambia el claner del clan.");
+					Responde(cl, bl, "\00312CLAN SALIR\003 Abandona el clan.");
+				}
+				else if (!strcasecmp(para, "ADMIN") && BDato(cl->nombre, "admin") == 1)
+				{
+					Responde(cl, bl, "\00312ADMIN");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Añade o elimina un administrador del juego.");
+					Responde(cl, bl, "Si dicho jugador no es administrador, se le añade como tal. Si ya lo es, se elimina.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312ADMIN nick");
+				}
+				else if (!strcasecmp(para, "HOG") && BDato(cl->nombre, "admin") == 1)
+				{
+					Responde(cl, bl, "\00312HOG");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Lanza una mano de Dios.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312HOG");
+				}
+				else if (!strcasecmp(para, "PUSH") && BDato(cl->nombre, "admin") == 1)
+				{
+					Responde(cl, bl, "\00312PUSH");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Añade o resta segundos al reloj de un jugador.");
+					Responde(cl, bl, "Si el valor de los segundos es positivo, se añaden; si es negativo, se restan.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312PUSH nick {+|-}segundos");
+				}
+				else
+				{
+					Responde(cl, bl, GS_ERR_EMPT, "Comando desconocido. Para más ayuda use el comando HELP");
+					BPen(cl, PEN_MSG, msg);
+					return 1;
 				}
 			}
 			else
@@ -1239,6 +1573,18 @@ int BidleEncuentraItem(SQLRow row)
 		Responde(cl, bidle->cl, "Has encontrado %s %s de nivel %i. T%s %s es de nivel %i. Parece que la Suerte está contra ti. Te deshaces del objeto.", plrs3[it], items[it], nivel, plrs4[it]+1, items[it], atoi(row[BIDLE_ITEMS_POS+it]));
 	return 0;
 }
+int BidleClan(char *clan, int segs)
+{
+	SQLRes res;
+	SQLRow row;
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i", PREFIJO, GS_BIDLE, clan, B_ISIN)))
+	{
+		while ((row = SQLFetchRow(res)))
+			SQLInserta(GS_BIDLE, row[0], "sig", "%li", atol(row[8])+segs);
+		SQLFreeRes(res);
+	}
+	return 0;
+}
 int BidleReta(SQLRow mirow, SQLRow op)
 {
 	SQLRes res = NULL;
@@ -1282,8 +1628,16 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		inc = (long)(opuser == bidle->nick ? 20 : atol(oprow[5])/4);
 		inc = MAX(7, inc);
 		inc = (long)(inc*sig/100);
-		BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha ganado! Se han descontado %s de su reloj.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc));
-		SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig-inc);
+		if (!BadPtr(mirow[2]))
+		{
+			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc), mirow[2]);
+			BidleClan(mirow[2], -inc);
+		}
+		else
+		{
+			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha ganado! Se han descontado %s de su reloj.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc));
+			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig-inc);
+		}
 		if (*mirow[3] == 'L')
 			factor = 50;
 		else if (*mirow[3] == 'O')
@@ -1312,8 +1666,16 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		inc = (long)(opuser == bidle->nick ? 10 : atol(oprow[5])/7);
 		inc = MAX(7, inc);
 		inc = (long)(inc*sig/100);
-		BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha perdido! Se han añadido %s a su reloj.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc));
-		SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig+inc);
+		if (!BadPtr(mirow[2]))
+		{
+			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc), mirow[2]);
+			BidleClan(mirow[2], inc);
+		}
+		else
+		{
+			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha perdido! Se han añadido %s a su reloj.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc));
+			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig+inc);
+		}
 	}
 	if (res)
 		SQLFreeRes(res);

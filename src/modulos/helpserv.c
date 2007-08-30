@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.11 2007-08-28 20:33:54 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.12 2007-08-30 10:20:52 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -196,8 +196,6 @@ HDIRFUNC(LeeHDir)
 				*errmsg = "Faltan parámetros";
 				return 400;
 			}
-			if (*c == 'n')
-				n = d+1;
 			if (*c == 'k' || *c == 'v' || *c == 'u')
 			{
 				a = *c;
@@ -205,6 +203,8 @@ HDIRFUNC(LeeHDir)
 			}
 			else if (*c == 'c')
 				tok = d+1;
+			else if (*c == 'n')
+				n = d+1;
 		}
 		if ((a == 'v' || a == 'k') && (!tok || !user))
 		{
