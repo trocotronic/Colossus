@@ -1744,7 +1744,7 @@ int BidleClan(char *clan, char *exc, int segs)
 	SQLRes res;
 	SQLRow row;
 	char *clw = strtolower(clan);
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i AND LOWER(item)!='%s'", PREFIJO, GS_BIDLE, clw, B_ISIN, strtolower(exc))))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i AND LOWER(item)!='%s' AND online=1", PREFIJO, GS_BIDLE, clw, B_ISIN, strtolower(exc))))
 	{
 		while ((row = SQLFetchRow(res)))
 			SQLInserta(GS_BIDLE, row[0], "sig", "%li", atol(row[8])+segs);
