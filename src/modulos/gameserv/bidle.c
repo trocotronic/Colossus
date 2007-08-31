@@ -1793,8 +1793,8 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		else
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s de su reloj.", 
-				mirow[0], mirol, misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
-				opuser, oprol, opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc));
+				mirow[0], mirol-atoi(mirow[31]), misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
+				opuser, oprol-(oprow ? atoi(oprow[31]) : 0), opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig-inc);
 		}
 		if (*mirow[3] == 'L')
@@ -1827,12 +1827,16 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		inc = (long)(inc*sig/100);
 		if (!BadPtr(mirow[2]))
 		{
-			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc), mirow[2]);
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", 
+				mirow[0], mirol-atoi(mirow[31]), misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
+				opuser, oprol-(oprow ? atoi(oprow[31]) : 0), opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc), mirow[2]);
 			BidleClan(mirow[2], opuser, inc);
 		}
 		else
 		{
-			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha perdido! Se han añadido %s a su reloj.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc));
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s a su reloj.", 
+				mirow[0], mirol-atoi(mirow[31]), misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
+				opuser, oprol-(oprow ? atoi(oprow[31]) : 0), opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig+inc);
 		}
 	}
