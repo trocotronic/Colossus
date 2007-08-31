@@ -1407,7 +1407,7 @@ int BidleCalamidades()
 			val = BAlea(10);
 			BCMsg("A los Dioses no les ha gustado %s %s de %s y ahora están malditos. Han perdido un 10%% de su efectividad.", plrs[val], items[val], row[0]);
 			inc = (long)(atol(row[BIDLE_ITEMS_POS+val])*0.9);
-			SQLInserta(GS_BIDLE, row[0], items[val], "%li%c", atol(row[BIDLE_ITEMS_POS+val]), IsDigit(row[BIDLE_ITEMS_POS+val][strlen(row[BIDLE_ITEMS_POS+val]-1)]) ? '\0' : row[BIDLE_ITEMS_POS+val][strlen(row[BIDLE_ITEMS_POS+val]-1)]);
+			SQLInserta(GS_BIDLE, row[0], items[val], "%li%c", inc, IsDigit(row[BIDLE_ITEMS_POS+val][strlen(row[BIDLE_ITEMS_POS+val]-1)]) ? '\0' : row[BIDLE_ITEMS_POS+val][strlen(row[BIDLE_ITEMS_POS+val]-1)]);
 		}
 		else
 		{
