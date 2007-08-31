@@ -1635,7 +1635,7 @@ int BidleMueve()
 }
 int BidleEncuentraItem(SQLRow row)
 {
-	int it = BAlea(10), lvl = atoi(row[5]), nivel = 1, univel, i, m = (int)(lvl*1.5);
+	int it = BAlea(10), lvl = atoi(row[5]), nivel = 1, univel, i, m = (int)(lvl*1.5), oro;
 	Cliente *cl;
 	if (!(cl = BuscaCliente(row[0])))
 		return -1;
@@ -1732,6 +1732,11 @@ int BidleEncuentraItem(SQLRow row)
 	}
 	else
 		Responde(cl, bidle->cl, "Has encontrado %s %s de nivel %i. T%s %s es de nivel %i. Parece que la Suerte está contra ti. Te deshaces del objeto.", plrs3[it], items[it], nivel, plrs4[it]+1, items[it], atoi(row[BIDLE_ITEMS_POS+it]));
+	if ((oro = BAlea(lvl)))
+	{
+		SQLInserta(GS_BIDLE, row[0], "oro", "%li", atoi(row[30])+oro);
+		Responde(cl, bidle->cl, "Se han añadido %i oros a tu cuenta.", oro);
+	}
 	return 0;
 }
 int BidleClan(char *clan, int segs)
