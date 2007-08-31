@@ -1304,7 +1304,7 @@ int BidleComprueba()
 		SQLRes res[2];
 		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 44", PREFIJO, GS_BIDLE)))
 		{
-			res[1] = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND()", PREFIJO, GS_BIDLE);
+			res[1] = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE);
 			if ((double)(SQLNumRows(res[0])/SQLNumRows(res[1])) > 0.15)
 			{
 				row = SQLFetchRow(res[0]);
@@ -1330,7 +1330,7 @@ int BidleHog()
 	SQLRes res;
 	SQLRow row;
 	long val;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND()", PREFIJO, GS_BIDLE)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE)))
 	{
 		row = SQLFetchRow(res);
 		val = (long)((5+BAlea(71))*atol(row[8])/100);
@@ -1355,9 +1355,9 @@ int BidleBatallaEqs()
 	SQLRow row[6];
 	int i, rows, misum, opsum, mirol, oprol;
 	long inc;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND()", PREFIJO, GS_BIDLE)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 6", PREFIJO, GS_BIDLE)))
 	{
-		if ((rows = SQLNumRows(res)) > 6)
+		if ((rows = SQLNumRows(res)) == 6)
 		{
 			for (i = 0; i < 6; i++)
 				row[i] = SQLFetchRow(res);
@@ -1399,7 +1399,7 @@ int BidleCalamidades()
 	SQLRes res;
 	SQLRow row;
 	long val, inc;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND()", PREFIJO, GS_BIDLE)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE)))
 	{
 		row = SQLFetchRow(res);
 		if (!BAlea(10))
@@ -1424,7 +1424,7 @@ int BidleRafagas()
 	SQLRes res;
 	SQLRow row;
 	long val, inc;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND()", PREFIJO, GS_BIDLE)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE)))
 	{
 		row = SQLFetchRow(res);
 		if (!BAlea(10))
@@ -1449,9 +1449,9 @@ int BidleLuz()
 	SQLRes res;
 	SQLRow row[2];
 	int i, rows, inc;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND lado='Luz' ORDER BY RAND()", PREFIJO, GS_BIDLE)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND lado='Luz' ORDER BY RAND() LIMIT 2", PREFIJO, GS_BIDLE)))
 	{
-		if ((rows = SQLNumRows(res)) > 2)
+		if ((rows = SQLNumRows(res)) == 2)
 		{
 			row[0] = SQLFetchRow(res);
 			row[1] = SQLFetchRow(res);
@@ -1754,19 +1754,24 @@ int BidleReta(SQLRow mirow, SQLRow op)
 	{
 		if (atoi(mirow[5]) < 25 && BAlea(4) > 0)
 			return 0;
-		if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND LOWER(item)!='%s' ORDER BY RAND()", PREFIJO, GS_BIDLE, strtolower(mirow[0]))))
+		res = SQLQuery("SELECT COUNT(*) FROM %s%s", PREFIJO, GS_BIDLE);
+		oprow = SQLFetchRow(res);
+		rows = atoi(oprow[0]);
+		SQLFreeRes(res);
+		res = NULL;
+		oprow = NULL;
+		if (rows == 1 || BAlea(rows+1) < 1)
+			opuser = bidle->nick;
+		else
 		{
-			rows = SQLNumRows(res);
-			if (BAlea(rows+1) < 1) // lucha contra la máquina
-				opuser = bidle->nick;
-			else
+			if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND LOWER(item)!='%s' ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE, strtolower(mirow[0]))))
 			{
 				oprow = SQLFetchRow(res);
 				opuser = oprow[0];
 			}
+			else
+				opuser = bidle->nick;
 		}
-		else
-			opuser = bidle->nick;
 	}
 	misum = BidleSum(mirow[0], 1);
 	opsum = BidleSum(opuser, 1);
@@ -1838,7 +1843,7 @@ int BidleQuest()
 {
 	if (!bidle->quest.res)
 	{
-		if ((bidle->quest.res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 39 AND lastlogin < %lu ORDER BY RAND()", PREFIJO, GS_BIDLE, time(0)-1200)))
+		if ((bidle->quest.res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 39 AND lastlogin < %lu ORDER BY RAND() LIMIT 4", PREFIJO, GS_BIDLE, time(0)-1200)))
 		{
 			int i;
 			if ((bidle->quest.rows = SQLNumRows(bidle->quest.res)) > 1)
