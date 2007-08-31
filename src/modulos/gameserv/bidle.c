@@ -1739,16 +1739,18 @@ int BidleEncuentraItem(SQLRow row)
 	}
 	return 0;
 }
-int BidleClan(char *clan, int segs)
+int BidleClan(char *clan, char *exc, int segs)
 {
 	SQLRes res;
 	SQLRow row;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i", PREFIJO, GS_BIDLE, strtolower(clan), B_ISIN)))
+	char *clw = strtolower(clan);
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i AND LOWER(item)!='%s'", PREFIJO, GS_BIDLE, clw, B_ISIN, strtolower(exc))))
 	{
 		while ((row = SQLFetchRow(res)))
 			SQLInserta(GS_BIDLE, row[0], "sig", "%li", atol(row[8])+segs);
 		SQLFreeRes(res);
 	}
+	Free(clw);
 	return 0;
 }
 int BidleReta(SQLRow mirow, SQLRow op)
@@ -1799,7 +1801,7 @@ int BidleReta(SQLRow mirow, SQLRow op)
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", 
 				mirow[0], mirol, misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
 				opuser, oprol, opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc), mirow[2]);
-			BidleClan(mirow[2], -inc);
+			BidleClan(mirow[2], opuser, -inc);
 		}
 		else
 		{
@@ -1839,7 +1841,7 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		if (!BadPtr(mirow[2]))
 		{
 			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc), mirow[2]);
-			BidleClan(mirow[2], inc);
+			BidleClan(mirow[2], opuser, inc);
 		}
 		else
 		{
