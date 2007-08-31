@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.10 2007-06-03 18:50:13 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.11 2007-08-31 00:05:34 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -597,12 +597,12 @@ BOTFUNC(ESSalida)
 	tt = CreaTime(dia, mes, ano, hora, min);
 	if (params == 2)
 	{
-		SQLQuery("DELETE FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND item='%s'", PREFIJO, ES_SQL, tt, tt+86400, cl->nombre);
+		SQLQuery("DELETE FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND LOWER(item)='%s'", PREFIJO, ES_SQL, tt, tt+86400, strtolower(cl->nombre));
 		Responde(cl, CLI(noteserv), "Todas las entradas para el día \00312%s\003 han sido eliminadas.", param[1]);
 	}
 	else if (params == 3)
 	{
-		SQLQuery("DELETE FROM %s%s WHERE fecha = %lu AND item='%s'", PREFIJO, ES_SQL, tt, cl->nombre);
+		SQLQuery("DELETE FROM %s%s WHERE fecha = %lu AND LOWER(item)='%s'", PREFIJO, ES_SQL, tt, strtolower(cl->nombre));
 		Responde(cl, CLI(noteserv), "Todas las entradas para el día \00312%s\003 a las \00312%s\003 han sido eliminadas.", param[1], param[2]);
 	}
 	return 0;
@@ -634,7 +634,7 @@ BOTFUNC(ESVer)
 		Responde(cl, CLI(noteserv), ES_ERR_SNTX, "Formato de fecha incorrecto: día/mes/año|HOY|MAÑANA");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT * FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND item='%s'", PREFIJO, ES_SQL, tt, tt+86400, cl->nombre)))
+	if (!(res = SQLQuery("SELECT * FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND LOWER(item)='%s'", PREFIJO, ES_SQL, tt, tt+86400, strtolower(cl->nombre))))
 	{
 		Responde(cl, CLI(noteserv), ES_ERR_EMPT, "No existen entradas para este día.");
 		return 1;

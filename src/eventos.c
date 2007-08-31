@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.9 2007-06-03 18:34:48 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.10 2007-08-31 00:05:34 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -319,9 +319,9 @@ char *CogeCache(char *tipo, char *item, int id)
 	SQLRow row;
 	char *tipo_c, *item_c;
 	static char row0[BUFSIZE];
-	tipo_c = SQLEscapa(tipo);
-	item_c = SQLEscapa(item);
-	res = SQLQuery("SELECT valor,hora FROM %s%s WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, item_c, tipo_c, id);
+	tipo_c = SQLEscapa(strtolower(tipo));
+	item_c = SQLEscapa(strtolower(item));
+	res = SQLQuery("SELECT valor,hora FROM %s%s WHERE LOWER(item)='%s' AND LOWER(tipo)='%s' AND owner=%i", PREFIJO, SQL_CACHE, item_c, tipo_c, id);
 	Free(item_c);
 	Free(tipo_c);
 	if (res)
@@ -374,10 +374,10 @@ void InsertaCache(char *tipo, char *item, int off, int id, char *valor, ...)
 		va_end(vl);
 		valor_c = SQLEscapa(buf);
 	}
-	tipo_c = SQLEscapa(tipo);
-	item_c = SQLEscapa(item);
+	tipo_c = SQLEscapa(strtolower(tipo));
+	item_c = SQLEscapa(strtolower(item));
 	if (CogeCache(tipo, item, id))
-		SQLQuery("UPDATE %s%s SET valor='%s', hora=%lu WHERE item='%s' AND tipo='%s' AND owner=%i", PREFIJO, SQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
+		SQLQuery("UPDATE %s%s SET valor='%s', hora=%lu WHERE LOWER(item)='%s' AND LOWER(tipo)='%s' AND owner=%i", PREFIJO, SQL_CACHE, valor_c ? valor_c : item_c, off ? time(0) + off : 0, item_c, tipo_c, id);
 	else
 		SQLQuery("INSERT INTO %s%s (item,valor,hora,tipo,owner) values ('%s','%s',%lu,'%s',%i)", PREFIJO, SQL_CACHE, item_c, valor_c ? valor_c : item_c, off ? time(0) + off : 0, tipo_c, id);
 	Free(item_c);

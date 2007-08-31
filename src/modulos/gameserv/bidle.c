@@ -69,7 +69,7 @@ int BidleParseaConf(Conf *cnf)
 	bidle->paso_pen = 1.14;
 	bidle->eventos = 5;
 	bidle->maxx = bidle->maxy = 500;
-	bidle->paso_venda = 0.8;
+	bidle->paso_vende = 0.8;
 	bidle->paso_compra = 1.2;
 	ircstrdup(bidle->nick, "bidle");
 	for (i = 0; i < cnf->secciones; i++)
@@ -100,8 +100,8 @@ int BidleParseaConf(Conf *cnf)
 			bidle->maxy = atoi(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "max_top"))	
 			bidle->maxtop = atoi(cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "paso_venda"))
-			bidle->paso_venda = atof(cnf->seccion[i]->data);
+		else if (!strcmp(cnf->seccion[i]->item, "paso_vende"))
+			bidle->paso_vende = atof(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "paso_compra"))
 			bidle->paso_compra = atof(cnf->seccion[i]->data);
 	}
@@ -198,6 +198,8 @@ int BidleDescarga()
 	DesconectaBot(bidle->cl, "El juego de idle");
 	bidle->cl = NULL;
 	bidle->cn = NULL;
+	ApagaCrono(timerbidlecheck);
+	timerbidlecheck = NULL;
 	BorraSenyal(SIGN_SYNCH, BidleSynch);
 	BorraSenyal(SIGN_SQL, BidleSQL);
 	BorraSenyal(SIGN_PMSG, BidlePMsg);
@@ -463,24 +465,34 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				}
 				if (BadPtr(user))
 					user = cl->nombre;
-				if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, user)))
+				if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(user))))
 				{
 					Responde(cl, bl, GS_ERR_EMPT, "Este nick no está dado de alta.");
 					return 1;
 				}
 				row = SQLFetchRow(res);
-				Responde(cl, bl, "%s, %s", user, row[1]);
+				Responde(cl, bl, "%s, %s", row[0], row[1]);
 				Responde(cl, bl, "Nivel: %s", row[5]);
 				if (!BadPtr(row[2]))
+				{
 					Responde(cl, bl, "Pertenece al clan %s", row[2]);
+					if (atoi(row[32]) & B_FUND)
+						Responde(cl, bl, "Es Patriarca");
+					if (atoi(row[32]) & B_RECV)
+						Responde(cl, bl, "Es Claner");
+				}
 				if (*row[3] != 'N')
 					Responde(cl, bl, "Es del lado de la %s", row[3]);
 				else
 					Responde(cl, bl, "Es del lado Neutral");
-				Responde(cl, bl, "Estado: %s", * row[6] == '1' ? "online" : "offline");
+				Responde(cl, bl, "Estado: %s", *row[6] == '1' ? "online" : "offline");
 				Responde(cl, bl, "Siguiente nivel en: %s", BDura(atoi(row[8])));
 				Responde(cl, bl, "Idle acumulado: %s", BDura(atoi(row[7])));
 				Responde(cl, bl, "Suma de los ítems: %i", BidleSum(row[0], 0));
+				if (*row[31] != '0')
+					Responde(cl, bl, "Mejoras: +%s", row[31]);
+				if (*row[4] == '1' || user == cl->nombre || !strcasecmp(user, cl->nombre))
+					Responde(cl, bl, "Oro: %s", row[30]);
 				t = atol(row[18]);
 				Responde(cl, bl, "Nacido el: %s", Fecha(&t));
 			}
@@ -556,17 +568,21 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					opt++; 
 				if (!strcasecmp(acc, "CREAR"))
 				{
+					char *clan;
 					if (BadPtr(opt))
 					{
 						Responde(cl, bl, GS_ERR_PARA, "CLAN", "CREAR nombre_clan");
 						return 1;
 					}
-					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s'", PREFIJO, GS_BIDLE, opt)))
+					clan = SQLEscapa(strtolower(opt));
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s'", PREFIJO, GS_BIDLE, clan)))
 					{
 						SQLFreeRes(res);
+						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "Este clan ya existe. Si quieres entrar, ejecuta el comando CLAN ENTRAR nombre_clan.");
 						return 1;
 					}
+					Free(clan);
 					if (SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan"))
 					{
 						Responde(cl, bl, GS_ERR_EMPT, "Ya has ingresado o estás solicitando la entrada en un clan. Si quieres salir de este clan, ejecuta el comando CLAN SALIR nombre_clan");
@@ -579,26 +595,32 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				}
 				else if (!strcasecmp(acc, "ENTRAR"))
 				{
+					char *clan;
 					if (BadPtr(opt))
 					{
 						Responde(cl, bl, GS_ERR_PARA, "CLAN", "ENTRAR nombre_clan");
 						return 1;
 					}
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s'", PREFIJO, GS_BIDLE, opt)))
-					{
-						Responde(cl, bl, GS_ERR_EMPT, "Este clan no existe. Si quieres crearlo, ejecuta el comando CLAN CREAR nombre_clan.");
-						return 1;
-					}
-					SQLFreeRes(res);
 					if (SQLCogeRegistro(GS_BIDLE, cl->nombre, "clan"))
 					{
 						Responde(cl, bl, GS_ERR_EMPT, "Ya has ingresado o estás solicitando la entrada en un clan. Si quieres salir de este clan, ejecuta el comando CLAN SALIR nombre_clan");
 						return 1;
 					}
-					SQLInserta(GS_BIDLE, cl->nombre, "clan", opt);
+					clan = SQLEscapa(strtolower(opt));
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s'", PREFIJO, GS_BIDLE, clan)))
+					{
+						Free(clan);
+						Responde(cl, bl, GS_ERR_EMPT, "Este clan no existe. Si quieres crearlo, ejecuta el comando CLAN CREAR nombre_clan.");
+						return 1;
+					}
+					Free(clan);
+					row = SQLFetchRow(res);
+					clan = strdup(row[2]);
+					SQLFreeRes(res);
+					SQLInserta(GS_BIDLE, cl->nombre, "clan", clan);
 					SQLInserta(GS_BIDLE, cl->nombre, "claner", "%i", B_PEND);
-					Responde(cl, bl, "Tu solicitud para ingresar al clan \00312%s\003 está pendiente de aprobación.", opt);
-					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i", PREFIJO, GS_BIDLE, opt, B_RECV)))
+					Responde(cl, bl, "Tu solicitud para ingresar al clan \00312%s\003 está pendiente de aprobación.", clan);
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i", PREFIJO, GS_BIDLE, strtolower(clan), B_RECV)))
 					{
 						Cliente *al;
 						row = SQLFetchRow(res);
@@ -606,6 +628,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 							Responde(al, bl, "%s solicita entrar en el clan. Para aceptarlo, usa el comando CLAN ACEPTAR %s. Para rechazarlo, CLAN RECHAZAR %s.", cl->nombre, cl->nombre, cl->nombre);
 						SQLFreeRes(res);
 					}
+					Free(clan);
 				}
 				else if (!strcasecmp(acc, "ACEPTAR"))
 				{
@@ -628,7 +651,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para ACEPTAR.");
 						return 1;
 					}
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, opt, clan, B_PEND)))
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, strtolower(opt), clan, B_PEND)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no ha solicitado la entrada al clan.");
@@ -663,7 +686,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para RECHAZAR.");
 						return 1;
 					}
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, opt, clan, B_PEND)))
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, strtolower(opt), clan, B_PEND)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no ha solicitado la entrada al clan.");
@@ -686,7 +709,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						return 1;
 					}
 					clan = strdup(clan);
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, clan, B_PEND)))
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner=%i", PREFIJO, GS_BIDLE, strtolower(clan), B_PEND)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "No existen solicitudes pendientes.");
@@ -765,7 +788,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 			else if (!strcasecmp(com, "COMPRAR"))
 			{
 				char *opt = strtok(NULL, " ");
-				int i, nivel = BDato(cl->nombre, "nivel"), lvl;
+				int i, nivel = BDato(cl->nombre, "nivel"), lvl, mej = 0;
 				if (BDato(cl->nombre, "online") != 1)
 				{
 					Responde(cl, bl, GS_ERR_EMPT, "No estás logueado.");
@@ -776,16 +799,90 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "Puedes comprar los siguientes objetos al siguiente precio:");
 					for (i = 0; i < BIDLE_ITEMS; i++)
 					{
-						lvl = (int)(nivel * 1.5 * (1+(((nivel+i)%10)+1)/50));
+						lvl = (int)(nivel * 1.5 * (1+((nivel+i*i)%11)*0.02));
 						if (!((nivel+i)%10))
-							Responde(cl, bl, "%c%s: nivel \00312%i\003, mejora \x2+%i\x2, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, (int)((((BCuenta()+nivel*100*i)%86400)*50*BidleSum(cl->nombre, 0))/8640000), lvl*bidle->paso_compra);
+						{
+							mej = (int)((((i*(BCuenta()+nivel*100))%86400)*50*BidleSum(cl->nombre, 0))/8640000);
+							Responde(cl, bl, "%c%s: nivel \00312%i\003, mejora \x2+%i\x2, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, mej, (int)((lvl+mej)*bidle->paso_compra));
+						}
 						else
-							Responde(cl, bl, "%c%s: nivel \00312%i\003, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, lvl*bidle->paso_compra);
+							Responde(cl, bl, "%c%s: nivel \00312%i\003, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, (int)(lvl*bidle->paso_compra));
 					}
+				}
+				else
+				{
+					for (i = 0; i < BIDLE_ITEMS; i++)
+					{
+						if (!strcasecmp(items[i], opt))
+						{
+							int precio;
+							lvl = (int)(nivel * 1.5 * (1+((nivel+i*i)%11)*0.02));
+							if (!((nivel+i)%10))
+								mej = (int)((((i*(BCuenta()+nivel*100))%86400)*50*BidleSum(cl->nombre, 0))/8640000);
+							precio = (int)((lvl+mej)*bidle->paso_compra);
+							if (BDato(cl->nombre, "oro") < precio)
+								Responde(cl, bl, GS_ERR_EMPT, "No tienes suficientes oros");
+							else
+							{
+								SQLInserta(GS_BIDLE, cl->nombre, items[i], "%li", lvl);
+								if (mej)
+									SQLInserta(GS_BIDLE, cl->nombre, "mejora", "%li", mej);
+								SQLInserta(GS_BIDLE, cl->nombre, "oro", "%li", BDato(cl->nombre, "oro")-precio);
+								Responde(cl, bl, "Has comprado %s %s de nivel %i por %i oros.", plrs3[i], items[i], lvl, precio);
+							}
+							return 0;
+						}
+					}
+					Responde(cl, bl, GS_ERR_EMPT, "Este objeto no existe.");
+					return 1;
 				}
 			}
 			else if (!strcasecmp(com, "VENDER"))
 			{
+				char *opt = strtok(NULL, " ");
+				int i, lvl;
+				if (BDato(cl->nombre, "online") != 1)
+				{
+					Responde(cl, bl, GS_ERR_EMPT, "No estás logueado.");
+					return 1;
+				}
+				if (BadPtr(opt))
+				{
+					SQLRes res;
+					SQLRow row;
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(cl->nombre))))
+					{
+						row = SQLFetchRow(res);
+						Responde(cl, bl, "Puedes vender los siguientes objetos al siguiente precio:");
+						for (i = 0; i < BIDLE_ITEMS; i++)
+						{
+							if ((lvl = atoi(row[BIDLE_ITEMS_POS+i])))
+								Responde(cl, bl, "%c%s: nivel \00312%i\003, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, (int)(lvl*bidle->paso_compra*bidle->paso_vende));
+						}
+					}
+					SQLFreeRes(res);
+				}
+				else
+				{
+					for (i = 0; i < BIDLE_ITEMS; i++)
+					{
+						if (!strcasecmp(items[i], opt))
+						{
+							int precio, lvl = BDato(cl->nombre, items[i]);
+							if ((precio = (int)(lvl*bidle->paso_compra*bidle->paso_vende)))
+							{
+								SQLInserta(GS_BIDLE, cl->nombre, "oro", "%li", BDato(cl->nombre, "oro")+precio);
+								SQLInserta(GS_BIDLE, cl->nombre, items[i], "0");
+								Responde(cl, bl, "Has vendido %s %s de nivel %i por %i oros.", plrs4[i], items[i], lvl, precio);
+							}
+							else
+								Responde(cl, bl, "Este objeto no tiene nivel.");
+							return 0;
+						}
+					}
+					Responde(cl, bl, GS_ERR_EMPT, "Este objeto no existe.");
+					return 1;
+				}
 			}
 			else if (!strcasecmp(com, "HELP"))
 			{
@@ -820,6 +917,8 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "\00312LADO\003 Fija el Lado al que perteneces.");
 					Responde(cl, bl, "\00312QUEST\003 Da información sobre la misión en curso.");
 					Responde(cl, bl, "\00312CLAN\003 Crea, solicita una invitación, acepta una invitación o abandona un clan.");
+					Responde(cl, bl, "\00312COMPRAR\003 Compra objetos.");
+					Responde(cl, bl, "\00312VENDER\003 Vende objetos.");
 					if (BDato(cl->nombre, "admin") == 1)
 					{
 						Responde(cl, bl, "\00312ADMIN\003 Añade o elimina jugadores para que puedan administrar el juego.");
@@ -900,6 +999,30 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "\00312CLAN LISTAR\003 Lista las solicitudes de ingreso pendientes.");
 					Responde(cl, bl, "\00312CLAN CLANER nick\003 Cambia el claner del clan.");
 					Responde(cl, bl, "\00312CLAN SALIR\003 Abandona el clan o cancela tu solicitud.");
+				}
+				else if (!strcasecmp(para, "COMPRAR"))
+				{
+					Responde(cl, bl, "\00312COMPRAR");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Compra objetos. El precio de los objetos se define según el nivel que sean.");
+					Responde(cl, bl, "Depende de la demanda y la oferta, habrá un objeto que ofrezca mejoras de forma oscilante.");
+					Responde(cl, bl, "La mejora es un valor fijo que se añadirá siempre al valor aleatorio durante un combate. Es decir, como mínimo siempre sacarás esa mejora.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Si no se especifica el objeto a comprar, muestra una lista de los precios de compra.");
+					Responde(cl, bl, "Para ver el oro disponible, ejecuta el comando INFO.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312COMPRAR [objeto]");
+				}
+				else if (!strcasecmp(para, "VENDER"))
+				{
+					Responde(cl, bl, "\00312VENDER");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Vende un objeto a cambio de oros.");
+					Responde(cl, bl, "El precio de venda se fija según el nivel que sea y del precio de compra.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Si no se especifica el objeto a vender, muestra una lista de los precios de venta.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312VENDER [objeto]");
 				}
 				else if (!strcasecmp(para, "ADMIN") && BDato(cl->nombre, "admin") == 1)
 				{
@@ -1082,7 +1205,7 @@ int BidleSum(char *user, int batalla)
 		}
 		return sum+1;
 	}
-	else if ((res = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, user)))
+	else if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(user))))
 	{
 		row = SQLFetchRow(res);
 		for (i = BIDLE_ITEMS_POS; i < BIDLE_ITEMS_POS+BIDLE_ITEMS; i++)
@@ -1615,7 +1738,7 @@ int BidleClan(char *clan, int segs)
 {
 	SQLRes res;
 	SQLRow row;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i", PREFIJO, GS_BIDLE, clan, B_ISIN)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i", PREFIJO, GS_BIDLE, strtolower(clan), B_ISIN)))
 	{
 		while ((row = SQLFetchRow(res)))
 			SQLInserta(GS_BIDLE, row[0], "sig", "%li", atol(row[8])+segs);
@@ -1659,8 +1782,8 @@ int BidleReta(SQLRow mirow, SQLRow op)
 	}
 	misum = BidleSum(mirow[0], 1);
 	opsum = BidleSum(opuser, 1);
-	mirol = BAlea(misum);
-	oprol = BAlea(opsum);
+	mirol = BAlea(misum)+atoi(mirow[31]);
+	oprol = BAlea(opsum)+(oprow ? atoi(oprow[31]) : 0);
 	if (mirol >= oprol)
 	{
 		inc = (long)(opuser == bidle->nick ? 20 : atol(oprow[5])/4);
@@ -1668,12 +1791,16 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		inc = (long)(inc*sig/100);
 		if (!BadPtr(mirow[2]))
 		{
-			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc), mirow[2]);
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", 
+				mirow[0], mirol, misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
+				opuser, oprol, opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc), mirow[2]);
 			BidleClan(mirow[2], -inc);
 		}
 		else
 		{
-			BCMsg("%s [%i/%i] ha retado a %s [%i/%i] en combate y ha ganado! Se han descontado %s de su reloj.", mirow[0], mirol, misum, opuser, oprol, opsum, BDura(inc));
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s de su reloj.", 
+				mirow[0], mirol, misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
+				opuser, oprol, opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig-inc);
 		}
 		if (*mirow[3] == 'L')
