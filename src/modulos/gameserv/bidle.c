@@ -1302,7 +1302,7 @@ int BidleComprueba()
 	if (count && !(count % 3600))
 	{
 		SQLRes res[2];
-		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 44", PREFIJO, GS_BIDLE)))
+		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 34", PREFIJO, GS_BIDLE)))
 		{
 			res[1] = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE);
 			if ((double)(SQLNumRows(res[0])/SQLNumRows(res[1])) > 0.15)
@@ -1570,7 +1570,7 @@ int BidleMueve()
 		SQLFreeRes(res);
 		if (bidle->quest.res && bidle->quest.tipo == 2)
 		{
-			int i, idos = 1;
+			int i, idos = 1, oros = BAlea(250);
 			for (i = 0; i < MIN(4,bidle->quest.rows); i++)
 			{
 				x = atoi(bidle->quest.row[i][9]);
@@ -1597,14 +1597,15 @@ int BidleMueve()
 				if (bidle->quest.fase == 1)
 				{
 					if (bidle->quest.row[3])
-						BCMsg("%s, %s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0]);
+						BCMsg("%s, %s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], oros);
 					else if (bidle->quest.row[2])
-						BCMsg("%s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0]);
+						BCMsg("%s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], oros);
 					else if (bidle->quest.row[1])
-						BCMsg("%s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes.", bidle->quest.row[0][0], bidle->quest.row[1][0]);
+						BCMsg("%s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], oros);
 					for (i = 0; i < MIN(4,bidle->quest.rows); i++)
 					{
 						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "sig", "%li", (long)(atol(bidle->quest.row[i][8])*0.75));
+						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "oro", "%li", BDato(bidle->quest.row[i][0], "oro")+oros);
 						bidle->quest.row[i] = NULL;
 					}
 					SQLFreeRes(bidle->quest.res);
@@ -1843,7 +1844,7 @@ int BidleQuest()
 {
 	if (!bidle->quest.res)
 	{
-		if ((bidle->quest.res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 39 AND lastlogin < %lu ORDER BY RAND() LIMIT 4", PREFIJO, GS_BIDLE, time(0)-1200)))
+		if ((bidle->quest.res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 29 AND lastlogin < %lu ORDER BY RAND() LIMIT 4", PREFIJO, GS_BIDLE, time(0)-1200)))
 		{
 			int i;
 			if ((bidle->quest.rows = SQLNumRows(bidle->quest.res)) > 1)
@@ -1880,16 +1881,17 @@ int BidleQuest()
 	}
 	else if (bidle->quest.tipo == 1)
 	{
-		int i;
+		int i, oros = BAlea(250);
 		if (bidle->quest.row[3])
-			BCMsg("%s, %s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0]);
+			BCMsg("%s, %s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], oros);
 		else if (bidle->quest.row[2])
-			BCMsg("%s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0]);
+			BCMsg("%s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], oros);
 		else if (bidle->quest.row[1])
-			BCMsg("%s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes.", bidle->quest.row[0][0], bidle->quest.row[1][0]);
+			BCMsg("%s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], oros);
 		for (i = 0; i < MIN(4,bidle->quest.rows); i++)
 		{
 			SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "sig", "%li", (long)(atol(bidle->quest.row[i][8])*0.75));
+			SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "oro", "%li", BDato(bidle->quest.row[i][0], "oro")+oros);
 			bidle->quest.row[i] = NULL;
 		}
 		SQLFreeRes(bidle->quest.res);
