@@ -1302,9 +1302,9 @@ int BidleComprueba()
 	if (count && !(count % 3600))
 	{
 		SQLRes res[2];
-		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 34", PREFIJO, GS_BIDLE)))
+		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 34 BY RAND() LIMIT 1", PREFIJO, GS_BIDLE)))
 		{
-			res[1] = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE);
+			res[1] = SQLQuery("SELECT * FROM %s%s WHERE online=1", PREFIJO, GS_BIDLE);
 			if ((double)(SQLNumRows(res[0])/SQLNumRows(res[1])) > 0.15)
 			{
 				row = SQLFetchRow(res[0]);
