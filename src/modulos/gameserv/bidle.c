@@ -226,22 +226,22 @@ char *BDura(u_int segs)
 	MideDuracionEx(segs, &d);
 	if (d.sems*7+d.dias)
 	{
-		ircsprintf(buf, "%u días ", d.sems*7+d.dias);
+		ircsprintf(buf, "%u día%s ", d.sems*7+d.dias, (d.sems*7+d.dias > 1 ? "s" : ""));
 		strlcat(tmp, buf, sizeof(tmp));
 	}
 	if (d.horas)
 	{
-		ircsprintf(buf, "%u horas ", d.horas);
+		ircsprintf(buf, "%u hora%s ", d.horas, (d.horas > 1 ? "s" : ""));
 		strlcat(tmp, buf, sizeof(tmp));
 	}
 	if (d.mins)
 	{
-		ircsprintf(buf, "%u minutos ", d.mins);
+		ircsprintf(buf, "%u minuto%s ", d.mins, (d.mins > 1 ? "s" : ""));
 		strlcat(tmp, buf, sizeof(tmp));
 	}
 	if (d.segs)
 	{
-		ircsprintf(buf, "%u segundos ", d.segs);
+		ircsprintf(buf, "%u segundo%s ", d.segs, (d.segs > 1 ? "s" : ""));
 		strlcat(tmp, buf, sizeof(tmp));
 	}
 	tmp[strlen(tmp)-1] = '\0';
@@ -1155,6 +1155,8 @@ int BPen(Cliente *cl, Penas pena, char *msg)
 			SQLFreeRes(bidle->quest.res);
 			bidle->quest.res = NULL;
 			bidle->quest.tiempo = time(0)+3600;
+			bidle->quest.tipo = 0;
+			bidle->quest.rows = 0;
 		}
 		if (pena == PEN_MSG)
 			inc = (long)(strlen(msg) * pow(bidle->paso_pen, nivel));
@@ -1302,7 +1304,7 @@ int BidleComprueba()
 	if (count && !(count % 3600))
 	{
 		SQLRes res[2];
-		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 34 BY RAND() LIMIT 1", PREFIJO, GS_BIDLE)))
+		if ((res[0] = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 34 ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE)))
 		{
 			res[1] = SQLQuery("SELECT * FROM %s%s WHERE online=1", PREFIJO, GS_BIDLE);
 			if ((double)(SQLNumRows(res[0])/SQLNumRows(res[1])) > 0.15)
@@ -1611,6 +1613,8 @@ int BidleMueve()
 					SQLFreeRes(bidle->quest.res);
 					bidle->quest.res = NULL;
 					bidle->quest.tiempo = time(0)+3600;
+					bidle->quest.tipo = 0;
+					bidle->quest.rows = 0;
 				}
 				else
 					bidle->quest.fase++;
@@ -1901,6 +1905,8 @@ int BidleQuest()
 		SQLFreeRes(bidle->quest.res);
 		bidle->quest.res = NULL;
 		bidle->quest.tiempo = time(0)+3600;
+		bidle->quest.tipo = 0;
+		bidle->quest.rows = 0;
 	}
 	return 0;
 }
