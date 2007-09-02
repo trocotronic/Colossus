@@ -1155,8 +1155,6 @@ int BPen(Cliente *cl, Penas pena, char *msg)
 			SQLFreeRes(bidle->quest.res);
 			bidle->quest.res = NULL;
 			bidle->quest.tiempo = time(0)+3600;
-			bidle->quest.tipo = 0;
-			bidle->quest.rows = 0;
 		}
 		if (pena == PEN_MSG)
 			inc = (long)(strlen(msg) * pow(bidle->paso_pen, nivel));
@@ -1613,8 +1611,6 @@ int BidleMueve()
 					SQLFreeRes(bidle->quest.res);
 					bidle->quest.res = NULL;
 					bidle->quest.tiempo = time(0)+3600;
-					bidle->quest.tipo = 0;
-					bidle->quest.rows = 0;
 				}
 				else
 					bidle->quest.fase++;
@@ -1885,6 +1881,11 @@ int BidleQuest()
 						BCMsg("%s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
 				}
 			}
+			else
+			{
+				SQLFreeRes(bidle->quest.res);
+				bidle->quest.res = NULL;
+			}
 		}
 	}
 	else if (bidle->quest.tipo == 1)
@@ -1905,8 +1906,6 @@ int BidleQuest()
 		SQLFreeRes(bidle->quest.res);
 		bidle->quest.res = NULL;
 		bidle->quest.tiempo = time(0)+3600;
-		bidle->quest.tipo = 0;
-		bidle->quest.rows = 0;
 	}
 	return 0;
 }
