@@ -215,12 +215,10 @@ int BidleDescarga()
 	for (i = 0; i < bidle->maxx; i++)
 		Free(bidle->pos[i]);
 	Free(bidle->pos);
-	if (bidle->quest.res)
+	if (bidle->quest.tipo)
 	{
-		for (i = 0; i < MIN(4, bidle->quest.rows); i++)
-			bidle->quest.row[i] = NULL;
-		SQLFreeRes(bidle->quest.res);
-		bidle->quest.res = NULL;
+		for (i = 0; i < 4; i++)
+			ircfree(bidle->quest.user[i].user);
 	}
 	ircfree(bidle);
 	return 0;
@@ -534,28 +532,28 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 			}
 			else if (!strcasecmp(com, "QUEST"))
 			{
-				if (!bidle->quest.res)
+				if (!bidle->quest.tipo)
 				{
 					Responde(cl, bl, GS_ERR_EMPT, "No existen misiones en este momento.");
 					return 1;
 				}
 				if (bidle->quest.tipo == 1)
 				{
-					if (bidle->quest.row[3])
-						Responde(cl, bl, "%s, %s, %s y %s deben terminar la misión en %s.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], BDura(bidle->quest.tiempo - time(0)));
-					else if (bidle->quest.row[2])
-						Responde(cl, bl, "%s, %s y %s deben terminar la misión en %s.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], BDura(bidle->quest.tiempo - time(0)));	
-					else if (bidle->quest.row[1])
-						Responde(cl, bl, "%s y %s deben terminar la misión en %s.", bidle->quest.row[0][0], bidle->quest.row[1][0], BDura(bidle->quest.tiempo - time(0)));
+					if (bidle->quest.user[3].user)
+						Responde(cl, bl, "%s, %s, %s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, BDura(bidle->quest.tiempo - time(0)));
+					else if (bidle->quest.user[2].user)
+						Responde(cl, bl, "%s, %s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, BDura(bidle->quest.tiempo - time(0)));	
+					else if (bidle->quest.user[1].user)
+						Responde(cl, bl, "%s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, BDura(bidle->quest.tiempo - time(0)));
 				}
 				else if (bidle->quest.tipo == 2)
 				{
-					if (bidle->quest.row[3])
-						Responde(cl, bl, "%s, %s, %s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
-					else if (bidle->quest.row[2])
-						Responde(cl, bl, "%s, %s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
-					else if (bidle->quest.row[1])
-						Responde(cl, bl, "%s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
+					if (bidle->quest.user[3].user)
+						Responde(cl, bl, "%s, %s, %s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
+					else if (bidle->quest.user[2].user)
+						Responde(cl, bl, "%s, %s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
+					else if (bidle->quest.user[1].user)
+						Responde(cl, bl, "%s y %s deben ir primero a [%i,%i] y luego a [%i,%i].", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
 				}
 			}
 			else if (!strcasecmp(com, "CLAN"))
@@ -1155,15 +1153,14 @@ int BPen(Cliente *cl, Penas pena, char *msg)
 			if (bidle->limit_pen)
 				inc = MIN(bidle->limit_pen, inc);
 			BCMsg("La imprudencia de %s le ha salido cara. Los Dioses llenos de ira han añadido %s a todos los participantes de la misión.", cl->nombre, BDura(inc));
-			for (i = 0; i < MIN(4,bidle->quest.rows); i++)
+			for (i = 0; i < 4; i++)
 			{
-				SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "pen_quest", "%li", atol(bidle->quest.row[i][16])+inc);
-				SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "sig", "%li", atol(bidle->quest.row[i][8])+inc);
-				Responde(BuscaCliente(bidle->quest.row[i][0]), bidle->cl, "Has sido penalizado con \00312%s\003 de más.", BDura(inc));
-				bidle->quest.row[i] = NULL;
+				SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "pen_quest", "%li", BDato(bidle->quest.user[i].user, "pen_quest")+inc);
+				SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "sig", "%li", BDato(bidle->quest.user[i].user, "sig")+inc);
+				Responde(BuscaCliente(bidle->quest.user[i].user), bidle->cl, "Has sido penalizado con \00312%s\003 de más.", BDura(inc));
+				ircfree(bidle->quest.user[i].user);
 			}
-			SQLFreeRes(bidle->quest.res);
-			bidle->quest.res = NULL;
+			bidle->quest.tipo = 0;
 			bidle->quest.tiempo = time(0)+3600;
 		}
 		if (pena == PEN_MSG)
@@ -1334,12 +1331,11 @@ int BidleSockClose()
 	timerbidlecheck = NULL;
 	SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
 	ultime = 0;
-	if (bidle->quest.res)
+	if (bidle->quest.tipo)
 	{
-		for (i = 0; i < MIN(4, bidle->quest.rows); i++)
-			bidle->quest.row[i] = NULL;
-		SQLFreeRes(bidle->quest.res);
-		bidle->quest.res = NULL;
+		for (i = 0; i < 4; i++)
+			ircfree(bidle->quest.user[i].user);
+		bidle->quest.tipo = 0;
 	}
 	return 0;
 }
@@ -1534,11 +1530,11 @@ int BidleOscuridad()
 int BidleHaceQuest(char *user)
 {
 	int i;
-	if (!bidle->quest.res)
+	if (!bidle->quest.tipo)
 		return 0;
-	for (i = 0; i < MIN(4,bidle->quest.rows); i++)
+	for (i = 0; i < 4; i++)
 	{
-		if (!strcmp(user, bidle->quest.row[i][0]))
+		if (!strcmp(user, bidle->quest.user[i].user))
 			return 1;
 	}
 	return 0;
@@ -1547,11 +1543,12 @@ int BidleMueve()
 {
 	SQLRes res;
 	SQLRow row;
-	int x, y, rows;
-	for (x = 0; x < bidle->maxx; x++)
-		bzero(bidle->pos[x], sizeof(struct BidlePos)*bidle->maxy);
+	int i;
+	for (i = 0; i < bidle->maxx; i++)
+		bzero(bidle->pos[i], sizeof(struct BidlePos)*bidle->maxy);
 	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1", PREFIJO, GS_BIDLE)))
 	{
+		int x, y, rows = SQLNumRows(res);
 		rows = SQLNumRows(res);
 		while ((row = SQLFetchRow(res)))
 		{
@@ -1586,27 +1583,23 @@ int BidleMueve()
 			}
 		}
 		SQLFreeRes(res);
-		if (bidle->quest.res && bidle->quest.tipo == 2)
+		if (bidle->quest.tipo == 2)
 		{
 			int i, idos = 1, oros;
-			for (i = 0; i < MIN(4,bidle->quest.rows); i++)
+			for (i = 0; i < 4; i++)
 			{
-				x = atoi(bidle->quest.row[i][9]);
-				y = atoi(bidle->quest.row[i][10]);
-				if (x != bidle->quest.x[bidle->quest.fase] || y != bidle->quest.y[bidle->quest.fase])
+				if (bidle->quest.user[i].x != bidle->quest.x[bidle->quest.fase] || bidle->quest.user[i].y != bidle->quest.y[bidle->quest.fase])
 				{
 					idos = 0;
-					if (x != bidle->quest.x[bidle->quest.fase])
+					if (bidle->quest.user[i].x != bidle->quest.x[bidle->quest.fase])
 					{
-						x += (x < bidle->quest.x[bidle->quest.fase] ? 1 : -1);
-						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "x", "%i", x);
-						snprintf(bidle->quest.row[i][9], 11, "%i", x);
+						bidle->quest.user[i].x += (bidle->quest.user[i].x < bidle->quest.x[bidle->quest.fase] ? 1 : -1);
+						SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "x", "%i", bidle->quest.user[i].x);
 					}
-					if (y != bidle->quest.y[bidle->quest.fase])
+					if (bidle->quest.user[i].y != bidle->quest.y[bidle->quest.fase])
 					{
-						y += (y < bidle->quest.y[bidle->quest.fase] ? 1 : -1);
-						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "y", "%i", y);
-						snprintf(bidle->quest.row[i][10], 11, "%i", y);
+						bidle->quest.user[i].y += (bidle->quest.user[i].y < bidle->quest.y[bidle->quest.fase] ? 1 : -1);
+						SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "y", "%i", bidle->quest.user[i].y);
 					}
 				}
 			}
@@ -1615,20 +1608,19 @@ int BidleMueve()
 				if (bidle->quest.fase == 1)
 				{
 					oros = BAlea((time(0)-bidle->quest.initime)/360);
-					if (bidle->quest.row[3])
-						BCMsg("%s, %s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], oros);
-					else if (bidle->quest.row[2])
-						BCMsg("%s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], oros);
-					else if (bidle->quest.row[1])
-						BCMsg("%s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], oros);
-					for (i = 0; i < MIN(4,bidle->quest.rows); i++)
+					if (bidle->quest.user[3].user)
+						BCMsg("%s, %s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, oros);
+					else if (bidle->quest.user[2].user)
+						BCMsg("%s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, oros);
+					else if (bidle->quest.user[1].user)
+						BCMsg("%s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, oros);
+					for (i = 0; i < 4; i++)
 					{
-						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "sig", "%li", (long)(atol(bidle->quest.row[i][8])*0.75));
-						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "oro", "%li", BDato(bidle->quest.row[i][0], "oro")+oros);
-						bidle->quest.row[i] = NULL;
+						SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "sig", "%li", (long)(BDato(bidle->quest.user[i].user, "sig")*0.75));
+						SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "oro", "%li", BDato(bidle->quest.user[i].user, "oro")+oros);
+						ircfree(bidle->quest.user[i].user);
 					}
-					SQLFreeRes(bidle->quest.res);
-					bidle->quest.res = NULL;
+					bidle->quest.tipo = 0;
 					bidle->quest.tiempo = time(0)+3600;
 				}
 				else
@@ -1865,26 +1857,32 @@ int BidleReta(SQLRow mirow, SQLRow op)
 }
 int BidleQuest()
 {
-	if (!bidle->quest.res)
+	SQLRes res;
+	SQLRow row;
+	int rows;
+	if (!bidle->quest.tipo)
 	{
-		if ((bidle->quest.res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 29 AND lastlogin < %lu ORDER BY RAND() LIMIT 4", PREFIJO, GS_BIDLE, time(0)-1200)))
+		if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND nivel > 29 AND lastlogin < %lu ORDER BY RAND() LIMIT 4", PREFIJO, GS_BIDLE, time(0)-1200)))
 		{
 			int i;
-			if ((bidle->quest.rows = SQLNumRows(bidle->quest.res)) > 1)
+			if ((rows = SQLNumRows(res)) > 1)
 			{
-				for (i = 0; i < MIN(bidle->quest.rows,4); i++)
-					bidle->quest.row[i] = SQLFetchRow(bidle->quest.res);
+				for (i = 0; i < MIN(rows,4); i++)
+				{
+					row = SQLFetchRow(res);
+					ircstrdup(bidle->quest.user[i].user, row[0]);
+				}
 				bidle->quest.tipo = BAlea(2)+1;
 				bidle->quest.initime = time(0);
 				if (bidle->quest.tipo == 1)
 				{
 					bidle->quest.tiempo = time(0)+43200+BAlea(43201);
-					if (bidle->quest.row[3])
-						BCMsg("%s, %s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Terminarán dentro de %s.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], BDura(bidle->quest.tiempo-time(0)));
-					else if (bidle->quest.row[2])
-						BCMsg("%s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Terminarán dentro de %s.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], BDura(bidle->quest.tiempo-time(0)));
-					else if (bidle->quest.row[1])
-						BCMsg("%s y %s han sido escogidos por los Dioses para realizar una dura misión. Terminarán dentro de %s.", bidle->quest.row[0][0], bidle->quest.row[1][0], BDura(bidle->quest.tiempo-time(0)));
+					if (bidle->quest.user[3].user)
+						BCMsg("%s, %s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Terminarán dentro de %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, BDura(bidle->quest.tiempo-time(0)));
+					else if (bidle->quest.user[2].user)
+						BCMsg("%s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Terminarán dentro de %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, BDura(bidle->quest.tiempo-time(0)));
+					else if (bidle->quest.user[1].user)
+						BCMsg("%s y %s han sido escogidos por los Dioses para realizar una dura misión. Terminarán dentro de %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, BDura(bidle->quest.tiempo-time(0)));
 				}
 				else if (bidle->quest.tipo == 2)
 				{
@@ -1893,38 +1891,33 @@ int BidleQuest()
 					bidle->quest.y[0] = BAlea(bidle->maxy);
 					bidle->quest.y[1] = BAlea(bidle->maxy);
 					bidle->quest.fase = 0;
-					if (bidle->quest.row[3])
-						BCMsg("%s, %s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
-					else if (bidle->quest.row[2])
-						BCMsg("%s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
-					else if (bidle->quest.row[1])
-						BCMsg("%s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
+					if (bidle->quest.user[3].user)
+						BCMsg("%s, %s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
+					else if (bidle->quest.user[2].user)
+						BCMsg("%s, %s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
+					else if (bidle->quest.user[1].user)
+						BCMsg("%s y %s han sido escogidos por los Dioses para realizar una dura misión. Deberán ir a las coordenadas [%i,%i] y luego a [%i,%i].", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.x[0], bidle->quest.y[0], bidle->quest.x[1], bidle->quest.y[1]);
 				}
 			}
-			else
-			{
-				SQLFreeRes(bidle->quest.res);
-				bidle->quest.res = NULL;
-			}
+			SQLFreeRes(res);
 		}
 	}
 	else if (bidle->quest.tipo == 1)
 	{
 		int i, oros = BAlea((time(0)-bidle->quest.initime)/360);
-		if (bidle->quest.row[3])
-			BCMsg("%s, %s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], oros);
-		else if (bidle->quest.row[2])
-			BCMsg("%s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], oros);
-		else if (bidle->quest.row[1])
-			BCMsg("%s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], oros);
-		for (i = 0; i < MIN(4,bidle->quest.rows); i++)
+		if (bidle->quest.user[3].user)
+			BCMsg("%s, %s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, oros);
+		else if (bidle->quest.user[2].user)
+			BCMsg("%s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, oros);
+		else if (bidle->quest.user[1].user)
+			BCMsg("%s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, oros);
+		for (i = 0; i < 4; i++)
 		{
-			SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "sig", "%li", (long)(atol(bidle->quest.row[i][8])*0.75));
-			SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "oro", "%li", BDato(bidle->quest.row[i][0], "oro")+oros);
-			bidle->quest.row[i] = NULL;
+			SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "sig", "%li", (long)(BDato(bidle->quest.user[i].user, "sig")*0.75));
+			SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "oro", "%li", BDato(bidle->quest.user[i].user, "oro")+oros);
+			ircfree(bidle->quest.user[i].user);
 		}
-		SQLFreeRes(bidle->quest.res);
-		bidle->quest.res = NULL;
+		bidle->quest.tipo = 0;
 		bidle->quest.tiempo = time(0)+3600;
 	}
 	return 0;

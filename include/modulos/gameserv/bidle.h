@@ -20,9 +20,11 @@ struct _bidle
 	double paso_vende;
 	struct 
 	{
-		SQLRow row[4];
-		SQLRes res;
-		int rows;
+		struct 
+		{
+			char *user;
+			int x, y;
+		}user[4];
 		time_t tiempo;
 		int x[2], y[2];
 		int tipo;
