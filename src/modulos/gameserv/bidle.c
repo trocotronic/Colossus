@@ -217,7 +217,7 @@ int BidleDescarga()
 	Free(bidle->pos);
 	if (bidle->quest.tipo)
 	{
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < bidle->quest.users; i++)
 			ircfree(bidle->quest.user[i].user);
 	}
 	ircfree(bidle);
@@ -1153,7 +1153,7 @@ int BPen(Cliente *cl, Penas pena, char *msg)
 			if (bidle->limit_pen)
 				inc = MIN(bidle->limit_pen, inc);
 			BCMsg("La imprudencia de %s le ha salido cara. Los Dioses llenos de ira han añadido %s a todos los participantes de la misión.", cl->nombre, BDura(inc));
-			for (i = 0; i < 4; i++)
+			for (i = 0; i < bidle->quest.users; i++)
 			{
 				SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "pen_quest", "%li", BDato(bidle->quest.user[i].user, "pen_quest")+inc);
 				SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "sig", "%li", BDato(bidle->quest.user[i].user, "sig")+inc);
@@ -1333,7 +1333,7 @@ int BidleSockClose()
 	ultime = 0;
 	if (bidle->quest.tipo)
 	{
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < bidle->quest.users; i++)
 			ircfree(bidle->quest.user[i].user);
 		bidle->quest.tipo = 0;
 	}
@@ -1532,7 +1532,7 @@ int BidleHaceQuest(char *user)
 	int i;
 	if (!bidle->quest.tipo)
 		return 0;
-	for (i = 0; i < 4; i++)
+	for (i = 0; i < bidle->quest.users; i++)
 	{
 		if (!strcmp(user, bidle->quest.user[i].user))
 			return 1;
@@ -1586,7 +1586,7 @@ int BidleMueve()
 		if (bidle->quest.tipo == 2)
 		{
 			int i, idos = 1, oros;
-			for (i = 0; i < 4; i++)
+			for (i = 0; i < bidle->quest.users; i++)
 			{
 				if (bidle->quest.user[i].x != bidle->quest.x[bidle->quest.fase] || bidle->quest.user[i].y != bidle->quest.y[bidle->quest.fase])
 				{
@@ -1614,7 +1614,7 @@ int BidleMueve()
 						BCMsg("%s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, oros);
 					else if (bidle->quest.user[1].user)
 						BCMsg("%s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, oros);
-					for (i = 0; i < 4; i++)
+					for (i = 0; i < bidle->quest.users; i++)
 					{
 						SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "sig", "%li", (long)(BDato(bidle->quest.user[i].user, "sig")*0.75));
 						SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "oro", "%li", BDato(bidle->quest.user[i].user, "oro")+oros);
@@ -1874,6 +1874,7 @@ int BidleQuest()
 					bidle->quest.user[i].x = atoi(row[9]);
 					bidle->quest.user[i].y = atoi(row[10]);
 				}
+				bidle->quest.users = rows;
 				bidle->quest.tipo = BAlea(2)+1;
 				bidle->quest.initime = time(0);
 				if (bidle->quest.tipo == 1)
@@ -1913,7 +1914,7 @@ int BidleQuest()
 			BCMsg("%s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, oros);
 		else if (bidle->quest.user[1].user)
 			BCMsg("%s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.user[0].user, bidle->quest.user[1].user, oros);
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < bidle->quest.users; i++)
 		{
 			SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "sig", "%li", (long)(BDato(bidle->quest.user[i].user, "sig")*0.75));
 			SQLInserta(GS_BIDLE, bidle->quest.user[i].user, "oro", "%li", BDato(bidle->quest.user[i].user, "oro")+oros);
