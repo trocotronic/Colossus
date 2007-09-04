@@ -1871,6 +1871,8 @@ int BidleQuest()
 				{
 					row = SQLFetchRow(res);
 					ircstrdup(bidle->quest.user[i].user, row[0]);
+					bidle->quest.user[i].x = atoi(row[9]);
+					bidle->quest.user[i].y = atoi(row[10]);
 				}
 				bidle->quest.tipo = BAlea(2)+1;
 				bidle->quest.initime = time(0);

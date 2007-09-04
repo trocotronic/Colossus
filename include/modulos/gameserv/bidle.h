@@ -25,6 +25,7 @@ struct _bidle
 			char *user;
 			int x, y;
 		}user[4];
+		int users;
 		time_t tiempo;
 		int x[2], y[2];
 		int tipo;
