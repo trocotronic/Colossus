@@ -222,6 +222,8 @@ char *BDura(u_int segs)
 {
 	Duracion d;
 	static char tmp[64];
+	if (!segs)
+		return "0 segundos";
 	tmp[0] = '\0';
 	MideDuracionEx(segs, &d);
 	if (d.sems*7+d.dias)
@@ -491,7 +493,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				Responde(cl, bl, "Suma de los ítems: %i", BidleSum(row[0], 0));
 				if (*row[31] != '0')
 					Responde(cl, bl, "Mejoras: +%s", row[31]);
-				if (*row[4] == '1' || user == cl->nombre || !strcasecmp(user, cl->nombre))
+				if (*row[4] == '1' || user == cl->nombre || !strcasecmp(user, cl->nombre) || BDato(cl->nombre, "admin") == 1))
 					Responde(cl, bl, "Oro: %s", row[30]);
 				t = atol(row[18]);
 				Responde(cl, bl, "Nacido el: %s", Fecha(&t));
@@ -1570,7 +1572,7 @@ int BidleMueve()
 		SQLFreeRes(res);
 		if (bidle->quest.res && bidle->quest.tipo == 2)
 		{
-			int i, idos = 1, oros = BAlea(250);
+			int i, idos = 1, oros;
 			for (i = 0; i < MIN(4,bidle->quest.rows); i++)
 			{
 				x = atoi(bidle->quest.row[i][9]);
@@ -1582,13 +1584,13 @@ int BidleMueve()
 					{
 						x += (x < bidle->quest.x[bidle->quest.fase] ? 1 : -1);
 						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "x", "%i", x);
-						ircsprintf(bidle->quest.row[i][9], "%i", x);
+						snprintf(bidle->quest.row[i][9], 11, "%i", x);
 					}
 					if (y != bidle->quest.y[bidle->quest.fase])
 					{
 						y += (y < bidle->quest.y[bidle->quest.fase] ? 1 : -1);
 						SQLInserta(GS_BIDLE, bidle->quest.row[i][0], "y", "%i", y);
-						ircsprintf(bidle->quest.row[i][10], "%i", y);
+						snprintf(bidle->quest.row[i][10], 11, "%i", y);
 					}
 				}
 			}
@@ -1596,6 +1598,7 @@ int BidleMueve()
 			{
 				if (bidle->quest.fase == 1)
 				{
+					oros = BAlea((time(0)-bidle->quest.initime)/360);
 					if (bidle->quest.row[3])
 						BCMsg("%s, %s, %s y %s han logrado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], oros);
 					else if (bidle->quest.row[2])
@@ -1856,6 +1859,7 @@ int BidleQuest()
 				for (i = 0; i < MIN(bidle->quest.rows,4); i++)
 					bidle->quest.row[i] = SQLFetchRow(bidle->quest.res);
 				bidle->quest.tipo = BAlea(2)+1;
+				bidle->quest.initime = time(0);
 				if (bidle->quest.tipo == 1)
 				{
 					bidle->quest.tiempo = time(0)+43200+BAlea(43201);
@@ -1890,7 +1894,7 @@ int BidleQuest()
 	}
 	else if (bidle->quest.tipo == 1)
 	{
-		int i, oros = BAlea(250);
+		int i, oros = BAlea((time(0)-bidle->quest.initime)/360);
 		if (bidle->quest.row[3])
 			BCMsg("%s, %s, %s y %s han sido bendecidos por el reino celestial y han completado su misión! Se ha descontado el 25%% de sus relojes y han ganado %i oros.", bidle->quest.row[0][0], bidle->quest.row[1][0], bidle->quest.row[2][0], bidle->quest.row[3][0], oros);
 		else if (bidle->quest.row[2])
