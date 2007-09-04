@@ -27,6 +27,7 @@ struct _bidle
 		int x[2], y[2];
 		int tipo;
 		int fase;
+		time_t initime;
 	}quest;
 	struct BidlePos
 	{

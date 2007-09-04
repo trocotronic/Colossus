@@ -493,7 +493,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				Responde(cl, bl, "Suma de los ítems: %i", BidleSum(row[0], 0));
 				if (*row[31] != '0')
 					Responde(cl, bl, "Mejoras: +%s", row[31]);
-				if (*row[4] == '1' || user == cl->nombre || !strcasecmp(user, cl->nombre) || BDato(cl->nombre, "admin") == 1))
+				if (*row[4] == '1' || user == cl->nombre || !strcasecmp(user, cl->nombre) || BDato(cl->nombre, "admin") == 1)
 					Responde(cl, bl, "Oro: %s", row[30]);
 				t = atol(row[18]);
 				Responde(cl, bl, "Nacido el: %s", Fecha(&t));
