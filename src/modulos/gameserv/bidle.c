@@ -490,6 +490,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				Responde(cl, bl, "Estado: %s", *row[6] == '1' ? "online" : "offline");
 				Responde(cl, bl, "Siguiente nivel en: %s", BDura(atoi(row[8])));
 				Responde(cl, bl, "Idle acumulado: %s", BDura(atoi(row[7])));
+				Responde(cl, bl, "Posición: [%i,%i]", atoi(row[9]), atoi(row[10]));
 				Responde(cl, bl, "Suma de los ítems: %i", BidleSum(row[0], 0));
 				if (*row[31] != '0')
 					Responde(cl, bl, "Mejoras: +%s", row[31]);
