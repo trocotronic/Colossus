@@ -215,6 +215,13 @@ int BidleDescarga()
 	for (i = 0; i < bidle->maxx; i++)
 		Free(bidle->pos[i]);
 	Free(bidle->pos);
+	if (bidle->quest.res)
+	{
+		for (i = 0; i < MIN(4, bidle->quest.rows); i++)
+			bidle->quest.row[i] = NULL;
+		SQLFreeRes(bidle->quest.res);
+		bidle->quest.res = NULL;
+	}
 	ircfree(bidle);
 	return 0;
 }
@@ -1322,10 +1329,18 @@ int BidleComprueba()
 }
 int BidleSockClose()
 {
+	int i;
 	ApagaCrono(timerbidlecheck);
 	timerbidlecheck = NULL;
 	SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
 	ultime = 0;
+	if (bidle->quest.res)
+	{
+		for (i = 0; i < MIN(4, bidle->quest.rows); i++)
+			bidle->quest.row[i] = NULL;
+		SQLFreeRes(bidle->quest.res);
+		bidle->quest.res = NULL;
+	}
 	return 0;
 }
 int BidleHog()
