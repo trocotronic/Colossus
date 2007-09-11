@@ -186,6 +186,8 @@ int BidleSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_BIDLE);
 	}
+	else
+		SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
 	SQLCargaTablas();
 	return 0;
 }
@@ -1207,7 +1209,7 @@ int BidleSum(char *user, int batalla)
 		if ((res = SQLQuery("SELECT * FROM %s%s", PREFIJO, GS_BIDLE)))
 		{
 			while ((row = SQLFetchRow(res)))
-				sum = MAX(sum, BidleSum(row[0], 0));
+				sum = MAX(sum, BidleSum(row[0], batalla));
 			SQLFreeRes(res);
 		}
 		return sum+1;
@@ -1367,7 +1369,7 @@ int BidleBatallaEqs()
 {
 	SQLRes res;
 	SQLRow row[6];
-	int i, rows, misum, opsum, mirol, oprol;
+	int i, rows, misum, opsum, mirol, oprol, mimej, opmej;
 	long inc;
 	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 ORDER BY RAND() LIMIT 6", PREFIJO, GS_BIDLE)))
 	{
@@ -1376,18 +1378,25 @@ int BidleBatallaEqs()
 			for (i = 0; i < 6; i++)
 				row[i] = SQLFetchRow(res);
 			misum = BidleSum(row[0][0], 1) + BidleSum(row[1][0], 1) + BidleSum(row[2][0], 1);
+			mimej = atoi(row[0][31]) + atoi(row[1][31]) + atoi(row[2][31]);
 			opsum = BidleSum(row[3][0], 1) + BidleSum(row[4][0], 1) + BidleSum(row[5][0], 1);
+			opmej = atoi(row[3][31]) + atoi(row[4][31]) + atoi(row[5][31]);
 			inc = atol(row[0][8]);
 			inc = MIN(inc, atol(row[1][8]));
 			inc = MIN(inc, atol(row[2][8]));
 			inc = (long)(inc*0.2);
-			mirol = BAlea(misum);
-			oprol = BAlea(opsum);
+			mirol = BAlea(misum)+mimej;
+			oprol = BAlea(opsum)+opmej;
+			buf[0] = tokbuf[0] = '\0';
 			if (mirol >= oprol)
 			{
-				BCMsg("%s, %s y %s [%i/%i] se han batido en duelo con %s, %s y %s [%i/%i] y han vencido! Se han descontado %s de sus relojes.",
-					row[0][0], row[1][0], row[2][0], mirol, misum,
-					row[3][0], row[4][0], row[5][0], oprol, opsum,
+				if (mimej)
+					ircsprintf(buf, "%i", mimej);
+				if (opmej)
+					ircsprintf(tokbuf, "%i", opmej);
+				BCMsg("%s, %s y %s [%i/%i]%s%s se han batido en duelo con %s, %s y %s [%i/%i]%s%s y han vencido! Se han descontado %s de sus relojes.",
+					row[0][0], row[1][0], row[2][0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? buf : ""),
+					row[3][0], row[4][0], row[5][0], oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? tokbuf : ""),
 					BDura(inc));
 				SQLInserta(GS_BIDLE, row[0][0], "sig", "%li", atol(row[0][8])-inc);
 				SQLInserta(GS_BIDLE, row[1][0], "sig", "%li", atol(row[1][8])-inc);
@@ -1395,9 +1404,9 @@ int BidleBatallaEqs()
 			}
 			else
 			{
-				BCMsg("%s, %s y %s [%i/%i] se han batido en duelo con %s, %s y %s [%i/%i] y han perdido! Se han añadido %s a sus relojes.",
-					row[0][0], row[1][0], row[2][0], mirol, misum,
-					row[3][0], row[4][0], row[5][0], oprol, opsum,
+				BCMsg("%s, %s y %s [%i/%i]%s%s se han batido en duelo con %s, %s y %s [%i/%i]%s%s y han perdido! Se han añadido %s a sus relojes.",
+					row[0][0], row[1][0], row[2][0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? buf : ""),
+					row[3][0], row[4][0], row[5][0], oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? tokbuf : ""),
 					BDura(inc));
 				SQLInserta(GS_BIDLE, row[0][0], "sig", "%li", atol(row[0][8])+inc);
 				SQLInserta(GS_BIDLE, row[1][0], "sig", "%li", atol(row[1][8])+inc);
@@ -1754,7 +1763,7 @@ int BidleReta(SQLRow mirow, SQLRow op)
 {
 	SQLRes res = NULL;
 	SQLRow oprow = NULL;
-	int rows, misum, opsum, mirol, oprol, factor = 35, it;
+	int rows, misum, opsum, mirol, oprol, factor = 35, it, mimej = 0, opmej = 0;
 	long sig = atol(mirow[8]), inc;
 	char *opuser;
 	if (op)
@@ -1787,8 +1796,12 @@ int BidleReta(SQLRow mirow, SQLRow op)
 	}
 	misum = BidleSum(mirow[0], 1);
 	opsum = BidleSum(opuser, 1);
-	mirol = BAlea(misum)+atoi(mirow[31]);
-	oprol = BAlea(opsum)+(oprow ? atoi(oprow[31]) : 0);
+	if (!BadPtr(mirow[31]))
+		mimej = atoi(mirow[31]);
+	if (oprow && !BadPtr(oprow[31]))
+		opmej = atoi(oprow[31]);
+	mirol = BAlea(misum)+mimej;
+	oprol = BAlea(opsum)+opmej;
 	if (mirol >= oprol)
 	{
 		inc = (long)(opuser == bidle->nick ? 20 : atol(oprow[5])/4);
@@ -1797,15 +1810,15 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		if (!BadPtr(mirow[2]))
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", 
-				mirow[0], mirol, misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
-				opuser, oprol, opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc), mirow[2]);
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc), mirow[2]);
 			BidleClan(mirow[2], opuser, -inc);
 		}
 		else
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s de su reloj.", 
-				mirow[0], mirol-atoi(mirow[31]), misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
-				opuser, oprol-(oprow ? atoi(oprow[31]) : 0), opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc));
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig-inc);
 		}
 		if (*mirow[3] == 'L')
@@ -1839,15 +1852,15 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		if (!BadPtr(mirow[2]))
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", 
-				mirow[0], mirol-atoi(mirow[31]), misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
-				opuser, oprol-(oprow ? atoi(oprow[31]) : 0), opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc), mirow[2]);
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc), mirow[2]);
 			BidleClan(mirow[2], opuser, inc);
 		}
 		else
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s a su reloj.", 
-				mirow[0], mirol-atoi(mirow[31]), misum, (*mirow[31] != '0' ? "+" : ""), (*mirow[31] != '0' ? mirow[31] : ""), 
-				opuser, oprol-(oprow ? atoi(oprow[31]) : 0), opsum, (oprow && *oprow[31] != '0' ? "+" : ""), (oprow && *oprow[31] != '0' ? oprow[31] : ""), BDura(inc));
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig+inc);
 		}
 	}
