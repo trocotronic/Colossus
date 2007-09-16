@@ -1216,15 +1216,17 @@ int BidleSum(char *user, int batalla)
 	}
 	else if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(user))))
 	{
+		char c;
 		row = SQLFetchRow(res);
 		for (i = BIDLE_ITEMS_POS; i < BIDLE_ITEMS_POS+BIDLE_ITEMS; i++)
 			sum += atoi(row[i]);
+		c = *row[3];
 		SQLFreeRes(res);
 		if (batalla)
 		{
-			if (*row[3] == 'L')
+			if (c == 'L')
 				return (int)(1.1*sum);
-			else if (*row[3] == 'O')
+			else if (c == 'O')
 				return (int)(0.9*sum);
 			else
 				return sum;
