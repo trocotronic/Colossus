@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.42 2007-03-01 15:30:22 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.43 2007-09-24 09:50:48 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -606,6 +606,7 @@ BOTFUNC(OSGline)
 BOTFUNC(OSOpers)
 {
 	Nivel *niv = NULL;
+	Cliente *al = NULL;
 	if (params < 2)
 	{
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [nivel]");
@@ -625,6 +626,8 @@ BOTFUNC(OSOpers)
 		}
 		SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);		
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1], param[2]);
+		if ((al = BuscaCliente(param[1])))
+			al->nivel |= niv->nivel;
 	}
 	else
 	{
@@ -635,6 +638,8 @@ BOTFUNC(OSOpers)
 		}
 		SQLBorra(OS_SQL, param[1]);
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1]);
+		if ((al = BuscaCliente(param[1])))
+			al->nivel &= ~niv->nivel;
 	}
 	EOI(operserv, 5);
 	return 0;

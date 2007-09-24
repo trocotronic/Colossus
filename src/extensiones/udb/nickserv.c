@@ -259,25 +259,16 @@ EXTFUNC(NSInfo_U)
 }
 EXTFUNC(NSSuspend)
 {
-	Cliente *al;
 	if (mod != nickserv->hmod)
 		return 1;
-	if ((al = BuscaCliente(param[1])))
-	{
-		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "+S-r");
-		Responde(al, CLI(nickserv), "Tu nick ha sido suspendido por \00312%s\003: %s", cl->nombre, Unifica(param, params, 2, -1));
-	}
 	if (IsNickUDB(param[1]))
 		PropagaRegistro("N::%s::S %s", param[1], SQLCogeRegistro(NS_SQL, param[1], "suspend"));
 	return 0;
 }
 EXTFUNC(NSLiberar_U)
 {
-	Cliente *al;
 	if (mod != nickserv->hmod)
 		return 1;
-	if ((al = BuscaCliente(param[1])))
-		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-S");
 	if (IsNickUDB(param[1]))
 		PropagaRegistro("N::%s::S", param[1]);
 	return 0;

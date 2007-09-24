@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.55 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.56 2007-09-24 09:50:48 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -911,9 +911,12 @@ BOTFUNC(NSSuspender)
 	ircsprintf(buf, "Suspendido: %s", motivo);
 	NSMarca(cl, param[1], buf);
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido suspendido.", param[1]);
-	EOI(nickserv, 9);
 	if ((al = BuscaCliente(param[1])))
+	{
+		Responde(al, CLI(nickserv), "Tu nick ha sido suspendido por \00312%s\003: %s", cl->nombre, motivo);
 		NSCambiaInv(al);
+	}
+	EOI(nickserv, 9);
 	return 0;
 }
 BOTFUNC(NSLiberar)
@@ -937,9 +940,9 @@ BOTFUNC(NSLiberar)
 	SQLInserta(NS_SQL, param[1], "suspend", "");
 	NSMarca(cl, param[1], "Suspenso levantado.");
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);			
-	EOI(nickserv, 10);
 	if ((al = BuscaCliente(param[1])))
 		NSCambiaInv(al);
+	EOI(nickserv, 10);
 	return 0;
 }
 BOTFUNC(NSSwhois)

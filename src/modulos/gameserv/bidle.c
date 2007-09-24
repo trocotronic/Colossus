@@ -1,3 +1,25 @@
+/************************************************************************
+ *   Idle RPG
+ *
+ *	Módulo complementario para GameServ.
+ *
+ *	(C) redyc.com
+ *
+ *   This program is free software; you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License as published by
+ *   the Free Software Foundation; either version 1, or (at your option)
+ *   any later version.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program; if not, write to the Free Software
+ *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
 #include <time.h>
 #include <math.h>
 #include "struct.h"
@@ -119,7 +141,6 @@ int BidleParseaConf(Conf *cnf)
 	InsertaSenyal(SIGN_CMSG, BidleCMsg);
 	InsertaSenyal(NS_SIGN_DROP, BidleDrop);
 	InsertaSenyal(SIGN_SOCKCLOSE, BidleSockClose);
-	bidle->quest.tiempo = time(0)+3600;
 	bidle->pos = (struct BidlePos **)Malloc(sizeof(struct BidlePos *)*bidle->maxx);
 	for (i = 0; i < bidle->maxx; i++)
 	{
@@ -136,17 +157,23 @@ int BidleParseaConf(Conf *cnf)
 }
 int BidleSynch()
 {
-	if ((bidle->cl = CreaBot(bidle->nick ? bidle->nick : "Bidle", gameserv->hmod->ident, gameserv->hmod->host, "kBq", "El RPG de idle")))
+	if ((bidle->cl = CreaBot(bidle->nick ? bidle->nick : "bidle", gameserv->hmod->ident, gameserv->hmod->host, "kBq", "El RPG de idle")))
 	{
 		bidle->cn = EntraBot(bidle->cl, bidle->canal);
-		ircsprintf(buf, "Canal de juego de bidle. Para jugar, /msg %s ALTA. Más información /msg %s HELP", bidle->nick, bidle->nick);
-		ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, bidle->topic ? bidle->topic : buf);
+		if (bidle->topic)
+			ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, bidle->topic);
+		else
+		{
+			ircsprintf(buf, "Canal de juego de bidle. Para jugar, /msg %s ALTA. Más información /msg %s HELP", bidle->nick, bidle->nick);
+			ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, buf);
+		}
 		if (bidle->voz)
 			ProtFunc(P_MODO_CANAL)(bidle->cl, bidle->cn, "+ntm");
 		else
 			ProtFunc(P_MODO_CANAL)(bidle->cl, bidle->cn, "+nt");
 		timerbidlecheck = IniciaCrono(0, bidle->eventos, BidleComprueba, NULL);
 		ultime = time(0);
+		bidle->quest.tiempo = time(0)+3600;
 	}
 	return 0;
 }
