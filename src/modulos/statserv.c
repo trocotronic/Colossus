@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.34 2007-10-24 13:56:40 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.35 2007-10-24 14:14:24 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -656,8 +656,7 @@ int SSCmdUmode(Cliente *cl, char *umodes)
 }
 int SSCmdCCreate(Canal *cn)
 {
-	if (cn->miembros == 1)
-		SSRefresca(CHANS);
+	SSRefresca(CHANS);
 	return 0;
 }
 int SSCmdDestroyChan(Canal *cn)
