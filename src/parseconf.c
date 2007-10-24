@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.32 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.33 2007-10-24 13:39:56 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -160,9 +160,11 @@ void LiberaMemoriaSet()
 	ircfree(conf_set->debug);
 	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
 	bzero(conf_set, sizeof(struct Conf_set));
-	conf_set->red = strdup(tmp);
+	if (tmp)
+		conf_set->red = strdup(tmp);
 	DescargaNiveles();
-	Free(tmp);
+	if (tmp)
+		Free(tmp);
 }
 void LiberaMemoriaLog()
 {

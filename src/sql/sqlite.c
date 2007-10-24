@@ -1,5 +1,5 @@
 /*
- * $Id: sqlite.c,v 1.12 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: sqlite.c,v 1.13 2007-10-24 13:39:56 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -21,9 +21,9 @@ void CargaTablas();
 int GetErrno();
 void Seek(SQLRes, u_long);
 #ifdef _WIN32
-#define DB_PATH "sql\\sqlite\\"
+#define DB_PATH "sql\\"
 #else
-#define DB_PATH "sql/sqlite/"
+#define DB_PATH "sql/"
 #endif
 int Carga()
 {

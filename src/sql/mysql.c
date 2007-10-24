@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.14 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.15 2007-10-24 13:39:55 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -130,7 +130,8 @@ int Carga()
 		if (Pregunta("La base de datos no existe. ¿Quieres crearla?") == 1)
 #endif
 		{
-			SQLQuery("CREATE DATABASE IF NOT EXISTS %s", conf_db->bd);
+			ircsprintf(buf, "CREATE DATABASE IF NOT EXISTS %s", conf_db->bd);
+			Query(buf);
 			if (sql->_errno)
 			{
 				Alerta(FERR, "Ha sido imposible crear la base de datos\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
