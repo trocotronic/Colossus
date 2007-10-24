@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.33 2007-10-24 13:52:31 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.34 2007-10-24 13:56:40 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -319,7 +319,7 @@ HDIRFUNC(LeeHDir);
 int SSCmdPostNick(Cliente *, int);
 int SSCmdQuit(Cliente *, char *);
 int SSCmdUmode(Cliente *, char *);
-int SSCmdCCreate(Cliente *, Canal *);
+int SSCmdCCreate(Canal *);
 int SSCmdDestroyChan(Canal *);
 int SSCmdServer(Cliente *, int);
 int SSCmdSquit(Cliente *);
@@ -654,9 +654,9 @@ int SSCmdUmode(Cliente *cl, char *umodes)
 	}
 	return 0;
 }
-int SSCmdCCreate(Cliente *cl, Canal *cn)
+int SSCmdCCreate(Canal *cn)
 {
-	if (!cl || cn->miembros == 1)
+	if (cn->miembros == 1)
 		SSRefresca(CHANS);
 	return 0;
 }
@@ -1015,7 +1015,7 @@ int SSSigEOS()
 		for (lk = servidores; lk; lk = lk->sig)
 			SSCmdServer(lk->user, 0);
 		for (cn = canales; cn; cn = cn->sig)
-			SSCmdCCreate(NULL, cn);
+			SSRefresca(CHANS);
 		for (cl = clientes; cl; cl = cl->sig)
 		{
 			if (EsCliente(cl))
