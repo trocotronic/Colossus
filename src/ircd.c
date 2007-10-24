@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.54 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.55 2007-10-24 13:52:31 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -427,6 +427,7 @@ Canal *CreaCanal(char *canal)
 	cn->creacion = time(0);
 	AddItem(cn, canales);
 	InsertaCanalEnHash(cn, canal, cTab);
+	LlamaSenyal(SIGN_CCREATE, 1, cn);
 	return cn;
 }
 void InsertaCanalEnCliente(Cliente *cl, Canal *cn)

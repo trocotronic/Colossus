@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.32 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.33 2007-10-24 13:52:31 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -319,7 +319,7 @@ HDIRFUNC(LeeHDir);
 int SSCmdPostNick(Cliente *, int);
 int SSCmdQuit(Cliente *, char *);
 int SSCmdUmode(Cliente *, char *);
-int SSCmdJoin(Cliente *, Canal *);
+int SSCmdCCreate(Cliente *, Canal *);
 int SSCmdDestroyChan(Canal *);
 int SSCmdServer(Cliente *, int);
 int SSCmdSquit(Cliente *);
@@ -390,7 +390,7 @@ int MOD_DESCARGA(StatServ)()
 	BorraSenyal(SIGN_POST_NICK, SSCmdPostNick);
 	BorraSenyal(SIGN_QUIT, SSCmdQuit);
 	BorraSenyal(SIGN_UMODE, SSCmdUmode);
-	BorraSenyal(SIGN_JOIN, SSCmdJoin);
+	BorraSenyal(SIGN_CCREATE, SSCmdCCreate);
 	BorraSenyal(SIGN_CDESTROY, SSCmdDestroyChan);
 	BorraSenyal(SIGN_SERVER, SSCmdServer);
 	BorraSenyal(SIGN_SQUIT, SSCmdSquit);
@@ -469,7 +469,7 @@ void SSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_POST_NICK, SSCmdPostNick);
 	InsertaSenyal(SIGN_QUIT, SSCmdQuit);
 	InsertaSenyal(SIGN_UMODE, SSCmdUmode);
-	InsertaSenyal(SIGN_JOIN, SSCmdJoin);
+	InsertaSenyal(SIGN_CCREATE, SSCmdCCreate);
 	InsertaSenyal(SIGN_CDESTROY, SSCmdDestroyChan);
 	InsertaSenyal(SIGN_SERVER, SSCmdServer);
 	InsertaSenyal(SIGN_SQUIT, SSCmdSquit);
@@ -654,7 +654,7 @@ int SSCmdUmode(Cliente *cl, char *umodes)
 	}
 	return 0;
 }
-int SSCmdJoin(Cliente *cl, Canal *cn)
+int SSCmdCCreate(Cliente *cl, Canal *cn)
 {
 	if (!cl || cn->miembros == 1)
 		SSRefresca(CHANS);
@@ -1015,7 +1015,7 @@ int SSSigEOS()
 		for (lk = servidores; lk; lk = lk->sig)
 			SSCmdServer(lk->user, 0);
 		for (cn = canales; cn; cn = cn->sig)
-			SSCmdJoin(NULL, cn);
+			SSCmdCCreate(NULL, cn);
 		for (cl = clientes; cl; cl = cl->sig)
 		{
 			if (EsCliente(cl))

@@ -44,7 +44,6 @@ HDir *bhdir = NULL;
 
 int BidleSynch();
 int BidleSQL();
-int BidleEOS();
 int BidlePMsg(Cliente *, Cliente *, char *, int);
 int BidleJoin(Cliente *, Canal *);
 int BidleDrop(char *);
@@ -142,7 +141,6 @@ int BidleParseaConf(Conf *cnf)
 	InsertaSenyal(SIGN_CMSG, BidleCMsg);
 	InsertaSenyal(NS_SIGN_DROP, BidleDrop);
 	InsertaSenyal(SIGN_SOCKCLOSE, BidleSockClose);
-	InsertaSenyal(SIGN_EOS, BidleEOS);
 	bidle->pos = (struct BidlePos **)Malloc(sizeof(struct BidlePos *)*bidle->maxx);
 	for (i = 0; i < bidle->maxx; i++)
 	{
@@ -160,8 +158,24 @@ int BidleParseaConf(Conf *cnf)
 int BidleSynch()
 {
 	if ((bidle->cl = CreaBot(bidle->nick ? bidle->nick : "bidle", gameserv->hmod->ident, gameserv->hmod->host, "kBq", "El RPG de idle")))
-		return 0;
-	return 1;
+	{
+		bidle->cn = EntraBot(bidle->cl, bidle->canal);
+		if (bidle->topic)
+			ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, bidle->topic);
+		else
+		{
+			ircsprintf(buf, "Canal de juego de bidle. Para jugar, /msg %s ALTA. Más información /msg %s HELP", bidle->nick, bidle->nick);
+			ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, buf);
+		}
+		if (bidle->voz)
+			ProtFunc(P_MODO_CANAL)(bidle->cl, bidle->cn, "+ntm");
+		else
+			ProtFunc(P_MODO_CANAL)(bidle->cl, bidle->cn, "+nt");
+		timerbidlecheck = IniciaCrono(0, bidle->eventos, BidleComprueba, NULL);
+		ultime = time(0);
+		bidle->quest.tiempo = time(0)+3600;
+	}
+	return 0;
 }
 int BidleSQL()
 {
@@ -202,28 +216,6 @@ int BidleSQL()
 	else
 		SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
 	SQLCargaTablas();
-	return 0;
-}
-int BidleEOS()
-{
-	if (bidle->cl)
-	{
-		bidle->cn = EntraBot(bidle->cl, bidle->canal);
-		if (bidle->topic)
-			ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, bidle->topic);
-		else
-		{
-			ircsprintf(buf, "Canal de juego de bidle. Para jugar, /msg %s ALTA. Más información /msg %s HELP", bidle->nick, bidle->nick);
-			ProtFunc(P_TOPIC)(bidle->cl, bidle->cn, buf);
-		}
-		if (bidle->voz)
-			ProtFunc(P_MODO_CANAL)(bidle->cl, bidle->cn, "+ntm");
-		else
-			ProtFunc(P_MODO_CANAL)(bidle->cl, bidle->cn, "+nt");
-		timerbidlecheck = IniciaCrono(0, bidle->eventos, BidleComprueba, NULL);
-		ultime = time(0);
-		bidle->quest.tiempo = time(0)+3600;
-	}
 	return 0;
 }
 int BidleDescarga()

@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.36 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.37 2007-10-24 13:52:31 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -293,6 +293,7 @@ extern char *TipoMascara(char *, int);
 #define SIGN_SOCKCLOSE 19
 #define SIGN_SQUIT 20
 #define SIGN_RAW 21
+#define SIGN_CCREATE 22
 
 /*!
  * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.
