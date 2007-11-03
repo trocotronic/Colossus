@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.57 2007-11-03 13:43:36 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.58 2007-11-03 13:45:13 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1277,7 +1277,7 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 	if (!strcasecmp(param[1], "EMAIL"))
 	{
 		char *dominio;
-		if (!(dominio = strchr(mail, '@')) || !Mx(dominio+1))
+		if (!(dominio = strchr(param[2], '@')) || !Mx(dominio+1))
 		{
 			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una cuenta de email válida.");
 			return 1;

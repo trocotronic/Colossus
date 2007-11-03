@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.50 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.51 2007-11-03 13:43:37 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -501,6 +501,8 @@ int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 }
 int p_topic(Cliente *bl, Canal *cn, char *topic)
 {
+	if (!cn)
+		return 1;
 	if (!cn->topic || strcmp(cn->topic, topic))
 	{
 		EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_TOPIC, cn->nombre, topic);
