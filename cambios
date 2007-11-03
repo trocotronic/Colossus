@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.73 2007-10-24 13:39:56 Trocotronic Exp $
+ * $Id: cambios,v 1.74 2007-11-03 13:43:37 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -487,3 +487,8 @@
 161007543 - Arreglado un fallo al cargar el programa, aviso de Marquitox (#0000278).
 161007544 - Arreglado la impresión del nombre del programa por pantalla.
 211007545 - Arreglado un fallo al crear la base de datos, aviso de Marquitox (#0000280).
+031107546 - Arreglado un fallo al permitir otros parámetros que no sean ON u OFF en ChanServ, aviso de endy (#0000282).
+031107547 - Arreglado un fallo al mostrar el mensaje DEAUTH de ChanServ, aviso de endy (#0000284).
+031107548 - Arreglado un fallo en la ayuda del comando MODO de ChanServ, aviso de endy (#0000283).
+031107549 - Arreglado un cuelgue al fijar un topic estando vacío el canal, aviso de endy (#0000285).
+031107550 - Arreglado un cuelgue importante al parsear modos, aviso de endy (#0000282).

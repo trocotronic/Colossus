@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.56 2007-09-24 09:50:48 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.57 2007-11-03 13:43:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1276,6 +1276,12 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 	Cliente *al;
 	if (!strcasecmp(param[1], "EMAIL"))
 	{
+		char *dominio;
+		if (!(dominio = strchr(mail, '@')) || !Mx(dominio+1))
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una cuenta de email válida.");
+			return 1;
+		}
 		SQLInserta(NS_SQL, nick, "email", param[2]);
 		ircsprintf(buf, "Nuevo email: %s", param[2]);
 		NSMarca(cl, nick, buf);
@@ -1312,8 +1318,13 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 			int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
 			if (!strcasecmp(param[2], "ON"))
 				opts |= NS_OPT_NODROP;
-			else
+			else if (!strcasecmp(param[2], "OFF"))
 				opts &= ~NS_OPT_NODROP;
+			else
+			{
+				Responde(cl, CLI(nickserv), NS_ERR_SNTX, "ON|OFF");
+				return 1;
+			}
 			SQLInserta(NS_SQL, nick, "opts", "%i", opts);
 			if (dif)
 				Responde(cl, CLI(nickserv), "El DROP de %s se ha cambiado a \00312%s\003.", nick, param[2]);
@@ -1342,6 +1353,11 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 		if (params < 4)
 		{
 			Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "HIDE valor on|off");
+			return 1;
+		}
+		if (strcasecmp(param[3], "ON") && strcasecmp(param[3], "OFF"))
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_SNTX, "HIDE valor on|off");
 			return 1;
 		}
 		if (!strcasecmp(param[2], "EMAIL"))

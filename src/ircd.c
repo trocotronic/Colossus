@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.55 2007-10-24 13:52:31 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.56 2007-11-03 13:43:36 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -958,8 +958,11 @@ char *ModosAFlags(u_long modes, mTab tabla[], Canal *cn)
 		MallaParam *mpm;
 		for (mpm = cn->mallapm; mpm; mpm = mpm->sig)
 		{
-			strlcat(flags, " ", sizeof(buf));
-			strlcat(flags, mpm->param, sizeof(buf));
+			if (mpm->param)
+			{
+				strlcat(flags, " ", sizeof(buf));
+				strlcat(flags, mpm->param, sizeof(buf));
+			}
 		}
 	}
 	return buf;

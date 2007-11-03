@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.54 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.55 2007-11-03 13:43:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -398,8 +398,8 @@ BOTFUNCHELP(CSHModos)
 	Responde(cl, CLI(chanserv), "Da o quita un modo de canal a varios usuarios a la vez.");
 	Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+r\003 para este canal.");
 	Responde(cl, CLI(chanserv), " ");
-	Responde(cl, CLI(chanserv), "Sintaxis: \00312MODO {+|-}modo #canal nick1 [nick2 [nick3 [...nickN]]]");
-	Responde(cl, CLI(chanserv), "Ejemplo: \00312MODO +o #canal nick1 nick2");
+	Responde(cl, CLI(chanserv), "Sintaxis: \00312MODO #canal {+|-}modo nick1 [nick2 [nick3 [...nickN]]]");
+	Responde(cl, CLI(chanserv), "Ejemplo: \00312MODO #canal +o nick1 nick2");
 	return 0;
 }
 BOTFUNCHELP(CSHKick)
@@ -865,7 +865,7 @@ BOTFUNC(CSDeauth)
 	}
 	if (buf[0])
 		InsertaCache(CACHE_FUNDADORES, cl->nombre, 0, chanserv->hmod->id, buf);
-	Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ya no estás identificado como fundador de \00312%s", param[1]);
+	Responde(cl, CLI(chanserv), "Ya no estás identificado como fundador de \00312%s", param[1]);
 	EOI(chanserv, 3);
 	return 1;
 }
@@ -1013,7 +1013,7 @@ BOTFUNC(CSModos)
 	char flag, modo = ADD;
 	if (params < 4)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal {+|-}flag");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal {+|-}flag [params]");
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
