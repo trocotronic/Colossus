@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.107 2007-10-24 13:39:56 Trocotronic Exp $ 
+ * $Id: main.c,v 1.108 2007-11-10 18:28:03 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -73,17 +73,7 @@ SOCKFUNC(MotdLee);
 extern int SigPostNick(Cliente *, int);
 extern int SigCDestroy(Canal *);
 extern int SiguienteTAsync(int);
-
-#ifndef _WIN32
-const char logo[] = {
-	"  ____        _                              \n"
-	" / ___| ___  | |  ___   ___  ___  _   _  ___ \n"
-	"| |    / _ \\ | | / _ \\ / __|/ __|| | | |/ __|\n"
-	"| |___| (_) || || (_) |\\__ \\\\__ \\| |_| |\\__ \\\n"
-	" \\____|\\___/ |_| \\___/ |___/|___/ \\__,_||___/\n"
-	"                                             \n"
-};
-#endif
+extern char logo[];
 
 /* 
  * print_r

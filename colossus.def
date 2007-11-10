@@ -158,12 +158,14 @@ EXPORTS
 	base64_decode
 	base64_encode
 	base64toint
+	bid
 	buf
 	canal_debug
 	canales
 	chrcat
 	chrremove
 	clientes
+	compilacion
 	conf_db
 	conf_httpd
 	conf_log
@@ -172,6 +174,8 @@ EXPORTS
 	conf_smtp
 	conf_ssl
 	copyfile
+	creado
+	creditos
 	del_item
 	gettok
 	hInst
@@ -197,6 +201,7 @@ EXPORTS
 	parabuf
 	protocolo
 	refrescando
+	rev
 	senyals
 	servidores
 	spath

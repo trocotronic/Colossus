@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.25 2007-08-20 01:46:25 Trocotronic Exp $
+## $Id: Makefile,v 1.26 2007-11-10 18:28:04 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -76,7 +76,7 @@ LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib 
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt
 EXP_OBJ_FILES=SRC/CORE.OBJ SRC/CRIPTO.OBJ SRC/EVENTOS.OBJ SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
-	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ $(ZLIBOBJ) $(SSLOBJ) 
+	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/VERSION.OBJ $(ZLIBOBJ) $(SSLOBJ) 
 MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL \
 	SRC/MODULOS/NEWSSERV.DLL SRC/MODULOS/HELPSERV.DLL SRC/MODULOS/LOGSERV.DLL SRC/MODULOS/NOTESERV.DLL SRC/MODULOS/GAMESERV.DLL \
@@ -96,12 +96,17 @@ PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib $(ZLIB_LIB) $(O
 SQLCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/sql/ /Fosrc/sql/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 SQLLFLAGS=/link /def:src/sql/sql.def colossus.lib
 
-ALL: SETUP Colossus.exe MODULOS
+ALL: SETUP CONFVER Colossus.exe MODULOS
 
 AUTOCONF: src/win32/autoconf.c
 	$(CC) src/win32/autoconf.c
 	-@autoconf.exe
 
+CONFVER: src/utils/confver.c
+	$(CC) src/utils/confver.c
+	-@confver.exe
+	-@erase confver.exe
+	
 CLEAN:
 	-@erase src\*.obj >NUL
 	-@erase .\*.exe >NUL
@@ -152,7 +157,7 @@ CLEAN:
 SETUP: 
 	-@copy src\win32\setup.h include\setup.h >NUL
 	-@copy $(PTHREAD_LIB)\pthreadVC2.dll pthreadVC2.dll >NUL
-     -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
+      -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
      
 Colossus.exe: $(OBJ_FILES)
 	$(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
@@ -212,6 +217,9 @@ src/zlib.obj: src/zlib.c $(INCLUDES)
 	
 src/ssl.obj: src/ssl.c $(INCLUDES)
 	$(CC) $(EXECFLAGS) src/ssl.c
+
+src/version.obj: src/version.c $(INCLUDES) cambios
+	$(CC) $(EXECFLAGS) src/version.c
 	
 src/win32/colossus.res: src/win32/colossus.rc $(INCLUDES)
         $(RC) /l 0x409 /fosrc/win32/colossus.res /i ./include /i ./src \
@@ -362,8 +370,8 @@ src/sql/mysql.dll: src/sql/mysql.c $(INCLUDES)
 	-@copy src\sql\mysql.pdb sql\mysql.pdb >NUL
 
 src/sql/postgresql.dll: src/sql/postgresql.c $(INCLUDES)
-	$(CC) $(SQLCFLAGS) /I "C:\dev\postgresql-8.2.3\src\interfaces\libpq" /I "C:\dev\postgresql-8.2.3\src\include" \
-	src/sql/postgresql.c $(SQLLFLAGS) /LIBPATH:"C:\dev\postgresql-8.2.3\src\interfaces\libpq\Release" libpq.lib \
+	$(CC) $(SQLCFLAGS) /I "C:\dev\postgresql-8.2.5\src\interfaces\libpq" /I "C:\dev\postgresql-8.2.5\src\include" \
+	src/sql/postgresql.c $(SQLLFLAGS) /LIBPATH:"C:\dev\postgresql-8.2.5\src\interfaces\libpq\Release" libpq.lib \
 	user32.lib ws2_32.lib Advapi32.lib shell32.lib
 	-@copy src\sql\postgresql.dll sql\postgresql.dll >NUL
 	-@copy src\sql\postgresql.pdb sql\postgresql.pdb >NUL

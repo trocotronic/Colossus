@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.37 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.38 2007-11-10 18:28:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -924,7 +924,11 @@ IRCFUNC(m_msg)
 	}
 	else if (!strcasecmp(param[0], "CREDITOS"))
 	{
-		Creditos();
+		int i;
+		Responde(cl, bl, COLOSSUS_VERSION " (rv%i) - Trocotronic @2004-2007", rev);
+		Responde(cl, bl, " ");
+		for (i = 0; creditos[i]; i++)
+			Responde(cl, bl, creditos[i]);
 		return 0;
 	}
 	if ((mod = BuscaModulo(bl->nombre, modulos)))
@@ -1147,6 +1151,8 @@ IRCFUNC(m_kick)
 IRCFUNC(m_version)
 {
 	EnviaAServidor(":%s 351 %s :%s .%s. iniciado el %s", me.nombre, parv[0], COLOSSUS_VERSION, conf_set->red, Fecha(&inicio));
+	EnviaAServidor(":%s 351 %s :Creado el %s", me.nombre, parv[0], creado);
+	EnviaAServidor(":%s 351 %s :BID %s, #%i", bid, compilacion);
 	return 0;
 }
 IRCFUNC(m_stats)

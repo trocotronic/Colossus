@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc,v 1.27 2007-11-10 18:28:04 Trocotronic Exp $
+// $Id: colossus.rc.tpl,v 1.1 2007-11-10 18:28:04 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -74,10 +74,8 @@ END
 //
 
 VER_COLOSSUS VERSIONINFO
- FILEVERSION 1,9,2,550
-
- PRODUCTVERSION 1,9,2,550
-
+ FILEVERSION 1,9,2,0
+ PRODUCTVERSION 1,9,2,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -96,7 +94,6 @@ BEGIN
             VALUE "CompanyName", "Redyc\0"
             VALUE "FileDescription", "Colossus - Servicios de red\0"
             VALUE "FileVersion", "1.9b\0"
-
             VALUE "InternalName", "Colossus\0"
             VALUE "LegalCopyright", "Copyright © 2004-2007\0"
             VALUE "LegalTrademarks", "\0"
@@ -104,7 +101,6 @@ BEGIN
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Colossus\0"
             VALUE "ProductVersion", "1.9b\0"
-
             VALUE "SpecialBuild", "\0"
         END
     END

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.83 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.84 2007-11-10 18:28:03 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -40,6 +40,7 @@
 #include "ircsprintf.h"
 #include "parseconf.h"
 #include "sql.h"
+#include "version.h"
 
 extern void carga_socks(void);
 #ifdef NEED_STRCASECMP
@@ -337,10 +338,6 @@ extern int DetieneProceso(int (*)());
 #define INI_SUMD 0xFF
 extern u_int HashCliente(char *);
 extern u_int HashCanal(char *);
-#define COLOSSUS_VERNUM "1.9b"
-#define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
-#define COLOSSUS_VERINT 10902
-extern MODVAR int mainversion;
 extern char **margv;
 #define Malloc(x) ExMalloc(x, 0, __FILE__, __LINE__)
 /*!
@@ -468,15 +465,7 @@ extern Recurso CopiaDll(char *, char *, char *);
 #endif
 extern MODVAR time_t iniciado;
 extern MODVAR int refrescando;
-#define Creditos() 																\
-	Responde(cl, bl, "\00312%s - Trocotronic ©2004-2007", COLOSSUS_VERSION);								\
-	Responde(cl, bl, " ");															\
-	Responde(cl, bl, "Este programa ha salido tras horas y horas de dedicación y entusiasmo.");						\
-	Responde(cl, bl, "Quiero agradecer a toda la gente que me ha ayudado y que ha colaborado, "						\
-		"aportando su semilla, a que este programa vea la luz.");									\
-	Responde(cl, bl, "A todos los usuarios que lo usan que contribuyen con sugerencias, informando de fallos y mejorándolo poco a poco."); 	\
-	Responde(cl, bl, " "); 															\
-	Responde(cl, bl, "Puedes descargar este programa de forma gratuita en %c\00312http://www.redyc.com", 31)
+
 extern void ResuelveHost(char **, char *);
 extern u_int base64toint(const char *);
 extern const char *inttobase64(char *, u_int, u_int);
@@ -531,3 +520,6 @@ extern int EjecutaComandoASinc(char *, char *, ECmdFunc, void *);
 extern Directorio AbreDirectorio(char *);
 extern char *LeeDirectorio(Directorio);
 extern void CierraDirectorio(Directorio);
+#ifndef __TIMESTAMP__
+#define __TIMESTAMP__ __DATE__ " " __TIME__
+#endif

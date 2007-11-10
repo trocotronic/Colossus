@@ -1,14 +1,14 @@
 /*
- * $Id: zlib.c,v 1.14 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.15 2007-11-10 18:28:03 Trocotronic Exp $ 
  */
  
 #include "struct.h"
 #ifdef USA_ZLIB
 #include "zip.h"
 #define ZIP_BUFFER_SIZE	ZIP_MAXIMUM + BUFSIZE
-#define UNZIP_BUFFER_SIZE	6 * ZIP_BUFFER_SIZE
+#define UNZIP_BUFFER_SIZE	16 * ZIP_BUFFER_SIZE
 
-static char unzipbuf[UNZIP_BUFFER_SIZE];
+static char *unzipbuf = NULL;
 static char zipbuf[ZIP_BUFFER_SIZE];
 
 int ZLibInit(Sock *sck, int nivel)
@@ -21,6 +21,15 @@ int ZLibInit(Sock *sck, int nivel)
 		return -1;
 	if (deflateInit(sck->zlib->out, nivel) != Z_OK)
 		return -2;
+	if (!unzipbuf)
+  	{
+  		unzipbuf = Malloc(UNZIP_BUFFER_SIZE);
+  		if (!unzipbuf)
+  		{
+  			Info("ZLibInit: sin memoria (%i bytes)", UNZIP_BUFFER_SIZE);
+  			return -1;
+  		}
+  	}
 	return 0;
 }
 void ZLibLibera(Sock *sck)
@@ -101,17 +110,19 @@ char *ZLibDescomprime(Sock *sck, char *mensaje, int *len)
 	{
 		case Z_OK:
 			if (zin->avail_in)
-       			{
+       		{
           			sck->zlib->incount = 0;
 				if (!zin->avail_out)
 				{
 					Info("Hay que incrementar UNZIP_BUFFER_SIZE");
+					*len = 0;
+					return NULL;
 					if (zin->next_out[0] == '\n' || zin->next_out[0] == '\r')
 					{
 						sck->zlib->inbuf[0] = '\n';
 						sck->zlib->incount = 1;
                 			}
-              				else
+              			else
 					{
 						for (p = (char *) zin->next_out; p >= unzipbuf;)
 						{
