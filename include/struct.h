@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.84 2007-11-10 18:28:03 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.85 2007-11-10 18:43:16 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -520,6 +520,3 @@ extern int EjecutaComandoASinc(char *, char *, ECmdFunc, void *);
 extern Directorio AbreDirectorio(char *);
 extern char *LeeDirectorio(Directorio);
 extern void CierraDirectorio(Directorio);
-#ifndef __TIMESTAMP__
-#define __TIMESTAMP__ __DATE__ " " __TIME__
-#endif

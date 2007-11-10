@@ -1,6 +1,10 @@
 /*
- * $Id: version.c.tpl,v 1.1 2007-11-10 18:28:03 Trocotronic Exp $ 
+ * $Id: version.c.tpl,v 1.2 2007-11-10 18:43:16 Trocotronic Exp $ 
  */
+
+#ifndef __TIMESTAMP__
+#define __TIMESTAMP__ __DATE__ " " __TIME__
+#endif
 
 #ifndef _WIN32
 const char logo[] = {

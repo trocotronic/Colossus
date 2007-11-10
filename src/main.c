@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.108 2007-11-10 18:28:03 Trocotronic Exp $ 
+ * $Id: main.c,v 1.109 2007-11-10 18:45:42 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 #endif
 #ifndef _WIN32
 	fprintf(stderr, "%s", logo);
-	fprintf(stderr, "\t\t" COLOSSUS_VERSION "\n");
+	fprintf(stderr, "\t\t" COLOSSUS_VERSION " (rv%i)\n", rev);
   #ifdef USA_ZLIB
 	fprintf(stderr, "\t\t+ZLIB %s\n", zlibVersion());
   #endif

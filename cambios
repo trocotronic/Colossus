@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.74 2007-11-03 13:43:37 Trocotronic Exp $
+ * $Id: cambios,v 1.75 2007-11-10 18:48:17 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -492,3 +492,6 @@
 031107548 - Arreglado un fallo en la ayuda del comando MODO de ChanServ, aviso de endy (#0000283).
 031107549 - Arreglado un cuelgue al fijar un topic estando vacío el canal, aviso de endy (#0000285).
 031107550 - Arreglado un cuelgue importante al parsear modos, aviso de endy (#0000282).
+101107551 - Cambiado el sistema de versiones y créditos.
+101107552 - Añadida una variable con el número de revisión.
+101107553 - Añadidas variables como número de compilación, creación y BID.
