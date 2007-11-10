@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.109 2007-11-10 18:45:42 Trocotronic Exp $ 
+ * $Id: main.c,v 1.110 2007-11-10 18:48:17 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -266,6 +266,7 @@ int main(int argc, char *argv[])
   #ifdef USA_SSL
 	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
   #endif
+  	fprintf(stderr, "\n");
 #endif
 	for (i = 0; i < UMAX; i++)
 	{
