@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.15 2007-06-03 18:37:51 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.16 2007-11-10 18:38:24 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -36,6 +36,9 @@ build:
 		echo "No parece que hayas ejecutado la configuracion..."; \
 		sh Config; \
 	fi
+	$(CC) -o confver utils/confver.c
+	./confver
+	rm -rf confver
 	@for i in $(SUBDIRS); do \
 		echo "Compilando $$i";\
 		( cd $$i; ${MAKE} ${MAKEARGS} build; ) \
