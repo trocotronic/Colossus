@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.38 2007-11-10 18:28:04 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.39 2007-11-12 14:40:26 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1152,7 +1152,7 @@ IRCFUNC(m_version)
 {
 	EnviaAServidor(":%s 351 %s :%s .%s. iniciado el %s", me.nombre, parv[0], COLOSSUS_VERSION, conf_set->red, Fecha(&inicio));
 	EnviaAServidor(":%s 351 %s :Creado el %s", me.nombre, parv[0], creado);
-	EnviaAServidor(":%s 351 %s :BID %s, #%i", bid, compilacion);
+	EnviaAServidor(":%s 351 %s :BID %s, #%i", me.nombre, parv[0], bid, compilacion);
 	return 0;
 }
 IRCFUNC(m_stats)
