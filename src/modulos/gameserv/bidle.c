@@ -545,6 +545,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "Oro: %s", row[30]);
 				t = atol(row[18]);
 				Responde(cl, bl, "Nacido el: %s", Fecha(&t));
+				Responde(cl, bl, "Combates: %s", row[33]);
 			}
 			else if (!strcasecmp(com, "LADO"))
 			{
@@ -1851,7 +1852,7 @@ int BidleClan(char *clan, char *exc, int segs)
 {
 	SQLRes res;
 	SQLRow row;
-	char *clw = strtolower(clan);
+	char *clw = strdup(strtolower(clan));
 	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i AND LOWER(item)!='%s' AND online=1", PREFIJO, GS_BIDLE, clw, B_ISIN, strtolower(exc))))
 	{
 		while ((row = SQLFetchRow(res)))
@@ -1909,9 +1910,9 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 		if (combate)
 		{
 			if (misum+mimej > opsum+opmej)
-				inc = (long)((opsum+opmej)/(misum+mimej)*sig*0.15);
+				inc = (long)((double)(opsum+opmej)/(double)(misum+mimej)*sig*0.15);
 			else
-				inc = (long)((1-(misum+mimej)/(opsum+opmej)*sig)*0.6);
+				inc = (long)((1-(double)(misum+mimej)/(double)(opsum+opmej)*sig)*0.6);
 		}
 		else
 		{
@@ -1961,9 +1962,9 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 		if (combate)
 		{
 			if (misum+mimej > opsum+opmej)
-				inc = (long)((opsum+opmej)/(misum+mimej)*sig*0.12);
+				inc = (long)((double)(opsum+opmej)/(double)(misum+mimej)*sig*0.12);
 			else
-				inc = (long)((1-(misum+mimej)/(opsum+opmej)*sig)*0.5);
+				inc = (long)((1-(double)(misum+mimej)/(double)(opsum+opmej)*sig)*0.5);
 		}
 		else
 		{
@@ -1988,7 +1989,7 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 	}
 	if (combate)
 	{
-		SQLInserta(GS_BIDLE, mirow[0], "sig_combate", "%li", time(0)+pow(2+BDato(mirow[0], "combates"), bidle->paso_combate));
+		SQLInserta(GS_BIDLE, mirow[0], "sig_combate", "%li", time(0)+(int)pow(2+BDato(mirow[0], "combates"), bidle->paso_combate));
 		SQLInserta(GS_BIDLE, mirow[0], "combates", "%i", atoi(mirow[33])+1);
 	}
 	if (res)
