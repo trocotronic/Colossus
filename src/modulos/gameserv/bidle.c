@@ -1021,6 +1021,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "\00312CLAN\003 Crea, solicita una invitación, acepta una invitación o abandona un clan.");
 					Responde(cl, bl, "\00312COMPRAR\003 Compra objetos.");
 					Responde(cl, bl, "\00312VENDER\003 Vende objetos.");
+					Responde(cl, bl, "\00312COMBATE\003 Reta a un jugador.");
 					if (BDato(cl->nombre, "admin") == 1)
 					{
 						Responde(cl, bl, "\00312ADMIN\003 Añade o elimina jugadores para que puedan administrar el juego.");
