@@ -132,6 +132,7 @@ EXPORTS
 	SQLNumRows
 	SQLQuery
 	SQLSeek
+	SQLVersionTabla
 	SacaBot
 	SetComMod
 	SockAccept

@@ -66,7 +66,7 @@ char *BDura(u_int);
 int BidleSum(char *, int);
 int BidleMueve();
 int BidleEncuentraItem(SQLRow);
-int BidleReta(SQLRow, SQLRow);
+int BidleReta(SQLRow, SQLRow, int);
 int BidleQuest();
 int BidleHaceQuest(char *);
 HDIRFUNC(BidleLeeHDir);
@@ -93,6 +93,7 @@ int BidleParseaConf(Conf *cnf)
 	bidle->maxx = bidle->maxy = 500;
 	bidle->paso_vende = 0.8;
 	bidle->paso_compra = 1.2;
+	bidle->paso_combate = 1.3;
 	ircstrdup(bidle->nick, "bidle");
 	for (i = 0; i < cnf->secciones; i++)
 	{
@@ -126,6 +127,8 @@ int BidleParseaConf(Conf *cnf)
 			bidle->paso_vende = atof(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "paso_compra"))
 			bidle->paso_compra = atof(cnf->seccion[i]->data);
+		else if (!strcmp(cnf->seccion[i]->item, "paso_combate"))
+			bidle->paso_combate = atof(cnf->seccion[i]->data);
 	}
 	if ((60 % bidle->eventos))
 		bidle->eventos = 5;
@@ -208,13 +211,23 @@ int BidleSQL()
 			"oro int, "
 			"mejora int, "
 			"claner int, "
+			"combates int, "
+			"sig_combate int, "
 			"PRIMARY KEY item (item) "
 			");", PREFIJO, GS_BIDLE);
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_BIDLE);
 	}
 	else
+	{
 		SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
+		if (SQLVersionTabla(GS_BIDLE) < 2)
+		{
+			SQLQuery("ALTER TABLE %s%s ADD combates int default '0'", PREFIJO, GS_BIDLE);
+			SQLQuery("ALTER TABLE %s%s ADD sig_combate int default '0'", PREFIJO, GS_BIDLE);
+			SQLInserta(SQL_VERSIONES, GS_BIDLE, "version", "2");
+		}
+	}
 	SQLCargaTablas();
 	return 0;
 }
@@ -921,6 +934,57 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					return 1;
 				}
 			}
+			else if (!strcasecmp(com, "COMBATE"))
+			{
+				int sig;
+				u_long fecha;
+				char *opt = strtok(NULL, " ");
+				if (BDato(cl->nombre, "online") != 1)
+				{
+					Responde(cl, bl, GS_ERR_EMPT, "No estás logueado.");
+					return 1;
+				}
+				if ((fecha = BDato(cl->nombre, "sig_combate")) > time(0))
+				{
+					ircsprintf(buf, "No puedes combatir hasta el %s", Fecha(&fecha));
+					Responde(cl, bl, GS_ERR_EMPT, buf);
+					return 1;
+				}
+				if (!opt)
+				{
+					SQLRes res;
+					SQLRow mirow;
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(cl->nombre))) && (mirow = SQLFetchRow(res)))
+					{
+						BidleReta(mirow, NULL, 1);
+						SQLFreeRes(res);
+					}
+				}
+				else
+				{
+					SQLRes res1, res2;
+					SQLRow mirow, oprow;
+					if (!strcasecmp(opt, cl->nombre))
+					{
+						Responde(cl, bl, GS_ERR_EMPT, "No puedes combatir contra ti mismo");
+						return 1;
+					}
+					if ((res1 = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(cl->nombre))) && (mirow = SQLFetchRow(res1)))
+					{
+						if ((res2 = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(opt))) && (oprow = SQLFetchRow(res2)))
+						{
+							if (atoi(oprow[6]) == 1)
+								BidleReta(mirow, oprow, 1);
+							else
+								Responde(cl, bl, GS_ERR_EMPT, "Este usuario no está online");
+							SQLFreeRes(res2);
+						}
+						else
+							Responde(cl, bl, GS_ERR_EMPT, "Este usuario no existe");
+						SQLFreeRes(res1);
+					}
+				}		
+			}
 			else if (!strcasecmp(com, "HELP"))
 			{
 				char *para = strtok(NULL, " ");
@@ -1060,6 +1124,15 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, "Si no se especifica el objeto a vender, muestra una lista de los precios de venta.");
 					Responde(cl, bl, " ");
 					Responde(cl, bl, "Sintaxis: \00312VENDER [objeto]");
+				}
+				else if (!strcasecmp(para, "COMBATE"))
+				{
+					Responde(cl, bl, "\00312COMBATE");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Lanza un reto a algún jugador. Si no especificas el jugador que quieres retar, se retará a uno al azar.");
+					Responde(cl, bl, "Para combatir con alguien es necesario pasar un tiempo. Cuantos más combates tengas, más tiempo deberás esperar.");
+					Responde(cl, bl, " ");
+					Responde(cl, bl, "Sintaxis: \00312COMBATE [jugador]");
 				}
 				else if (!strcasecmp(para, "ADMIN") && BDato(cl->nombre, "admin") == 1)
 				{
@@ -1291,7 +1364,7 @@ int BidleComprueba()
 					BCMsg("%s, %s\xF, ha alcanzado el nivel %u! Próximo nivel en %s.", row[0], row[1], atoi(row[5])+1, BDura(val));
 					snprintf(row[8], 11, "%li", val);
 					BidleEncuentraItem(row);
-					BidleReta(row, NULL);
+					BidleReta(row, NULL, 0);
 				}
 				else
 					SQLInserta(GS_BIDLE, row[0], "sig", "%li", val);
@@ -1346,7 +1419,7 @@ int BidleComprueba()
 			if ((double)(SQLNumRows(res[0])/SQLNumRows(res[1])) > 0.15)
 			{
 				row = SQLFetchRow(res[0]);
-				BidleReta(row, NULL);
+				BidleReta(row, NULL, 0);
 			}
 			SQLFreeRes(res[0]);
 			SQLFreeRes(res[1]);
@@ -1611,7 +1684,7 @@ int BidleMueve()
 				if (!BAlea(rows))
 				{
 					bidle->pos[x][y].batallado = 1;
-					BidleReta(row, bidle->pos[x][y].user);
+					BidleReta(row, bidle->pos[x][y].user, 0);
 				}
 			}
 			else
@@ -1788,7 +1861,7 @@ int BidleClan(char *clan, char *exc, int segs)
 	Free(clw);
 	return 0;
 }
-int BidleReta(SQLRow mirow, SQLRow op)
+int BidleReta(SQLRow mirow, SQLRow op, int combate)
 {
 	SQLRes res = NULL;
 	SQLRow oprow = NULL;
@@ -1802,7 +1875,7 @@ int BidleReta(SQLRow mirow, SQLRow op)
 	}
 	else 
 	{
-		if (atoi(mirow[5]) < 25 && BAlea(4) > 0)
+		if (!combate && atoi(mirow[5]) < 25 && BAlea(4) > 0)
 			return 0;
 		res = SQLQuery("SELECT COUNT(*) FROM %s%s", PREFIJO, GS_BIDLE);
 		oprow = SQLFetchRow(res);
@@ -1831,11 +1904,21 @@ int BidleReta(SQLRow mirow, SQLRow op)
 		opmej = atoi(oprow[31]);
 	mirol = BAlea(misum)+mimej;
 	oprol = BAlea(opsum)+opmej;
-	if (mirol >= oprol)
+	if (mirol >= oprol) /* gano yo */
 	{
-		inc = (long)(opuser == bidle->nick ? 20 : atol(oprow[5])/4);
-		inc = MAX(7, inc);
-		inc = (long)(inc*sig/100);
+		if (combate)
+		{
+			if (misum+mimej > opsum+opmej)
+				inc = (long)((opsum+opmej)/(misum+mimej)*sig*0.15);
+			else
+				inc = (long)((1-(misum+mimej)/(opsum+opmej)*sig)*0.6);
+		}
+		else
+		{
+			inc = (long)(opuser == bidle->nick ? 20 : atol(oprow[5])/4);
+			inc = MAX(7, inc);
+			inc = (long)(inc*sig/100);
+		}
 		if (!BadPtr(mirow[2]))
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", 
@@ -1873,11 +1956,21 @@ int BidleReta(SQLRow mirow, SQLRow op)
 			}
 		}
 	}
-	else
+	else /* gana él */
 	{
-		inc = (long)(opuser == bidle->nick ? 10 : atol(oprow[5])/7);
-		inc = MAX(7, inc);
-		inc = (long)(inc*sig/100);
+		if (combate)
+		{
+			if (misum+mimej > opsum+opmej)
+				inc = (long)((opsum+opmej)/(misum+mimej)*sig*0.12);
+			else
+				inc = (long)((1-(misum+mimej)/(opsum+opmej)*sig)*0.5);
+		}
+		else
+		{
+			inc = (long)(opuser == bidle->nick ? 10 : atol(oprow[5])/7);
+			inc = MAX(7, inc);
+			inc = (long)(inc*sig/100);
+		}
 		if (!BadPtr(mirow[2]))
 		{
 			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", 
@@ -1892,6 +1985,11 @@ int BidleReta(SQLRow mirow, SQLRow op)
 				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig+inc);
 		}
+	}
+	if (combate)
+	{
+		SQLInserta(GS_BIDLE, mirow[0], "sig_combate", "%li", time(0)+pow(2+BDato(mirow[0], "combates"), bidle->paso_combate));
+		SQLInserta(GS_BIDLE, mirow[0], "combates", "%i", atoi(mirow[33])+1);
 	}
 	if (res)
 		SQLFreeRes(res);

@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.110 2007-11-10 18:48:17 Trocotronic Exp $ 
+ * $Id: main.c,v 1.111 2008-01-16 15:43:21 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -331,6 +331,23 @@ int main(int argc, char *argv[])
 #else
 	margv = argv;
 #endif
+	SQLCargaTablas();
+	if (!SQLEsTabla(SQL_VERSIONES))
+	{
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"version int default NULL, "
+  			"KEY item (item) "
+			");", PREFIJO, SQL_VERSIONES);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_VERSIONES);
+		else
+		{
+			int i;
+			for (i = 0; (sql->tablas[i][0]); i++)
+				SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
+		}
+	}
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
 	LlamaSenyal(SIGN_SQL, 0);
@@ -380,75 +397,3 @@ void LoopPrincipal(void *args)
 	return 0;
 #endif
 }
-
-/*
-#define MAX 32
-typedef struct
-{
-	double valors[MAX][MAX];
-	int ordre;
-}mat;
-double det(mat *);
-void print_mat(mat *A)
-{
-	int i, j;
-	for (i = 0; i < A->ordre; i++)
-	{
-		for (j = 0; j < A->ordre; j++)
-			printf("%f ", A->valors[i][j]);
-		printf("\n");
-	}
-	printf("------\n");
-}
-mat menor(mat A, int fila, int col)
-{
-	int i, j;
-	for (i = fila; i < A.ordre; i++)
-	{
-		for (j = 0; j < A.ordre; j++)
-			A.valors[i][j] = A.valors[i+1][j];
-	}
-	for (j = col; j < A.ordre; j++)
-	{
-		for (i = 0; i < A.ordre; i++)
-			A.valors[i][j] = A.valors[i][j+1];
-	}
-	A.ordre--;
-	print_mat(A);
-	return A;
-}
-double adjunt(mat *A, int fila, int col)
-{
-	return ((fila + col) % 2 ? -1 : 1)*A->valors[fila][col]*det(menor(*A, fila, col));
-}
-double det(mat *A)
-{
-	int i;
-	double determ = 0;
-	if (A->ordre == 2)
-		return A->valors[0][0] * A->valors[1][1] - A->valors[0][1] * A->valors[1][0];
-	for (i = 0; i < A->ordre; i++)
-		determ += adjunt(A, i, 0);
-	return determ;
-}
-int mainn(int argc, char *argv[])
-{
-	mat A;
-	int i, j, ordre;
-	ordre = atoi(argv[1]);
-	srand(time(NULL));
-	for (i = 0; i < ordre; i++)
-	{
-		for (j = 0; j < ordre; j++)
-		{
-			A.valors[i][j] = rand() % 3;
-			//printf("%f ",A.valors[i][j]);
-		}
-	}
-	//printf("\n");
-	A.ordre = ordre;
-	print_mat(&A);
-	printf("\nDeterminant: %f", det(&A));
-	return 1;
-}
-*/

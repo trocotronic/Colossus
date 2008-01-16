@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.15 2007-10-24 13:39:55 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.16 2008-01-16 15:43:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -255,7 +255,7 @@ void CargaTablas()
 			tabla = row[0];
 			if (strncmp(PREFIJO, tabla, strlen(PREFIJO)))
 				continue;
-			ircstrdup(sql->tablas[i][0], tabla);
+			ircstrdup(sql->tablas[i][0], &tabla[strlen(PREFIJO)]);
 			ircsprintf(buf, "SELECT * FROM %s", tabla);
 			if ((mysql_query(mysql, buf)) || (!(cp = mysql_store_result(mysql))))
 			{

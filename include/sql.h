@@ -1,5 +1,5 @@
 /*
- * $Id: sql.h,v 1.5 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: sql.h,v 1.6 2008-01-16 15:43:19 Trocotronic Exp $ 
  */
 
 typedef char ** SQLRow;
@@ -41,3 +41,4 @@ extern void SQLBorra(char *, char *);
 extern int SQLNumRows(SQLRes);
 extern int SQLEsCampo(char *, char *);
 extern void SQLSeek(SQLRes, u_long);
+extern int SQLVersionTabla(char *);

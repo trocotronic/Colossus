@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.13 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.14 2008-01-16 15:43:21 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -72,14 +72,12 @@ int CargaSQL(char *sqlf)
  
 int SQLEsTabla(char *tabla)
 {
-	char buf[256];
 	int i = 0;
 	if (sql)
 	{
-		ircsprintf(buf, "%s%s", PREFIJO, tabla);
 		while (sql->tablas[i][0])
 		{
-			if (!strcasecmp(sql->tablas[i][0], buf))
+			if (!strcasecmp(sql->tablas[i][0], tabla))
 				return 1;
 			i++;
 		}
@@ -97,14 +95,12 @@ int SQLEsTabla(char *tabla)
  
 int SQLEsCampo(char *tabla, char *campo)
 {
-	char buf[256];
 	int i = 0, j;
 	if (sql)
 	{
-		ircsprintf(buf, "%s%s", PREFIJO, tabla);
 		while (sql->tablas[i][0])
 		{
-			if (!strcasecmp(sql->tablas[i][0], buf))
+			if (!strcasecmp(sql->tablas[i][0], tabla))
 			{
 				for (j = 1; sql->tablas[i][j]; j++)
 				{
@@ -358,4 +354,19 @@ void SQLSeek(SQLRes res, u_long off)
 		sql->Seek(res, off);
 		SetSQLErrno();
 	}
+}
+
+/*!
+ * @desc: Devuelve la versión de una tabla.
+ * @params: $tabla [in] Nombre de la tabla.
+ * @ver SQLInserta SQLCogeRegistro
+ * @cat: SQL
+ !*/
+int SQLVersionTabla(char *tabla)
+{
+	char *reg;
+	if (!(reg = SQLCogeRegistro(SQL_VERSIONES, tabla, "version")))
+		return -1;
+	else
+		return atoi(reg);
 }

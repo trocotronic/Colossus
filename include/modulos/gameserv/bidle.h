@@ -18,6 +18,7 @@ struct _bidle
 	int maxtop;
 	double paso_compra;
 	double paso_vende;
+	double paso_combate;
 	struct 
 	{
 		struct 
