@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.11 2007-08-31 00:05:34 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.12 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -684,7 +684,6 @@ int ESSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, ES_SQL);
 	}
-	SQLCargaTablas();
 	return 0;
 }
 int CompruebaNotas()

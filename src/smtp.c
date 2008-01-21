@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.25 2007-02-14 15:02:49 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.26 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -453,7 +453,7 @@ void Email(char *para, char *tema, char *cuerpo, ...)
  		El último elemento debe ser NULL para indicar el fin de la matriz.
  		Al final de la función, se ejecutará <i>Free()</i> sobre el campo <i>item</i> y sobre el puntero <i>fps</i>.
  		$closefunc [in] Función que se llama una vez se ha enviado el correo correctamente. Se pasa como puntero <i>SmtpData</i> referente al correo.
- 		Esta función deberá cerrar los descriptores usados por <i>open()</i> en los campos <i>opt</i>.
+ 		Esta función deberá cerrar los descriptores usados por <i>open()</i> en los campos <i>opt</i>, liberar los campos <i>item</i> y liberar el puntero <i>fps</i>.
  		$cuerpo [in] Cuerpo del mensaje. Es una cadena con formato.
  		$... [in] Argumentos variables según cadena con formato.
  * @cat: Programa

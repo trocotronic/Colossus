@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.76 2008-01-16 15:43:20 Trocotronic Exp $
+ * $Id: cambios,v 1.77 2008-01-21 19:46:47 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -498,3 +498,9 @@
 160108554 - Arreglado un fallo al cargar las tablas.
 160108555 - Se añade un sistema para controlar la versión de cada tabla e irlas actualizándolas.
 160108556 - Se añade el comando COMBATE al juego bidle.
+180108557 - Se añade el tipo de error en el logueo para facilitar la depuración.
+190108558 - Arreglado un fallo con el SSL.
+190108559 - Arreglado un fallo con el parseo de configuración.
+190108560 - Se cambia el sistema SSL. Se carga siempre.
+190108561 - Se añade el parámetro ssl en el bloque server { }.
+190108562 - Se crea el complemento MSN para gestionar Colossus por el MSN Messenger.

@@ -730,7 +730,6 @@ int KyrhosSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
 	}
-	SQLCargaTablas();
 	return 0;
 }
 int KyrhosDescarga()

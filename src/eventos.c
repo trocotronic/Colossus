@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.10 2007-08-31 00:05:34 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.11 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -298,7 +298,6 @@ int CargaCache()
 		if (!SQLEsCampo(SQL_CACHE, "tipo"))
 			SQLQuery("ALTER TABLE %s%s ADD tipo VARCHAR(255) default NULL;", PREFIJO, SQL_CACHE);
 	}
-	SQLCargaTablas();
 	IniciaProceso(ProcCache);
 	return 1;
 }

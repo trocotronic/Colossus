@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.33 2007-10-24 13:39:56 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.34 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -23,6 +23,9 @@ struct Conf_log *conf_log = NULL;
 struct Conf_ssl *conf_ssl = NULL;
 #endif
 struct Conf_httpd *conf_httpd = NULL;
+#ifdef USA_SSL
+struct Conf_msn *conf_msn = NULL;
+#endif
 
 static int TestServer		(Conf *, int *);
 static int TestDb 			(Conf *, int *);
@@ -35,6 +38,9 @@ static int TestSSL		(Conf *, int *);
 #endif
 static int TestProtocolo	(Conf *, int *);
 static int TestHttpd (Conf *, int *);
+#ifdef USA_SSL
+static int TestMSN	(Conf *, int *);
+#endif
 
 static void ConfServer	(Conf *);
 static void ConfDb 		(Conf *);
@@ -46,8 +52,14 @@ static void ConfSSL		(Conf *);
 #endif
 static void ConfModulos	(Conf *);
 static void ConfHttpd	(Conf *);
+#ifdef USA_SSL
+static void ConfMSN	(Conf *);
+#endif
+
 extern int IniciaHTTPD();
 extern int DetieneHTTPD();
+extern int CargaMSN();
+extern int DescargaMSN();
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
@@ -69,6 +81,9 @@ static cComConf cComs[] = {
 #endif
 	{ "protocolo" , TestProtocolo , NULL , OBL , 1 } ,
 	{ "httpd" , TestHttpd , ConfHttpd , OPC , 1 } ,
+#ifdef USA_SSL
+	{ "msn" , TestMSN , ConfMSN , OPC , 1 } ,
+#endif
 	{ 0x0 , 0x0 , 0x0 }
 };
 struct bArchivos
@@ -91,6 +106,9 @@ static Opts Opts_Log[] = {
 	{ LOG_ERROR , "errores" } ,
 	{ LOG_SERVER , "servidores" } ,
 	{ LOG_CONN , "conexiones" } ,
+#ifdef USA_SSL
+	{ LOG_MSN , "msn" } ,
+#endif
 	{ 0x0 , 0x0 }
 };
 
@@ -124,6 +142,7 @@ void LiberaMemoriaServer()
 	ircfree(conf_server->info);
 	ircfree(conf_server->password.local);
 	ircfree(conf_server->password.remoto);
+	ircfree(conf_server->bind_ip);
 	bzero(conf_server, sizeof(struct Conf_server));
 }
 void LiberaMemoriaDb()
@@ -145,7 +164,7 @@ void LiberaMemoriaSmtp()
 	ircfree(conf_smtp->host);
 	ircfree(conf_smtp->login);
 	ircfree(conf_smtp->pass);
-	ircfree(conf_smtp);
+	bzero(conf_smtp, sizeof(struct Conf_smtp));
 }
 void LiberaMemoriaSet()
 {
@@ -171,7 +190,7 @@ void LiberaMemoriaLog()
 	if (!conf_log)
 		return;
 	ircfree(conf_log->archivo);
-	ircfree(conf_log);
+	bzero(conf_log, sizeof(struct Conf_log));
 }
 #ifdef USA_SSL
 void LiberaMemoriaSSL()
@@ -183,7 +202,7 @@ void LiberaMemoriaSSL()
 	ircfree(conf_ssl->x_server_key_pem);
 	ircfree(conf_ssl->trusted_ca_file);
 	ircfree(conf_ssl->cifrados);
-	ircfree(conf_ssl);
+	bzero(conf_ssl, sizeof(struct Conf_ssl));
 }
 #endif
 void LiberaMemoriaHttpd()
@@ -192,8 +211,21 @@ void LiberaMemoriaHttpd()
 		return;
 	DetieneHTTPD();
 	ircfree(conf_httpd->url);
-	ircfree(conf_httpd);
+	ircfree(conf_httpd->php);
+	bzero(conf_httpd, sizeof(struct Conf_httpd));
 }
+#ifdef USA_SSL
+void LiberaMemoriaMSN()
+{
+	if (!conf_msn)
+		return;
+	DescargaMSN();
+	ircfree(conf_msn->cuenta);
+	ircfree(conf_msn->pass);
+	ircfree(conf_msn->master);
+	bzero(conf_msn, sizeof(struct Conf_msn));
+}
+#endif
 void DescargaConfiguracion()
 {
 	LiberaMemoriaServer();
@@ -205,6 +237,9 @@ void DescargaConfiguracion()
 	LiberaMemoriaSSL();
 #endif
 	LiberaMemoriaHttpd();
+#ifdef USA_SSL
+	LiberaMemoriaMSN();
+#endif
 }
 #define pce(x) Error("[%s:%i] " x, archivo, linea)
 /* parseconf
@@ -767,6 +802,10 @@ void ConfServer(Conf *config)
 					ircstrdup(conf_server->bind_ip, config->seccion[i]->seccion[p]->data);
 			}
 		}
+#ifdef USA_SSL
+		else if (!strcmp(config->seccion[i]->item, "ssl"))
+			conf_server->usa_ssl = 1;
+#endif
 	}
 	if (!conf_server->escucha)
 		conf_server->escucha = conf_server->puerto;
@@ -1311,7 +1350,6 @@ void ConfSSL(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "cifrados"))
 			ircstrdup(conf_ssl->cifrados, config->seccion[i]->data);
 	}
-	SSLInit();
 }
 #endif
 int TestProtocolo(Conf *config, int *errores)
@@ -1407,6 +1445,71 @@ void ConfHttpd(Conf *config)
 	}
 	IniciaHTTPD();
 }
+#ifdef USA_SSL
+int TestMSN(Conf *config, int *errores)
+{
+	short error_parcial = 0;
+	int puerto;
+	Conf *eval;
+	if (!(eval = BuscaEntrada(config, "cuenta")))
+	{
+		Error("[%s:%s] No se encuentra la directriz cuenta.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz cuenta esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if (!(eval = BuscaEntrada(config, "pass")))
+	{
+		Error("[%s:%s] No se encuentra la directriz pass.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz pass esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	if (!(eval = BuscaEntrada(config, "master")))
+	{
+		Error("[%s:%s] No se encuentra la directriz master.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz master esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
+	*errores += error_parcial;
+	return error_parcial;
+}
+void ConfMSN(Conf *config)
+{
+	int i;
+	if (!conf_msn)
+		conf_msn = BMalloc(struct Conf_msn);
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcmp(config->seccion[i]->item, "cuenta"))
+			ircstrdup(conf_msn->cuenta, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "pass"))
+			ircstrdup(conf_msn->pass, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "master"))
+			ircstrdup(conf_msn->master, config->seccion[i]->data);
+	}
+	CargaMSN();
+}
+#endif
 #ifndef _WIN32
 void Error(char *formato, ...)
 {

@@ -8,13 +8,13 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
 </style>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.39 2007-09-24 09:50:48 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.40 2008-01-21 19:46:47 Trocotronic Exp $ -->
 
 <body>
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.redyc.com" target="_blank"><font size="3">http://www.redyc.com/</font></a><font size="3"><br>
-    <b>Versi&oacute;n actual:</b> 1.9b<br>
+    <b>Versi&oacute;n actual:</b> 1.10<br>
   <b>&Uacute;ltima modificaci&oacute;n:</b> 05/04/2007</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
@@ -29,32 +29,34 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
   <font size="+1">6. <a href="#remoto">Conexi&oacute;n remota</a> </font><br>
   <font size="+1">7. <a href="#zlib">SSL y ZLib</a></font><br>
   <font size="+1">8. <a href="#httpd">Servidor HTTPD</a></font><br>
-  <font size="+1">9. <a href="#configuracion">Configuraci&oacute;n</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.1 <a href="#server">Bloque server { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.2 <a href="#smtp">Bloque smtp { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.3 <a href="#db">Bloque db { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.4 <a href="#set">Bloque set { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.5 <a href="#modulos">Bloque modulo { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.6 <a href="#log">Bloque log { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.7 <a href="#ssl">Bloque ssl { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.8 <a href="#protocolo">Bloque protocolo { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 9.9 <a href="#bloque_httpd">Bloque httpd { }</a></font><br>
-  <font size="+1">10. <a href="#bots">Configuraci&oacute;n de m&oacute;dulos</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.0.1 <a href="#funciones">Bloque funciones { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.0.2 <a href="#funcion">Bloque funcion { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.0.3 <a href="#alias">Bloque alias { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.1 <a href="#nickserv">NickServ</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.2 <a href="#chanserv">ChanServ</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.3 <a href="#operserv">OperServ</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.4 <a href="#memoserv">MemoServ</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  10.5 <a href="#ipserv">IpServ</a></font><br> 
-  <font size="+1">11. <a href="#protos">Configuraci&oacute;n de protocolos</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.1 <a href="#unreal">UnrealIRCD</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.2 <a href="#p10">P10</a></font><br>
-  <font size="+1">12. <a href="#exts">Configuraci&oacute;n de extensiones</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.1 <a href="#udb">UDB</a></font><br>
-  <font size="+1">13. <a href="#faq">FAQ (Cuestiones Más Preguntadas)</a></font><br>
-  <font size="+1">14. <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
+  <font size="+1">9. <a href="#msn">MSN Messenger</a></font><br>
+  <font size="+1">10. <a href="#configuracion">Configuraci&oacute;n</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.1 <a href="#server">Bloque server { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.2 <a href="#smtp">Bloque smtp { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.3 <a href="#db">Bloque db { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.4 <a href="#set">Bloque set { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.5 <a href="#modulos">Bloque modulo { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.6 <a href="#log">Bloque log { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.7 <a href="#ssl">Bloque ssl { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.8 <a href="#protocolo">Bloque protocolo { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.9 <a href="#bloque_httpd">Bloque httpd { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.10 <a href="#bloque_msn">Bloque msn { }</a></font><br>
+  <font size="+1">11. <a href="#bots">Configuraci&oacute;n de m&oacute;dulos</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.0.1 <a href="#funciones">Bloque funciones { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.0.2 <a href="#funcion">Bloque funcion { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.0.3 <a href="#alias">Bloque alias { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.1 <a href="#nickserv">NickServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.2 <a href="#chanserv">ChanServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.3 <a href="#operserv">OperServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.4 <a href="#memoserv">MemoServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  11.5 <a href="#ipserv">IpServ</a></font><br> 
+  <font size="+1">12. <a href="#protos">Configuraci&oacute;n de protocolos</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.1 <a href="#unreal">UnrealIRCD</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.2 <a href="#p10">P10</a></font><br>
+  <font size="+1">13. <a href="#exts">Configuraci&oacute;n de extensiones</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 13.1 <a href="#udb">UDB</a></font><br>
+  <font size="+1">14. <a href="#faq">FAQ (Cuestiones Más Preguntadas)</a></font><br>
+  <font size="+1">15. <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
   <p><br>
     <b><font size="6"><a name="intro"></a>1. Introducci&oacute;n </font></b><br>
     Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
@@ -141,20 +143,29 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b><font size="6"><a name="zlib"></a>7. SSL y ZLib</font></b></p>
   <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro 
   considerable del ancho de banda. Ambos servidores (servicios e ircd) tienen que estar configurados con la misma compresi&oacute;n: 1 a 9. </p>
-  <p>Tambi&eacute;n se incluye la caracter&iacute;stica SSL para trabajar con conexiones seguras y evitar el robo de informaci&oacute;n. Esta caracter&iacute;stica se define con su propio bloque, cuya presencia indica su suporte.</p>
+  <p>Tambi&eacute;n se incluye la caracter&iacute;stica SSL para trabajar con conexiones seguras y evitar el robo de informaci&oacute;n.</p>
   <p>Ambas caracter&iacute;sticas son opcionales, siendo en conexiones &quot;localhost&quot; triviales.</p>
   <p>&nbsp; </p>
   <p><b><font size="6"><a name="httpd"></a>8. Servidor HTTPD</font></b></p>
-  <p>A partir de la versi&oacute;n 1.10, Colossus incluye un servidor httpd integrado. Esto significa que puedes conectarte a los servicios vía HTTP, usando tu navegador habitual, e interactuar con los servicios que se brinden. </p>
-  <p>Por ejemplo, puedes ver estadísticas en tiempo real, ya que el servicio de StatServ acepta peticiones HTTP y devuelve un estado global y detallado sobre la red.<br>
-  También puedes ver la información sobre los jugadores de <i>bidle</i>, el juego de idle.</p>
+  <p>A partir de la versi&oacute;n 1.10, Colossus incluye un servidor httpd integrado. Esto significa que puede conectarse a los servicios vía HTTP, usando su navegador habitual, e interactuar con los servicios que se brinden. </p>
+  <p>Por ejemplo, puede ver estadísticas en tiempo real, ya que el servicio de StatServ acepta peticiones HTTP y devuelve un estado global y detallado sobre la red.<br>
+  También puede ver la información sobre los jugadores de <i>bidle</i>, el juego de idle.</p>
   <p>Cada servicio ofrecerá distintas posibilidades, pero siempre a través de webs. Para ello, todas las webs deberán colocarse en el directorio <i>html/&lt;nombre_servicio&gt;</i>.<br>
   Por ejemplo, las páginas webs del servicio de estadísticas estarán en <i>html/StatServ</i> y las del juego bidle, en <i>html/bidle</i>.</p>
-  <p>Además también soporta <a href="http://www.php.net/" target="_blank">PHP</a>. Si también tienes instalado <a href="http://www.php.net/" target="_blank">PHP</a>, puedes usarlo para que las páginas en ese lenguaje sean preprocesadas y luego devueltas al usuario final. Es opcional pero se recomienda instalarlo.<br>
+  <p>Además también soporta <a href="http://www.php.net/" target="_blank">PHP</a>. Si también tiene instalado <a href="http://www.php.net/" target="_blank">PHP</a>, puede usarlo para que las páginas en ese lenguaje sean preprocesadas y 
+  luego devueltas al usuario final. Es opcional pero se recomienda instalarlo.<br>
   Sólo es necesario descargarlo, descomprimirlo y configurarlo. </p>
-  <p>Con este servidor HTTPD integrado se abren un sinfín de posibilidades.</p>
+  <p>Con este servidor HTTPD integrado se le abren un sinfín de posibilidades.</p>
   <p>&nbsp; </p>
-  <p><b><font size="6"><a name="configuracion"></a>9. Configuraci&oacute;n</font></b></p>
+  <p><b><font size="6"><a name="msn"></a>9. MSN Messenger</font></b></p>
+  <p>Con la versión 1.10, se introduce un servicio MSN. Con este complemento podrá controlar vía Messenger a su servidor Colossus. De igual forma, recibirá notificaciones del sevidor por el MSN.<br>
+  Lo primero es tener una compilación de Colossus con soporte SSL. Las de Windows soportan SSL, por lo que podrá usar el complemento MSN. Las de linux, no todas. Asegúrese antes de descargla que sí la soporta.<br>
+  El complemento MSN utiliza una cuenta MSN propia. Eso significa que para comunicarse con Colossus por el Messenger, deberá utilizar una cuenta para Colossus y otra para usted. Si sólo dispone de una cuenta, 
+  diríjase a <a href="https://signup.live.com/newuser.aspx?mkt=es-es&revipc=ES&rollrs=04&lic=1" target="_blank">SignUP Live</a> y registre una cuenta. Una vez la tenga, deberá configurar Colossus con esa cuenta y su contraseña.<br>
+  Finalmente, deberá configurar también su cuenta principal, la que utilizará para comunicarte con Colossus. Una vez esté todo configurado, cada vez que arranque Colossus se conectará automáticamente al Messenger.<br>
+  Agregue a su MSN la cuenta que ha creado para Colossus y ya tendrá a Colossus en su MSN. Podrá gestionar a Colossus mediante comandos por el MSN y recibirá avisos de la red.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="configuracion"></a>10. Configuraci&oacute;n</font></b></p>
   <p>El archivo de configuraci&oacute;n se compone con la siguiente estructura:</p>
   <pre>bloque valor {
 	directriz valor;
@@ -171,7 +182,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
   <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa.</p>
   <p>El archivo se compone de varios bloques:</p><br>
-  <p><b><font size="5"><a name="server"></a>9.1 Bloque server { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <p><b><font size="5"><a name="server"></a>10.1 Bloque server { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>server {
 	addr ip.a.conectar;
 	puerto puerto;
@@ -187,6 +198,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		puerto nº;
 		enlace ip;
 	};
+	ssl;
 };</pre>
   <p>Los valores se deducen f&aacute;cilmente. </p>
   <p><b>addr</b><br>Indica a qu&eacute; ip o host debe conectar.</p>
@@ -198,6 +210,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b>compresion</b><br>Es <i>opcional</i> e indica que el flujo de datos entre servidores debe hacerse con compresi&oacute;n de nivel especificado. Ambos extremos deben disponer de soporte ZLib y tener la misma compresi&oacute;n. </p>
   <p><b>escucha::puerto</b><br>Es <i>opcional</i> y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. </p>
   <p><b>escucha::enlace</b><br>Es <i>opcional</i> y define una ip de enlace para poner en escucha y recibir conexiones remotas. Debe usarse en caso de disponer varios dispositivos.</p>
+  <p><b>ssl</b><br>Es <i>opcional</i>. Indica que la conexión con el servidor IRCd debe hacerse por SSL.</p>
   <p>Ejemplo:</p>
   <pre>server {
 	addr 127.0.0.1;
@@ -215,7 +228,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	compresion 9;
 };</pre>
 <p>&nbsp;</p>
-  <p><b><font size="5"><a name="smtp"></a>9.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>
+  <p><b><font size="5"><a name="smtp"></a>10.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>
   <pre>smtp {
 	host host.del.servidor.smtp;
 	login &quot;milogin&quot;;
@@ -235,7 +248,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	pass mipass;
 };</pre>
   <p>&nbsp;</p>
-  <p><b><font size="5"><a name="db"></a>9.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <p><b><font size="5"><a name="db"></a>10.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>db &quot;ruta/archivo.[dll|so]&quot; {
 	host host;
 	puerto puerto;
@@ -262,7 +275,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	prefijo colossus_;
 };</pre>
   <p>&nbsp;</p>
-  <p><b><font size="5"><a name="set"></a>9.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <p><b><font size="5"><a name="set"></a>10.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>set {
 	autobop;  //opcional
 	respuesta PRIVMSG|NOTICE;
@@ -322,7 +335,7 @@ Está desactivado. Conflicto de versiones.</p>
 	};
 };</pre>
   <p>&nbsp;</p>
-  <p><b><font size="5"><a name="modulos"></a>9.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>
+  <p><b><font size="5"><a name="modulos"></a>10.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>
 <pre>modulo &quot;ruta/archivo.[dll|so]&quot; {
   	nick nick;
   	ident ident;
@@ -357,7 +370,7 @@ Está desactivado. Conflicto de versiones.</p>
 	config chanserv.inc;
 };</pre>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="log"></a>9.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="log"></a>10.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>log archivo {
 	tama&ntilde;o kbytes; // opcional
 	opciones {
@@ -382,7 +395,7 @@ Está desactivado. Conflicto de versiones.</p>
 	};
 };</pre>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="ssl"></a>9.7 Bloque ssl { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="ssl"></a>10.7 Bloque ssl { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>ssl {
 	egd archivo;
 	certificado archivo;
@@ -418,7 +431,7 @@ Está desactivado. Conflicto de versiones.</p>
 	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;
 };</pre>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="protocolo"></a>9.8 Bloque protocolo { } <font color="#FF0000">(obligatorio)</font></b></font></p>
+  <p><font size="5"><b><a name="protocolo"></a>10.8 Bloque protocolo { } <font color="#FF0000">(obligatorio)</font></b></font></p>
   <pre>protocolo &quot;ruta/archivo.[dll|so]&quot; {
   	/* opciones */
   	...
@@ -426,13 +439,13 @@ Está desactivado. Conflicto de versiones.</p>
   <p>Carga un protocolo de red. Seg&uacute;n al IRCd al que conecten, requerir&aacute;n un protocolo u otro. Las opciones y caracter&iacute;sticas var&iacute;an de cada protocolo.<br>
   Tiene m&aacute;s informaci&oacute;n sobre los protocolos soportados actualmente en <a href="#protos">Configuraci&oacute;n de protocolos</a>.</p>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="httpd_bloque"></a>9.9 Bloque httpd { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="bloque_httpd"></a>10.9 Bloque httpd { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>httpd {
   	url ruta;
   	puerto número; //opcional
   	edad_maxima segundos; //opcional
   	ruta_php &quot;ruta/php&quot;; //opcional
-  };</pre>
+};</pre>
   <p>Este bloque configura el servidor httpd. Recuerde que todas las webs se sitúan en <i>html/&lt;nombre_servicio&gt;</i>.</p>
   <p><b>ruta</b><br>Ruta o host principal de la web. Todas las webs se accederán a través de <i>http://ruta/nombre_servicio/pagina.html</i>. Puede ser el host de su irc o una ip.</p>
   <p><b>puerto</b><br>Puerto de escucha por el que se aceptan las conexiones entrantes. Si no se especifica ninguno, se asume por defecto el puerto 80.</p>
@@ -446,18 +459,35 @@ Está desactivado. Conflicto de versiones.</p>
 };</pre>
   <p>Por ejemplo, los usuarios accederán vía <i>http://irc.redyc.com:81/servicio/pagina.php</i>.</p>
   <p>&nbsp;</p>
-  <p><b><font size="6"><a name="bots"></a>10. Configuraci&oacute;n de m&oacute;dulos</font></b></p>
+  <p><font size="5"><b><a name="bloque_msn"></a>10.10 Bloque msn { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <pre>msn {
+  	cuenta nombre@hotmail.com;
+  	pass contraseña;
+  	master su_cuenta@hotmail.com;
+};</pre>
+  <p>Este bloque configura el complemento MSN. Si dispone de este complemento, podrá comunicarse con Colossus a través del Messenger. Para ello debe disponer de una cuenta adicional que utilizará Colossus.</p>
+  <p><b>cuenta</b><br>Cuenta que utilizará Colossus y que debe agregar en su MSN.</p>
+  <p><b>pass</b><br>Contraseña de la cuenta de Colossus.</p>
+  <p><b>master</b><br>La dirección de su cuenta. La cuenta master es la cuenta que Colossus identificará como root y por la que recibirá las órdenes. Debe ser la cuenta que utilizará para comunicarse con Colossus.</p>
+  <p>Ejemplo:</p>
+  <pre>msn {
+	cuenta cuenta_colossus@hotmail.com;
+	pass contraseña1234;
+	master mi_cuenta@hotmail.com;
+};</pre>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="bots"></a>11. Configuraci&oacute;n de m&oacute;dulos</font></b></p>
   <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.</p>
   <p>Esta configuraci&oacute;n puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>). Si no se especifica &eacute;sta, se tomar&aacute; la configuraci&oacute;n por defecto.</p>
   <p>&nbsp;</p>
   <p>Adem&aacute;s, poseen tres bloques comunes en todos los m&oacute;dulos</p>
-  <p><b><font size="4"><a name="funciones"></a>10.0.1 Bloque funciones { }</font></b></p>
+  <p><b><font size="4"><a name="funciones"></a>11.0.1 Bloque funciones { }</font></b></p>
   <pre>funciones {
   ...
 };</pre>
   <p>Se trata de una lista de todas las funciones que se van a cargar. Lo har&aacute;n con su nivel y comando por defecto.</p>
   <p>&nbsp;</p>
-  <p><b><font size="4"><a name="funcion"></a>10.0.2 Bloque funcion { }</font></b></p>
+  <p><b><font size="4"><a name="funcion"></a>11.0.2 Bloque funcion { }</font></b></p>
   <pre>funcion func {
   	nivel nivel;
   	comando comando;
@@ -469,7 +499,7 @@ Está desactivado. Conflicto de versiones.</p>
   <p>Una funci&oacute;n puede ser cargada varias veces, siempre que el comando sea distinto en cada vez. Por ejemplo, puede cargar dos veces la funci&oacute;n <i>help</i> con los comandos AYUDA y HELP por separado. 
   As&iacute;, los usuarios acceder&aacute;n a la ayuda a trav&eacute;s de estos dos comandos.</p>
   <p>&nbsp;</p>
-  <p><b><font size="4"><a name="alias"></a>10.0.3 Bloque alias { }</font></b></p>
+  <p><b><font size="4"><a name="alias"></a>11.0.3 Bloque alias { }</font></b></p>
   <pre>alias "formato" {
 	sintaxis "sintaxis";
 };</pre>
@@ -492,7 +522,7 @@ Está desactivado. Conflicto de versiones.</p>
   <p>&nbsp;</p>
   <p><b>NOTA:</b> Algunos m&oacute;dulos requieren que antes est&eacute;n cargados otros m&oacute;dulos.</p>
   <p>&nbsp;</p>
-  <p><b><font size="5"><a name="nickserv"></a>10.1 NickServ</font></b></p>
+  <p><b><font size="5"><a name="nickserv"></a>11.1 NickServ</font></b></p>
   <p>Nombre del archivo <b>nickserv.inc</b>.</p>
   <p>Requiere: <b>chanserv</b>. </p>
   <pre>NickServ {
@@ -598,7 +628,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	};  // Opcional
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="chanserv"></a>10.2 ChanServ</font></b></p>
+<p><b><font size="5"><a name="chanserv"></a>11.2 ChanServ</font></b></p>
 <p>Nombre del archivo <b>chanserv.inc</b>.</p>
 <pre>ChanServ {
 	sid;  //opcional
@@ -707,7 +737,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="operserv"></a>10.3 OperServ</font></b></p>
+<p><b><font size="5"><a name="operserv"></a>11.3 OperServ</font></b></p>
 <p>Nombre del archivo <b>operserv.inc</b>.</p>
 <p>Requiere: <b>chanserv</b>, <b>memoserv</b>. </p>
 <pre>OperServ {
@@ -776,7 +806,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="memoserv"></a>10.4 MemoServ</font></b></p>
+<p><b><font size="5"><a name="memoserv"></a>11.4 MemoServ</font></b></p>
 <p>Nombre del archivo <b>memoserv.inc</b>.</p>
 <p>Requiere: <b>chanserv</b>. </p>
 <pre>MemoServ {
@@ -830,7 +860,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="ipserv"></a>10.5 IpServ</font></b></p>
+<p><b><font size="5"><a name="ipserv"></a>11.5 IpServ</font></b></p>
 <p>&nbsp;Nombre del archivo <b>ipserv.inc</b>.</p>
 <pre>IpServ {
 	sufijo sufijo;
@@ -879,10 +909,10 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="6"><a name="protos"></a>11. Configuraci&oacute;n de protocolos</font></b></p>
+<p><b><font size="6"><a name="protos"></a>12. Configuraci&oacute;n de protocolos</font></b></p>
 <p>Colossus soporta la conexi&oacute;n a distintos ircds. Seg&uacute;n los que sean se requerir&aacute; un protocolo u otro con opciones que var&iacute;an entre s&iacute;.<br>
 A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opciones de configuraci&oacute;n.</p>
-<p><b><font size="5"><a name="unreal"></a>11.1 UnrealIRCd</font></b></p>
+<p><b><font size="5"><a name="unreal"></a>12.1 UnrealIRCd</font></b></p>
 <p>Protocolo usado en redes UnrealIRCd 3.2 y superiores.</p>
 <pre>protocolo protocolos/unreal.[dll|so] {
 	no_server_deop; // opcional
@@ -931,7 +961,7 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="5"><a name="p10"></a>11.2 P10</font></b></p>
+<p><b><font size="5"><a name="p10"></a>12.2 P10</font></b></p>
 Este protocolo corresponde al P10 nativo. IRCu de <a href="http://www.undernet.org" target="_blank">Undernet</a>.
 <pre>protocolo protocolos/p10.dll {
 	red nombre;
@@ -969,10 +999,10 @@ Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran dif
 	};
 };</pre>
 <p>&nbsp;</p>
-<p><b><font size="6"><a name="exts"></a>12. Configuraci&oacute;n de extensiones</font></b></p>
+<p><b><font size="6"><a name="exts"></a>13. Configuraci&oacute;n de extensiones</font></b></p>
 <p>Estas extensiones complementan los protocolos actuales.<br>
 A continuaci&oacute;n tiene una lista de las extensiones soportados y sus opciones de configuraci&oacute;n.</p>
-<p><b><font size="5"><a name="udb"></a>12.1 UDB</font></b></p>
+<p><b><font size="5"><a name="udb"></a>13.1 UDB</font></b></p>
 <p>Extensión usada en redes UnrealIRCd 3.2 y superiores.</p>
 <pre>extension protocolos/extensiones/udb.[dll|so] {
 	autooptimizar; // opcional
@@ -1021,10 +1051,10 @@ como los bloques <i>funciones</i>, <i>funcion</i> y algún otro parámetro.</p>
 <p><b>NOTA:</b> Si no se especifica un bloque para módulos, se cargan por defecto todas sus funciones complementarias. <br>
 Si se especifica un bloque para algún módulo, deben especificarse también las funciones que van a cargarse.</p>
 <p>&nbsp;</p>
-<p><b><font size="6"><a name="faq"></a>13. FAQ (Cuestiones Más Preguntadas)</font></b></p>
+<p><b><font size="6"><a name="faq"></a>14. FAQ (Cuestiones Más Preguntadas)</font></b></p>
 <p>Tiene una recopilación de las cuestiones más preguntadas en <a href="http://www.redyc.com/?colossus#faq" target="_blank">FAQ</a>.</p>
 <br>
-<p><b><font size="6"><a name="patrones"></a>14. Par&aacute;metros de patr&oacute;n</font></b></p>
+<p><b><font size="6"><a name="patrones"></a>15. Par&aacute;metros de patr&oacute;n</font></b></p>
 <p>Algunos campos requieren un patr&oacute;n a seguir que contenga comodines que sean intercambiados por valores aleatorios. Estos son:</p>
 <ul>
   <li>? una cifra</li>

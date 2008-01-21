@@ -158,6 +158,5 @@ int PBSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, PBS_SQL);
 	}
-	SQLCargaTablas();
 	return 0;
 }

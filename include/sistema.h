@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.21 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.22 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -124,7 +124,7 @@ typedef DIR * Directorio;
  * @ret: Devuelve el caracter en minúscula.
  * @cat: Programa
  * @sntx: char ToLower(char c)
- * @ver: ToUpper
+ * @ver: ToUpper IsLower
  !*/
 #define ToLower(c) (NTL_tolower_tab[(int)(c)])
 /*!
@@ -133,13 +133,60 @@ typedef DIR * Directorio;
  * @ret: Devuelve el caracter en mayúscula.
  * @cat: Programa
  * @sntx: char ToUpper(char c)
- * @ver: ToLower
+ * @ver: ToLower IsUpper
  !*/
 #define ToUpper(c) (NTL_toupper_tab[(int)(c)])
-#define u_long unsigned long
-#define u_char unsigned char
-#define u_int unsigned int
-#define u_short unsigned short
+/*!
+ * @desc: Indica si es una mayúscula o no.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve 1 si es una mayúscula o 0 si no lo es.
+ * @ct: Programa
+ * @sntx: int IsUpper(char c)
+ * @ver: ToUpper IsLower
+ !*/
+#define IsUpper(c) (c >= 'A' && c <= 'Z')
+/*!
+ * @desc: Indica si es una minúscula o no.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve 1 si es una minúscula o 0 si no lo es.
+ * @ct: Programa
+ * @sntx: int IsLower(char c)
+ * @ver: ToLower IsUpper
+ !*/
+#define IsLower(c) (c >= 'a' && c <= 'z')
+/*!
+ * @desc: Indica si es una cifra o no.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve 1 si es una cifra o 0 si no lo es.
+ * @ct: Programa
+ * @sntx: int IsNum(char c)
+ * @ver: IsAlpha IsAlnum
+ !*/
+#define IsNum(c) (c >= '0' && c <= '9')
+/*!
+ * @desc: Indica si es una letra.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve 1 si es una letra o 0 si no lo es.
+ * @ct: Programa
+ * @sntx: int IsAlpha(char c)
+ * @ver: IsNum IsAlnum
+ !*/
+#define IsAlpha(c) (IsUpper(c) || IsLower(c))
+/*!
+ * @desc: Indica si es una letra o una cifra.
+ * @params: $c [in] Caracter.
+ * @ret: Devuelve 1 si es una letra o cifra o 0 si no lo es.
+ * @ct: Programa
+ * @sntx: int IsAlpha(char c)
+ * @ver: IsAlpha IsNum
+ !*/
+#define IsAlnum(c) (IsAlpha(c) || IsNum(c))
+
+typedef unsigned long u_long;
+typedef unsigned char u_char;
+typedef unsigned int u_int;
+typedef unsigned short u_short;
+
 /*!
  * @desc: Decide si un puntero apunta a NULL o su contenido está vacío.
  * @params: $ptr [in] Puntero a evaluar.

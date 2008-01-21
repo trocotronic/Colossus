@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.58 2007-11-03 13:45:13 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.59 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1198,9 +1198,8 @@ int NSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
 	}
-	SQLCargaTablas();
 	umodreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
-	return 1;
+	return 0;
 }
 int NSSigQuit(Cliente *cl, char *msg)
 {

@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.86 2008-01-16 15:43:19 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.87 2008-01-21 19:46:44 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -521,3 +521,5 @@ extern int EjecutaComandoASinc(char *, char *, ECmdFunc, void *);
 extern Directorio AbreDirectorio(char *);
 extern char *LeeDirectorio(Directorio);
 extern void CierraDirectorio(Directorio);
+extern char *URLEncode(char *);
+extern char *URLDecode(char *);

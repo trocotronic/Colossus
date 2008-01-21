@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.15 2006-10-31 23:49:11 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.16 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -356,7 +356,6 @@ int linkserv_sig_mysql()
 			");", PREFIJO, LS_SQL))
 				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
 	}
-	SQLCargaTablas();
 	return 0;
 }
 int linkserv_sig_eos()

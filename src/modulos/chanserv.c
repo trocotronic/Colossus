@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.56 2008-01-16 15:43:17 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.57 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -2516,9 +2516,8 @@ int CSSigSQL()
 			SQLQuery("ALTER TABLE %s%s DROP akick", PREFIJO, CS_SQL);
 		}*/
 	}
-	SQLCargaTablas();
 	cmodreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
-	return 1;
+	return 0;
 }
 int CSSigEOS()
 {

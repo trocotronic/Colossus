@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.19 2007-01-18 12:43:55 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.20 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -48,6 +48,9 @@ struct Conf_server
 #ifdef USA_ZLIB
 	int compresion;
 #endif
+#ifdef USA_SSL
+	unsigned usa_ssl:1;
+#endif
 	int escucha;
 	char *bind_ip;
 };
@@ -91,7 +94,7 @@ struct Conf_log
 struct Conf_ssl
 {
 	int opts;
-	char usa_egd;
+	int usa_egd;
 	char *egd_path;
 	char *x_server_cert_pem;
 	char *x_server_key_pem;
@@ -106,10 +109,17 @@ struct Conf_httpd
 	int max_age;
 	char *php;
 };
+struct Conf_msn
+{
+	char *cuenta;
+	char *pass;
+	char *master;
+};
 
 #define LOG_ERROR 0x1
 #define LOG_SERVER 0x2
 #define LOG_CONN 0x4
+#define LOG_MSN 0x8
 
 typedef struct _conf_com
 {
@@ -135,10 +145,11 @@ extern MODVAR struct Conf_log *conf_log;
 extern MODVAR struct Conf_ssl *conf_ssl;
 #endif
 extern MODVAR struct Conf_httpd *conf_httpd;
+extern MODVAR struct Conf_msn *conf_msn;
 #define PREFIJO conf_db->prefijo
 #define OPC 1
 #define OBL 2
 #ifdef USA_SSL
-#define SSL_SERVER_CERT_PEM (conf_ssl->x_server_cert_pem ? conf_ssl->x_server_cert_pem : "server.cert.pem")
-#define SSL_SERVER_KEY_PEM (conf_ssl->x_server_key_pem ? conf_ssl->x_server_key_pem : "server.key.pem")
+#define SSL_SERVER_CERT_PEM (conf_ssl && conf_ssl->x_server_cert_pem ? conf_ssl->x_server_cert_pem : "server.cert.pem")
+#define SSL_SERVER_KEY_PEM (conf_ssl && conf_ssl->x_server_key_pem ? conf_ssl->x_server_key_pem : "server.key.pem")
 #endif

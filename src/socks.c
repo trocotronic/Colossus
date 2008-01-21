@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.40 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.41 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -916,12 +916,12 @@ int LeeSocks() /* devuelve los bytes leídos */
 #ifdef USA_SSL
 			if (SockActual->ssl && (EsSSLAcceptHandshake(SockActual) || EsSSLConnectHandshake(SockActual)))
 			{
-				if (!SSL_is_init_finished(SockActual->ssl))
+				/*if (!SSL_is_init_finished(SockActual->ssl))
 				{
 					if (EsCerr(SockActual) || EsSSLAcceptHandshake(SockActual) ? !SSLAccept(SockActual, SockActual->pres) : SSLConnect(SockActual) < 0)
 						len = -2;
 				}
-				else
+				else*/
 					CompletaConexion(SockActual);
 			}
 #endif

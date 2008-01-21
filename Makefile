@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.27 2008-01-16 15:43:19 Trocotronic Exp $
+## $Id: Makefile,v 1.28 2008-01-21 19:46:47 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -75,7 +75,7 @@ LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib 
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt
 EXP_OBJ_FILES=SRC/CORE.OBJ SRC/CRIPTO.OBJ SRC/EVENTOS.OBJ SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
-	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
+	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/MSN.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
 	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/VERSION.OBJ $(ZLIBOBJ) $(SSLOBJ) 
 MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL \
@@ -192,7 +192,10 @@ src/md5.obj: src/md5.c $(INCLUDES)
         $(CC) $(EXECFLAGS) src/md5.c        
         
 src/modulos.obj: src/modulos.c $(INCLUDES)
-        $(CC) $(EXECFLAGS) src/modulos.c        
+        $(CC) $(EXECFLAGS) src/modulos.c
+
+src/msn.obj: src/msn.c $(INCLUDES)
+        $(CC) $(EXECFLAGS) src/msn.c
         
 src/parseconf.obj: src/parseconf.c $(INCLUDES)
         $(CC) $(EXECFLAGS) src/parseconf.c 

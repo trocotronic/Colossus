@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.111 2008-01-16 15:43:21 Trocotronic Exp $ 
+ * $Id: main.c,v 1.112 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -290,7 +290,10 @@ int main(int argc, char *argv[])
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);
-	DistribuyeMe(&me);	
+	DistribuyeMe(&me);
+#ifdef USA_SSL
+	SSLInit();
+#endif
 #ifndef _WIN32
 	if (sql && sql->clientinfo)
 		fprintf(stderr, "\t\t+Cliente SQL %s\n", sql->clientinfo);
@@ -343,7 +346,6 @@ int main(int argc, char *argv[])
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_VERSIONES);
 		else
 		{
-			int i;
 			for (i = 0; (sql->tablas[i][0]); i++)
 				SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
 		}
@@ -351,6 +353,12 @@ int main(int argc, char *argv[])
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
 	LlamaSenyal(SIGN_SQL, 0);
+	SQLCargaTablas();
+	for (i = 0; (sql->tablas[i][0]); i++)
+	{
+		if (!SQLCogeRegistro(SQL_VERSIONES, sql->tablas[i][0], "version"))
+			SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
+	}
 	pthread_mutex_init(&mutex, NULL);
 #ifdef _WIN32
 	signal(SIGSEGV, CleanUpSegv);

@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.17 2007-07-14 15:28:23 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.18 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -467,6 +467,7 @@ int Pregunta(char *preg)
  		- LOG_CONN: Relacionado con conexiones.
  		- LOG_SERVER: Relacionado con servidores.
  		- LOG_ERROR: Relacionado con errores.
+ 		- LOG_MSN: Relacionado con el complemento MSN.
  	    $formato [in] Cadena con formato a loguear.
  	    $... [in] Argumentos variables según cadena de formato.
  * @cat: Programa
@@ -474,7 +475,7 @@ int Pregunta(char *preg)
  
 void Loguea(int opt, char *formato, ...)
 {
-	char buf[256], auxbuf[512];
+	char buf[256], auxbuf[512], *campo;
 	int fp;
 	va_list vl;
 	time_t tm;
@@ -485,7 +486,15 @@ void Loguea(int opt, char *formato, ...)
 	va_start(vl, formato);
 	ircvsprintf(buf, formato, vl);
 	va_end(vl);
-	ircsprintf(auxbuf, "(%s) > %s\n", Fecha(&tm), buf);
+	if (opt == LOG_CONN)
+		campo = "CON";
+	else if (opt == LOG_SERVER)
+		campo = "SERVER";
+	else if (opt == LOG_ERROR)
+		campo = "ERR";
+	else if (opt == LOG_MSN)
+		campo = "MSN";
+	ircsprintf(auxbuf, "[%s] (%s) > %s\n", Fecha(&tm), buf);
 	if (stat(conf_log->archivo, &inode) == -1)
 		return;
 	if (conf_log->size && inode.st_size > conf_log->size)
@@ -496,4 +505,35 @@ void Loguea(int opt, char *formato, ...)
 		return;
 	write(fp, auxbuf, strlen(auxbuf));
 	close(fp);
+}
+
+/*!
+ * @desc: Codifica la cadena para mandarse vía HTTP. Esta función usa Malloc, por lo que debe liberarse con Free una vez utilizada.
+ * @params: $str [in] Cadena a codificar.
+ * @ret: Devuelve un puntero a una nueva cadena codificada. No olvidar a liberar con Free una vez utilizado.
+ * @cat: Internet
+ !*/
+ 
+char *URLEncode(char *str)
+{
+	char *coded, *c, *d;
+	if (BadPtr(str))
+		return NULL;
+	coded = (char *)Malloc(sizeof(char) * (strlen(str) * 3 + 1)); /* como máximo, se codificará todo */
+	d = coded;
+	for (c = str; !BadPtr(c); c++)
+	{
+		if (IsAlnum(*c) || *c == '-' || *c == '_' || *c == '.')
+			*d++ = *c;
+		else
+		{
+			char tmp[3];
+			ircsprintf(tmp, "%X", *c);
+			*d++ = '%';
+			*d++ = tmp[0];
+			*d++ = tmp[1];
+		}
+	}
+	*d++ = '\0';
+	return coded;
 }

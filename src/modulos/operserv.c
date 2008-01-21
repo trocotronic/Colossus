@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.43 2007-09-24 09:50:48 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.44 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1110,9 +1110,8 @@ int OSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, OS_AKILL);
 	}
-	SQLCargaTablas();
 	OSCargaNoticias();
-	return 1;
+	return 0;
 }
 int OSSigSynch()
 {

@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.40 2007-04-18 17:49:37 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.41 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -440,8 +440,7 @@ int PSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, XS_SQL);
 	}
-	SQLCargaTablas();
-	return 1;
+	return 0;
 }
 int PSSigEOS()
 {

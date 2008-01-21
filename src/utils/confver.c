@@ -1,5 +1,5 @@
 /*
- * $Id: confver.c,v 1.1 2007-11-10 18:28:04 Trocotronic Exp $ 
+ * $Id: confver.c,v 1.2 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #include <stdio.h>
@@ -82,9 +82,19 @@ int main()
 		else if (!strncmp(buf, " PRODUCTVERSION", 15))
 			fprintf(fp2, " PRODUCTVERSION %i,%i,%i,%i\r\n", v1, v2, v3, rev);
 		else if (strstr(buf, "FileVersion"))
-			fprintf(fp2, "            VALUE \"FileVersion\", \"%i.%i%c\\0\"\r\n", v1, v2, v3+96);
+		{
+			if (v3)
+				fprintf(fp2, "            VALUE \"FileVersion\", \"%i.%i%c\\0\"\r\n", v1, v2, v3+96);
+			else
+				fprintf(fp2, "            VALUE \"FileVersion\", \"%i.%i\\0\"\r\n", v1, v2);
+		}
 		else if (strstr(buf, "ProductVersion"))
-			fprintf(fp2, "            VALUE \"ProductVersion\", \"%i.%i%c\\0\"\r\n", v1, v2, v3+96);
+		{
+			if (v3)
+				fprintf(fp2, "            VALUE \"ProductVersion\", \"%i.%i%c\\0\"\r\n", v1, v2, v3+96);
+			else
+				fprintf(fp2, "            VALUE \"ProductVersion\", \"%i.%i\\0\"\r\n", v1, v2);
+		}
 		else
 			fprintf(fp2, "%s", buf);
 	}

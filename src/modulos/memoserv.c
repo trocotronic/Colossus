@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.34 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.35 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -895,7 +895,6 @@ int MSSigSQL()
 			}
 		}
 	}
-	SQLCargaTablas();
 	return 0;
 }
 void MSNotifica(Cliente *al)

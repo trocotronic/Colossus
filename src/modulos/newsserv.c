@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.13 2007-05-14 18:28:42 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.14 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -714,8 +714,7 @@ int WSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, WS_SQL);
 	}
-	SQLCargaTablas();
-	return 1;
+	return 0;
 }
 int WSEmiteRSS(Proc *proc)
 {

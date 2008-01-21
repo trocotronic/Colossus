@@ -228,7 +228,6 @@ int BidleSQL()
 			SQLInserta(SQL_VERSIONES, GS_BIDLE, "version", "2");
 		}
 	}
-	SQLCargaTablas();
 	return 0;
 }
 int BidleDescarga()
@@ -1583,7 +1582,7 @@ int BidleLuz()
 			row[0] = SQLFetchRow(res);
 			row[1] = SQLFetchRow(res);
 			inc = 5 + BAlea(8);
-			BCMsg("%s y %s rechazaron el veneno de la Oscuridad. Juntos han rezado y la Luz celestial les ha iluminado. Se han descontado el %i%% de sus relojes.", row[0][0], row[1][0], inc);
+			BCMsg("%s y %s rechazaron el veneno de la Oscuridad y la Luz celestial les ha iluminado. Se han descontado el %i%% de sus relojes.", row[0][0], row[1][0], inc);
 			SQLInserta(GS_BIDLE, row[0][0], "sig", "%li", (long)(atol(row[0][8])*(1-inc/100)));
 			SQLInserta(GS_BIDLE, row[1][0], "sig", "%li", (long)(atol(row[1][8])*(1-inc/100)));
 			BCMsg("%s subirá de nivel en %s.", row[0][0], BDura(atol(row[0][8])*(1-inc/100)));
@@ -1913,7 +1912,7 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 			if (misum+mimej > opsum+opmej)
 				inc = (long)((double)(opsum+opmej)/(double)(misum+mimej)*sig*0.15);
 			else
-				inc = (long)((1-(double)(misum+mimej)/(double)(opsum+opmej)*sig)*0.6);
+				inc = (long)((double)(1-(double)(misum+mimej)/(double)(opsum+opmej))*sig*0.6);
 		}
 		else
 		{
@@ -1965,7 +1964,7 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 			if (misum+mimej > opsum+opmej)
 				inc = (long)((double)(opsum+opmej)/(double)(misum+mimej)*sig*0.12);
 			else
-				inc = (long)((1-(double)(misum+mimej)/(double)(opsum+opmej)*sig)*0.5);
+				inc = (long)((double)(1-(double)(misum+mimej)/(double)(opsum+opmej))*sig*0.5);
 		}
 		else
 		{

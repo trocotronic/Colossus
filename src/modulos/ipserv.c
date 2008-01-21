@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.32 2007-05-27 19:14:37 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.33 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -363,7 +363,6 @@ int ISSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
 	}
-	SQLCargaTablas();
 	return 0;
 }
 int ISCompruebaCifrado()

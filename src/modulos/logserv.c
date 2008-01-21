@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.9 2007-06-03 18:45:55 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.10 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -455,8 +455,7 @@ int LSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
 	}
-	SQLCargaTablas();
-	return 1;
+	return 0;
 }
 int LSCmdJoin(Cliente *cl, Canal *cn)
 {

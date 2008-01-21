@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.28 2007-05-23 22:54:18 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.29 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -1418,8 +1418,7 @@ int TSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
 	}
-	SQLCargaTablas();
-	return 1;
+	return 0;
 }
 int TSSigQuit(Cliente *cl, char *mensaje)
 {

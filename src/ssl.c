@@ -1,5 +1,5 @@
 /*
- * $Id: ssl.c,v 1.17 2007-02-02 17:43:02 Trocotronic Exp $ 
+ * $Id: ssl.c,v 1.18 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
  
 #include "struct.h"
@@ -134,14 +134,12 @@ static int SSLComprueba(int preverify_ok, X509_STORE_CTX *ctx)
 	verify_err = X509_STORE_CTX_get_error(ctx);
 	if (preverify_ok)
 		return 1;
-	if (conf_ssl->opts & SSLFLAG_VERIFYCERT)
+	if (conf_ssl && conf_ssl->opts & SSLFLAG_VERIFYCERT)
 	{
 		if (verify_err == X509_V_ERR_DEPTH_ZERO_SELF_SIGNED_CERT)
 		{
 			if (!(conf_ssl->opts & SSLFLAG_DONOTACCEPTSELFSIGNED))
-			{
 				return 1;
-			}
 		}
 		return preverify_ok;
 	}
@@ -158,29 +156,32 @@ void CTXInitServer()
 	}
 	SSL_CTX_set_default_passwd_cb(ctx_server, SSLPemPasswd);
 	SSL_CTX_set_options(ctx_server, SSL_OP_NO_SSLv2);
-	SSL_CTX_set_verify(ctx_server, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE	| (conf_ssl->opts & SSLFLAG_FAILIFNOCERT ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), SSLComprueba);
+	SSL_CTX_set_verify(ctx_server, SSL_VERIFY_PEER|SSL_VERIFY_CLIENT_ONCE | (conf_ssl && conf_ssl->opts & SSLFLAG_FAILIFNOCERT ? SSL_VERIFY_FAIL_IF_NO_PEER_CERT : 0), SSLComprueba);
 	SSL_CTX_set_session_cache_mode(ctx_server, SSL_SESS_CACHE_OFF);
-	if (SSL_CTX_use_certificate_file(ctx_server, SSL_SERVER_CERT_PEM, SSL_FILETYPE_PEM) <= 0)
+	if (conf_ssl)
 	{
-		Alerta(FERR, "Falla al cargar el certificado SSL %s", SSL_SERVER_CERT_PEM);
-		CierraColossus(3);
-	}
-	if (SSL_CTX_use_PrivateKey_file(ctx_server, SSL_SERVER_KEY_PEM, SSL_FILETYPE_PEM) <= 0)
-	{
-		Alerta(FERR, "Falla al cargar la clave privada SSL %s", SSL_SERVER_KEY_PEM);
-		CierraColossus(4);
-	}
-	if (!SSL_CTX_check_private_key(ctx_server))
-	{
-		Alerta(FERR, "Falla al comprobar la clave privada SSL");
-		CierraColossus(5);
-	}
-	if (conf_ssl->trusted_ca_file)
-	{
-		if (!SSL_CTX_load_verify_locations(ctx_server, conf_ssl->trusted_ca_file, NULL))
+		if (SSL_CTX_use_certificate_chain_file(ctx_server, SSL_SERVER_CERT_PEM) <= 0)
 		{
-			Alerta(FERR, "Falla al cargar los certificados seguros desde %s", conf_ssl->trusted_ca_file);
-			CierraColossus(6);
+			Alerta(FERR, "Falla al cargar el certificado SSL %s", SSL_SERVER_CERT_PEM);
+			CierraColossus(3);
+		}
+		if (SSL_CTX_use_PrivateKey_file(ctx_server, SSL_SERVER_KEY_PEM, SSL_FILETYPE_PEM) <= 0)
+		{
+			Alerta(FERR, "Falla al cargar la clave privada SSL %s", SSL_SERVER_KEY_PEM);
+			CierraColossus(4);
+		}
+		if (!SSL_CTX_check_private_key(ctx_server))
+		{
+			Alerta(FERR, "Falla al comprobar la clave privada SSL");
+			CierraColossus(5);
+		}
+		if (conf_ssl->trusted_ca_file)
+		{
+			if (!SSL_CTX_load_verify_locations(ctx_server, conf_ssl->trusted_ca_file, NULL))
+			{
+				Alerta(FERR, "Falla al cargar los certificados seguros desde %s", conf_ssl->trusted_ca_file);
+				CierraColossus(6);
+			}
 		}
 	}
 }
@@ -194,44 +195,42 @@ void CTXInitCliente()
 	}
 	SSL_CTX_set_default_passwd_cb(ctx_client, SSLPemPasswd);
 	SSL_CTX_set_session_cache_mode(ctx_client, SSL_SESS_CACHE_OFF);
-	if (SSL_CTX_use_certificate_file(ctx_client, SSL_SERVER_CERT_PEM, SSL_FILETYPE_PEM) <= 0)
+	if (conf_ssl)
 	{
-		Alerta(FERR, "Falla al cargar el certificado %s (client)", SSL_SERVER_CERT_PEM);
-		CierraColossus(3);
-	}
-	if (SSL_CTX_use_PrivateKey_file(ctx_client, SSL_SERVER_KEY_PEM, SSL_FILETYPE_PEM) <= 0)
-	{
-		Alerta(FERR, "Falla alcargar la clave privada SSL %s (client)", SSL_SERVER_KEY_PEM);
-		CierraColossus(4);
-	}
-
-	if (!SSL_CTX_check_private_key(ctx_client))
-	{
-		Alerta(FERR, "Falla al comprobar la clave privada SSL (client)");
-		CierraColossus(5);
+		if (SSL_CTX_use_certificate_file(ctx_client, SSL_SERVER_CERT_PEM, SSL_FILETYPE_PEM) <= 0)
+		{
+			Alerta(FERR, "Falla al cargar el certificado %s (client)", SSL_SERVER_CERT_PEM);
+			CierraColossus(3);
+		}
+		if (SSL_CTX_use_PrivateKey_file(ctx_client, SSL_SERVER_KEY_PEM, SSL_FILETYPE_PEM) <= 0)
+		{
+			Alerta(FERR, "Falla alcargar la clave privada SSL %s (client)", SSL_SERVER_KEY_PEM);
+			CierraColossus(4);
+		}
+		if (!SSL_CTX_check_private_key(ctx_client))
+		{
+			Alerta(FERR, "Falla al comprobar la clave privada SSL (client)");
+			CierraColossus(5);
+		}
 	}
 }
 void SSLInit(void)
 {
-	static int cargado = 0;
-	if (!conf_ssl) /* no hay configuración, así que no hay "soporte" */
-		return;
-	if (cargado)
-		return;
-	cargado = 1;
 	SSL_load_error_strings();
 	SSLeay_add_ssl_algorithms();
-	if (conf_ssl->usa_egd) 
+	if (conf_ssl)
 	{
+		if (conf_ssl->usa_egd) 
+		{
 #if OPENSSL_VERSION_NUMBER >= 0x000907000
-		if (!conf_ssl->egd_path)
-			RAND_status();
-		else
-
+			if (!conf_ssl->egd_path)
+				RAND_status();
+			else
 #else
-		if (conf_ssl->egd_path) 
+			if (conf_ssl->egd_path) 
 #endif
-			RAND_egd(conf_ssl->egd_path);		
+				RAND_egd(conf_ssl->egd_path);		
+		}
 	}
 	CTXInitServer();
 	CTXInitCliente();
@@ -311,13 +310,12 @@ int SSLSockWrite(Sock *sck, const void *buf, int sz)
 }
 int SSLClienteConexion(Sock *sck)
 {
-	sck->ssl = SSL_new(ctx_client);
-	if (!sck->ssl)
-		return FALSE;
+	if (!(sck->ssl = SSL_new(ctx_client)))
+		return -1;
 	SSL_set_fd(sck->ssl, sck->pres);
 	SSL_set_connect_state(sck->ssl);
 	SSLSockNoBlock(sck->ssl);
-	if (SockIrcd == sck && conf_ssl->cifrados)
+	if (SockIrcd == sck && conf_ssl && conf_ssl->cifrados)
 	{
 		if (SSL_set_cipher_list((SSL *)sck->ssl, conf_ssl->cifrados) == 0)
 			return -2;

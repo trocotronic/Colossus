@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.35 2007-10-24 14:14:24 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.36 2008-01-21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1042,8 +1042,7 @@ int SSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
 	}
-	SQLCargaTablas();
-	return 1;
+	return 0;
 }
 int SSSigSockClose()
 {

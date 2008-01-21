@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.11 2007-04-07 19:32:17 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.12 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -572,8 +572,7 @@ int SSSigSQL()
 		if (sql->_errno)
 			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
 	}
-	SQLCargaTablas();
-	return 1;
+	return 0;
 }
 int SSSigQuit(Cliente *cl, char *mensaje)
 {

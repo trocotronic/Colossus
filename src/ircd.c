@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.56 2007-11-03 13:43:36 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.57 2008-01-21 19:46:46 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -133,7 +133,7 @@ int MiraPings()
 VOIDSIG AbreSockIrcd()
 {
 #ifdef USA_SSL
-	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, conf_ssl ? OPT_SSL : 0)))
+	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, conf_server->usa_ssl ? OPT_SSL : 0)))
 #else
 	if (!(SockIrcd = SockOpen(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd)))
 #endif
@@ -157,7 +157,7 @@ void EscuchaIrcd()
 	{
 		IrcdEscucha = SockListen(conf_server->escucha, EscuchaAbre, NULL, NULL, NULL);
 #ifdef USA_SSL
-		if (IrcdEscucha && conf_ssl)
+		if (IrcdEscucha && conf_server->usa_ssl)
 			SetSSL(IrcdEscucha);
 #endif
 	}
