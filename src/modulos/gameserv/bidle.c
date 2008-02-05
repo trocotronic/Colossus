@@ -302,12 +302,6 @@ long BDato(char *item, char *campo)
 		return atol(cres);
 	return -1;
 }
-int BCuenta()
-{
-	time_t t = time(0);
-	struct tm *ttm = localtime(&t);
-	return ttm->tm_sec+ttm->tm_min*60+ttm->tm_hour*3600;
-}
 int BCMsg(char *msg, ...)
 {
 	if (bidle->cn && protocolo->eos)
@@ -852,7 +846,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						lvl = (int)(nivel * 1.5 * (1+((nivel+i*i)%11)*0.02));
 						if (!((nivel+i)%10))
 						{
-							mej = (int)((((i*(BCuenta()+nivel*100))%86400)*50*BidleSum(cl->nombre, 0))/8640000);
+							mej = (int)(lvl/10);
 							Responde(cl, bl, "%c%s: nivel \00312%i\003, mejora \x2+%i\x2, \00312%i\003 oros", *items[i]-32, items[i]+1, lvl, mej, (int)((lvl+mej)*bidle->paso_compra));
 						}
 						else
@@ -868,7 +862,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 							int precio;
 							lvl = (int)(nivel * 1.5 * (1+((nivel+i*i)%11)*0.02));
 							if (!((nivel+i)%10))
-								mej = (int)((((i*(BCuenta()+nivel*100))%86400)*50*BidleSum(cl->nombre, 0))/8640000);
+								mej = (int)(lvl/10);
 							precio = (int)((lvl+mej)*bidle->paso_compra);
 							if (BDato(cl->nombre, "oro") < precio)
 								Responde(cl, bl, GS_ERR_EMPT, "No tienes suficientes oros");
