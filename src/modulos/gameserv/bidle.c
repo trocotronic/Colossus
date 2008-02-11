@@ -44,6 +44,7 @@ HDir *bhdir = NULL;
 
 int BidleSynch();
 int BidleSQL();
+int BidleSockClose();
 int BidlePMsg(Cliente *, Cliente *, char *, int);
 int BidleJoin(Cliente *, Canal *);
 int BidleDrop(char *);

@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.34 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.35 2008-02-11 00:05:42 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -223,6 +223,7 @@ void LiberaMemoriaMSN()
 	ircfree(conf_msn->cuenta);
 	ircfree(conf_msn->pass);
 	ircfree(conf_msn->master);
+	ircfree(conf_msn->nick);
 	bzero(conf_msn, sizeof(struct Conf_msn));
 }
 #endif
@@ -1506,6 +1507,10 @@ void ConfMSN(Conf *config)
 			ircstrdup(conf_msn->pass, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "master"))
 			ircstrdup(conf_msn->master, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "nick"))
+			ircstrdup(conf_msn->nick, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "solomaster"))
+			conf_msn->solomaster = 1;
 	}
 	CargaMSN();
 }
