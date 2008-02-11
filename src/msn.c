@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.2 2008-02-11 00:05:43 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.3 2008-02-11 01:08:20 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -243,7 +243,7 @@ SOCKFUNC(MSNSBRead)
 			*c = '\0';
 		else if ((c = strchr(param, '\n')))
 			*c = '\0';
-		SockClose(sb->SBsck, REMOTO);
+		//SockClose(sb->SBsck, LOCAL);
 	}
 	return 0;
 }
