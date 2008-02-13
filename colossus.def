@@ -151,6 +151,8 @@ EXPORTS
 	TieneNivel
 	TipoMascara
 	Unifica
+	URLEncode
+	URLDecode
 	VerInfo
 	add_item
 	backupbuf

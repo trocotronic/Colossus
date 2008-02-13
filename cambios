@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.78 2008-02-05 22:31:14 Trocotronic Exp $
+ * $Id: cambios,v 1.79 2008-02-13 16:16:10 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -505,3 +505,6 @@
 190108561 - Se añade el parámetro ssl en el bloque server { }.
 190108562 - Se crea el complemento MSN para gestionar Colossus por el MSN Messenger.
 190108563 - Se añade el nivel "msn" para loguear los eventos del Messenger.
+120208564 - Se simplifica el uso de SockClose.
+130208565 - Se añade un botón para activar o desactivar el control MSN.
+130208566 - Se añade un botón para ocultar o mostrar la ventana de información.

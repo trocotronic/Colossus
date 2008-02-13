@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.53 2007-11-12 14:40:26 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.54 2008-02-13 16:16:11 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1188,7 +1188,7 @@ IRCFUNC(m_pass)
 	if (strcmp(parv[1], conf_server->password.remoto))
 	{
 		Alerta(FERR, "Contraseñas incorrectas");
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 	}
 	return 0;
 }
@@ -1424,7 +1424,7 @@ IRCFUNC(m_server)
 	if (!cl && protocol && atoi(protocol + 1) < 2302)
 	{
 		Alerta(FERR, "Version UnrealIRCd incorrecta. Solo funciona con v3.2.x y v3.1.x");
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 		return 1;
 	}
 	al = NuevoCliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, inf);

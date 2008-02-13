@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.12 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.13 2008-02-13 16:16:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -269,7 +269,7 @@ SOCKFUNC(SmsLee)
 	else if (!strncmp(data, "Location:", 9))
 	{
 		char *c;
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 		if ((c = strchr(data+17, '/')))
 		{
 			*c = '\0';
@@ -581,7 +581,7 @@ int SSSigQuit(Cliente *cl, char *mensaje)
 	{
 		if (cola[i] && cola[i]->cl == cl)
 		{
-			SockClose(cola[i]->sck, LOCAL);
+			SockClose(cola[i]->sck);
 			break;
 		}
 	}

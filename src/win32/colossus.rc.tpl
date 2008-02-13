@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc.tpl,v 1.1 2007-11-10 18:28:04 Trocotronic Exp $
+// $Id: colossus.rc.tpl,v 1.2 2008-02-13 16:16:11 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -118,18 +118,20 @@ END
 // Dialog
 //
 
-COLOSSUS DIALOG DISCARDABLE  0, 0, 205, 130
+COLOSSUS DIALOG DISCARDABLE  0, 0, 205, 80
 STYLE DS_MODALFRAME | DS_3DLOOK | DS_NOFAILCREATE | DS_CENTER | 
     WS_MINIMIZEBOX | WS_POPUP | WS_CAPTION | WS_SYSMENU
 FONT 8, "Tahoma"
 BEGIN
-    GROUPBOX        "Opciones disponibles",IDC_STATIC,5,5,195,55,BS_LEFT
+    GROUPBOX        "Opciones disponibles",IDC_STATIC,5,5,195,70,BS_LEFT
     CONTROL         "Conectar",BT_CON,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE,10,15,90,15
     PUSHBUTTON      "Refrescar",BT_REHASH,105,15,90,15,NOT WS_TABSTOP
     PUSHBUTTON      "Configuración",BT_CONF,10,35,90,15,NOT WS_TABSTOP
     PUSHBUTTON      "Ayuda",BT_AYUDA,105,35,90,15,NOT WS_TABSTOP
-    GROUPBOX        "Información",IDC_STATIC,5,65,195,60,BS_LEFT
-    EDITTEXT        EDT_INFO,10,75,185,45,ES_MULTILINE | ES_READONLY | WS_VSCROLL
+    CONTROL         "Complemento MSN",BT_MSN,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE,10,55,90,15
+    CONTROL         "Mostrar información",BT_OCU,"Button",BS_AUTOCHECKBOX | BS_PUSHLIKE,105,55,90,15
+    GROUPBOX        "Información",IDC_STATIC,5,80,195,60,BS_LEFT
+    EDITTEXT        EDT_INFO,10,90,185,45,ES_MULTILINE | ES_READONLY | WS_VSCROLL
 END
 
 CONFERROR DIALOG DISCARDABLE  0, 0, 331, 178

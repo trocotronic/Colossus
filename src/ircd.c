@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.57 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.58 2008-02-13 16:16:08 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -124,7 +124,7 @@ int MiraPings()
 			tping = ahora;
 		}
 		else if (tping && (SockIrcd->recibido + 120 + 30) < ahora) /* 30 segs para responder el ping */
-			SockClose(SockIrcd, REMOTO);
+			SockCloseEx(SockIrcd, REMOTO);
 		else if (tping <= SockIrcd->recibido)
 			tping = 0;
 	}
@@ -144,7 +144,7 @@ VOIDSIG AbreSockIrcd()
 	}
 	if (IrcdEscucha)
 	{
-		SockClose(IrcdEscucha, LOCAL);
+		SockClose(IrcdEscucha);
 		IrcdEscucha = NULL;
 	}
 	tping = 0;
@@ -246,11 +246,11 @@ SOCKFUNC(EscuchaAbre) /* nos aceptan el sock, lo renombramos */
 {
 	if (IrcdEscucha) /* primero cerramos la escucha para no aceptar más conexiones */
 	{
-		SockClose(IrcdEscucha, LOCAL);
+		SockClose(IrcdEscucha);
 		IrcdEscucha = NULL;
 	}
 	if (SockIrcd) /* ups, ya teníamos la conexión. cerramos la de escucha */
-		SockClose(sck, LOCAL); /* de momento no tiene asignadas las funciones propias del irc, vía libre */
+		SockClose(sck); /* de momento no tiene asignadas las funciones propias del irc, vía libre */
 	else
 	{
 		/* asignamos funciones */
@@ -259,7 +259,7 @@ SOCKFUNC(EscuchaAbre) /* nos aceptan el sock, lo renombramos */
 		SockIrcd = sck;
 		if (strcmp(sck->host, conf_server->addr))
 		{
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			Loguea(LOG_CONN, "Se ha rechazado una conexión remota %s:%i", sck->host, sck->puerto);
 			EscuchaIrcd();
 			return 1;

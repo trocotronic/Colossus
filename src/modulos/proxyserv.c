@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.41 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.42 2008-02-13 16:16:10 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -105,7 +105,7 @@ int MOD_DESCARGA(ProxyServ)()
 	for (px = proxys; px; px = px->sig)
 	{
 		for (ppx = px->puerto; ppx; ppx = ppx->sig)
-				SockClose(ppx->sck, LOCAL);
+				SockClose(ppx->sck);
 	}
 	BorraSenyal(SIGN_POST_NICK, PSCmdNick);
 	BorraSenyal(SIGN_SQL, PSSigSQL);
@@ -587,7 +587,7 @@ SOCKFUNC(PSAbre)
 		if (ppx->tipo & XS_T_ABIERTO)
 		{
 			ppx->proxy = XS_T_ABIERTO;
-			SockClose(ppx->sck, LOCAL);
+			SockClose(ppx->sck);
 		}
 		else if (ppx->tipo & XS_T_HTTP)
 		{
@@ -651,7 +651,7 @@ SOCKFUNC(PSLee)
 		ppx->bytes += len;
 		if (ppx->bytes > 1024)
 		{
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			return 1;
 		}
 		for (i = 0; proxyserv->patron[i]; i++)
@@ -672,7 +672,7 @@ SOCKFUNC(PSLee)
 					ppx->proxy = XS_T_POST;
 				else if (ppx->tipo & XS_T_GET)
 					ppx->proxy = XS_T_GET;
-				SockClose(sck, LOCAL);
+				SockClose(sck);
 				break;
 			}
 		}

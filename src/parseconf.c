@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.35 2008-02-11 00:05:42 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.36 2008-02-13 16:16:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -13,6 +13,7 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
+#include "msn.h"
 
 struct Conf_server *conf_server = NULL;
 struct Conf_db *conf_db = NULL;
@@ -58,8 +59,6 @@ static void ConfMSN	(Conf *);
 
 extern int IniciaHTTPD();
 extern int DetieneHTTPD();
-extern int CargaMSN();
-extern int DescargaMSN();
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
@@ -225,6 +224,9 @@ void LiberaMemoriaMSN()
 	ircfree(conf_msn->master);
 	ircfree(conf_msn->nick);
 	bzero(conf_msn, sizeof(struct Conf_msn));
+#ifdef _WIN32
+	EnableWindow(GetDlgItem(hwMain, BT_MSN), FALSE);
+#endif
 }
 #endif
 void DescargaConfiguracion()
@@ -1513,6 +1515,9 @@ void ConfMSN(Conf *config)
 			conf_msn->solomaster = 1;
 	}
 	CargaMSN();
+#ifdef _WIN32
+	EnableWindow(GetDlgItem(hwMain, BT_MSN), TRUE);
+#endif
 }
 #endif
 #ifndef _WIN32

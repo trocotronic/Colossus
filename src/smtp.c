@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.26 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.27 2008-02-13 16:16:09 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -623,7 +623,7 @@ SOCKFUNC(ProcesaSmtp)
 		smtp->enviado = 1;
 	}
 	if (!ParseSmtp(data, 221))
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 	return 0;
 }
 SOCKFUNC(CierraSmtp)

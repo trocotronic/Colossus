@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.18 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.19 2008-02-13 16:16:09 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -512,6 +512,7 @@ void Loguea(int opt, char *formato, ...)
  * @params: $str [in] Cadena a codificar.
  * @ret: Devuelve un puntero a una nueva cadena codificada. No olvidar a liberar con Free una vez utilizado.
  * @cat: Internet
+ * @ver: URLDecode
  !*/
  
 char *URLEncode(char *str)
@@ -533,6 +534,40 @@ char *URLEncode(char *str)
 			*d++ = tmp[0];
 			*d++ = tmp[1];
 		}
+	}
+	*d++ = '\0';
+	return coded;
+}
+
+/*!
+ * @desc: Decodifica la cadena para mandarse vía HTTP. Esta función usa Malloc, por lo que debe liberarse con Free una vez utilizada.
+ * @params: $str [in] Cadena a codificar.
+ * @ret: Devuelve un puntero a una nueva cadena decodificada. No olvidar a liberar con Free una vez utilizado.
+ * @cat: Internet
+ * @ver: URLEncode
+ !*/
+ 
+char *URLDecode(char *str)
+{
+	char *coded, *c, *d;
+	if (BadPtr(str))
+		return NULL;
+	coded = (char *)Malloc(sizeof(char) * (strlen(str) + 1)); /* como máximo, no se decodificará nada */
+	d = coded;
+	for (c = str; !BadPtr(c); c++)
+	{
+		if (*c == '%')
+		{
+			char tmp[3];
+			tmp[0] = *(c+1);
+			tmp[1] = *(c+2);
+			tmp[2] = 0;
+			sscanf(tmp, "%02X", &tmp[0]);
+			*d++ = tmp[0];
+			c += 2;
+		}
+		else
+			*d++ = *c;
 	}
 	*d++ = '\0';
 	return coded;

@@ -1025,7 +1025,7 @@ IRCFUNC(m_pass)
 	if (strcmp(parv[1], conf_server->password.remoto))
 	{
 		Alerta(FERR, "Contraseñas incorrectas");
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 	}
 	return 0;
 }
@@ -1107,7 +1107,7 @@ IRCFUNC(m_server)
 	if (!cl && atoi(parv[5] + 1) < 10)
 	{
 		Alerta(FERR, "Version IRCU incorrecta. Sólo funciona con versiones de P10");
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 		return 1;
 	}
 	al = NuevoCliente(parv[1], NULL, NULL, NULL, NULL, NULL, NULL, parv[parc-1]);

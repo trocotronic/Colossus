@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.29 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.30 2008-02-13 16:16:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -382,7 +382,7 @@ int MOD_DESCARGA(TvServ)()
 	for (i = 0; i < MAX_COLA; i++)
 	{
 		if (cola[i])
-			SockClose(cola[i]->sck, LOCAL);
+			SockClose(cola[i]->sck);
 	}
 	BorraSenyal(SIGN_SQL, TSSigSQL);
 	BorraSenyal(SIGN_QUIT, TSSigQuit);
@@ -935,7 +935,7 @@ SOCKFUNC(TSLeeTv)
 		imp = 0;
 	}
 	else if (strstr(data, "</html>"))
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 	else if (!strncmp(data, "HTTP/", 5))
 	{
 		tsf = TSFecha(time(0));
@@ -995,7 +995,7 @@ SOCKFUNC(TSLeeHoroscopo)
 		SQLQuery("INSERT INTO %s%s values ('%s', '%s', '%s')", PREFIJO, TS_HO, horoscopos[dts->numero - 1], tsf, m_c);
 		Free(m_c);
 		salud = dinero = amor = 0;
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 		Responde(dts->cl, CLI(tvserv), txt);
 	}
 	else if (!strncmp(data, "HTTP/", 5))
@@ -1035,7 +1035,7 @@ SOCKFUNC(TSLeeTiempo)
 					*d = '\0';
 				ircsprintf(buf, "/%s-%i.html", c, ++dia);
 				strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
-				SockClose(sck, LOCAL);	
+				SockClose(sck);	
 				if ((dts = InsertaCola(buf, 0, cl)))
 					dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 			}
@@ -1057,7 +1057,7 @@ SOCKFUNC(TSLeeTiempo)
 					}
 					c = d+1;
 				}
-				SockClose(sck, LOCAL);	
+				SockClose(sck);	
 			}
 			else if (dts->numero > regs)
 			{
@@ -1079,7 +1079,7 @@ SOCKFUNC(TSLeeTiempo)
 							*d = '\0';
 							ircsprintf(buf, "/%s-%i.html", c, ++dia);
 							strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));	
-							SockClose(sck, LOCAL);	
+							SockClose(sck);	
 							if ((dts = InsertaCola(buf, 0, cl)))
 								dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 						}
@@ -1093,7 +1093,7 @@ SOCKFUNC(TSLeeTiempo)
 		else
 		{
 			Responde(cl, CLI(tvserv), TS_ERR_EMPT, "No se han encontrado coincidencias");
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			return 1;
 		}
 	}
@@ -1112,7 +1112,7 @@ SOCKFUNC(TSLeeTiempo)
 			dia = 0;
 			if (!IsOper(cl))
 				InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 		}
 		else
 		{
@@ -1154,7 +1154,7 @@ SOCKFUNC(TSLeeCine)
 	{
 		if (*(data+1) == '/')
 		{
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			m = 0;
 			i = 1;
 		}
@@ -1170,7 +1170,7 @@ SOCKFUNC(TSLeeCine)
 				c = strchr(data, '"')+1;
 				d = strchr(c, '"');
 				*d = '\0';
-				SockClose(sck, LOCAL);
+				SockClose(sck);
 				if ((dts = InsertaCola(c, 0, cl)))
 					dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeeCine, NULL, TSCierraDataSock);
 				m = 0;
@@ -1183,7 +1183,7 @@ SOCKFUNC(TSLeeCine)
 		{
 			m = n = 0;
 			i = 1;
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			if (!IsOper(cl))
 				InsertaCache(CACHE_TIEMPO, strchr(cl->mask, '!') + 1, 30, tvserv->hmod->id, "%lu", time(0));
 		}
@@ -1252,7 +1252,7 @@ SOCKFUNC(TSLeePeli)
 		{
 			i = 1;
 			m = 0;
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			if (dts->numero != -1)
 				Responde(cl, CLI(tvserv), TS_ERR_EMPT, "No se ha encontrado esta película");
 		}
@@ -1274,7 +1274,7 @@ SOCKFUNC(TSLeePeli)
 					c = strchr(data, '"')+1;
 					d = strchr(c, '?');
 					*d = '\0';
-					SockClose(sck, LOCAL);
+					SockClose(sck);
 					if ((dts = InsertaCola(c, 0, cl)))
 						dts->sck = SockOpen("www.elmundo.es", 80, TSAbreDataSock, TSLeePeli, NULL, TSCierraDataSock);
 					m = 0;
@@ -1304,7 +1304,7 @@ SOCKFUNC(TSLeePeli)
 		{
 			n = 0;
 			snd[0] = '\0';
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 		}
 		else
 		{
@@ -1357,7 +1357,7 @@ SOCKFUNC(TSLeeLiga)
 		{
 			m = 0;
 			j = 1;
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 		}
 		else
 		{
@@ -1427,7 +1427,7 @@ int TSSigQuit(Cliente *cl, char *mensaje)
 	{
 		if (cola[i] && cola[i]->cl == cl)
 		{
-			SockClose(cola[i]->sck, LOCAL);
+			SockClose(cola[i]->sck);
 			break;
 		}
 	}

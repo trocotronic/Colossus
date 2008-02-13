@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.39 2007-11-12 14:40:26 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.40 2008-02-13 16:16:11 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1092,7 +1092,7 @@ IRCFUNC(m_pass)
 	if (strcmp(parv[1], conf_server->password.remoto))
 	{
 		Alerta(FERR, "Contraseñas incorrectas");
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 	}
 	return 0;
 }
@@ -1178,7 +1178,7 @@ IRCFUNC(m_server)
 	if (!cl && atoi(parv[5] + 1) < 10)
 	{
 		Alerta(FERR, "Version IRCU incorrecta. Sólo funciona con versiones de P10");
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 		return 1;
 	}
 	numeric[i++] = *parv[6];

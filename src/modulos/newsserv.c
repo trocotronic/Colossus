@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.14 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.15 2008-02-13 16:16:10 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
@@ -144,7 +144,7 @@ int MOD_DESCARGA(NewsServ)()
 	{
 		if (rss[i])
 		{
-			SockClose(rss[i]->sck, LOCAL);
+			SockClose(rss[i]->sck);
 			if (rss[i]->fp > 0)
 				close(rss[i]->fp);
 			ircsprintf(tokbuf, "tmp/%s.xml", urls[rss[i]->opt].item);

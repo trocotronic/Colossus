@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.12 2007-08-25 10:31:14 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.13 2008-02-13 16:16:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -255,7 +255,7 @@ void DetieneMDS()
 	for (mds = sgn.mds; mds; mds = tmp)
 	{
 		tmp = mds->sig;
-		SockClose(mds->sck, LOCAL);
+		SockClose(mds->sck);
 		Free(mds);
 	}
 	sgn.mds = NULL;

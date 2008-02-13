@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.4 2008-02-13 00:35:30 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.5 2008-02-13 16:16:09 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -80,7 +80,7 @@ int BorraSB(MSNSB *sb, int fuerza)
 	}
 	BorraItem(sb, msnsbs);
 	if (!EsCerr(sb->SBsck))
-		SockClose(sb->SBsck, LOCAL);
+		SockClose(sb->SBsck);
 	ircfree(sb->SBToken);
 	ircfree(sb->SBId);
 	ircfree(sb->SBcuenta);
@@ -151,7 +151,7 @@ SOCKFUNC(MSNLoginRead)
 	else if (!strncmp(data, "Location:", 9))
 	{
 		char *param;
-		SockClose(sck, LOCAL);
+		SockClose(sck);
 		strtok(data, " ");
 		param = strtok(NULL, " ");
 		param = strstr(param, "//")+2;
@@ -243,7 +243,7 @@ SOCKFUNC(MSNSBRead)
 			*c = '\0';
 		else if ((c = strchr(param, '\n')))
 			*c = '\0';
-		//SockClose(sb->SBsck, LOCAL);
+		//SockClose(sb->SBsck);
 	}
 	return 0;
 }
@@ -258,6 +258,10 @@ SOCKFUNC(MSNSBClose)
 SOCKFUNC(MSNNSOpen)
 {
 	SockWrite(sck, MSN_VER);
+#ifdef _WIN32
+	SetDlgItemText(hwMain, BT_MSN, "Complemento MSN (ON)");
+	CheckDlgButton(hwMain, BT_MSN, BST_CHECKED);
+#endif
 	return 0;
 }
 SOCKFUNC(MSNNSRead)
@@ -269,7 +273,7 @@ SOCKFUNC(MSNNSRead)
 		else
 		{
 			Loguea(LOG_MSN, "No se puede verificar la versión");
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 		}
 	}
 	else if (!strncmp(data, "CVR", 3))
@@ -304,7 +308,7 @@ SOCKFUNC(MSNNSRead)
 		else if (!strcmp(com, "NS"))
 		{
 			char *serv, *port;
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			if ((serv = strtok(NULL, " ")))
 			{
 				serv = strtok(serv, ":");
@@ -321,13 +325,13 @@ SOCKFUNC(MSNNSRead)
 			if (!(lc = strstr(data, "lc=")))
 			{
 				Loguea(LOG_MSN, "No encuentra lc.");
-				SockClose(sck, LOCAL);
+				SockClose(sck);
 				return 1;
 			}
 			if (!SockOpen("nexus.passport.com", 80, MSNNexusOpen, MSNNexusRead, NULL, NULL))
 			{
 				Loguea(LOG_MSN, "No puede conectar al Nexus.");
-				SockClose(sck, LOCAL);
+				SockClose(sck);
 				return 1;
 			}
 		}
@@ -415,9 +419,11 @@ SOCKFUNC(MSNNSRead)
 			sb = BMalloc(MSNSB);
 			sb->SBcuenta = strdup(cuenta);
 			AddItem(sb, msnsbs);
+			if (!strcasecmp(cuenta, conf_msn->master))
+				sb->master = 1;
 		}
 		else if (sb->SBsck)
-			SockClose(sb->SBsck, LOCAL);
+			SockClose(sb->SBsck);
 		ircstrdup(sb->SBId, id);
 		ircstrdup(sb->SBToken, tok);
 		sb->SBsck = SockOpenEx(serv, atoi(port), MSNSBOpen, MSNSBRead, NULL, MSNSBClose, 30, 0, OPT_NORECVQ);
@@ -452,6 +458,7 @@ SOCKFUNC(MSNNSRead)
 	{
 		char *coded = URLEncode(COLOSSUS_VERSION);
 		SockWrite(sck, "REA %i %s %s", ++trid, conf_msn->cuenta, coded);
+		SockWrite(sck, "BLP %i BL", ++trid);
 		Free(coded);
 	}
 	else if (!strncmp(data, "REA", 3))
@@ -477,6 +484,10 @@ SOCKFUNC(MSNNSRead)
 SOCKFUNC(MSNNSClose)
 {
 	sckMSNNS = NULL;
+#ifdef _WIN32
+	SetDlgItemText(hwMain, BT_MSN, "Complemento MSN (OFF)");
+	CheckDlgButton(hwMain, BT_MSN, BST_UNCHECKED);
+#endif
 	return 0;
 }
 int CargaMSN()
@@ -485,7 +496,7 @@ int CargaMSN()
 	if (!conf_msn)
 		return 1;
 	if (sckMSNNS)
-		SockClose(sckMSNNS, LOCAL);
+		SockClose(sckMSNNS);
 	for (sb = msnsbs; sb; sb = sig)
 	{
 		sig = sb->sig;
@@ -506,7 +517,7 @@ int DescargaMSN()
 {
 	MSNSB *sb, *sig;
 	if (sckMSNNS)
-		SockClose(sckMSNNS, LOCAL);
+		SockClose(sckMSNNS);
 	for (sb = msnsbs; sb; sb = sig)
 	{
 		sig = sb->sig;

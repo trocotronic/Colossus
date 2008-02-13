@@ -1,5 +1,5 @@
 /*
- * $Id: msn.h,v 1.1 2008-02-11 00:05:43 Trocotronic Exp $ 
+ * $Id: msn.h,v 1.2 2008-02-13 16:16:10 Trocotronic Exp $ 
  */
 
 typedef struct _msncn MSNCn;
@@ -38,3 +38,4 @@ struct _msncn
 	
 #define MSN_VER "VER 1 MSNP8 CVR0"
 #define MSNFUNC(x) int (x)(MSNSB *sb, char **argv, int argc)
+#define BT_MSN			1117

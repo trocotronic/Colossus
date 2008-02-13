@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.28 2007-08-25 10:31:14 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.29 2008-02-13 16:16:08 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32
@@ -236,7 +236,7 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 	SockWrite(hh->sck, tbuf);
 	if (data && bytes)
 		SockWriteBin(hh->sck, bytes, data);
-	SockClose(hh->sck, LOCAL);
+	SockClose(hh->sck);
 }
 void EnviaError(HHead *hh, u_int num, char *texto)
 {
@@ -299,7 +299,7 @@ SOCKFUNC(AbreHTTPD)
 			return 0;
 		}
 	}
-	SockClose(sck, LOCAL);
+	SockClose(sck);
 	return 1;
 }
 int EPhp(u_long len, char *res, HHead *hh)
@@ -307,7 +307,7 @@ int EPhp(u_long len, char *res, HHead *hh)
 	hh->noclosesock = 0;
 	EnviaRespuesta(hh, 200, -1, NULL, len, res);
 	Free(res);
-	//SockClose(hh->sck, LOCAL);
+	//SockClose(hh->sck);
 	return 0;
 }
 void ProcesaHHead(HHead *hh, Sock *sck)
@@ -575,9 +575,9 @@ int DetieneHTTPD()
 	for (i = 0; i < MAX_CON; i++)
 	{
 		if (httpcons[i])
-			SockClose(httpcons[i]->sck, LOCAL);
+			SockClose(httpcons[i]->sck);
 	}
 	if (listen_httpd)
-		SockClose(listen_httpd, LOCAL);
+		SockClose(listen_httpd);
 	return 0;
 }

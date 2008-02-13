@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.41 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.42 2008-02-13 16:16:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -340,7 +340,7 @@ Sock *SockAccept(Sock *list, int pres)
 		SetSSLAcceptHandshake(sck);
 		if (!(sck->ssl = SSL_new(ctx_server)))
 		{
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			return NULL;
 		}
 		SSL_set_fd(sck->ssl, pres);
@@ -350,7 +350,7 @@ Sock *SockAccept(Sock *list, int pres)
 			SSL_set_shutdown(sck->ssl, SSL_RECEIVED_SHUTDOWN);
 			SSLShutDown(sck->ssl);
 			SSL_free(sck->ssl);
-			SockClose(sck, LOCAL);
+			SockClose(sck);
 			return NULL;
 		}
 	}
@@ -435,6 +435,18 @@ void SockWrite(Sock *sck, char *formato, ...)
 /*!
  * @desc: Cierra una conexión.
  * @params: $sck [in] Conexión a cerrar.
+ * @ver: SockOpen SockListen
+ * @cat: Conexiones
+ !*/
+
+void SockClose(Sock *sck)
+{
+	SockCloseEx(sck, LOCAL);
+}
+
+/*!
+ * @desc: Cierra una conexión con parámetros extra.
+ * @params: $sck [in] Conexión a cerrar.
  	    $closef [in] Forma de cierre:
  	    	- LOCAL: Desconexión local. Recomendado.
  	    	- REMOTO: Desconexión remota.
@@ -442,7 +454,7 @@ void SockWrite(Sock *sck, char *formato, ...)
  * @cat: Conexiones
  !*/
  
-void SockClose(Sock *sck, char closef)
+void SockCloseEx(Sock *sck, int closef)
 {
 	if (!sck || EsCerr(sck))
 		return;
@@ -834,7 +846,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 		if (sck->pres >= 0)
 		{
 			if ((EsConn(sck) && ((time_t)(sck->inicio + sck->contout) < ahora)) || (EsOk(sck) && sck->recvtout && (time_t)(sck->recibido + sck->recvtout) < ahora))
-				SockClose(sck, LOCAL);
+				SockClose(sck);
 			if (EsCerr(sck))
 				LiberaSock(sck);
 			else
@@ -902,7 +914,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 					sels--;
 					FD_CLR(SockActual->pres, &read_set);
 				}
-				SockClose(SockActual, REMOTO);
+				SockCloseEx(SockActual, REMOTO);
 				continue;
 			}
 		}
@@ -929,7 +941,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 			{
 				sels--;
 				FD_CLR(SockActual->pres, &read_set);
-				SockClose(SockActual, REMOTO);
+				SockCloseEx(SockActual, REMOTO);
 				continue;
 			}
 			lee += len;
@@ -958,7 +970,7 @@ int LeeSocks() /* devuelve los bytes leídos */
 		{
 			sels--;
 			FD_CLR(SockActual->pres, &excpt_set);
-			SockClose(SockActual, REMOTO);
+			SockCloseEx(SockActual, REMOTO);
 			continue;
 		}
 	}

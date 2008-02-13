@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.c,v 1.16 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: linkserv.c,v 1.17 2008-02-13 16:16:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -211,7 +211,7 @@ int linkserv_cierra_red(char *red)
 		if (!strcasecmp(links[i]->red, red))
 		{
 			if (links[i]->sck)
-				SockClose(links[i]->sck, LOCAL);
+				SockClose(links[i]->sck);
 			Free(links[i]->red);
 			Free(links[i]);
 			links[i] = NULL;

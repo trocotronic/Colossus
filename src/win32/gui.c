@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.22 2007-07-14 14:40:56 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.23 2008-02-13 16:16:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -229,8 +229,34 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					}
 					else
 					{
-						SockClose(SockIrcd, LOCAL);
+						SockClose(SockIrcd);
 						ChkBtCon(0, 0);
+					}
+					break;
+				}
+				case BT_MSN:
+				{
+					if (IsDlgButtonChecked(hDlg, BT_MSN))
+						CargaMSN();
+					else
+						DescargaMSN();
+					break;
+				}
+				case BT_OCU:
+				{
+					RECT rct;
+					GetWindowRect(hDlg, &rct);
+					if (IsDlgButtonChecked(hDlg, BT_OCU))
+					{
+						SetWindowPos(hDlg, NULL, 0, 0, rct.right-rct.left, rct.bottom-rct.top+105, SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER);
+						SetDlgItemText(hwMain, BT_OCU, "Ocultar información");
+						CheckDlgButton(hwMain, BT_OCU, BST_CHECKED);
+					}
+					else
+					{
+						SetDlgItemText(hwMain, BT_OCU, "Mostrar información");
+						CheckDlgButton(hwMain, BT_OCU, BST_UNCHECKED);
+						SetWindowPos(hDlg, NULL, 0, 0, rct.right-rct.left, rct.bottom-rct.top-105, SWP_NOMOVE | SWP_NOOWNERZORDER | SWP_NOZORDER);
 					}
 					break;
 				}

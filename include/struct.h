@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.87 2008-01-21 19:46:44 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.88 2008-02-13 16:16:10 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -193,7 +193,8 @@ extern void SockWriteExVL(Sock *, int, char *, va_list);
 extern void SockWriteVL(Sock *, char *, va_list);
 extern void SockWriteEx(Sock *, int, char *, ...);
 extern void SockWrite(Sock *, char *, ...);
-extern void SockClose(Sock *, char);
+extern void SockCloseEx(Sock *, int);
+extern void SockClose(Sock *);
 extern Sock *SockListen(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*));
 extern Sock *SockListenEx(int, SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), SOCKFUNC(*), u_int);
 extern void SockWriteBin(Sock *, u_long, char *);
