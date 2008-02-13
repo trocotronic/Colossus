@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.28 2008-01-21 19:46:47 Trocotronic Exp $
+## $Id: Makefile,v 1.29 2008-02-13 00:35:30 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -87,8 +87,8 @@ PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
 SQL_DLL=SRC/SQL/MYSQL.DLL SRC/SQL/POSTGRESQL.DLL SRC/SQL/SQLITE.DLL
 EXT_DLL=SRC/EXTENSIONES/UDB/UDB.DLL SRC/EXTENSIONES/HISPANO/HISPANO.DLL
 
-INCLUDES = ./include/ircd.h ./include/md5.h ./include/modulos.h ./include/parseconf.h ./include/protocolos.h \
-	./include/ircsprintf.h ./include/sql.h ./include/struct.h ./include/ssl.h ./include/zip.h ./include/sistema.h 
+INCLUDES = ./include/hash.h ./include/httpd.h ./include/ircd.h ./include/ircsprintf.h ./include/md5.h ./include/modulos.h ./include/msn.h \
+	./include/parseconf.h ./include/protocolos.h ./include/sistema.h ./include/socksint.h ./include/sql.h ./include/struct.h ./include/ssl.h ./include/zip.h
 MODCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ws2_32.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS)
 PROTCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /D ENLACE_DINAMICO /D MODULE_COMPILE

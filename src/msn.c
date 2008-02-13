@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.3 2008-02-11 01:08:20 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.4 2008-02-13 00:35:30 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -99,11 +99,11 @@ MSNCn *BuscaMCn(char *nombre)
 }
 MSNLSB *BuscaLSB(MSNSB *sb, char *canal)
 {
-	MSNCn *cn;
-	if ((cn = BuscaMCn(canal)))
+	MSNCn *mcn;
+	if ((mcn = BuscaMCn(canal)))
 	{
 		MSNLSB *lsb;
-		for (lsb = cn->lsb; lsb; lsb = lsb->sig)
+		for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
 		{
 			if (!strcasecmp(lsb->cuenta, sb->SBcuenta))
 				return lsb;
@@ -565,7 +565,7 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 		MSNLSB *lsb;
 		if (!(lsb = BuscaLSB(sb, com)))
 		{
-			SendMSN(sb->SBcuenta, "No estás en ese canal");
+			SendMSN(sb->SBcuenta, "No estás dentro de %s", com);
 			return;
 		}
 		if (!(argv[0] = strtok(NULL, "")))
@@ -645,14 +645,14 @@ MSNFUNC(MSNHelp)
 MSNFUNC(MSNJoin)
 {
 	MSNCn *mcn;
-	Canal *icn;
+	Canal *cn;
 	MSNLSB *lsb;
 	if (!SockIrcd)
 	{
 		SendMSN(sb->SBcuenta, "El sistema no está conectado al IRC");
 		return 1;
 	}
-	if (!(icn = BuscaCanal(argv[0])))
+	if (!(cn = BuscaCanal(argv[0])))
 	{
 		SendMSN(sb->SBcuenta, "Este canal no existe");
 		return 1;
@@ -660,7 +660,7 @@ MSNFUNC(MSNJoin)
 	if (!(mcn = BuscaMCn(argv[0])))
 	{
 		mcn = BMalloc(MSNCn);
-		mcn->mcn = icn;
+		mcn->mcn = cn;
 		EntraBot(msncl, argv[0]);
 		AddItem(mcn, msncns);
 	}
@@ -690,6 +690,7 @@ MSNFUNC(MSNPart)
 	}
 	mcn = lsb->mcn;
 	BorraItem(mcn, sb->mcn);
+	ircfree(lsb->cuenta);
 	LiberaItem(lsb, mcn->lsb);
 	if (!mcn->lsb)
 	{
