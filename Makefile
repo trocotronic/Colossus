@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.30 2008-02-13 16:47:18 Trocotronic Exp $
+## $Id: Makefile,v 1.31 2008-02-13 19:02:54 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -362,7 +362,7 @@ src/sql/mysql.dll: src/sql/mysql.c ./include/struct.h ./include/ircd.h
 src/sql/postgresql.dll: src/sql/postgresql.c ./include/struct.h ./include/ircd.h
 	$(CC) $(SQLCFLAGS) /I "C:\dev\postgresql-8.2.3\src\interfaces\libpq" /I "C:\dev\postgresql-8.2.3\src\include" \
 	src/sql/postgresql.c $(SQLLFLAGS) /LIBPATH:"C:\dev\postgresql-8.2.3\src\interfaces\libpq\Release" libpq.lib \
-	user32.lib ws2_32.lib Advapi32.lib shell32.lib
+	user32.lib ws2_32.lib Advapi32.lib shell32.lib /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib 
 	-@copy src\sql\postgresql.dll sql\postgresql.dll >NUL
 	-@copy src\sql\postgresql.pdb sql\postgresql.pdb >NUL
 
