@@ -1,19 +1,18 @@
 /*
- * $Id: msn.h,v 1.2 2008-02-13 16:16:10 Trocotronic Exp $ 
+ * $Id: msn.h,v 1.3 2008-02-13 18:45:23 Trocotronic Exp $ 
  */
 
 typedef struct _msncn MSNCn;
 typedef struct _msnsb MSNSB;
+typedef struct _msncl MSNCl;
 struct _msnsb
 {
 	struct _msnsb *sig;
 	Sock *SBsck;
-	char *SBcuenta;
+	MSNCl *mcl;
 	char SBMsg[BUFSIZE];
 	char *SBToken;
 	char *SBId;
-	unsigned master:1;
-	MSNCn *mcn;
 };
 struct MSNComs
 {
@@ -22,18 +21,35 @@ struct MSNComs
 	int params;
 	int master;
 };
-typedef struct _msnlsb MSNLSB;
-struct _msnlsb
+typedef struct _msnlcl MSNLCl;
+struct _msnlcl
 {
-	struct _msnlsb *sig;
-	char *cuenta;
+	struct _msnlcl *sig;
+	MSNCl *mcl;
+	MSNCn *mcn;
+};
+typedef struct _msnlcl MSNLCn;
+struct _msnlcn
+{
+	struct _msnlcn *sig;
+	MSNCl *mcl;
 	MSNCn *mcn;
 };
 struct _msncn
 {
-	struct _msncn *sig;
-	Canal *mcn;
-	MSNLSB *lsb;
+	MSNCn *sig, *prev, *hsig;
+	Canal *cn;
+	MSNLCl *lcl;
+};
+struct _msncl
+{
+	MSNCl *sig, *prev, *hsig;
+	char *cuenta;
+	char *nombre;
+	char *alias;
+	unsigned master:1;
+	int estado;
+	MSNLCn *lcn;
 };
 	
 #define MSN_VER "VER 1 MSNP8 CVR0"

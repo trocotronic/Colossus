@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.5 2008-02-13 16:16:09 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.6 2008-02-13 18:45:24 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -13,7 +13,6 @@ char *DALoginServer = NULL;
 char *DALoginPath = NULL;
 SOCKFUNC(MSNNSClose);
 int trid = 0;
-int masterin = 0;
 int contactos = 0;
 int lsts = 0;
 void MSNProcesaMsg(MSNSB *, char *);
@@ -29,6 +28,10 @@ int MSNCPart(Cliente *, Canal *, char *);
 int MSNCKick(Cliente *, Canal *, char *);
 int MSNCJoin(Cliente *, Canal *);
 MSNCn *msncns = NULL;
+Hash MSNuTab[UMAX];
+Hash MSNcTab[CHMAX];
+MSNCl *msncls = NULL;
+MSNSB *msnsbs = NULL;
 
 struct MSNComs msncoms[] = {
 	{ "RPT" , MSNProcesaRPT , 2 , 1 } ,
@@ -37,8 +40,36 @@ struct MSNComs msncoms[] = {
 	{ "PART" , MSNPart , 2 , 0 } ,
 	{ 0x0 , 0x0 , 0x0 }
 };
-MSNSB *msnsbs = NULL;
-
+MSNCl *MSNBuscaCliente(char *cuenta)
+{
+	MSNCl *al = NULL;
+	if (cuenta)
+	{
+		u_int hash;
+		hash = HashCliente(cuenta);
+		for (al = (MSNCl *)MSNuTab[hash].item; al; al = al->hsig)
+		{
+			if (!strcasecmp(al->cuenta, cuenta))
+				return al;
+		}
+	}
+	return NULL;
+}
+MSNCn *MSNBuscaCanal(char *canal)
+{
+	MSNCn *an = NULL;
+	if (canal)
+	{
+		u_int hash;
+		hash = HashCanal(canal);
+		for (an = (MSNCn *)MSNcTab[hash].item; an; an = an->hsig)
+		{
+			if (!strcasecmp(an->cn->nombre, canal))
+				return an;
+		}
+	}
+	return NULL;
+}
 MSNSB *BuscaSB(Sock *sck)
 {
 	MSNSB *aux;
@@ -54,64 +85,39 @@ MSNSB *BuscaSBCuenta(char *cuenta)
 	MSNSB *aux;
 	for (aux = msnsbs; aux; aux = aux->sig)
 	{
-		if (!strcasecmp(cuenta, aux->SBcuenta))
+		if (!strcasecmp(cuenta, aux->mcl->cuenta))
 			return aux;
 	}
 	return NULL;
 }
-int BorraSB(MSNSB *sb, int fuerza)
-{
-	if (fuerza)
-	{
-		MSNCn *mcn;
-		MSNLSB *lsb;
-		for (mcn = sb->mcn; mcn; mcn = mcn->sig)
-		{
-			for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
-			{
-				if (!strcasecmp(lsb->cuenta, sb->SBcuenta))
-				{
-					ircfree(lsb->cuenta);
-					LiberaItem(lsb, mcn->lsb);
-					break;
-				}
-			}
-		}
-	}
-	BorraItem(sb, msnsbs);
-	if (!EsCerr(sb->SBsck))
-		SockClose(sb->SBsck);
-	ircfree(sb->SBToken);
-	ircfree(sb->SBId);
-	ircfree(sb->SBcuenta);
-	ircfree(sb);
-	return 1;
-}
-MSNCn *BuscaMCn(char *nombre)
+MSNLCl *BuscaLCl(MSNSB *sb, char *canal)
 {
 	MSNCn *mcn;
-	for (mcn = msncns; mcn; mcn = mcn->sig)
+	if ((mcn = MSNBuscaCanal(canal)))
 	{
-		if (!strcasecmp(mcn->mcn->nombre, nombre))
-			return mcn;
-	}
-	return NULL;
-}
-MSNLSB *BuscaLSB(MSNSB *sb, char *canal)
-{
-	MSNCn *mcn;
-	if ((mcn = BuscaMCn(canal)))
-	{
-		MSNLSB *lsb;
-		for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
+		MSNLCl *lcl;
+		for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
 		{
-			if (!strcasecmp(lsb->cuenta, sb->SBcuenta))
-				return lsb;
+			if (lcl->mcl == sb->mcl)
+				return lcl;
 		}
 	}
 	return NULL;
 }
-
+MSNLCn *BuscaLCn(MSNSB *sb, char *canal)
+{
+	MSNCn *mcn;
+	if ((mcn = MSNBuscaCanal(canal)))
+	{
+		MSNLCn *lcn;
+		for (lcn = sb->mcl->lcn; lcn; lcn = lcn->sig)
+		{
+			if (lcn->mcn == mcn)
+				return lcn;
+		}
+	}
+	return NULL;
+}
 SOCKFUNC(MSNLoginOpen)
 {
 	char *ucuenta, *upass;
@@ -205,6 +211,8 @@ SOCKFUNC(MSNSBOpen)
 		SockWrite(sck, "ANS %i %s %s %s", ++trid, conf_msn->cuenta, sb->SBToken, sb->SBId);
 	else
 		SockWrite(sck, "USR %i %s %s", ++trid, conf_msn->cuenta, sb->SBToken);
+	ircfree(sb->SBToken);
+	ircfree(sb->SBId);
 	return 0;
 }
 SOCKFUNC(MSNSBRead)
@@ -228,11 +236,11 @@ SOCKFUNC(MSNSBRead)
 			MSNProcesaMsg(sb, msg);
 	}
 	else if (!strncmp(data, "USR", 3))
-		SockWrite(sck, "CAL %i %s", ++trid, sb->SBcuenta);
+		SockWrite(sck, "CAL %i %s", ++trid, sb->mcl->cuenta);
 	else if (!strncmp(data, "JOI", 3))
 	{
 		strtok(data, " ");
-		SendMSN(sb->SBcuenta, NULL);
+		SendMSN(sb->mcl->cuenta, NULL);
 	}
 	else if (!strncmp(data, "BYE", 3))
 	{
@@ -252,7 +260,7 @@ SOCKFUNC(MSNSBClose)
 	MSNSB *sb;
 	if (!(sb = BuscaSB(sck)))
 		return 1;
-	BorraSB(sb, data ? 1 : 0);
+	LiberaItem(sb, msnsbs);
 	return 0;
 }
 SOCKFUNC(MSNNSOpen)
@@ -338,7 +346,6 @@ SOCKFUNC(MSNNSRead)
 		else if (strstr(data, "OK "))
 		{
 			trid = 4;
-			masterin = 0;
 			SockWrite(sck, "SYN %i 0", ++trid);
 		}
 	}
@@ -354,16 +361,28 @@ SOCKFUNC(MSNNSRead)
 	}
 	else if (!strncmp(data, "LST", 3))
 	{
-		if (atoi(&data[strlen(data)-1]) == 8)
+		MSNCl *mcl = BMalloc(MSNCl);
+		char *cuenta, *nombre, *listas, *grupos, *c;
+		strtok(data, " ");
+		cuenta = strtok(NULL, " ");
+		nombre = strtok(NULL, " ");
+		listas = strtok(NULL, " ");
+		grupos = strtok(NULL, " ");
+		mcl->cuenta = strdup(cuenta);
+		mcl->nombre = strdup(nombre);
+		c = strchr(cuenta, '@');
+		mcl->alias = (char *)Malloc(sizeof(char) * (c-cuenta+1));
+		strncpy(mcl->alias, cuenta, c-cuenta);
+		if (!strcasecmp(cuenta, conf_msn->master))
+			mcl->master = 1;
+		AddItem(mcl, msncls);
+		InsertaClienteEnHash((Cliente *)mcl, cuenta, MSNuTab);
+		if (listas && atoi(listas) == 8)
 		{
-			char *param;
-			strtok(data, " ");
-			param = strtok(NULL, " ");
-			if (!conf_msn->solomaster || !strcasecmp(param, conf_msn->master))
+			if (!conf_msn->solomaster || mcl->master)
 			{
-				char *name = strtok(NULL, " ");
-				SockWrite(sck, "ADD %i AL %s %s", ++trid, param, name);
-				SockWrite(sck, "ADD %i FL %s %s", ++trid, param, name);
+				SockWrite(sck, "ADD %i AL %s %s", ++trid, cuenta, nombre);
+				SockWrite(sck, "ADD %i FL %s %s", ++trid, cuenta, nombre);
 			}
 		}
 		if (++lsts == contactos)
@@ -406,6 +425,7 @@ SOCKFUNC(MSNNSRead)
 	{
 		char *serv, *port, *cuenta, *id, *tok;
 		MSNSB *sb;
+		MSNCl *mcl;
 		strtok(data, " ");
 		id = strtok(NULL, " ");
 		serv = strtok(NULL, " ");
@@ -414,51 +434,69 @@ SOCKFUNC(MSNNSRead)
 		cuenta = strtok(NULL, " ");
 		serv = strtok(serv, ":");
 		port = strtok(NULL, ":");
-		if (!(sb = BuscaSBCuenta(cuenta)))
+		if ((mcl = MSNBuscaCliente(cuenta)) && !(sb = BuscaSBCuenta(cuenta)))
 		{
 			sb = BMalloc(MSNSB);
-			sb->SBcuenta = strdup(cuenta);
+			sb->mcl = mcl;
 			AddItem(sb, msnsbs);
-			if (!strcasecmp(cuenta, conf_msn->master))
-				sb->master = 1;
+			ircstrdup(sb->SBId, id);
+			ircstrdup(sb->SBToken, tok);
+			sb->SBsck = SockOpenEx(serv, atoi(port), MSNSBOpen, MSNSBRead, NULL, MSNSBClose, 30, 0, OPT_NORECVQ);
 		}
-		else if (sb->SBsck)
-			SockClose(sb->SBsck);
-		ircstrdup(sb->SBId, id);
-		ircstrdup(sb->SBToken, tok);
-		sb->SBsck = SockOpenEx(serv, atoi(port), MSNSBOpen, MSNSBRead, NULL, MSNSBClose, 30, 0, OPT_NORECVQ);
 	}
 	else if (!strncmp(data, "ILN", 3))
 	{
+		char *cuenta;
+		MSNCl *mcl;
 		strtok(data, " ");
 		strtok(NULL, " ");
 		strtok(NULL, " ");
-		if (!strcasecmp(strtok(NULL, " "), conf_msn->master))
-			masterin = 1;
+		cuenta = strtok(NULL, " ");
+		if ((mcl = MSNBuscaCliente(cuenta)))
+			mcl->estado = 1;
 	}
 	else if (!strncmp(data, "NLN", 3))
 	{
+		char *cuenta;
+		MSNCl *mcl;
 		strtok(data, " ");
 		strtok(NULL, " ");
-		if (!strcasecmp(strtok(NULL, " "), conf_msn->master))
-			masterin = 1;
+		cuenta = strtok(NULL, " ");
+		if ((mcl = MSNBuscaCliente(cuenta)))
+			mcl->estado = 1;
 	}
 	else if (!strncmp(data, "FLN", 3))
 	{
 		char *cuenta;
 		MSNSB *sb;
+		MSNCl *mcl;
+		MSNLCn *lcn, *ccsig;
+		MSNLCl *lcl;
 		strtok(data, " ");
 		cuenta = strtok(NULL, " ");
-		if (!strcasecmp(cuenta, conf_msn->master))
-			masterin = 0;
+		if ((mcl = MSNBuscaCliente(cuenta)))
+			mcl->estado = 0;
 		if ((sb = BuscaSBCuenta(cuenta)))
-			BorraSB(sb, 1);
+			LiberaItem(sb, msnsbs);
+		for (lcn = mcl->lcn; lcn; lcn = ccsig)
+		{
+			ccsig = lcn->sig;
+			for (lcl = lcn->mcn->lcl; lcl; lcl = lcl->sig)
+			{
+				if (lcl->mcl == mcl)
+				{
+					LiberaItem(lcl, lcn->mcn->lcl);
+					break;
+				}
+			}
+			Free(lcn);
+		}
+		mcl->lcn = NULL;
 	}
 	else if (!strncmp(data, "CHG", 3))
 	{
 		char *coded = URLEncode(COLOSSUS_VERSION);
 		SockWrite(sck, "REA %i %s %s", ++trid, conf_msn->cuenta, coded);
-		SockWrite(sck, "BLP %i BL", ++trid);
 		Free(coded);
 	}
 	else if (!strncmp(data, "REA", 3))
@@ -478,31 +516,73 @@ SOCKFUNC(MSNNSRead)
 		lsts = 0;
 	}
 	else if (!strncmp(data, "QNG", 3))
+	{
+		SockWrite(sck, "BLP %i BL", ++trid);
 		SendMSN(conf_msn->master, "Soy el complemento MSN de %s. Para cualquier duda que tenga, utilice el comando HELP.", COLOSSUS_VERSION);
+	}
 	return 0;
 }
 SOCKFUNC(MSNNSClose)
 {
+	MSNSB *sb, *bsig;
+	MSNCl *mcl, *lsig;
+	MSNCn *mcn, *csig;
+	MSNLCl *lcl, *llsig;
+	MSNLCn *lcn, *ccsig;
 	sckMSNNS = NULL;
 #ifdef _WIN32
 	SetDlgItemText(hwMain, BT_MSN, "Complemento MSN (OFF)");
 	CheckDlgButton(hwMain, BT_MSN, BST_UNCHECKED);
 #endif
+	for (mcl = msncls; mcl; mcl = lsig)
+	{
+		lsig = mcl->sig;
+		for (lcn = mcl->lcn; lcn; lcn = ccsig)
+		{
+			ccsig = lcn->sig;
+			Free(lcn);
+		}
+		Free(mcl->cuenta);
+		Free(mcl->nombre);
+		Free(mcl);
+	}
+	for (mcn = msncns; mcn; mcn = csig)
+	{
+		csig = mcn->sig;
+		for (lcl = mcn->lcl; lcl; lcl = llsig)
+		{
+			llsig = lcl->sig;
+			Free(lcl);
+		}
+		Free(mcn);
+	}
+	for (sb = msnsbs; sb; sb = bsig)
+	{
+		bsig = sb->sig;
+		Free(sb);
+	}
 	return 0;
 }
 int CargaMSN()
 {
-	MSNSB *sb, *sig;
+	int i;
 	if (!conf_msn)
 		return 1;
 	if (sckMSNNS)
 		SockClose(sckMSNNS);
-	for (sb = msnsbs; sb; sb = sig)
-	{
-		sig = sb->sig;
-		BorraSB(sb, 1);
-	}
 	msnsbs = NULL;
+	msncls = NULL;
+	msncns = NULL;
+	for (i = 0; i < UMAX; i++)
+	{
+		MSNuTab[i].item = NULL;
+		MSNuTab[i].items = 0;
+	}
+	for (i = 0; i < CHMAX; i++)
+	{
+		MSNcTab[i].item = NULL;
+		MSNcTab[i].items = 0;
+	}
 	if (!(sckMSNNS = SockOpen("messenger.hotmail.com", 1863, MSNNSOpen, MSNNSRead, NULL, MSNNSClose)))
 		return 1;
 	InsertaSenyal(SIGN_SYNCH, MSNSynch);
@@ -515,15 +595,8 @@ int CargaMSN()
 }
 int DescargaMSN()
 {
-	MSNSB *sb, *sig;
 	if (sckMSNNS)
 		SockClose(sckMSNNS);
-	for (sb = msnsbs; sb; sb = sig)
-	{
-		sig = sb->sig;
-		BorraSB(sb, 1);
-	}
-	msnsbs = NULL;
 	BorraSenyal(SIGN_SYNCH, MSNSynch);
 	BorraSenyal(SIGN_SOCKCLOSE, MSNSockClose);
 	BorraSenyal(SIGN_CMSG, MSNCMsg);
@@ -535,16 +608,17 @@ int DescargaMSN()
 int SendMSN(char *cuenta, char *msg, ...)
 {
 	MSNSB *sb;
+	MSNCl *mcl;
+	if (!(mcl = MSNBuscaCliente(cuenta)))
+		return 1;
+	if (!mcl->estado)
+		return 2;
 	if (!(sb = BuscaSBCuenta(cuenta)))
 	{
 		sb = BMalloc(MSNSB);
-		sb->SBcuenta = strdup(cuenta);
-		if (!strcasecmp(cuenta, conf_msn->master))
-			sb->master = 1;
+		sb->mcl = mcl;
 		AddItem(sb, msnsbs);
 	}
-	if (sb->master && !masterin)
-		return 1;
 	if (msg)
 	{
 		va_list vl;
@@ -573,18 +647,18 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 	com = strtok(msg, " ");
 	if (*com == '#')
 	{
-		MSNLSB *lsb;
-		if (!(lsb = BuscaLSB(sb, com)))
+		MSNLCl *lcl;
+		if (!(lcl = BuscaLCl(sb, com)))
 		{
-			SendMSN(sb->SBcuenta, "No estás dentro de %s", com);
+			SendMSN(sb->mcl->cuenta, "No estás dentro de %s", com);
 			return;
 		}
 		if (!(argv[0] = strtok(NULL, "")))
 		{
-			SendMSN(sb->SBcuenta, "Faltan parámetros");
+			SendMSN(sb->mcl->cuenta, "Faltan parámetros");
 			return;
 		}
-		Responde((Cliente *)lsb->mcn->mcn, msncl, "%s@***** > %s", strtok(sb->SBcuenta, "@"), argv[0]);
+		Responde((Cliente *)lcl->mcn->cn, msncl, "%s@***** > %s", sb->mcl->alias, argv[0]);
 		return;
 	}
 	for (mcom = msncoms; mcom->com; mcom++)
@@ -594,17 +668,17 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 	}
 	if (!mcom->com)
 	{
-		SendMSN(sb->SBcuenta, "Comando desconocido.");
+		SendMSN(sb->mcl->cuenta, "Comando desconocido.");
 		return;
 	}
-	if (mcom->master && !sb->master)
+	if (mcom->master && !sb->mcl->master)
 	{
-		SendMSN(sb->SBcuenta, "Acceso denegado.");
+		SendMSN(sb->mcl->cuenta, "Acceso denegado.");
 		return;
 	}
-	if (conf_msn->solomaster && !sb->master)
+	if (conf_msn->solomaster && !sb->mcl->master)
 	{
-		SendMSN(sb->SBcuenta, "Función deshabilitada. Acceso sólo para masters.");
+		SendMSN(sb->mcl->cuenta, "Función deshabilitada. Acceso sólo para masters.");
 		return;
 	}
 	if (mcom->params == 1)
@@ -613,7 +687,7 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 	{
 		if (!(argv[0] = strtok(NULL, "")))
 		{
-			SendMSN(sb->SBcuenta, "Faltan parámetros");
+			SendMSN(sb->mcl->cuenta, "Faltan parámetros");
 			return;
 		}
 		mcom->func(sb, argv, 1);
@@ -631,7 +705,7 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 		}
 		if (argc+1 < params)
 		{
-			SendMSN(sb->SBcuenta, "Faltan parámetros");
+			SendMSN(sb->mcl->cuenta, "Faltan parámetros");
 			return;
 		}
 		mcom->func(sb, argv, argc);
@@ -639,75 +713,82 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 }
 MSNFUNC(MSNProcesaRPT)
 {
-	SendMSN(sb->SBcuenta, argv[0]);
+	SendMSN(sb->mcl->cuenta, argv[0]);
 	return 0;
 }
 MSNFUNC(MSNHelp)
 {
 	ircsprintf(buf, "Complemento MSN para %s.\r\n\r\n"
 		"El complemento MSN es una pasarela entre el Messenger y el IRC. Los comandos permitidos son:", COLOSSUS_VERSION);
-	SendMSN(sb->SBcuenta, buf);
+	SendMSN(sb->mcl->cuenta, buf);
 	ircsprintf(buf, "HELP Muestra esta ayuda\r\n"
 				"JOIN Entra en un canal y te permite ver todo lo que acontece\r\n"
 				"PART Sale de un canal");
-	SendMSN(sb->SBcuenta, buf);
+	SendMSN(sb->mcl->cuenta, buf);
 	return 0;
 }
 MSNFUNC(MSNJoin)
 {
 	MSNCn *mcn;
 	Canal *cn;
-	MSNLSB *lsb;
+	MSNLCl *lcl;
+	MSNLCn *lcn;
 	if (!SockIrcd)
 	{
-		SendMSN(sb->SBcuenta, "El sistema no está conectado al IRC");
+		SendMSN(sb->mcl->cuenta, "El sistema no está conectado al IRC");
 		return 1;
 	}
 	if (!(cn = BuscaCanal(argv[0])))
 	{
-		SendMSN(sb->SBcuenta, "Este canal no existe");
+		SendMSN(sb->mcl->cuenta, "Este canal no existe");
 		return 1;
 	}
-	if (!(mcn = BuscaMCn(argv[0])))
+	if (!(mcn = MSNBuscaCanal(argv[0])))
 	{
 		mcn = BMalloc(MSNCn);
-		mcn->mcn = cn;
+		mcn->cn = cn;
 		EntraBot(msncl, argv[0]);
 		AddItem(mcn, msncns);
+		InsertaCanalEnHash((Canal *)mcn, argv[0], MSNcTab);
 	}
-	if (!(lsb = BuscaLSB(sb, argv[0])))
+	if (!(lcl = BuscaLCl(sb, argv[0])))
 	{
-		lsb = BMalloc(MSNLSB);
-		ircstrdup(lsb->cuenta, sb->SBcuenta);
-		lsb->mcn = mcn;
-		AddItem(lsb, mcn->lsb);
+		lcl = BMalloc(MSNLCl);
+		lcl->mcl = sb->mcl;
+		lcl->mcn = mcn;
+		AddItem(lcl, mcn->lcl);
 	}
-	AddItem(mcn, sb->mcn);
+	if (!(lcn = BuscaLCn(sb, argv[0])))
+	{
+		lcn = BMalloc(MSNLCn);
+		lcn->mcl = sb->mcl;
+		lcn->mcn = mcn;
+		AddItem(lcn, sb->mcl->lcn);
+	}
 	return 0;
 }
 MSNFUNC(MSNPart)
 {
-	MSNCn *mcn;
-	MSNLSB *lsb;
+	MSNLCl *lcl;
+	MSNLCn *lcn;
 	if (!SockIrcd)
 	{
-		SendMSN(sb->SBcuenta, "El sistema no está conectado al IRC");
+		SendMSN(sb->mcl->cuenta, "El sistema no está conectado al IRC");
 		return 1;
 	}
-	if (!(lsb = BuscaLSB(sb, argv[0])))
+	if (!(lcl = BuscaLCl(sb, argv[0])) || !(lcn = BuscaLCn(sb, argv[0])))
 	{
-		SendMSN(sb->SBcuenta, "No estás dentro");
+		SendMSN(sb->mcl->cuenta, "No estás dentro de %s", argv[0]);
 		return 1;
 	}
-	mcn = lsb->mcn;
-	BorraItem(mcn, sb->mcn);
-	ircfree(lsb->cuenta);
-	LiberaItem(lsb, mcn->lsb);
-	if (!mcn->lsb)
+	LiberaItem(lcn, sb->mcl->lcn);
+	if (!lcl->mcn->lcl->sig)
 	{
 		SacaBot(msncl, argv[0], NULL);
-		LiberaItem(mcn, msncns);
+		BorraCanalDeHash((Canal *)lcl->mcn, lcl->mcn->cn->nombre, MSNcTab);
+		LiberaItem(lcl->mcn, msncns);
 	}
+	LiberaItem(lcl, lcl->mcn->lcl);
 	return 0;
 }
 int MSNSynch()
@@ -725,44 +806,44 @@ int MSNSockClose()
 int MSNCMsg(Cliente *cl, Canal *cn, char *msg)
 {
 	MSNCn *mcn;
-	MSNLSB *lsb;
-	if ((mcn = BuscaMCn(cn->nombre)))
+	MSNLCl *lcl;
+	if ((mcn = MSNBuscaCanal(cn->nombre)))
 	{
-		for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
-			SendMSN(lsb->cuenta, "[%s] %s > %s", cn->nombre, cl->nombre, msg);
+		for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
+			SendMSN(lcl->mcl->cuenta, "[%s] %s > %s", cn->nombre, cl->nombre, msg);
 	}
 	return 0;
 }
 int MSNCPart(Cliente *cl, Canal *cn, char *msg)
 {
 	MSNCn *mcn;
-	MSNLSB *lsb;
-	if ((mcn = BuscaMCn(cn->nombre)))
+	MSNLCl *lcl;
+	if ((mcn = MSNBuscaCanal(cn->nombre)))
 	{
-		for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
-			SendMSN(lsb->cuenta, "[%s] %s Sale > %s", cn->nombre, cl->nombre, msg ? msg : "");
+		for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
+			SendMSN(lcl->mcl->cuenta, "[%s] %s Sale > %s", cn->nombre, cl->nombre, msg ? msg : "");
 	}
 	return 0;
 }
 int MSNCKick(Cliente *cl, Canal *cn, char *msg)
 {
 	MSNCn *mcn;
-	MSNLSB *lsb;
-	if ((mcn = BuscaMCn(cn->nombre)))
+	MSNLCl *lcl;
+	if ((mcn = MSNBuscaCanal(cn->nombre)))
 	{
-		for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
-			SendMSN(lsb->cuenta, "[%s] %s Pateado > %s", cn->nombre, cl->nombre, msg);
+		for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
+			SendMSN(lcl->mcl->cuenta, "[%s] %s Pateado > %s", cn->nombre, cl->nombre, msg);
 	}
 	return 0;
 }
 int MSNCJoin(Cliente *cl, Canal *cn)
 {
 	MSNCn *mcn;
-	MSNLSB *lsb;
-	if ((mcn = BuscaMCn(cn->nombre)))
+	MSNLCl *lcl;
+	if ((mcn = MSNBuscaCanal(cn->nombre)))
 	{
-		for (lsb = mcn->lsb; lsb; lsb = lsb->sig)
-			SendMSN(lsb->cuenta, "[%s] %s Entra", cn->nombre, cl->nombre);
+		for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
+			SendMSN(lcl->mcl->cuenta, "[%s] %s Entra", cn->nombre, cl->nombre);
 	}
 	return 0;
 }

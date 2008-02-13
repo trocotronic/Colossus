@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.37 2007-10-24 13:52:31 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.38 2008-02-13 18:45:23 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -158,7 +158,7 @@ struct _mallaparam
  !*/
 struct _canal
 {
-	Canal *sig, *hsig, *prev;
+	Canal *sig, *prev, *hsig;
 	char *nombre;
 	u_long modos;
 	char *topic;
