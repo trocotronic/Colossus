@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.19 2008-02-13 16:16:09 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.20 2008-02-13 16:47:18 Trocotronic Exp $ 
  */
 
 #include "struct.h"
