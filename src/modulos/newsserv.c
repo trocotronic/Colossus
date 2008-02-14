@@ -1,10 +1,9 @@
 /*
- * $Id: newsserv.c,v 1.15 2008-02-13 16:16:10 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.16 2008-02-14 21:32:11 Trocotronic Exp $ 
  */
 
 #define XML_STATIC
 #include <expat.h>
-#include <iconv.h>
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -19,7 +18,6 @@
 #include "modulos/nickserv.h"
 
 NewsServ *newsserv = NULL;
-iconv_t icv;
 Noticia *noticias = NULL;
 Timer *timerrss = NULL;
 
@@ -132,7 +130,6 @@ int MOD_CARGA(NewsServ)(Modulo *mod)
 	}
 	else
 		WSSet(NULL, mod);
-	icv = iconv_open("ISO-8859-1", "UTF-8");
 	timerrss = IniciaCrono(0, 300, DescargaRSS, NULL);
 	DescargaRSS();
 	return errores;
@@ -154,7 +151,6 @@ int MOD_DESCARGA(NewsServ)()
 			Free(rss[i]);
 		}
 	}
-	iconv_close(icv);
 	BotUnset(newsserv);
 	ApagaCrono(timerrss);
 	BorraSenyal(SIGN_SQL, WSSigSQL);
@@ -281,24 +277,11 @@ void XMLCALL xmlFin(Rss *rs, const char *nombre)
 			}
 			if (!rs->ids[i])
 			{
-				char tmp[BUFSIZE], *c2;
-				char *c1;
-				size_t t1, t2;
-				*(rs->not.t) = *(rs->not.d) = '\0';
-				t1 = strlen(rs->not.titular);
-				c1 = &(rs->not.titular[0]);
-				t2 = sizeof(tmp);
-				c2 = &tmp[0];
-				iconv(icv, &c1, &t1, &c2, &t2);
-				strncpy(rs->not.titular, tmp, t2);
-				rs->not.titular[sizeof(tmp)-t2] = '\0';
-				t1 = strlen(rs->not.descripcion);
-				c1 = &(rs->not.descripcion[0]);
-				t2 = sizeof(tmp);
-				c2 = &tmp[0];
-				iconv(icv, &c1, &t1, &c2, &t2);
-				strncpy(rs->not.descripcion, tmp, t2);
-				rs->not.descripcion[sizeof(tmp)-t2] = '\0';
+				char tmp[BUFSIZE];
+				CambiarCharset("UTF-8", "ISO-8859-1", rs->not.titular, tmp, BUFSIZE);
+				strlcpy(rs->not.titular, tmp, sizeof(rs->not.titular));
+				CambiarCharset("UTF-8", "ISO-8859-1", rs->not.descripcion, tmp, BUFSIZE);
+				strlcpy(rs->not.descripcion, tmp, sizeof(rs->not.descripcion));
 				InsertaNoticia(rs->not.id, rs->not.titular, rs->not.descripcion, rs->servicio);
 				/*for (cl = clientes; cl; cl = cl->sig)
 				{
