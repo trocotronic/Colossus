@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.10 2008-02-14 16:24:51 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.11 2008-02-14 16:33:17 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -474,8 +474,11 @@ SOCKFUNC(MSNNSRead)
 		MSNLCl *lcl;
 		strtok(data, " ");
 		cuenta = strtok(NULL, " ");
-		if ((mcl = MSNBuscaCliente(cuenta)))
-			mcl->estado = 0;
+		if (!(mcl = MSNBuscaCliente(cuenta)))
+			return 1;
+		mcl->estado = 0;
+		if ((sb = BuscaSBCuenta(cuenta)))
+			LiberaItem(sb, msnsbs);
 		for (lcn = mcl->lcn; lcn; lcn = ccsig)
 		{
 			ccsig = lcn->sig;
@@ -491,8 +494,6 @@ SOCKFUNC(MSNNSRead)
 			Free(lcn);
 		}
 		mcl->lcn = NULL;
-		if ((sb = BuscaSBCuenta(cuenta)))
-			LiberaItem(sb, msnsbs);
 	}
 	else if (!strncmp(data, "CHG", 3))
 	{
