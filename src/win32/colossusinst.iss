@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.26 2008-01-21 19:46:47 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.27 2008-02-14 16:19:29 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -37,6 +37,7 @@ Source: ..\..\cambios; DestDir: {app}; DestName: cambios.txt; Flags: ignoreversi
 Source: ..\..\ejemplo.conf; DestDir: {app}; DestName: ejemplo.conf; Flags: ignoreversion
 Source: ..\..\proximamente; DestDir: {app}; DestName: proximamente.txt; Flags: ignoreversion
 Source: ..\..\pthreadVC2.dll; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\iconv.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\colossusdoc.html; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\modulos\chanserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
 Source: ..\..\modulos\nickserv.dll; DestDir: {app}\modulos; Flags: ignoreversion

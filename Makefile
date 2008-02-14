@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.32 2008-02-14 14:37:06 Trocotronic Exp $
+## $Id: Makefile,v 1.33 2008-02-14 16:19:28 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -32,6 +32,10 @@ OPENSSL_LIB_DIR="C:\dev\openssl\lib"
 PTHREAD_INC="C:\dev\pthreads"
 PTHREAD_LIB="C:\dev\pthreads"
 ###### FIN PTHREAD ######
+#### SOPORTE ICONV ####
+ICONV_INC="C:\dev\libiconv\include"
+ICONV_LIB="C:\dev\libiconv\lib"
+###### FIN ICONV ######
 
 !IFDEF DEBUG
 DBGCFLAG=/MD /Zi /W1
@@ -74,7 +78,8 @@ CFLAGS=/J /D _WIN32 /D _CRT_NONSTDC_NO_DEPRECATE /D _CRT_SECURE_NO_DEPRECATE /D 
 EXECFLAGS=$(DBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c
 LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
-	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib /NODEFAULTLIB:libcmt
+	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib \
+	/LIBPATH:$(ICONV_LIB) iconv.lib /NODEFAULTLIB:libcmt
 EXP_OBJ_FILES=SRC/CORE.OBJ SRC/CRIPTO.OBJ SRC/EVENTOS.OBJ SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/MSN.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
 	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/VERSION.OBJ $(ZLIBOBJ) $(SSLOBJ) 
@@ -157,6 +162,7 @@ SETUP:
 	-@copy src\win32\setup.h include\setup.h >NUL
 	-@copy $(PTHREAD_LIB)\pthreadVC2.dll pthreadVC2.dll >NUL
       -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
+      -@copy $(ICONV_LIB)\iconv.dll iconv.dll >NUL
      
 Colossus.exe: $(OBJ_FILES)
 	$(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
@@ -209,7 +215,7 @@ src/socks.obj: src/socks.c ./include/struct.h ./include/ircd.h $(ZIP_HEAD)
 	$(CC) $(EXECFLAGS) src/socks.c 
 	
 src/soporte.obj: src/soporte.c ./include/struct.h ./include/ircd.h ./include/modulos.h
-	$(CC) $(EXECFLAGS) src/soporte.c
+	$(CC) $(EXECFLAGS) /I $(ICONV_INC) src/soporte.c
         
 src/ircsprintf.obj: src/ircsprintf.c ./include/ircsprintf.h
 	$(CC) $(EXECFLAGS) src/ircsprintf.c        
@@ -307,9 +313,9 @@ src/modulos/smsserv.dll: src/modulos/smsserv.c ./include/struct.h ./include/ircd
 	-@copy src\modulos\smsserv.pdb modulos\smsserv.pdb >NUL
 	
 src/modulos/newsserv.dll: src/modulos/newsserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/modulos/chanserv.h ./include/modulos/nickserv.h ./include/modulos/newsserv.h
-	$(CC) /I "C:\dev\expat\lib" /I "C:\dev\libiconv\include" $(MODCFLAGS) src/modulos/newsserv.c \
+	$(CC) /I "C:\dev\expat\lib" $(MODCFLAGS) src/modulos/newsserv.c \
 	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:"C:\dev\expat\lib\Release_static" \
-	libexpatMD.lib /LIBPATH:"C:\dev\libiconv\lib" iconv.lib /NODEFAULTLIB:libcmt
+	libexpatMD.lib /NODEFAULTLIB:libcmt
 	-@copy src\modulos\newsserv.dll modulos\newsserv.dll >NUL
 	-@copy src\modulos\newsserv.pdb modulos\newsserv.pdb >NUL
 	

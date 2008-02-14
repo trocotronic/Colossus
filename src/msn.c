@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.8 2008-02-14 14:45:23 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.9 2008-02-14 16:19:28 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -634,12 +634,13 @@ int SendMSN(char *cuenta, char *msg, ...)
 		SockWrite(sckMSNNS, "XFR %i SB", ++trid);
 	else
 	{
-		SockWrite(sb->SBsck, "MSG %i U %i", ++trid, 118+strlen(sb->SBMsg));
+		CambiarCharset("ISO-8859-1", "UTF-8", sb->SBMsg, buf, BUFSIZE);
+		SockWrite(sb->SBsck, "MSG %i U %i", ++trid, 113+strlen(buf));
 		SockWrite(sb->SBsck, "MIME-Version: 1.0");
-		SockWrite(sb->SBsck, "Content-Type: text/plain; charset=ISO-8859-1");
+		SockWrite(sb->SBsck, "Content-Type: text/plain; charset=UTF-8");
 		SockWrite(sb->SBsck, "X-MMS-IM-Format: FN=Arial; EF=B; CO=0; CS=0; PF=0");
 		SockWrite(sb->SBsck, "");
-		SockWriteEx(sb->SBsck, 0, sb->SBMsg);
+		SockWriteEx(sb->SBsck, 0, buf);
 	}
 	return 0;
 }

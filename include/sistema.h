@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.22 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.23 2008-02-14 16:19:29 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR
@@ -254,3 +254,4 @@ struct _duracion
 };
 extern int MideDuracionEx(u_int, Duracion *);
 extern char *MideDuracion(u_int);
+extern int CambiarCharset(char *, char *, char *, char *, size_t);

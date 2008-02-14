@@ -35,6 +35,7 @@ EXPORTS
 	BuscaTipo
 	BuscaTKL
 	CambiaNick
+	CambiarCharset
 	CargaExtensiones
 	ChkBtCon
 	CierraColossus

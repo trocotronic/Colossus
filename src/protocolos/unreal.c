@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.55 2008-02-14 14:37:07 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.56 2008-02-14 16:19:29 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -1920,8 +1920,8 @@ void EntraCliente(Cliente *cl, char *canal)
 }
 void ActualizaCanalPrivado(Canal *cn)
 {
-	if (!(cn->modos & CHMODE_INVITEONLY || cn->modos & CHMODE_KEY || cn->modos & CHMODE_MODERATED ||
-		cn->modos & CHMODE_OPERONLY || cn->modos & CHMODE_ADMONLY || cn->modos & CHMODE_MODREG ||
+	if (!(cn->modos & CHMODE_INVITEONLY || cn->modos & CHMODE_KEY ||
+		cn->modos & CHMODE_OPERONLY || cn->modos & CHMODE_ADMONLY ||
 		cn->modos & CHMODE_RGSTRONLY || cn->modos & CHMODE_ONLYSECURE))
 	{
 		if (cn->modos & CHMODE_LIMIT)

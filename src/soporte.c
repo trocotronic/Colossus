@@ -1,11 +1,12 @@
 /*
- * $Id: soporte.c,v 1.20 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.21 2008-02-14 16:19:28 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
 #include <pthread.h>
+#include <iconv.h>
 #ifdef _WIN32
 #include <sys/timeb.h>
 #include <io.h>
@@ -784,4 +785,30 @@ char *MideDuracion(u_int segs)
 	MideDuracionEx(segs, &d);
 	ircsprintf(tmp, "%u días, %02u:%02u:%02u", d.sems*7+d.dias, d.horas, d.mins, d.segs);
 	return tmp;
+}
+/*
+ * @desc: Convierte una cadena con un conjunto de caracteres a otro conjunto de caracteres. Por ejemplo, permite pasar de UTF-8 a ISO-8859-1
+ * @params: $from [in] Charset de la cadena de origen. Más información en http://www.gnu.org/software/libiconv/documentation/libiconv/iconv_open.3.html
+ 		$to [in] Charset al que se quiere convertir.
+ 		$src [in] Cadena que se desea transformar.
+ 		$dst [out] Buffer de destino al que se copiará la nueva cadena. Debe ser lo suficientemente grande para albergar la nueva cadena.
+ 		$siz [in] Tamaño máximo del buffer de destino.
+ * @cat: Programa
+ * @ret: Devuelve el número de bytes transformados o -1 si ha ocurrido un error.
+!*/
+int CambiarCharset(char *from, char *to, char *src, char *dst, size_t siz)
+{
+	iconv_t icv;
+	size_t t1, t2;
+	char *d = dst;
+	if ((icv = iconv_open(to, from)) == (iconv_t)-1)
+		return -1;
+	t1 = strlen(src);
+	t2 = siz;
+	if (iconv(icv, &src, &t1, &dst, &t2) == -1)
+		siz = -1;
+	else
+		d[(siz = (siz-t2))] = '\0';
+	iconv_close(icv);
+	return siz;
 }
