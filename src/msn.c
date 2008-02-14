@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.9 2008-02-14 16:19:28 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.10 2008-02-14 16:24:51 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -130,6 +130,8 @@ SOCKFUNC(MSNLoginOpen)
 	SockWrite(sck, "");
 	Free(ucuenta);
 	Free(upass);
+	ircfree(DALoginServer);
+	ircfree(DALoginPath);
 	return 0;
 }
 SOCKFUNC(MSNLoginRead)
@@ -162,8 +164,8 @@ SOCKFUNC(MSNLoginRead)
 		strtok(data, " ");
 		param = strtok(NULL, " ");
 		param = strstr(param, "//")+2;
-		DALoginServer = strtok(param, "/");
-		DALoginPath = strtok(NULL, "/");
+		ircstrdup(DALoginServer, strtok(param, "/"));
+		ircstrdup(DALoginPath, strtok(NULL, "/"));
 		if (!SockOpenEx(DALoginServer, 443, MSNLoginOpen, MSNLoginRead, NULL, NULL, 30, 0, OPT_SSL))
 		{
 			Loguea(LOG_MSN, "No puede conectar al LoginServer.");
@@ -190,9 +192,8 @@ SOCKFUNC(MSNNexusRead)
 			if (!strncmp(param, "DALogin=", 7))
 			{
 				strtok(param, "=");
-				DALoginServer = strtok(NULL, "=");
-				DALoginServer = strtok(DALoginServer, "/");
-				DALoginPath = strtok(NULL, "/");
+				ircstrdup(DALoginServer, strtok(strtok(NULL, "="), "/"));
+				ircstrdup(DALoginPath, strtok(NULL, "/"));
 				if (!SockOpenEx(DALoginServer, 443, MSNLoginOpen, MSNLoginRead, NULL, NULL, 30, 0, OPT_SSL))
 				{
 					Loguea(LOG_MSN, "No puede conectar al LoginServer.");
@@ -363,7 +364,7 @@ SOCKFUNC(MSNNSRead)
 	else if (!strncmp(data, "LST", 3))
 	{
 		MSNCl *mcl = BMalloc(MSNCl);
-		char *cuenta, *nombre, *listas, *grupos, *c;
+		char *cuenta, *nombre, *listas, *grupos;
 		strtok(data, " ");
 		cuenta = strtok(NULL, " ");
 		nombre = strtok(NULL, " ");
@@ -371,9 +372,7 @@ SOCKFUNC(MSNNSRead)
 		grupos = strtok(NULL, " ");
 		mcl->cuenta = strdup(cuenta);
 		mcl->nombre = strdup(nombre);
-		c = strchr(cuenta, '@');
-		mcl->alias = (char *)Malloc(sizeof(char) * (c-cuenta+1));
-		strncpy(mcl->alias, cuenta, c-cuenta);
+		mcl->alias = strdup(strtok(cuenta, "@"));
 		if (!strcasecmp(cuenta, conf_msn->master))
 			mcl->master = 1;
 		AddItem(mcl, msncls);
