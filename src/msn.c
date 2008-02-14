@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.11 2008-02-14 16:33:17 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.12 2008-02-14 16:37:17 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -373,16 +373,16 @@ SOCKFUNC(MSNNSRead)
 		mcl->cuenta = strdup(cuenta);
 		mcl->nombre = strdup(nombre);
 		mcl->alias = strdup(strtok(cuenta, "@"));
-		if (!strcasecmp(cuenta, conf_msn->master))
+		if (!strcasecmp(mcl->cuenta, conf_msn->master))
 			mcl->master = 1;
 		AddItem(mcl, msncls);
-		InsertaClienteEnHash((Cliente *)mcl, cuenta, MSNuTab);
+		InsertaClienteEnHash((Cliente *)mcl, mcl->cuenta, MSNuTab);
 		if (listas && atoi(listas) == 8)
 		{
 			if (!conf_msn->solomaster || mcl->master)
 			{
-				SockWrite(sck, "ADD %i AL %s %s", ++trid, cuenta, nombre);
-				SockWrite(sck, "ADD %i FL %s %s", ++trid, cuenta, nombre);
+				SockWrite(sck, "ADD %i AL %s %s", ++trid, mcl->cuenta, nombre);
+				SockWrite(sck, "ADD %i FL %s %s", ++trid, mcl->cuenta, nombre);
 			}
 		}
 		if (++lsts == contactos)
