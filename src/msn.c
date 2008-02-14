@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.12 2008-02-14 16:37:17 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.13 2008-02-14 21:32:23 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -548,6 +548,7 @@ SOCKFUNC(MSNNSClose)
 		Free(mcl->nombre);
 		Free(mcl);
 	}
+	msncls = NULL;
 	for (mcn = msncns; mcn; mcn = csig)
 	{
 		csig = mcn->sig;
@@ -558,11 +559,13 @@ SOCKFUNC(MSNNSClose)
 		}
 		Free(mcn);
 	}
+	msncns = NULL;
 	for (sb = msnsbs; sb; sb = bsig)
 	{
 		bsig = sb->sig;
 		Free(sb);
 	}
+	msnsbs = NULL;
 	return 0;
 }
 int CargaMSN()
