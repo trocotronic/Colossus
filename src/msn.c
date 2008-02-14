@@ -1,5 +1,5 @@
-ï»¿/*
- * $Id: msn.c,v 1.15 2008-02-14 22:46:07 Trocotronic Exp $ 
+/*
+ * $Id: msn.c,v 1.16 2008-02-14 23:18:10 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -138,7 +138,7 @@ SOCKFUNC(MSNLoginRead)
 {
 	if (!strcmp(data, "HTTP/1.1 401 Unauthorized"))
 	{
-		Loguea(LOG_MSN, "Cuenta o password incorrectos. AutentificaciÃ³n fallida.");
+		Loguea(LOG_MSN, "Cuenta o password incorrectos. Autentificación fallida.");
 		return 1;
 	}
 	else if (!strncmp(data, "Authentication-Info:", 20))
@@ -273,7 +273,7 @@ SOCKFUNC(MSNNSRead)
 			SockWrite(sck, "CVR 2 0x0409 win 4.10 i386 MSNMSGR 7.0.0816 MSMSGS %s", conf_msn->cuenta);
 		else
 		{
-			Loguea(LOG_MSN, "No se puede verificar la versiÃ³n");
+			Loguea(LOG_MSN, "No se puede verificar la versión");
 			SockClose(sck);
 		}
 	}
@@ -696,12 +696,12 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 		MSNLCl *lcl;
 		if (!(lcl = BuscaLCl(sb, com)))
 		{
-			SendMSN(sb->mcl->cuenta, "No estÃ¡s dentro de %s", com);
+			SendMSN(sb->mcl->cuenta, "No estás dentro de %s", com);
 			return;
 		}
 		if (!(argv[0] = strtok(NULL, "")))
 		{
-			SendMSN(sb->mcl->cuenta, "Faltan parÃ¡metros");
+			SendMSN(sb->mcl->cuenta, "Faltan parámetros");
 			return;
 		}
 		Responde((Cliente *)lcl->mcn->cn, msncl, "%s@***** > %s", sb->mcl->alias, argv[0]);
@@ -724,7 +724,7 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 	}
 	if (conf_msn->solomaster && !sb->mcl->master)
 	{
-		SendMSN(sb->mcl->cuenta, "FunciÃ³n deshabilitada. Acceso sÃ³lo para masters.");
+		SendMSN(sb->mcl->cuenta, "Función deshabilitada. Acceso sólo para masters.");
 		return;
 	}
 	if (mcom->params == 1)
@@ -733,7 +733,7 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 	{
 		if (!(argv[0] = strtok(NULL, "")))
 		{
-			SendMSN(sb->mcl->cuenta, "Faltan parÃ¡metros");
+			SendMSN(sb->mcl->cuenta, "Faltan parámetros");
 			return;
 		}
 		mcom->func(sb, argv, 1);
@@ -751,7 +751,7 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 		}
 		if (argc+1 < params)
 		{
-			SendMSN(sb->mcl->cuenta, "Faltan parÃ¡metros");
+			SendMSN(sb->mcl->cuenta, "Faltan parámetros");
 			return;
 		}
 		mcom->func(sb, argv, argc);
@@ -781,7 +781,7 @@ MSNFUNC(MSNJoin)
 	MSNLCn *lcn;
 	if (!SockIrcd)
 	{
-		SendMSN(sb->mcl->cuenta, "El sistema no estÃ¡ conectado al IRC");
+		SendMSN(sb->mcl->cuenta, "El sistema no está conectado al IRC");
 		return 1;
 	}
 	if (!(cn = BuscaCanal(argv[0])))
@@ -826,12 +826,12 @@ MSNFUNC(MSNPart)
 	MSNLCn *lcn;
 	if (!SockIrcd)
 	{
-		SendMSN(sb->mcl->cuenta, "El sistema no estÃ¡ conectado al IRC");
+		SendMSN(sb->mcl->cuenta, "El sistema no está conectado al IRC");
 		return 1;
 	}
 	if (!(lcl = BuscaLCl(sb, argv[0])) || !(lcn = BuscaLCn(sb, argv[0])))
 	{
-		SendMSN(sb->mcl->cuenta, "No estÃ¡s dentro de %s", argv[0]);
+		SendMSN(sb->mcl->cuenta, "No estás dentro de %s", argv[0]);
 		return 1;
 	}
 	LiberaItem(lcn, sb->mcl->lcn);
