@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.13 2008-02-14 21:32:23 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.14 2008-02-14 22:35:39 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -390,34 +390,73 @@ SOCKFUNC(MSNNSRead)
 	}
 	else if (!strncmp(data, "ADD", 3))
 	{
-		char *param;
 		strtok(data, " ");
 		if (atoi(strtok(NULL, " ")) == 0)
 		{
+			char *cuenta, *nombre;
+			MSNCl *mcl;
 			strtok(NULL, " ");
 			strtok(NULL, " ");
-			param = strtok(NULL, " ");
-			if (!conf_msn->solomaster || !strcasecmp(param, conf_msn->master))
+			cuenta = strtok(NULL, " ");
+			nombre = strtok(NULL, " ");
+			if ((!conf_msn->solomaster || !strcasecmp(cuenta, conf_msn->master)) && !(mcl = MSNBuscaCliente(cuenta)))
 			{
-				char *name = strtok(NULL, " ");
-				SockWrite(sck, "ADD %i AL %s %s", ++trid, param, name);
-				SockWrite(sck, "ADD %i FL %s %s", ++trid, param, name);
+				mcl = BMalloc(MSNCl);
+				mcl->cuenta = strdup(cuenta);
+				mcl->nombre = strdup(nombre);
+				mcl->alias = strdup(strtok(cuenta, "@"));
+				mcl->estado = 1;
+				if (!strcasecmp(mcl->cuenta, conf_msn->master))
+					mcl->master = 1;
+				AddItem(mcl, msncls);
+				InsertaClienteEnHash((Cliente *)mcl, mcl->cuenta, MSNuTab);
+				SockWrite(sck, "ADD %i AL %s %s", ++trid, mcl->cuenta, mcl->nombre);
+				SockWrite(sck, "ADD %i FL %s %s", ++trid, mcl->cuenta, mcl->nombre);
 			}
 		}
 	}
 	else if (!strncmp(data, "REM", 3))
 	{
-		char *param;
 		strtok(data, " ");
 		if (atoi(strtok(NULL, " ")) == 0)
 		{
+			char *cuenta;
+			MSNCl *mcl;
+			MSNSB *sb;
+			MSNLCn *lcn, *ccsig;
+			MSNLCl *lcl;
 			strtok(NULL, " ");
 			strtok(NULL, " ");
-			param = strtok(NULL, " ");
-			if (!conf_msn->solomaster || !strcasecmp(param, conf_msn->master))
+			cuenta = strtok(NULL, " ");
+			if ((!conf_msn->solomaster || !strcasecmp(cuenta, conf_msn->master)) && (mcl = MSNBuscaCliente(cuenta)))
 			{
-				SockWrite(sck, "REM %i FL %s", ++trid, param);
-				SockWrite(sck, "REM %i AL %s", ++trid, param);
+				SockWrite(sck, "REM %i FL %s", ++trid, cuenta);
+				SockWrite(sck, "REM %i AL %s", ++trid, cuenta);
+				if ((sb = BuscaSBCuenta(cuenta)))
+				{
+					if (sb->SBsck)
+						SockClose(sb->SBsck);
+					LiberaItem(sb, msnsbs);
+				}
+				for (lcn = mcl->lcn; lcn; lcn = ccsig)
+				{
+					ccsig = lcn->sig;
+					for (lcl = lcn->mcn->lcl; lcl; lcl = lcl->sig)
+					{
+						if (lcl->mcl == mcl)
+						{
+							LiberaItem(lcl, lcn->mcn->lcl);
+							Responde((Cliente *)lcn->mcn->cn, msncl, "%s@***** Cierra", mcl->alias);
+							break;
+						}
+					}
+					Free(lcn);
+				}
+				BorraClienteDeHash((Cliente *)mcl, mcl->cuenta, MSNuTab);
+				Free(mcl->cuenta);
+				Free(mcl->alias);
+				Free(mcl->nombre);
+				LiberaItem(mcl, msncls);
 			}
 		}
 	}
@@ -478,7 +517,11 @@ SOCKFUNC(MSNNSRead)
 			return 1;
 		mcl->estado = 0;
 		if ((sb = BuscaSBCuenta(cuenta)))
+		{
+			if (sb->SBsck)
+				SockClose(sb->SBsck);
 			LiberaItem(sb, msnsbs);
+		}
 		for (lcn = mcl->lcn; lcn; lcn = ccsig)
 		{
 			ccsig = lcn->sig;
@@ -516,6 +559,8 @@ SOCKFUNC(MSNNSRead)
 		strtok(NULL, " ");
 		contactos = atoi(strtok(NULL, " "));
 		lsts = 0;
+		if (!contactos)
+			SockWrite(sck, "CHG %i NLN 0", ++trid);
 	}
 	else if (!strncmp(data, "QNG", 3))
 	{
@@ -563,6 +608,8 @@ SOCKFUNC(MSNNSClose)
 	for (sb = msnsbs; sb; sb = bsig)
 	{
 		bsig = sb->sig;
+		if (sb->SBsck)
+			SockClose(sb->SBsck);
 		Free(sb);
 	}
 	msnsbs = NULL;
