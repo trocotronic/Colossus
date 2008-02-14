@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.14 2008-02-14 22:35:39 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.15 2008-02-14 22:46:07 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -244,17 +244,8 @@ SOCKFUNC(MSNSBRead)
 		strtok(data, " ");
 		SendMSN(sb->mcl->cuenta, NULL);
 	}
-	/*else if (!strncmp(data, "BYE", 3))
-	{
-		char *c, *param;
-		strtok(data, " ");
-		param = strtok(NULL, " ");
-		if ((c = strchr(param, '\r')))
-			*c = '\0';
-		else if ((c = strchr(param, '\n')))
-			*c = '\0';
-		//SockClose(sb->SBsck);
-	}*/
+	else if (!strncmp(data, "BYE", 3))
+		SockClose(sb->SBsck);
 	return 0;
 }
 SOCKFUNC(MSNSBClose)
