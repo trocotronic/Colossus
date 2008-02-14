@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.58 2008-02-13 16:16:08 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.59 2008-02-14 14:37:07 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -436,7 +436,7 @@ void InsertaCanalEnCliente(Cliente *cl, Canal *cn)
 	if (!cl || EsLinkCanal(cl->canal, cn))
 		return;
 	lk = (LinkCanal *)Malloc(sizeof(LinkCanal));
-	lk->chan = cn;
+	lk->cn = cn;
 	AddItem(lk, cl->canal);
 	cl->canales++;
 }
@@ -457,7 +457,7 @@ int BorraCanalDeCliente(Cliente *cl, Canal *cn)
 		return 0;
 	for (aux = cl->canal; aux; aux = aux->sig)
 	{
-		if (aux->chan == cn)
+		if (aux->cn == cn)
 		{
 			if (prev)
 				prev->sig = aux->sig;
@@ -741,7 +741,7 @@ int EsLinkCanal(LinkCanal *link, Canal *cn)
 	LinkCanal *aux;
 	for (aux = link; aux; aux = aux->sig)
 	{
-		if (aux->chan == cn)
+		if (aux->cn == cn)
 			return 1;
 	}
 	return 0;

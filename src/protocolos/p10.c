@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.40 2008-02-13 16:16:11 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.41 2008-02-14 14:37:07 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -142,6 +142,7 @@ void ProcesaModos(Canal *, char *);
 void ProcesaModo(Cliente *, Canal *, char **, int);
 void p_kick_vl(Cliente *, Cliente *, Canal *, char *, va_list *);
 int p_msg_vl(Cliente *, Cliente *, u_int, char *, va_list *);
+void ActualizaCanalPrivado(Canal *);
 
 /* Para no tocar la variable ->hsig, se crea otra estructura para guardar los trios y se indexa por el numeric */
 typedef struct _trio
@@ -329,7 +330,7 @@ int p_quit(Cliente *bl, char *motivo, ...)
 	else
 		EnviaAServidor("%s %s", bl->trio, TOK_QUIT);
 	for (lk = bl->canal; lk; lk = lk->sig)
-		BorraClienteDeCanal(lk->chan, bl);
+		BorraClienteDeCanal(lk->cn, bl);
 	BorraClienteDeNumerico(bl, bl->trio, tTab);
 	LiberaMemoriaCliente(bl);
 	return 0;
@@ -352,7 +353,7 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 		EnviaAServidor("%s %s %s :%s Usuario desconectado.", bl->trio, TOK_KILL, cl->trio, me.nombre);
 	LlamaSenyal(SIGN_QUIT, 2, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
-		BorraClienteDeCanal(lk->chan, cl);
+		BorraClienteDeCanal(lk->cn, cl);
 	LiberaMemoriaCliente(cl);
 	return 0;
 }
@@ -1055,7 +1056,10 @@ IRCFUNC(m_quit)
 	LinkCanal *lk;
 	LlamaSenyal(SIGN_QUIT, 2, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
-		BorraClienteDeCanal(lk->chan, cl);
+	{
+		BorraClienteDeCanal(lk->cn, cl);
+		ActualizaCanalPrivado(lk->cn);
+	}
 	LiberaMemoriaCliente(cl);
 	return 0;
 }
@@ -1066,7 +1070,10 @@ IRCFUNC(m_kill)
 	{
 		LinkCanal *lk;
 		for (lk = al->canal; lk; lk = lk->sig)
-			BorraClienteDeCanal(lk->chan, al);
+		{
+			BorraClienteDeCanal(lk->cn, al);
+			ActualizaCanalPrivado(lk->cn);
+		}
 		LiberaMemoriaCliente(al);
 	}
 	if (conf_set->opts & REKILL)
@@ -1111,6 +1118,7 @@ IRCFUNC(m_part)
 	LlamaSenyal(SIGN_PART, 3, cl, cn, parv[2]);
 	BorraCanalDeCliente(cl, cn);
 	BorraClienteDeCanal(cn, cl);
+	ActualizaCanalPrivado(cn);
 	return 0;
 }
 IRCFUNC(m_mode)
@@ -1126,6 +1134,7 @@ IRCFUNC(m_mode)
 		Canal *cn;
 		cn = CreaCanal(parv[1]);
 		ProcesaModo(cl, cn, parv + 2, parc - 2);
+		ActualizaCanalPrivado(cn);
 		LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	}
 	return 0;
@@ -1141,6 +1150,7 @@ IRCFUNC(m_kick)
 	LlamaSenyal(SIGN_KICK, 4, cl, al, cn, parv[3]);
 	BorraCanalDeCliente(al, cn);
 	BorraClienteDeCanal(cn, al);
+	ActualizaCanalPrivado(cn);
 	if (EsBot(al))
 	{
 		if (conf_set->opts & REJOIN)
@@ -1472,5 +1482,24 @@ void EntraCliente(Cliente *cl, char *canal)
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);
+	ActualizaCanalPrivado(cn);
 	LlamaSenyal(SIGN_JOIN, 2, cl, cn);
+}
+void ActualizaCanalPrivado(Canal *cn)
+{
+	if (!(cn->modos & CHMODE_INVITEONLY || cn->modos & CHMODE_KEY || cn->modos & CHMODE_RGSTRONLY || cn->modos & CHMODE_MODERATED))
+	{
+		if (cn->modos & CHMODE_LIMIT)
+		{
+			MallaParam *mpm;
+			if ((mpm = BuscaMallaParam(cn, 'l')) && atoi(mpm->param) <= cn->miembros)
+				cn->privado = 0;
+			else
+				cn->privado = 1;
+		}
+		else
+			cn->privado = 0;
+	}
+	else
+		cn->privado = 1;
 }

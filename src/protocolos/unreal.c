@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.54 2008-02-13 16:16:11 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.55 2008-02-14 14:37:07 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -217,6 +217,7 @@ u_long CHMODE_NONICKCHANGE;
 void ProcesaModos(Canal *, char *);
 DLLFUNC void ProcesaModo(Cliente *, Canal *, char **, int);
 DLLFUNC void EntraCliente(Cliente *, char *);
+void ActualizaCanalPrivado(Canal *);
 char *DecodeIP(char *buf)
 {
 	int len = strlen(buf);
@@ -366,7 +367,7 @@ int p_quit(Cliente *bl, char *motivo, ...)
 	else
 		EnviaAServidor(":%s %s", bl->nombre, TOK_QUIT);
 	for (lk = bl->canal; lk; lk = lk->sig)
-		BorraClienteDeCanal(lk->chan, bl);
+		BorraClienteDeCanal(lk->cn, bl);
 	LiberaMemoriaCliente(bl);
 	return 0;
 }
@@ -388,7 +389,7 @@ int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 		EnviaAServidor(":%s %s %s :Usuario desconectado.", bl->nombre, TOK_KILL, cl->nombre);
 	LlamaSenyal(SIGN_QUIT, 2, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
-		BorraClienteDeCanal(lk->chan, cl);
+		BorraClienteDeCanal(lk->cn, cl);
 	LiberaMemoriaCliente(cl);
 	return 0;
 }
@@ -1156,7 +1157,10 @@ IRCFUNC(m_quit)
 	LinkCanal *lk;
 	LlamaSenyal(SIGN_QUIT, 2, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
-		BorraClienteDeCanal(lk->chan, cl);
+	{
+		BorraClienteDeCanal(lk->cn, cl);
+		ActualizaCanalPrivado(lk->cn);
+	}
 	LiberaMemoriaCliente(cl);
 	return 0;
 }
@@ -1168,7 +1172,10 @@ IRCFUNC(m_kill)
 		LinkCanal *lk;
 		LlamaSenyal(SIGN_QUIT, 2, al, parv[1]);
 		for (lk = al->canal; lk; lk = lk->sig)
-			BorraClienteDeCanal(lk->chan, al);
+		{
+			BorraClienteDeCanal(lk->cn, al);
+			ActualizaCanalPrivado(lk->cn);
+		}
 		LiberaMemoriaCliente(al);
 		if (conf_set->opts & REKILL && !norekill)
 		{
@@ -1207,6 +1214,7 @@ IRCFUNC(m_part)
 	LlamaSenyal(SIGN_PART, 3, cl, cn, parv[2]);
 	BorraCanalDeCliente(cl, cn);
 	BorraClienteDeCanal(cn, cl);
+	ActualizaCanalPrivado(cn);
 	return 0;
 }
 IRCFUNC(m_mode)
@@ -1220,6 +1228,7 @@ IRCFUNC(m_mode)
 		strlcat(modebuf, protocolo->modcanales, sizeof(modebuf));
 	if (modebuf[0] != '\0')
 		ProtFunc(P_MODO_CANAL)(&me, cn, "%s %s", modebuf, parabuf);
+	ActualizaCanalPrivado(cn);
 	LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 2, EsServidor(cl) ? parc - 3 : parc - 2);
 	return 0;
 }
@@ -1368,6 +1377,7 @@ IRCFUNC(m_kick)
 	LlamaSenyal(SIGN_KICK, 4, cl, al, cn, parv[3]);
 	BorraCanalDeCliente(al, cn);
 	BorraClienteDeCanal(cn, al);
+	ActualizaCanalPrivado(cn);
 	if (EsBot(al))
 	{
 		if (conf_set->opts & REJOIN)
@@ -1905,9 +1915,29 @@ void EntraCliente(Cliente *cl, char *canal)
 	}
 	InsertaCanalEnCliente(cl, cn);
 	InsertaClienteEnCanal(cn, cl);
+	ActualizaCanalPrivado(cn);
 	LlamaSenyal(SIGN_JOIN, 2, cl, cn);
 }
-
+void ActualizaCanalPrivado(Canal *cn)
+{
+	if (!(cn->modos & CHMODE_INVITEONLY || cn->modos & CHMODE_KEY || cn->modos & CHMODE_MODERATED ||
+		cn->modos & CHMODE_OPERONLY || cn->modos & CHMODE_ADMONLY || cn->modos & CHMODE_MODREG ||
+		cn->modos & CHMODE_RGSTRONLY || cn->modos & CHMODE_ONLYSECURE))
+	{
+		if (cn->modos & CHMODE_LIMIT)
+		{
+			MallaParam *mpm;
+			if ((mpm = BuscaMallaParam(cn, 'l')) && atoi(mpm->param) <= cn->miembros)
+				cn->privado = 0;
+			else
+				cn->privado = 1;
+		}
+		else
+			cn->privado = 0;
+	}
+	else
+		cn->privado = 1;
+}
 /* ':' and '#' and '&' and '+' and '@' must never be in this table. */
 /* these tables must NEVER CHANGE! >) */
 char int6_to_base64_map[] = {

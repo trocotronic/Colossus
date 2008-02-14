@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.38 2008-02-13 18:45:23 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.39 2008-02-14 14:37:07 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -129,7 +129,7 @@ struct _mallamascara
  * @desc: Malla de parámetros por modo de canales.
  * @params: $sig Siguiente nodo de la malla.
  	    $flag Modo asociado a la malla.
- 	    $param Siguiente malla de nodo.
+ 	    $param Parámetro asociado al modo.
  	    $params Cantidad de parámetros en esta malla.
  * @cat: IRCd
  !*/
@@ -146,14 +146,13 @@ struct _mallaparam
  	    $modos Modos de canal que utiliza. Están en forma de bits.
  	    $topic Topic.
  	    $ntopic Cliente que ha puesto el topic.
- 	    $clave Clave del canal (modo +k).
- 	    $limite Límite de usuarios del canal (modo +l).
- 	    $flood Antiflood (modo +f).
- 	    $link Canal de linkaje (modo +L).
+	    $mallapm Malla de parámetros.
  	    $mallacl Malla de clientes.
  	    $mallamk Malla de máscaras.
  	    $miembro Malla de usuarios en el canal.
  	    $miembros Cantidad de usuarios en el canal.
+ 	    $creacion Fecha en formato UNIX de creación.
+ 	    $privado El canal es de entrada restringida (ya sea por +k, +i, etc.)
  * @cat: IRCd
  !*/
 struct _canal
@@ -169,6 +168,7 @@ struct _canal
 	LinkCliente *miembro;
 	u_int miembros;
 	time_t creacion;
+	unsigned privado:1;
 };
 /*!
  * @desc: Malla de canales para usuarios.
@@ -179,7 +179,7 @@ struct _canal
 struct _linkcanal
 {
 	LinkCanal *sig;
-	Canal *chan;
+	Canal *cn;
 };
 typedef struct _comando
 {

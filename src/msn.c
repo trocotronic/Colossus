@@ -1,5 +1,5 @@
 ﻿/*
- * $Id: msn.c,v 1.6 2008-02-13 18:45:24 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.7 2008-02-14 14:37:07 Trocotronic Exp $ 
  */
 
 #ifdef USA_SSL
@@ -12,7 +12,7 @@ char *lc = NULL;
 char *DALoginServer = NULL;
 char *DALoginPath = NULL;
 SOCKFUNC(MSNNSClose);
-int trid = 0;
+u_int trid = 0;
 int contactos = 0;
 int lsts = 0;
 void MSNProcesaMsg(MSNSB *, char *);
@@ -27,6 +27,7 @@ int MSNCMsg(Cliente *, Canal *, char *);
 int MSNCPart(Cliente *, Canal *, char *);
 int MSNCKick(Cliente *, Canal *, char *);
 int MSNCJoin(Cliente *, Canal *);
+int MSNCQuit(Cliente *, char *);
 MSNCn *msncns = NULL;
 Hash MSNuTab[UMAX];
 Hash MSNcTab[CHMAX];
@@ -242,7 +243,7 @@ SOCKFUNC(MSNSBRead)
 		strtok(data, " ");
 		SendMSN(sb->mcl->cuenta, NULL);
 	}
-	else if (!strncmp(data, "BYE", 3))
+	/*else if (!strncmp(data, "BYE", 3))
 	{
 		char *c, *param;
 		strtok(data, " ");
@@ -252,7 +253,7 @@ SOCKFUNC(MSNSBRead)
 		else if ((c = strchr(param, '\n')))
 			*c = '\0';
 		//SockClose(sb->SBsck);
-	}
+	}*/
 	return 0;
 }
 SOCKFUNC(MSNSBClose)
@@ -476,8 +477,6 @@ SOCKFUNC(MSNNSRead)
 		cuenta = strtok(NULL, " ");
 		if ((mcl = MSNBuscaCliente(cuenta)))
 			mcl->estado = 0;
-		if ((sb = BuscaSBCuenta(cuenta)))
-			LiberaItem(sb, msnsbs);
 		for (lcn = mcl->lcn; lcn; lcn = ccsig)
 		{
 			ccsig = lcn->sig;
@@ -486,12 +485,15 @@ SOCKFUNC(MSNNSRead)
 				if (lcl->mcl == mcl)
 				{
 					LiberaItem(lcl, lcn->mcn->lcl);
+					Responde((Cliente *)lcn->mcn->cn, msncl, "%s@***** Cierra", mcl->alias);
 					break;
 				}
 			}
 			Free(lcn);
 		}
 		mcl->lcn = NULL;
+		if ((sb = BuscaSBCuenta(cuenta)))
+			LiberaItem(sb, msnsbs);
 	}
 	else if (!strncmp(data, "CHG", 3))
 	{
@@ -591,6 +593,7 @@ int CargaMSN()
 	InsertaSenyal(SIGN_PART, MSNCPart);
 	InsertaSenyal(SIGN_KICK, MSNCKick);
 	InsertaSenyal(SIGN_JOIN, MSNCJoin);
+	InsertaSenyal(SIGN_QUIT, MSNCQuit);
 	return 0;
 }
 int DescargaMSN()
@@ -603,6 +606,7 @@ int DescargaMSN()
 	BorraSenyal(SIGN_PART, MSNCPart);
 	BorraSenyal(SIGN_KICK, MSNCKick);
 	BorraSenyal(SIGN_JOIN, MSNCJoin);
+	BorraSenyal(SIGN_QUIT, MSNCQuit);
 	return 0;
 }
 int SendMSN(char *cuenta, char *msg, ...)
@@ -743,6 +747,11 @@ MSNFUNC(MSNJoin)
 		SendMSN(sb->mcl->cuenta, "Este canal no existe");
 		return 1;
 	}
+	if (cn->privado)
+	{
+		SendMSN(sb->mcl->cuenta, "Este canal tiene la entrada restringida");
+		return 1;
+	}
 	if (!(mcn = MSNBuscaCanal(argv[0])))
 	{
 		mcn = BMalloc(MSNCn);
@@ -764,6 +773,8 @@ MSNFUNC(MSNJoin)
 		lcn->mcl = sb->mcl;
 		lcn->mcn = mcn;
 		AddItem(lcn, sb->mcl->lcn);
+		SendMSN(sb->mcl->cuenta, "Ok");
+		Responde((Cliente *)lcl->mcn->cn, msncl, "%s@***** Entra", sb->mcl->alias);
 	}
 	return 0;
 }
@@ -789,6 +800,8 @@ MSNFUNC(MSNPart)
 		LiberaItem(lcl->mcn, msncns);
 	}
 	LiberaItem(lcl, lcl->mcn->lcl);
+	SendMSN(sb->mcl->cuenta, "Ok");
+	Responde((Cliente *)lcl->mcn->cn, msncl, "%s@***** Sale", sb->mcl->alias);
 	return 0;
 }
 int MSNSynch()
@@ -844,6 +857,21 @@ int MSNCJoin(Cliente *cl, Canal *cn)
 	{
 		for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
 			SendMSN(lcl->mcl->cuenta, "[%s] %s Entra", cn->nombre, cl->nombre);
+	}
+	return 0;
+}
+int MSNCQuit(Cliente *cl, char *motivo)
+{
+	MSNCn *mcn;
+	MSNLCl *lcl;
+	LinkCanal *lk;
+	for (lk = cl->canal; lk; lk = lk->sig)
+	{
+		if ((mcn = MSNBuscaCanal(lk->cn->nombre)))
+		{
+			for (lcl = mcn->lcl; lcl; lcl = lcl->sig)
+				SendMSN(lcl->mcl->cuenta, "[%s] %s Cierra > %s", mcn->cn->nombre, cl->nombre, motivo ? motivo : "");
+		}
 	}
 	return 0;
 }
