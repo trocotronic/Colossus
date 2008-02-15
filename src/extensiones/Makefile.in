@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.4 2008-02-15 18:35:18 Trocotronic Exp $
+## $Id: Makefile.in,v 1.5 2008-02-15 18:41:25 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
@@ -22,3 +22,4 @@ clean:
 	@for i in $(SUBDIRS); do \
 		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
 	done
+

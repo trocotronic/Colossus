@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.41 2008-02-14 14:37:07 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.42 2008-02-15 18:41:48 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -926,7 +926,7 @@ IRCFUNC(m_msg)
 	else if (!strcasecmp(param[0], "CREDITOS"))
 	{
 		int i;
-		Responde(cl, bl, COLOSSUS_VERSION " (rv%i) - Trocotronic @2004-2007", rev);
+		Responde(cl, bl, COLOSSUS_VERSION " (rv%i) - Trocotronic @2004-2008", rev);
 		Responde(cl, bl, " ");
 		for (i = 0; creditos[i]; i++)
 			Responde(cl, bl, creditos[i]);
