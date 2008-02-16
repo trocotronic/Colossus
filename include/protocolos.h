@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.h,v 1.14 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.15 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
  
 #include "modulos.h"
@@ -91,6 +91,7 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #define P_INVITE 23
 #define P_MSG_VL 24
 #define P_PING 25
+#define P_SERVER 26
 
 #define ProtUmodo(x) (protocolo->umodos + x)->mode
 #define ProtCmodo(x) (protocolo->cmodos + x)->mode

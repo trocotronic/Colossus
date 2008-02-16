@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.36 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.37 2008-02-16 23:19:42 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -1012,7 +1012,7 @@ int SSSigEOS()
 		Canal *cn;
 		LinkCliente *lk;
 		for (lk = servidores; lk; lk = lk->sig)
-			SSCmdServer(lk->user, 0);
+			SSCmdServer(lk->cl, 0);
 		for (cn = canales; cn; cn = cn->sig)
 			SSRefresca(CHANS);
 		for (cl = clientes; cl; cl = cl->sig)

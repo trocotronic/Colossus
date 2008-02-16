@@ -1,8 +1,7 @@
 /*
- * $Id: msn.h,v 1.3 2008-02-13 18:45:23 Trocotronic Exp $ 
+ * $Id: msn.h,v 1.4 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
-typedef struct _msncn MSNCn;
 typedef struct _msnsb MSNSB;
 typedef struct _msncl MSNCl;
 struct _msnsb
@@ -21,26 +20,6 @@ struct MSNComs
 	int params;
 	int master;
 };
-typedef struct _msnlcl MSNLCl;
-struct _msnlcl
-{
-	struct _msnlcl *sig;
-	MSNCl *mcl;
-	MSNCn *mcn;
-};
-typedef struct _msnlcl MSNLCn;
-struct _msnlcn
-{
-	struct _msnlcn *sig;
-	MSNCl *mcl;
-	MSNCn *mcn;
-};
-struct _msncn
-{
-	MSNCn *sig, *prev, *hsig;
-	Canal *cn;
-	MSNLCl *lcl;
-};
 struct _msncl
 {
 	MSNCl *sig, *prev, *hsig;
@@ -49,7 +28,7 @@ struct _msncl
 	char *alias;
 	unsigned master:1;
 	int estado;
-	MSNLCn *lcn;
+	Cliente *cl;
 };
 	
 #define MSN_VER "VER 1 MSNP8 CVR0"

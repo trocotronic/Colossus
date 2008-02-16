@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.59 2008-02-14 14:37:07 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.60 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -446,7 +446,7 @@ void InsertaClienteEnCanal(Canal *cn, Cliente *cl)
 	if (!cl || EsLink(cn->miembro, cl))
 		return;
 	lk = (LinkCliente *)Malloc(sizeof(LinkCliente));
-	lk->user = cl;
+	lk->cl = cl;
 	AddItem(lk, cn->miembro);
 	cn->miembros++;
 }
@@ -479,7 +479,7 @@ int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 		return 0;
 	for (aux = cn->miembro; aux; aux = aux->sig)
 	{
-		if (aux->user == cl)
+		if (aux->cl == cl)
 		{
 			if (prev)
 				prev->sig = aux->sig;
@@ -534,7 +534,7 @@ void InsertaModoCliente(LinkCliente **link, Cliente *cl)
 	if (!cl || EsLink(*link, cl))
 		return;
 	lk = (LinkCliente *)Malloc(sizeof(LinkCliente));
-	lk->user = cl;
+	lk->cl = cl;
 	AddItem(lk, *link);
 }
 int BorraModoCliente(LinkCliente **link, Cliente *cl)
@@ -544,7 +544,7 @@ int BorraModoCliente(LinkCliente **link, Cliente *cl)
 		return 0;
 	for (aux = *link; aux; aux = aux->sig)
 	{
-		if (cl == aux->user)
+		if (cl == aux->cl)
 		{
 			if (prev)
 				prev->sig = aux->sig;
@@ -649,7 +649,7 @@ Canal *EntraBot(Cliente *bl, char *canal)
 		InsertaCanalEnCliente(bl, cn);
 		InsertaClienteEnCanal(cn, bl);
 		ProtFunc(P_JOIN_USUARIO_LOCAL)(bl, cn);
-		if (conf_set->opts & AUTOBOP)
+		if (EsBot(bl) && conf_set->opts & AUTOBOP)
 			ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
 	}
 	return cn;
@@ -729,9 +729,11 @@ char *TipoMascara(char *mask, int tipo)
 int EsLink(LinkCliente *link, Cliente *al)
 {
 	LinkCliente *aux;
+	if (!al)
+		return 0;
 	for (aux = link; aux; aux = aux->sig)
 	{
-		if (aux->user == al)
+		if (aux->cl == al)
 			return 1;
 	}
 	return 0;
@@ -739,6 +741,8 @@ int EsLink(LinkCliente *link, Cliente *al)
 int EsLinkCanal(LinkCanal *link, Canal *cn)
 {
 	LinkCanal *aux;
+	if (!cn)
+		return 0;
 	for (aux = link; aux; aux = aux->sig)
 	{
 		if (aux->cn == cn)
@@ -758,18 +762,19 @@ void LiberaMemoriaCliente(Cliente *cl)
 		clientes = cl->sig;
 	if (cl->sig)
 		cl->sig->prev = cl->prev;
-	Free(cl->nombre);
-	Free(cl->ident);
+	ircfree(cl->nombre);
+	ircfree(cl->ident);
 	//if (cl->rvhost != cl->host) /* hay que liberarlo */
 	//	Free(cl->rvhost);
 	if (cl->ip != cl->host)
-		Free(cl->ip);
-	Free(cl->host);
-	Free(cl->vhost);
-	Free(cl->mask);
-	Free(cl->vmask);
-	Free(cl->trio);
-	Free(cl->info);
+		ircfree(cl->ip);
+	ircfree(cl->host);
+	ircfree(cl->vhost);
+	ircfree(cl->mask);
+	ircfree(cl->vmask);
+	ircfree(cl->trio);
+	ircfree(cl->info);
+	ircfree(cl->datos);
 	for (aux = cl->canal; aux; aux = tmp)
 	{
 		tmp = aux->sig;
@@ -845,6 +850,10 @@ void LiberaMemoriaCanal(Canal *cn)
  
 Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realname)
 {
+	return CreaBotEx(nick, ident, host, modos, realname, me.nombre);
+}
+Cliente *CreaBotEx(char *nick, char *ident, char *host, char *modos, char *realname, char *serv)
+{
 	Cliente *al;
 	static int num = 0;
 	if (!EsOk(SockIrcd))
@@ -854,7 +863,7 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 #ifdef DEBUG
 	Debug("Creando %s", nick);
 #endif
-	al = NuevoCliente(nick, ident, host, NULL, me.nombre, host, modos, realname);
+	al = NuevoCliente(nick, ident, host, NULL, serv, host, modos, realname);
 	al->tipo = TBOT;
 	al->numeric = num;
 	ProtFunc(P_NUEVO_USUARIO)(al);
@@ -873,7 +882,7 @@ Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realnam
 void DesconectaBot(Cliente *bl, char *motivo)
 {
 	Modulo *ex;
-	if (EsBot(bl))
+	if (bl)
 	{
 		if ((ex = BuscaModulo(bl->nombre, modulos)))
 			ex->cl = NULL;
@@ -893,6 +902,31 @@ void ReconectaBot(char *nick)
 		for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
 			EntraBot(ex->cl, canal);
 	}
+}
+
+/*!
+ * @desc: Crea una estructura Cliente para un servidor.
+ Esta función se utiliza para introducir servidores adicionales al principal de los servicios.
+ * @params: $host [in] Host del servidor.
+ 	    $info [in] Información del servidor.
+ * @ret: Devuelve la estructura Cliente creada a partir de estos datos. 
+ * @cat: IRCd
+ !*/
+ 
+Cliente *CreaServidor(char *host, char *info)
+{
+	Cliente *al;
+	if (!EsOk(SockIrcd))
+		return NULL;
+	if ((al = BuscaCliente(host)))
+		return NULL;
+#ifdef DEBUG
+	Debug("Creando servidor %s", host);
+#endif
+	al = NuevoCliente(host, NULL, NULL, NULL, NULL, NULL, NULL, info);
+	al->tipo = TSERVIDOR;
+	ProtFunc(P_SERVER)(host, info);
+	return al;
 }
 u_long FlagAModo(char flag, mTab tabla[])
 {

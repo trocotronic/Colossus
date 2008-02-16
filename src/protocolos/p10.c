@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.42 2008-02-15 18:41:48 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.43 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -901,8 +901,8 @@ IRCFUNC(m_msg)
 	strtok(parv[1], "@");
 	parv[parc] = strtok(NULL, "@");
 	parv[parc+1] = NULL;
-	while (*parv[2] == ':')
-		parv[2]++;
+	//while (*parv[2] == ':')
+	//	parv[2]++;
 	if (*parv[1] == '#')
 	{
 		LlamaSenyal(SIGN_CMSG, 3, cl, BuscaCanal(parv[1]), parv[2]);

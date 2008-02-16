@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.57 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.58 2008-02-16 23:19:42 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -329,8 +329,8 @@ Cliente **CSEmpaquetaClientes(Canal *cn, LinkCliente *lista, u_int opers)
 	lk = (lista ? lista : cn->miembro);
 	for (i = 0; i < cn->miembros && lk; i++)
 	{
-		if (!EsBot(lk->user) && (!IsOper(lk->user) || opers))
-			al[j++] = lk->user;
+		if (!EsBot(lk->cl) && (!IsOper(lk->cl) || opers))
+			al[j++] = lk->cl;
 		lk = lk->sig;
 	}
 	al[j] = NULL;
@@ -1197,8 +1197,8 @@ BOTFUNC(CSClear)
 			motivo = Unifica(param, params, 4, -1);
 		for (aux = cn->miembro; aux; aux = aux->sig)
 		{
-			if (!EsBot(aux->user) && !IsOper(aux->user))
-				ProtFunc(P_GLINE)(CLI(chanserv), ADD, aux->user->ident, aux->user->host, atoi(param[3]), motivo);
+			if (!EsBot(aux->cl) && !IsOper(aux->cl))
+				ProtFunc(P_GLINE)(CLI(chanserv), ADD, aux->cl->ident, aux->cl->host, atoi(param[3]), motivo);
 		}
 		Responde(cl, CLI(chanserv), "Usuarios de \00312%s\003 con gline durante \00312%s\003 segundos.", param[1], param[3]);
 	}

@@ -46,6 +46,7 @@ EXPORTS
 	Crc32
 	CreaAlias
 	CreaBot
+	CreaBotEx
 	CreaCanal
 	CreaExtension
 	CreaHDir

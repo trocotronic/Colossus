@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.112 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: main.c,v 1.113 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
 	if (sql && sql->servinfo)
 		fprintf(stderr, "\t\t+Servidor SQL %s\n", sql->servinfo);
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.redyc.com/\n");
-	fprintf(stderr, "\t\t(c)2004-2007\n");
+	fprintf(stderr, "\t\t(c)2004-2008\n");
 	fprintf(stderr, "\n");
 #endif
 /*	if (EsArchivo("backup.sql"))

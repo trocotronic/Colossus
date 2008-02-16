@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.39 2008-02-14 14:37:07 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.40 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -45,6 +45,7 @@ typedef struct _mallaparam MallaParam;
  	    $trio Representación alfanumérica del cliente.
  	    $info Realname.
  	    $away Si está away, apunta al motivo away. Si no, a NULL.
+ 	    $datos Para guardar todo tipo de datos.
  * @cat: IRCd
  * @ver: EsCliente EsServidor EsBot TipoMascara MascaraIrcd
  !*/
@@ -70,6 +71,7 @@ struct _cliente
 	char *info;
 	char *away;
 	u_int nivel;
+	char *datos;
 };
 /*!
  * @desc: Malla de clientes para canales.
@@ -80,7 +82,7 @@ struct _cliente
 struct _linkcliente
 {
 	LinkCliente *sig;
-	Cliente *user;
+	Cliente *cl;
 };
 /*!
  * @desc: Malla de máscaras para canales.
@@ -327,6 +329,7 @@ extern void LiberaMemoriaCliente(Cliente *);
 extern void LiberaMemoriaCanal(Canal *);
 extern char backupbuf[BUFSIZE];
 extern Cliente *CreaBot(char *, char *, char *, char *, char *);
+extern Cliente *CreaBotEx(char *, char *, char *, char *, char *, char *);
 extern MODVAR Cliente *clientes;
 extern MODVAR Canal *canales;
 extern MODVAR LinkCliente *servidores;
@@ -341,6 +344,7 @@ extern int EntraResidentes();
 extern void DesconectaBot(Cliente *, char *);
 extern void EscuchaIrcd();
 extern void ReconectaBot(char *);
+extern Cliente *CreaServidor(char *, char *);
 extern MODVAR time_t inicio;
 extern void carga_comandos();
 extern char *Token(char *);

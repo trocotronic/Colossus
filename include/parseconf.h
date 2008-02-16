@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.21 2008-02-11 00:05:43 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.22 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #define MAXSECS 128
@@ -115,7 +115,7 @@ struct Conf_msn
 	char *pass;
 	char *master;
 	unsigned solomaster:1;
-	char *nick;
+	char *servidor;
 };
 
 #define LOG_ERROR 0x1

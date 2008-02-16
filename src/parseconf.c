@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.36 2008-02-13 16:16:09 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.37 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -222,7 +222,7 @@ void LiberaMemoriaMSN()
 	ircfree(conf_msn->cuenta);
 	ircfree(conf_msn->pass);
 	ircfree(conf_msn->master);
-	ircfree(conf_msn->nick);
+	ircfree(conf_msn->servidor);
 	bzero(conf_msn, sizeof(struct Conf_msn));
 #ifdef _WIN32
 	EnableWindow(GetDlgItem(hwMain, BT_MSN), FALSE);
@@ -1493,6 +1493,19 @@ int TestMSN(Conf *config, int *errores)
 			error_parcial++;
 		}
 	}
+	if (!(eval = BuscaEntrada(config, "servidor")))
+	{
+		Error("[%s:%s] No se encuentra la directriz servidor.", config->archivo, config->item);
+		error_parcial++;
+	}
+	else
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz servidor esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -1509,8 +1522,8 @@ void ConfMSN(Conf *config)
 			ircstrdup(conf_msn->pass, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "master"))
 			ircstrdup(conf_msn->master, config->seccion[i]->data);
-		else if (!strcmp(config->seccion[i]->item, "nick"))
-			ircstrdup(conf_msn->nick, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "servidor"))
+			ircstrdup(conf_msn->servidor, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "solomaster"))
 			conf_msn->solomaster = 1;
 	}

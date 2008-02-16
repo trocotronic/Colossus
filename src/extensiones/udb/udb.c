@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.26 2008-02-13 18:45:24 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.27 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -712,7 +712,7 @@ IRCFUNC(m_sjoin_U)
 							tmp[0] = '\0';
 						}
 						modos[i++] = mcl->flag;
-						strlcat(tmp, lk->user->nombre, sizeof(tmp));
+						strlcat(tmp, lk->cl->nombre, sizeof(tmp));
 						strlcat(tmp, " ", sizeof(tmp));
 					}
 				}

@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.57 2008-02-15 18:41:58 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.58 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -242,8 +242,8 @@ Cliente *BuscaNumerico(int num)
 	LinkCliente *lk;
 	for (lk = servidores; lk; lk = lk->sig)
 	{
-		if (lk->user->numeric == num)
-			return lk->user;
+		if (lk->cl->numeric == num)
+			return lk->cl;
 	}
 	return NULL;
 }
@@ -548,6 +548,11 @@ int p_ping()
 	EnviaAServidor("%s :%s", TOK_PING, me.nombre);
 	return 0;
 }
+int p_server(char *nombre, char *info)
+{
+	EnviaAServidor(":%s %s %s 2 :%s", me.nombre, TOK_SERVER, nombre, info);
+	return 0;
+}
 int test(Conf *config, int *errores)
 {
 	Conf *eval, *aux;
@@ -744,6 +749,7 @@ int PROT_CARGA(Unreal)(Conf *config)
 	protocolo->comandos[P_INVITE] = (int(*)())p_invite;
 	protocolo->comandos[P_MSG_VL] = (int(*)())p_msg_vl;
 	protocolo->comandos[P_PING] = (int(*)())p_ping;
+	protocolo->comandos[P_SERVER] = (int(*)())p_server;
 	InsertaComando(MSG_PRIVATE, TOK_PRIVATE, m_msg, INI, 2);
 	InsertaComando(MSG_WHOIS, TOK_WHOIS, m_whois, INI, MAXPARA);
 	InsertaComando(MSG_NICK, TOK_NICK, m_nick, INI, MAXPARA);
@@ -995,8 +1001,8 @@ IRCFUNC(m_msg)
 	strtok(parv[1], "@");
 	parv[parc] = strtok(NULL, "@");
 	parv[parc+1] = NULL;
-	while (*parv[2] == ':')
-		parv[2]++;
+	//while (*parv[2] == ':')
+	//	parv[2]++;
 	if (*parv[1] == '#')
 	{
 		LlamaSenyal(SIGN_CMSG, 3, cl, BuscaCanal(parv[1]), parv[2]);
@@ -1333,7 +1339,7 @@ IRCFUNC(m_sjoin)
 							tmp[0] = '\0';
 						}
 						modos[i++] = mcl->flag;
-						strlcat(tmp, lk->user->nombre, sizeof(tmp));
+						strlcat(tmp, lk->cl->nombre, sizeof(tmp));
 						strlcat(tmp, " ", sizeof(tmp));
 					}
 				}
@@ -1443,7 +1449,7 @@ IRCFUNC(m_server)
 	al->tipo = TSERVIDOR;
 	al->trio = strdup(opts);
 	aux = BMalloc(LinkCliente);
-	aux->user = al;
+	aux->cl = al;
 	AddItem(aux, servidores);
 	if (!cl) /* primer link */
 	{
@@ -1480,7 +1486,7 @@ IRCFUNC(m_squit)
 		LiberaMemoriaCliente(al);
 		for (aux = servidores; aux; aux = aux->sig)
 		{
-			if (aux->user == al)
+			if (aux->cl == al)
 			{
 				if (prev)
 					prev->sig = aux->sig;
@@ -1850,7 +1856,7 @@ void ProcesaModo(Cliente *cl, Canal *cn, char *parv[], int parc)
 						LinkCliente *lk;
 						Debug("!%c", mcl->flag);
 						for (lk = mcl->malla; lk; lk = lk->sig)
-							Debug("---%s", lk->user->nombre);
+							Debug("---%s", lk->cl->nombre);
 						Debug("*");
 					}
 #endif

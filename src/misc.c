@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.20 2008-02-13 16:47:18 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.21 2008-02-16 23:19:43 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -494,7 +494,7 @@ void Loguea(int opt, char *formato, ...)
 		campo = "ERR";
 	else if (opt == LOG_MSN)
 		campo = "MSN";
-	ircsprintf(auxbuf, "[%s] (%s) > %s\n", Fecha(&tm), buf);
+	ircsprintf(auxbuf, "[%s] (%s) > %s\n", Fecha(&tm), campo, buf);
 	if (stat(conf_log->archivo, &inode) == -1)
 		return;
 	if (conf_log->size && inode.st_size > conf_log->size)
