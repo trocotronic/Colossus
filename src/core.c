@@ -1,5 +1,5 @@
 /*
- * $Id: core.c,v 1.8 2008-02-15 18:29:45 Trocotronic Exp $
+ * $Id: core.c,v 1.9 2008-04-05 20:39:22 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -8,7 +8,6 @@
 #include "socksint.h"
 #ifdef _WIN32
 #include <process.h>
-#include <io.h>
 #else
 #include <sys/ioctl.h>
 #include <net/if.h>

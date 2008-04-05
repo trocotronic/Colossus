@@ -1,11 +1,10 @@
 /*
- * $Id: smtp.c,v 1.27 2008-02-13 16:16:09 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.28 2008-04-05 20:39:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include "httpd.h"
 #ifdef _WIN32
-#include <io.h>
 #else
 #include <arpa/nameser.h>
 #include <resolv.h>

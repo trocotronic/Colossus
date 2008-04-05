@@ -1,12 +1,11 @@
 /*
- * $Id: misc.c,v 1.21 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.22 2008-04-05 20:39:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"
 #include <pthread.h>
 
 #ifdef _WIN32
-#include <io.h>
 WIN32_FIND_DATA FindFileData;
 #else
 #include <netdb.h>
