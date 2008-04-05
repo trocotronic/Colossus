@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.10 2008-04-05 20:39:33 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.11 2008-04-05 20:48:49 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -437,7 +437,7 @@ BOTFUNC(OSSetUDB)
 		}
 		else
 		{
-			PropagaRegistro("S::G::%s", param[2]);
+			PropagaRegistro("S::G %s", param[2]);
 			Responde(cl, CLI(operserv), "Se ha fijado el parámetro GlobalServ de UDB a \00312%s", param[2]);
 		}
 	}
