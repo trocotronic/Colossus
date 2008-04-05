@@ -1,16 +1,14 @@
 TODO 
 
-$Id: proximamente,v 1.13 2008-01-21 19:46:47 Trocotronic Exp $
+$Id: proximamente,v 1.14 2008-04-05 20:37:20 Trocotronic Exp $
 
 
 Versión 1.1:
 
-[ ] Hacer modulable el protocolo.
+[X] Hacer modulable el protocolo.
 	[X] Incluir el protocolo de UnrealIRCd
 	[X] Incluir el protocolo p10
-	[/] Incluir el protocolo de redhispana
-	[ ] Incluir el protocolo de irc-hispano
-	
+
 [X] Versatilizar la caché
 
 [X] Extender la ayuda de los módulos
@@ -43,36 +41,32 @@ Versión 1.4:
 
 [X] Extensiones para módulos
 
-[/] Modularizar la BDD
+[X] Modularizar la BDD
 	[X] Datos de DB por tablas de funciones	
 	[X] Incluir soporte UDB
-	[ ] Incluir soporte BDDRH
-	[ ] Incluir soporte BDDH
 
-[ ] Incluir el protocolo Bahamut
-
-
-Versión 1.5: 
-
-[ ] Añadir soporte para varios idiomas
-	[ ] Soporte para castellano
-	[ ] Soporte para catalán
-	[ ] Soporte para inglés
-	
 
 Versión 1.6:
 
 [X] Disponer de un servidor SQL integrado
 
-[ ] Adaptar los módulos o bots a la semántica de IRCServices
-	[ ] ChanServ
-	[ ] NickServ
-	[ ] OperServ
-	[ ] MemoServ
-	
 
-Versión 1.7:
+Versión 1.10:
 
-[ ] Administración por vía web
+[X] Servidor HTTP integrado
 
-[!] Actualizador de componentes automático (.dll y .so)
+[X] Complemento MSN Messenger.
+	[X] Fusión red IRC con MSN (gatewaying)
+	[X] Uso del nick vía MSN
+	[X] Administración root vía MSN
+
+[X] Soporte UTF8.
+
+
+Pendiente:
+
+[ ] Remover GLines por código
+
+[ ] Soporte varios idiomas
+
+[ ] Administración y configuración por web
