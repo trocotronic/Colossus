@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.9 2007-02-18 18:58:53 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.10 2008-04-05 20:39:33 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -124,6 +124,7 @@ BOTFUNCHELP(OSHSetUDB)
 		Responde(cl, CLI(operserv), "\00312PASS-FLOOD\003 Establece el número de intentos para intentar una contraseña vía /nick nick:pass");
 		Responde(cl, CLI(operserv), "\00312SERVER-DEBUG\003 Fija un servidor como servidor debug.");
 		Responde(cl, CLI(operserv), "\00312CLIENTES\003 Permite o no la conexión de clientes en un servidor no-UDB, leaf y uline.");
+		Responde(cl, CLI(operserv), "\00312GLOBALSERV\003 Establece el nick!user@host para el envío de globales vía /msg $*.");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312SETUDB <opción> [parámetros]");
 		Responde(cl, CLI(operserv), "Para más información, \00312/msg %s %s SETUDB <opción>", operserv->hmod->nick, strtoupper(param[0]));
@@ -156,6 +157,16 @@ BOTFUNCHELP(OSHSetUDB)
 		Responde(cl, CLI(operserv), "Con esta opción activa, un servidor de estadísticas podría introducir clientes, siempre y cuando esté configurado como uline.");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312CLIENTES nombre.del.servidor ON|OFF");
+	}
+	else if (!strcasecmp(param[2], "CLIENTES"))
+	{
+		Responde(cl, CLI(operserv), "Fija el parámetro GlobalServ de UDB.");
+		Responde(cl, CLI(operserv), "Determina la máscara con la que se mandan los globales vía /msg $*");
+		Responde(cl, CLI(operserv), "Debe ser de la forma nick!user@host");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312GLOBALSERV nick!user@host");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Ejemplo: \00312GLOBALSERV GlobalServ!colossus@servicios.colossus");
 	}
 	else
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Opción desconocida.");
@@ -416,6 +427,19 @@ BOTFUNC(OSSetUDB)
 			return 1;
 		}
 		Responde(cl, CLI(operserv), "El parámetro \00312%s\003 para el servidor \00312%s\003 está en \00312%s", strtoupper(param[1]), param[2], param[3]);
+	}
+	else if (!strcasecmp(param[1], "GLOBALSERV"))
+	{
+		if (params < 3)
+		{
+			PropagaRegistro("S::G");
+			Responde(cl, CLI(operserv), "Se ha eliminado el parámetro GlobalServ de UDB.");
+		}
+		else
+		{
+			PropagaRegistro("S::G::%s", param[2]);
+			Responde(cl, CLI(operserv), "Se ha fijado el parámetro GlobalServ de UDB a \00312%s", param[2]);
+		}
 	}
 	return 0;
 }
