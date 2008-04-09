@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.28 2008-04-09 14:15:38 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.29 2008-04-09 14:18:23 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -649,6 +649,11 @@ IRCFUNC(m_sjoin_U)
 			{
 				p++;
 				strlcat(mod, "e", sizeof(mod));
+				break;
+			}
+			else if (*p == '\'')
+			{
+				p++;
 				break;
 			}
 			else
