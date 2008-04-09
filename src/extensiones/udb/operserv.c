@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.11 2008-04-05 20:48:49 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.12 2008-04-09 14:00:02 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -125,6 +125,7 @@ BOTFUNCHELP(OSHSetUDB)
 		Responde(cl, CLI(operserv), "\00312SERVER-DEBUG\003 Fija un servidor como servidor debug.");
 		Responde(cl, CLI(operserv), "\00312CLIENTES\003 Permite o no la conexión de clientes en un servidor no-UDB, leaf y uline.");
 		Responde(cl, CLI(operserv), "\00312GLOBALSERV\003 Establece el nick!user@host para el envío de globales vía /msg $*.");
+		Responde(cl, CLI(operserv), "\00312PREFIJOS\003 Fija los prefijos para los modos +qaohv.");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312SETUDB <opción> [parámetros]");
 		Responde(cl, CLI(operserv), "Para más información, \00312/msg %s %s SETUDB <opción>", operserv->hmod->nick, strtoupper(param[0]));
@@ -158,7 +159,7 @@ BOTFUNCHELP(OSHSetUDB)
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Sintaxis: \00312CLIENTES nombre.del.servidor ON|OFF");
 	}
-	else if (!strcasecmp(param[2], "CLIENTES"))
+	else if (!strcasecmp(param[2], "GLOBALSERV"))
 	{
 		Responde(cl, CLI(operserv), "Fija el parámetro GlobalServ de UDB.");
 		Responde(cl, CLI(operserv), "Determina la máscara con la que se mandan los globales vía /msg $*");
@@ -167,6 +168,15 @@ BOTFUNCHELP(OSHSetUDB)
 		Responde(cl, CLI(operserv), "Sintaxis: \00312GLOBALSERV nick!user@host");
 		Responde(cl, CLI(operserv), " ");
 		Responde(cl, CLI(operserv), "Ejemplo: \00312GLOBALSERV GlobalServ!colossus@servicios.colossus");
+	}
+	else if (!strcasecmp(param[2], "PREFIJOS"))
+	{
+		Responde(cl, CLI(operserv), "Fija los prefijos para los modos +qaohv");
+		Responde(cl, CLI(operserv), "Deben fijarse con orden qaohv.");
+		Responde(cl, CLI(operserv), "Por defecto, se utiliza el valor '~&@%+'");
+		Responde(cl, CLI(operserv), "Si no se especifica valor, se utilizan por defecto.");
+		Responde(cl, CLI(operserv), " ");
+		Responde(cl, CLI(operserv), "Sintaxis: \00312PREFIJOS qaohv");
 	}
 	else
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Opción desconocida.");
@@ -439,6 +449,19 @@ BOTFUNC(OSSetUDB)
 		{
 			PropagaRegistro("S::G %s", param[2]);
 			Responde(cl, CLI(operserv), "Se ha fijado el parámetro GlobalServ de UDB a \00312%s", param[2]);
+		}
+	}
+	else if (!strcasecmp(param[1], "PREFIJOS"))
+	{
+		if (params < 3)
+		{
+			PropagaRegistro("S::P");
+			Responde(cl, CLI(operserv), "Se han eliminado los prefijos.");
+		}
+		else
+		{
+			PropagaRegistro("S::P %s", param[2]);
+			Responde(cl, CLI(operserv), "Se han fijado los prefijos a \00312%s", param[2]);
 		}
 	}
 	return 0;
