@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.29 2008-04-09 14:18:23 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.30 2008-04-09 15:12:29 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -85,7 +85,7 @@ int (*p_svsmode_r)(Cliente *, Cliente *, char *, ...);
 
 ModInfo MOD_INFO(UDB) = {
 	"UDB" ,
-	3.3,
+	3.4,
 	"Trocotronic" ,
 	"trocotronic@telefonica.net"
 };

@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.21 2008-02-13 18:45:24 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.22 2008-04-09 15:12:29 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -296,6 +296,8 @@ Udb *DaFormato(char *form, Udb *reg, size_t t)
 		if (reg->data_char)
 		{
 			strlcat(form, " ", t);
+			if (*reg->data_char == CHAR_NUM)
+				strlcat(form, "\\", t);
 			strlcat(form, reg->data_char, t);
 		}
 		else if (reg->data_long)
@@ -593,7 +595,9 @@ int ParseaLinea(UDBloq *root, char *cur, int archivo)
 		*sp++ = '\0';
 		if (BadPtr(sp))
 			goto borra;
-		if (*sp == CHAR_NUM)
+		if (*sp == '\\' && *(sp+1) == CHAR_NUM)
+			bloq = InsertaRegistro(bloq->id, bloq, cur, sp+1, 0, archivo);
+		else if (*sp == CHAR_NUM)
 			bloq = InsertaRegistro(bloq->id, bloq, cur, NULL, atoul(++sp), archivo);
 		else
 			bloq = InsertaRegistro(bloq->id, bloq, cur, sp, 0, archivo);
