@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.27 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.28 2008-04-09 14:15:38 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -629,9 +629,9 @@ IRCFUNC(m_sjoin_U)
 		mod[0] = '\0';
 		while (*p)
 		{
-			if (*p == '.')
+			if (*p == '*')
 				strlcat(mod, "q", sizeof(mod));
-			else if (*p == '$')
+			else if (*p == '~')
 				strlcat(mod, "a", sizeof(mod));
 			else if (*p == '@')
 				strlcat(mod, "o", sizeof(mod));
