@@ -43,8 +43,8 @@ typedef struct _bloque
 
 #define DBMAX 64
 #define CHAR_NUM '*'
-extern UDBloq *N, *C, *I, *S, *L;
-extern Udb *UDB_NICKS, *UDB_CANALES, *UDB_IPS, *UDB_SET, *UDB_LINKS;
+extern UDBloq *N, *C, *I, *S, *L, *K;
+extern Udb *UDB_NICKS, *UDB_CANALES, *UDB_IPS, *UDB_SET, *UDB_LINKS, *UDB_LINES;
 
 extern Udb *BuscaBloque(char *, Udb *);
 u_int LevelOperUdb(char *);

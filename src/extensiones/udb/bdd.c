@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.22 2008-04-09 15:12:29 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.23 2008-04-23 21:36:49 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -17,10 +17,10 @@
 #include "bdd.h"
 #include "md5.h"
 
-Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL, *UDB_LINKS = NULL;
+Udb *UDB_NICKS = NULL, *UDB_CANALES = NULL, *UDB_IPS = NULL, *UDB_SET = NULL, *UDB_LINKS = NULL, *UDB_LINES = NULL;
 Udb ***hash;
 UDBloq *ultimo = NULL;
-UDBloq *N = NULL, *C= NULL, *S = NULL, *I = NULL, *L = NULL;
+UDBloq *N = NULL, *C= NULL, *S = NULL, *I = NULL, *L = NULL, *K = NULL;
 #define DaUdb(x) do{ x = (Udb *)Malloc(sizeof(Udb)); bzero(x, sizeof(Udb)); }while(0)
 u_int BDD_TOTAL = 0;
 #define MAX_HASH 2048
@@ -123,6 +123,8 @@ int IniciaUDB()
 		I = AltaBloque('I', DB_DIR "ips.udb", &UDB_IPS);
 	if (!L)
 		L = AltaBloque('L', DB_DIR "links.udb", &UDB_LINKS);
+	if (!K)
+		K = AltaBloque('K', DB_DIR "lines.udb", &UDB_LINES);
 	AltaHash();
 	switch ((dataver = CogeDataVer()))
 	{
