@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.14 2008-02-13 16:47:18 Trocotronic Exp $ 
+ * $Id: socksint.c,v 1.15 2008-04-23 21:13:11 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -129,13 +129,8 @@ SOCKFUNC(ActivoLee)
 	{
 		if (*data == '$')
 		{
-			FILE *fp;
-			if ((fp = fopen("colossus.sgn", "w")))
-			{
-				fwrite(data+1, 1, strlen(data)-1, fp);
-				fclose(fp);
-				strlcpy(sgn.sgn, data+1, sizeof(sgn.sgn));
-			}
+			SQLInserta(SQL_CONFIG, "Signatura", "valor", data+1);
+			strlcpy(sgn.sgn, data+1, sizeof(sgn.sgn));
 		}
 		else if (*data == '#')
 		{
@@ -156,7 +151,7 @@ SOCKFUNC(ActivoLee)
 						ReconectaBot(mds->md[i].hmod->nick);
 						break;
 					case 1:
-						unlink("colossus.sgn");
+						SQLBorra(SQL_CONFIG, "Signatura");
 						bzero(sgn.sgn, sizeof(sgn.sgn));
 					case 2:
 						Info("El módulo %s no tiene permiso para usarse en su servidor (err:%i)", mds->md[i].hmod->info->nombre, err);
@@ -262,14 +257,11 @@ void DetieneMDS()
 }
 void CargaSignatura()
 {
-	FILE *fp;
+	char *tmp;
 	sgn.mds = NULL;
 	bzero(sgn.sgn, sizeof(sgn.sgn));
-	if ((fp = fopen("colossus.sgn", "r")))
-	{
-		fgets(sgn.sgn, sizeof(sgn.sgn)-1, fp);
-		fclose(fp);
-	}
+	if ((tmp = SQLCogeRegistro(SQL_CONFIG, "Signatura", "valor")))
+		strlcpy(sgn.sgn, tmp, sizeof(sgn.sgn)-1);
 }
 int BuscaComponente(Sock *sck)
 {

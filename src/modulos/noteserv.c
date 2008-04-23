@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.12 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.13 2008-04-23 21:13:11 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -692,7 +692,7 @@ int CompruebaNotas()
 	SQLRes res;
 	SQLRow row;
 	Cliente *al;
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE fecha < %lu", PREFIJO, ES_SQL, t)))
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE (fecha < %lu AND fecha > 0)", PREFIJO, ES_SQL, t)))
 	{
 		while ((row = SQLFetchRow(res)))
 		{
@@ -704,7 +704,7 @@ int CompruebaNotas()
 		}
 		SQLFreeRes(res);
 	}
-	SQLQuery("DELETE FROM %s%s WHERE fecha < %lu", PREFIJO, ES_SQL, t);
+	SQLQuery("UPDATE %s%s SET fecha=0 WHERE (fecha < %lu AND fecha > 0)", PREFIJO, ES_SQL, t);
 	if ((res = SQLQuery("SELECT * FROM %s%s WHERE (avisar < %lu AND avisar > 0)", PREFIJO, ES_SQL, t)))
 	{
 		while ((row = SQLFetchRow(res)))

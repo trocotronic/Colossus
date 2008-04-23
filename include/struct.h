@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.88 2008-02-13 16:16:10 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.89 2008-04-23 21:13:11 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -394,6 +394,7 @@ extern char *ExMalloc(size_t, int, char *, long);
 extern struct in_addr *Resuelve(char *);
 #define SQL_CACHE "cache"
 #define SQL_VERSIONES "versiones"
+#define SQL_CONFIG "configuracion"
 extern MODVAR char tokbuf[BUFSIZE];
 #define MAX_LISTN 256
 extern int EsIp(char *);

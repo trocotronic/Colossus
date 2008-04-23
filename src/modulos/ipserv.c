@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.33 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.34 2008-04-23 21:13:11 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -365,40 +365,6 @@ int ISSigSQL()
 	}
 	return 0;
 }
-int ISCompruebaCifrado()
-{
-	char clave[128];
-	char tiempo[BUFSIZE];
-	FILE *fp;
-	ircsprintf(clave, "a%lu", Crc32(conf_set->clave_cifrado, strlen(conf_set->clave_cifrado)) + (time(0) / ipserv->cambio));
-	if ((fp = fopen("ts", "r")))
-	{
-		if (fgets(tiempo, BUFSIZE, fp))
-		{
-			if (atol(tiempo) + ipserv->cambio < time(0))
-			{
-				escribe:
-				if (fp)
-					fclose(fp);
-				if ((fp = fopen("ts", "w")))
-				{
-					tiempo[0] = '\0';
-					ircsprintf(tiempo, "%lu\n", time(0));
-					fputs(tiempo, fp);
-					fclose(fp);
-				}
-				return 0;
-			}
-			else
-				fclose(fp);
-		}
-		else
-			goto escribe;
-	}
-	else
-		goto escribe;
-	return 0;
-}
 int ISSigDrop(char *nick)
 {
 	SQLBorra(IS_SQL, nick);
@@ -406,7 +372,6 @@ int ISSigDrop(char *nick)
 }
 int ISSigEOS()
 {
-	ISCompruebaCifrado();
 	IniciaProceso(ISProcIps);
 	return 0;
 }
@@ -482,8 +447,6 @@ int ISProcIps(Proc *proc)
 	{
 		if (!(res = SQLQuery("SELECT item from %s%s where (caduca != '0' AND caduca < %i) LIMIT 30 OFFSET %i", PREFIJO, IS_SQL, time(0), proc->proc)) || !SQLNumRows(res))
 		{
-			if (proc->time) /* no es la primera llamada de ese proc */
-				ISCompruebaCifrado();
 			proc->proc = 0;
 			proc->time = time(0);
 			return 1;

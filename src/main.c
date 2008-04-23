@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.113 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: main.c,v 1.114 2008-04-23 21:13:11 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -349,6 +349,16 @@ int main(int argc, char *argv[])
 			for (i = 0; (sql->tablas[i][0]); i++)
 				SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
 		}
+	}
+	if (!SQLEsTabla(SQL_CONFIG))
+	{
+		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+  			"item varchar(255) default NULL, "
+  			"valor text default NULL, "
+  			"KEY item (item) "
+			");", PREFIJO, SQL_CONFIG);
+		if (sql->_errno)
+			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CONFIG);
 	}
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);

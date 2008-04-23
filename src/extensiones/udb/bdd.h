@@ -111,6 +111,7 @@ extern int RestauraSeguridad(UDBloq *, char *);
 #define S_QCL "Q"	/* quit por clones */
 #define S_DES "D"	/* desafio global */
 #define S_FLO "F"	/* pass-flood */
+#define S_PRE "P" /* prefijos */
 #define L_OPT "O"	/* opciones */
 
 #define C_OPT_PBAN 0x1

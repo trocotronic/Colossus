@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Config script for UnrealIRCd
-# (C) 2001 The UnrealIRCd Team
+# Script de configuración para Colossus
+# (C) Redyc
 
 RUN_CONFIGURE () {
 ARG=""
