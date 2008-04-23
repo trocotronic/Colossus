@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.12 2008-04-09 14:00:02 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.13 2008-04-23 21:13:27 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -28,6 +28,8 @@ BOTFUNC(OSRestaurar);
 BOTFUNCHELP(OSHRestaurar);
 BOTFUNC(OSSetUDB);
 BOTFUNCHELP(OSHSetUDB);
+BOTFUNC(OSLines);
+BOTFUNCHELP(OSHLines);
 EXTFUNC(OSOpers);
 
 #define NS_OPT_UDB 0x80
@@ -40,6 +42,7 @@ bCom operserv_coms[] = {
 	{ "backup" , OSBackup , N4 , "Realiza una copia de seguridad de los bloques (BDD)." , OSHBackup } ,
 	{ "restaurar" , OSRestaurar , N4 , "Restaura una copia de seguridad realizada con el comando \00312backup\003." , OSHRestaurar } ,
 	{ "setudb" , OSSetUDB , N4 , "Fija distintos parámetros UDB de red." , OSHSetUDB } ,
+	{ "lines" , OSLines , N4 , "Propaga por la red *lines (spamfilters, glines, zlines, shuns y qlines)" , OSHLines } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -200,6 +203,10 @@ BOTFUNCHELP(OSHServerDebug)
 	Responde(cl, CLI(operserv), " ");
 	Responde(cl, CLI(operserv), "Si utiliza este comando sobre un servidor que ya es debug, se le quitará esta opción. Si no es debug, se le añadirá.");
 	Responde(cl, CLI(operserv), "Sintaxis: \00312SERVER-DEBUG nombre.del.servidor");
+	return 0;
+}
+BOTFUNCHELP(OSHLines)
+{
 	return 0;
 }
 BOTFUNC(OSModos)
@@ -463,6 +470,22 @@ BOTFUNC(OSSetUDB)
 			PropagaRegistro("S::P %s", param[2]);
 			Responde(cl, CLI(operserv), "Se han fijado los prefijos a \00312%s", param[2]);
 		}
+	}
+	return 0;
+}
+BOTFUNC(OSLines)
+{
+	if (params < 3)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "*line parámetros");
+		return 1;
+	}
+	if (!strcasecmp(param[1], "GLINE"))
+	{
+		if (params > 3) /* añade */
+			PropagaRegistro("K::G::%s::R %s", param[2], Unifica(param, params, 3, -1));
+		else
+			PropagaRegistro("K::G::%s", param[2]);
 	}
 	return 0;
 }
