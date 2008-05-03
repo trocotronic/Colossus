@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.38 2008-05-03 12:04:25 Trocotronic Exp $
+ * $Id: parseconf.c,v 1.39 2008-05-03 12:08:30 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -55,12 +55,12 @@ static void ConfModulos	(Conf *);
 static void ConfHttpd	(Conf *);
 #ifdef USA_SSL
 static void ConfMSN	(Conf *);
+extern int DescargaMSN();
+extern int CargaMSN();
 #endif
 
 extern int IniciaHTTPD();
 extern int DetieneHTTPD();
-extern int DescargaMSN();
-extern int CargaMSN();
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
