@@ -1,5 +1,5 @@
 /*
- * $Id: msn.c,v 1.18 2008-05-03 12:11:11 Trocotronic Exp $
+ * $Id: msn.c,v 1.19 2008-05-03 12:13:45 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -33,6 +33,7 @@ int MSNCPart(Cliente *, Canal *, char *);
 int MSNCKick(Cliente *, Canal *, char *);
 int MSNCJoin(Cliente *, Canal *);
 int MSNCQuit(Cliente *, char *);
+int SendMSN(char *, char *, ...);
 Hash MSNuTab[UMAX];
 MSNCl *msncls = NULL;
 MSNSB *msnsbs = NULL;
@@ -214,14 +215,13 @@ SOCKFUNC(MSNSBOpen)
 }
 SOCKFUNC(MSNSBRead)
 {
-	char *c;
 	MSNSB *sb;
 	Debug("[Parseando: %s]", data);
 	if (!(sb = BuscaSB(sck)))
 		return 1;
 	if (!strncmp(data, "MSG", 3))
 	{
-		char *msg, *acc, *cuenta;
+		char *msg, *cuenta;
 		if ((msg = strstr(data, "\r\n\r\n")))
 		{
 			*msg = '\0';
@@ -821,7 +821,7 @@ MSNFUNC(MSNJoin)
 			}
 		}
 	}
-	if (!BadPtr(tmp))
+	if (tmp != '\0')
 		SendMSN(sb->mcl->cuenta, tmp);
 	ircsprintf(buf, "%s Entra en %s", sb->mcl->cl->nombre, argv[0]);
 	EnviaMsgCanal(sb->mcl->cl, cn, buf);
