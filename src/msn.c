@@ -1,5 +1,5 @@
 /*
- * $Id: msn.c,v 1.19 2008-05-03 12:13:45 Trocotronic Exp $
+ * $Id: msn.c,v 1.20 2008-05-03 12:14:11 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -821,7 +821,7 @@ MSNFUNC(MSNJoin)
 			}
 		}
 	}
-	if (tmp != '\0')
+	if (tmp[0] != '\0')
 		SendMSN(sb->mcl->cuenta, tmp);
 	ircsprintf(buf, "%s Entra en %s", sb->mcl->cl->nombre, argv[0]);
 	EnviaMsgCanal(sb->mcl->cl, cn, buf);

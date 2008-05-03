@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.58 2008-02-16 23:19:42 Trocotronic Exp $ 
+ * $Id: chanserv.c,v 1.59 2008-05-03 12:15:43 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -129,9 +129,9 @@ ModInfo MOD_INFO(ChanServ) = {
 	"ChanServ" ,
 	0.11 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com" 
+	"trocotronic@redyc.com"
 };
-	
+
 int MOD_CARGA(ChanServ)(Modulo *mod)
 {
 	Conf modulo;
@@ -800,7 +800,7 @@ BOTFUNC(CSIdentify)
 		ircsprintf(buf, "Identificación incorrecta. /msg %s@%s IDENTIFY #canal pass", chanserv->hmod->nick, me.nombre);
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
-	}	
+	}
 	if (strcmp(SQLCogeRegistro(CS_SQL, param[1], "pass"), MDString(param[2], 0)))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Contraseña incorrecta.");
@@ -962,7 +962,7 @@ BOTFUNC(CSInvite)
 	}
 	ProtFunc(P_INVITE)(al ? al : cl, CLI(chanserv), cn);
 	Responde(cl, CLI(chanserv), "El usuario \00312%s\003 ha sido invitado a \00312%s\003.", params == 3 ? param[2] : parv[0], param[1]);
-	CSDebug(param[1], "%s invita a %s", parv[0], params == 3 ? param[2] : parv[0]); 
+	CSDebug(param[1], "%s invita a %s", parv[0], params == 3 ? param[2] : parv[0]);
 	EOI(chanserv, 5);
 	return 0;
 }
@@ -1318,7 +1318,7 @@ BOTFUNC(CSOpts)
 			modos = Unifica(param, params, 3, -1);
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), BuscaCanal(param[1]), modos);
 			Responde(cl, CLI(chanserv), "Modos cambiados.");
-			
+
 		}
 		else
 			Responde(cl, CLI(chanserv), "Modos eliminados.");
@@ -1528,9 +1528,9 @@ BOTFUNC(CSAkick)
 		Cliente *al;
 		char *motivo = Unifica(param, params, 3, -1), *m_c;
 		m_c = SQLEscapa(motivo);
-		SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')", 
+		SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')",
 			PREFIJO, CS_AKICKS,
-			param[1], param[2], 
+			param[1], param[2],
 			m_c, cl->nombre);
 		Free(m_c);
 		if ((al = BuscaCliente(param[2])))
@@ -1650,7 +1650,7 @@ BOTFUNC(CSAccess)
 			}
 			modos++;
 		}
-		if (!BadPtr(autof))
+		if (autof[0] != '\0')
 		{
 			char *c;
 			if ((c = strchr(autof, ']')))
@@ -1661,9 +1661,9 @@ BOTFUNC(CSAccess)
 		if (!res)
 			SQLQuery("INSERT INTO %s%s (canal,nick) values ('%s','%s')", PREFIJO, CS_ACCESS, c_c, n_c);
 		SQLQuery("UPDATE %s%s SET nivel=%lu WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, prev, c_c, n_c);
-		if (!BadPtr(autof))
+		if (autof[0] != '\0')
 			SQLQuery("UPDATE %s%s SET automodos='%s' WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, autof, c_c, n_c);
-		if (prev || !BadPtr(autof))
+		if (prev || autof[0] != '\0')
 		{
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
 			CSDebug(param[1], "Acceso de \00312%s\003 cambiado a %s", param[2], Unifica(param, params, 3, -1));
@@ -1939,8 +1939,8 @@ BOTFUNC(CSBlock)
 	}
 	ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+iml 1");
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido bloqueado.", param[1]);
-	/* aun asi podrán opearse si tienen nivel, se supone que este comando lo utilizan los operadores 
-	   y estan supervisando el canal, para que si alguno se opea se le killee, o simplemente por hacer 
+	/* aun asi podrán opearse si tienen nivel, se supone que este comando lo utilizan los operadores
+	   y estan supervisando el canal, para que si alguno se opea se le killee, o simplemente por hacer
 	   la gracia */
 	EOI(chanserv, 19);
 	return 0;
@@ -2243,7 +2243,7 @@ int CSCmdTopic(Cliente *cl, Canal *cn, char *topic)
 			SQLInserta(CS_SQL, cn->nombre, "topic", topic);
 			SQLInserta(CS_SQL, cn->nombre, "ntopic", cl->nombre);
 		}
-	}	
+	}
 	return 0;
 }
 int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
@@ -2254,7 +2254,7 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 	{
 		if (CSTieneNivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
 			ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
-	}	
+	}
 	return 0;
 }
 int CSCmdJoin(Cliente *cl, Canal *cn)
@@ -2335,7 +2335,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 					if ((mod = strtok(NULL, "\0")))
 					{
 						char *p;
-						if ((p = strchr(mod, ' '))) 
+						if ((p = strchr(mod, ' ')))
 							strlcat(tokbuf, p+1, sizeof(tokbuf));
 						else
 							strlcat(tokbuf, mod, sizeof(tokbuf));
@@ -2454,16 +2454,16 @@ int CSSigSQL()
 								lev = NULL;
 							}
 							if (lev && autof)
-								SQLQuery("INSERT INTO %s%s (canal,nick,nivel,automodos) values ('%s','%s','%s','%s')", 
+								SQLQuery("INSERT INTO %s%s (canal,nick,nivel,automodos) values ('%s','%s','%s','%s')",
 									PREFIJO, CS_ACCESS,
 									row[0], tok,
 									lev, autof);
 							else if (autof)
-								SQLQuery("INSERT INTO %s%s (canal,nick,automodos) values ('%s','%s','%s')", 
+								SQLQuery("INSERT INTO %s%s (canal,nick,automodos) values ('%s','%s','%s')",
 									PREFIJO, CS_ACCESS,
 									row[0], tok, autof);
 							else if (lev)
-								SQLQuery("INSERT INTO %s%s (canal,nick,nivel) values ('%s','%s','%s')", 
+								SQLQuery("INSERT INTO %s%s (canal,nick,nivel) values ('%s','%s','%s')",
 									PREFIJO, CS_ACCESS,
 									row[0], tok, lev);
 						}
@@ -2503,7 +2503,7 @@ int CSSigSQL()
 							mo = strtok(NULL, "\1");
 							m_c = SQLEscapa(mo);
 							au = strtok(NULL, "\t");
-							SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')", 
+							SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')",
 								PREFIJO, CS_AKICKS,
 								row[0], tok,
 								m_c, au);
