@@ -1,7 +1,7 @@
-## $Id: Makefile,v 1.36 2007-11-10 18:28:03 Trocotronic Exp $
+## $Id: Makefile,v 1.37 2008-05-03 12:01:55 Trocotronic Exp $
 
 OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
-	misc.o modulos.o parseconf.o protocolos.o smtp.o socks.o socksint.o \
+	misc.o modulos.o msn.o parseconf.o protocolos.o smtp.o socks.o socksint.o \
 	soporte.o sql.o ssl.o version.o zlib.o
 SRC=$(OBJS:%.o=%.c)
 MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
@@ -69,6 +69,8 @@ misc.o: misc.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c misc.c
 modulos.o: modulos.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c modulos.c
+msn.o: msns.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c msn.c
 parseconf.o: parseconf.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c parseconf.c
 protocolos.o: protocolos.c $(INCLUDES)

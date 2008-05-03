@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.h,v 1.40 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: ircd.h,v 1.41 2008-05-03 12:01:55 Trocotronic Exp $ 
  */
  
 #include "hash.h"
@@ -375,6 +375,6 @@ typedef struct _tkl
 }Tkl;
 extern Tkl *InsertaTKL(int, char *, char *, char *, char *, time_t, time_t);
 extern int BorraTKL(Tkl **, char *, char *);
-extern Tkl *BuscaTKL(int, char*, Tkl *);
+extern Tkl *BuscaTKL(char*, Tkl *);
 #define TKL_MAX 16 /* máximo! */
 extern MODVAR Tkl *tklines[TKL_MAX];

@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.86 2008-04-23 21:13:11 Trocotronic Exp $
+ * $Id: cambios,v 1.87 2008-05-03 12:01:55 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -518,3 +518,4 @@
 090408574 - Se añade el comando SETUDB PREFIJOS para cambiar los prefijos de la red.
 090408575 - Arreglado un fallo con el sjoin.
 230408576 - Se añade una tabla de configuración.
+250408577 - Añadido el bloque K de UDB.
