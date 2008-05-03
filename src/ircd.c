@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.60 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: ircd.c,v 1.61 2008-05-03 12:01:55 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -23,14 +23,14 @@ time_t inicio;
  * @desc: Variable de uso general para cualquier trato con cadenas.
  * @cat: Programa
  !*/
- 
+
 char buf[BUFSIZE];
 char backupbuf[BUFSIZE];
 /*!
  * @desc: Cliente local del servidor de servicios.
  * @cat: IRCd
  !*/
- 
+
 Cliente me;
 Modulo *modulos;
 Cliente *linkado = NULL;
@@ -221,13 +221,13 @@ SOCKFUNC(CierraIrcd)
 	}
 	if (!data) /* es remoto */
 	{
-#ifdef _WIN32		
+#ifdef _WIN32
 		ChkBtCon(0, 1);
-#endif		
+#endif
 		if (++intentos > conf_set->reconectar.intentos)
 		{
 			Info("Se han realizado %i intentos y ha sido imposible conectar", intentos - 1);
-#ifdef _WIN32			
+#ifdef _WIN32
 			ChkBtCon(0, 0);
 #endif
 			intentos = 0;
@@ -275,7 +275,7 @@ SOCKFUNC(EscuchaAbre) /* nos aceptan el sock, lo renombramos */
  	    $... [in] Argumentos variables según cadena con formato.
  * @cat: IRCd
  !*/
- 
+
 void EnviaAServidor(char *formato, ...)
 {
 	va_list vl;
@@ -291,7 +291,7 @@ void EnviaAServidor(char *formato, ...)
  * @ret: Devuelve la estructura del cliente en caso de encontrarlo. Devuelve NULL si el cliente no existe.
  * @cat: IRCd
  !*/
- 
+
 Cliente *BuscaCliente(char *nick)
 {
 	Cliente *al = NULL;
@@ -306,7 +306,7 @@ Cliente *BuscaCliente(char *nick)
  * @ret: Devuelve la estructura del canal en caso de encontrarlo. Devuelve NULL si el canal no existe.
  * @cat: IRCd
  !*/
- 
+
 Canal *BuscaCanal(char *canal)
 {
 	Canal *cn = NULL;
@@ -328,7 +328,7 @@ Cliente *NuevoCliente(char *nombre, char *ident, char *host, char *ip, char *ser
 	//if (EsIp(host)) /* es ip, la resolvemos */
 	//	ResuelveHost(&cl->rvhost, cl->host);
 	if (ip)
-		cl->ip = strdup(ip);	
+		cl->ip = strdup(ip);
 	if (server)
 		cl->server = BuscaCliente(server);
 	if (vhost)
@@ -612,7 +612,7 @@ void DistribuyeMe(Cliente *me)
  * @ret: Devuelve esa máscara corregida.
  * @cat: IRCd
  !*/
- 
+
 char *MascaraIrcd(char *mascara)
 {
 	static char buf[BUFSIZE];
@@ -620,7 +620,7 @@ char *MascaraIrcd(char *mascara)
 	{
 		if (!strchr(mascara, '.'))
 			ircsprintf(buf, "%s!*@*", mascara);
-		else 
+		else
 			ircsprintf(buf, "*!*@%s", mascara);
 	}
 	else
@@ -640,7 +640,7 @@ char *MascaraIrcd(char *mascara)
  * @ver: SacaBot
  * @cat: Modulos
  !*/
- 
+
 Canal *EntraBot(Cliente *bl, char *canal)
 {
 	Canal *cn = NULL;
@@ -662,7 +662,7 @@ Canal *EntraBot(Cliente *bl, char *canal)
  	    $motivo [in] Motivo de la salida. Si no se precisa ninguno, usar NULL.
  * @cat: Modulos
  !*/
- 
+
 void SacaBot(Cliente *bl, char *canal, char *motivo)
 {
 	Canal *cn;
@@ -680,7 +680,7 @@ void SacaBot(Cliente *bl, char *canal, char *motivo)
  	    $tipo [in] Tipo de máscara. Número del 1 al 9.
  * @cat: IRCd
  !*/
- 
+
 char *TipoMascara(char *mask, int tipo)
 {
 	char *nick, *user, *host, *host2;
@@ -843,11 +843,11 @@ void LiberaMemoriaCanal(Canal *cn)
  	    $host [in] Host del bot.
  	    $modos [in] Modos de usuario del bot.
  	    $realname [in] Realname del bot.
- * @ret: Devuelve la estructura Cliente creada a partir de estos datos. 
+ * @ret: Devuelve la estructura Cliente creada a partir de estos datos.
  * @ver: DesconectaBot
  * @cat: Modulos
  !*/
- 
+
 Cliente *CreaBot(char *nick, char *ident, char *host, char *modos, char *realname)
 {
 	return CreaBotEx(nick, ident, host, modos, realname, me.nombre);
@@ -878,7 +878,7 @@ Cliente *CreaBotEx(char *nick, char *ident, char *host, char *modos, char *realn
  * @ver: CreaBot
  * @cat: Modulos
  !*/
- 
+
 void DesconectaBot(Cliente *bl, char *motivo)
 {
 	Modulo *ex;
@@ -909,10 +909,10 @@ void ReconectaBot(char *nick)
  Esta función se utiliza para introducir servidores adicionales al principal de los servicios.
  * @params: $host [in] Host del servidor.
  	    $info [in] Información del servidor.
- * @ret: Devuelve la estructura Cliente creada a partir de estos datos. 
+ * @ret: Devuelve la estructura Cliente creada a partir de estos datos.
  * @cat: IRCd
  !*/
- 
+
 Cliente *CreaServidor(char *host, char *info)
 {
 	Cliente *al;
@@ -948,7 +948,7 @@ char ModoAFlag(u_long mode, mTab tabla[])
 			return aux->flag;
 		aux++;
 	}
-	return (char)NULL;
+	return '\0';
 }
 u_long FlagsAModos(u_long *modos, char *flags, mTab tabla[])
 {
@@ -1033,7 +1033,7 @@ void ProcesaModosCliente(Cliente *cl, char *modos)
  	    $... [in] Argumentos variables según cadena con formato.
  * @cat: IRCd
  !*/
- 
+
 void Responde(Cliente *cl, Cliente *bot, char *formato, ...)
 {
 	va_list vl;
@@ -1130,13 +1130,15 @@ int BorraTKL(Tkl **lugar, char *user, char *host)
 			ircfree(aux->motivo);
 			ircfree(aux->autor);
 			ircfree(aux);
+			Free(s);
 			return 1;
 		}
 		prev = aux;
 	}
+	Free(s);
 	return 0;
 }
-Tkl *BuscaTKL(int tipo, char *mask, Tkl *lugar)
+Tkl *BuscaTKL(char *mask, Tkl *lugar)
 {
 	Tkl *aux;
 	for (aux = lugar; aux; aux = aux->sig)

@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.58 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.59 2008-05-03 12:01:55 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32
@@ -462,7 +462,7 @@ int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *mot
 	Tkl *tkl = NULL;
 	char *emisor = (bl ? bl->mask : me.nombre);
 	ircsprintf(buf, "%s@%s", ident, host);
-	if ((tkl = BuscaTKL(TKL_GLINE, buf, tklines[TKL_GLINE])) && (!tkl->fin || !strcmp(motivo, tkl->motivo)))
+	if ((tkl = BuscaTKL(buf, tklines[TKL_GLINE])) && (!tkl->fin || !strcmp(motivo, tkl->motivo)))
 		return 1;
 	if (modo == ADD)
 	{

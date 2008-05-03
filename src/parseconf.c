@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.37 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: parseconf.c,v 1.38 2008-05-03 12:04:25 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -59,6 +59,8 @@ static void ConfMSN	(Conf *);
 
 extern int IniciaHTTPD();
 extern int DetieneHTTPD();
+extern int DescargaMSN();
+extern int CargaMSN();
 
 /* el ultimo parámetro es la obliguetoriedad:
    Si es OBL, significa que es obligatorio a partir de la version dada (incluida)
@@ -117,7 +119,7 @@ static Opts Opts_Log[] = {
  * @ver: ParseaConfiguracion
  * @cat: Configuracion
  !*/
- 
+
 void LiberaMemoriaConfiguracion(Conf *seccion)
 {
 	int i;
@@ -246,7 +248,7 @@ void DescargaConfiguracion()
 }
 #define pce(x) Error("[%s:%i] " x, archivo, linea)
 /* parseconf
- * 
+ *
  * Inicializa una config y la mete en rama.
  * 0 Error
  * 1 Ok
@@ -260,7 +262,7 @@ void DescargaConfiguracion()
  * @ver: LiberaMemoriaConfiguracion
  * @cat: Configuracion
  !*/
- 
+
 int ParseaConfiguracion(char *archivo, Conf *rama, char avisa)
 {
 	int fp, linea, error = 0;
@@ -510,8 +512,8 @@ void Printea(Conf *conf, int escapes)
 			Debug("%s};", tabs);
 		}
 	}
-}	
-/* 
+}
+/*
  * distribuye_conf
  * Distribuye por bloques la configuración parseada
  */
@@ -525,7 +527,7 @@ void DistribuyeConfiguracion(Conf *config)
 		com = &cComs[0];
 		while (com->nombre != 0x0)
 		{
-			
+
 			if (!strcasecmp(config->seccion[i]->item, "protocolo"))
 			{
 				prot = config->seccion[i];
@@ -552,17 +554,17 @@ void DistribuyeConfiguracion(Conf *config)
 	com = &cComs[0];
 	while (com->nombre != 0x0)
 	{
-#ifdef _WIN32		
+#ifdef _WIN32
 		if ((com->opt == OBL && VerInfo.dwMajorVersion >= com->min_os) || (com->opt == OPC && VerInfo.dwMajorVersion < com->min_os))
 #else
 		if (com->opt == OBL)
-#endif			
+#endif
 		{
 			if (!BuscaEntrada(config, com->nombre))
 			{
 				Alerta(FERR, "No se encuentra la seccion %s", com->nombre);
 				errores++;
-			}		
+			}
 		}
 		com++;
 	}
@@ -1047,7 +1049,7 @@ int TestSet(Conf *config, int *errores)
 		}
 		else
 		{
-			
+
 			if (!(rec = atoi(aux->data)) || rec < 1 || rec >999)
 			{
 				Error("[%s:%s::%s::%s::%i] Intentos de reconexion invalido (1-999).", config->archivo, config->item, eval->item, aux->item, aux->linea);
@@ -1339,7 +1341,7 @@ void ConfSSL(Conf *config)
 			if (config->seccion[i]->data)
 				ircstrdup(conf_ssl->egd_path, config->seccion[i]->data);
 		}
-		else if (!strcmp(config->seccion[i]->item, "certificado"))	
+		else if (!strcmp(config->seccion[i]->item, "certificado"))
 			ircstrdup(conf_ssl->x_server_cert_pem, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "clave"))
 			ircstrdup(conf_ssl->x_server_key_pem, config->seccion[i]->data);
@@ -1422,8 +1424,8 @@ int TestHttpd(Conf *config, int *errores)
 		{
 			Error("[%s:%s::%s::%i] No se encuentra el archivo %s.", config->archivo, config->item, eval->item, eval->linea, eval->data);
 			error_parcial++;
-		}			
-	}		
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -1452,7 +1454,6 @@ void ConfHttpd(Conf *config)
 int TestMSN(Conf *config, int *errores)
 {
 	short error_parcial = 0;
-	int puerto;
 	Conf *eval;
 	if (!(eval = BuscaEntrada(config, "cuenta")))
 	{
@@ -1542,7 +1543,7 @@ void Error(char *formato, ...)
 	ircvsprintf(buf, formato, vl);
 	va_end(vl);
 	strlcat(buf, "\r\n", sizeof(buf));
-	fprintf(stderr, buf);	
+	fprintf(stderr, buf);
 }
 int Info(char *formato, ...)
 {

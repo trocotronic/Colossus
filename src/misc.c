@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.22 2008-04-05 20:39:22 Trocotronic Exp $ 
+ * $Id: misc.c,v 1.23 2008-05-03 12:01:55 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -25,14 +25,14 @@ typedef struct _ecmd
 	void *v;
 }ECmd;
 #ifdef _WIN32
-HANDLE CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr) 
-{ 
-	PROCESS_INFORMATION piProcInfo; 
+HANDLE CreateChildProcess(char *cmd, HANDLE hChildStdinRd, HANDLE hChildStdoutWr)
+{
+	PROCESS_INFORMATION piProcInfo;
 	STARTUPINFO siStartInfo;
 	BOOL bFuncRetn = FALSE;
 	ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 	ZeroMemory(&siStartInfo, sizeof(STARTUPINFO));
-	siStartInfo.cb = sizeof(STARTUPINFO); 
+	siStartInfo.cb = sizeof(STARTUPINFO);
 	siStartInfo.hStdError = hChildStdoutWr;
 	siStartInfo.hStdOutput = hChildStdoutWr;
 	siStartInfo.hStdInput = hChildStdinRd;
@@ -75,11 +75,11 @@ int EjecutaCmd(ECmd *ecmd)
 	Free(ecmd);
    	return 0;*/
 	HANDLE hChildStdoutRd, hProc;
-	SECURITY_ATTRIBUTES saAttr; 
+	SECURITY_ATTRIBUTES saAttr;
    	DWORD dwRead;
    	char *res, tmp[BUFSIZE], name[BUFSIZE];
-   	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES); 
-	saAttr.bInheritHandle = TRUE; 
+   	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saAttr.bInheritHandle = TRUE;
 	saAttr.lpSecurityDescriptor = NULL;
 	do {
 		ircsprintf(name, "tmp/output%lu.tmp", Aleatorio(0, 99999));
@@ -272,7 +272,7 @@ Directorio AbreDirectorio(char *dirname)
 {
 	Directorio dir;
 #ifdef _WIN32
-	char DirSpec[MAX_PATH + 1], *c, *d; 
+	char DirSpec[MAX_PATH + 1], *c, *d;
 	for (c = dirname, d = DirSpec; !BadPtr(c); c++)
 	{
 		if (*c == '/')
@@ -308,7 +308,7 @@ Directorio AbreDirectorio(char *dirname)
  		char *nombre;
  		while ((nombre = LeeDirectorio(dir)))
  		{
- 			// nombre irá tomando los nombres de los archivos en "database" 
+ 			// nombre irá tomando los nombres de los archivos en "database"
  		}
  		CierraDirectorio(dir);
  	}
@@ -342,7 +342,7 @@ char *LeeDirectorio(Directorio dir)
 	while ((dir_entry = readdir(dir)) != NULL)
 	{
 		lstat(dir_entry->d_name, &stat_info);
-		if (S_ISDIR(stat_info.st_mode)) 
+		if (S_ISDIR(stat_info.st_mode))
 			continue;
 		return dir_entry->d_name;
 	}
@@ -375,7 +375,7 @@ void CierraDirectorio(Directorio dir)
  	    $... [in] Argumentos variables según la cadena de formato.
  * @cat: Programa
  !*/
- 
+
 void Alerta(char err, char *error, ...)
 {
 	char buf[BUFSIZE];
@@ -471,7 +471,7 @@ int Pregunta(char *preg)
  	    $... [in] Argumentos variables según cadena de formato.
  * @cat: Programa
  !*/
- 
+
 void Loguea(int opt, char *formato, ...)
 {
 	char buf[256], auxbuf[512], *campo;
@@ -493,6 +493,8 @@ void Loguea(int opt, char *formato, ...)
 		campo = "ERR";
 	else if (opt == LOG_MSN)
 		campo = "MSN";
+	else
+		campo = "UH?";
 	ircsprintf(auxbuf, "[%s] (%s) > %s\n", Fecha(&tm), campo, buf);
 	if (stat(conf_log->archivo, &inode) == -1)
 		return;
@@ -513,7 +515,7 @@ void Loguea(int opt, char *formato, ...)
  * @cat: Internet
  * @ver: URLDecode
  !*/
- 
+
 char *URLEncode(char *str)
 {
 	char *coded, *c, *d;
@@ -545,7 +547,7 @@ char *URLEncode(char *str)
  * @cat: Internet
  * @ver: URLEncode
  !*/
- 
+
 char *URLDecode(char *str)
 {
 	char *coded, *c, *d;
@@ -558,11 +560,12 @@ char *URLDecode(char *str)
 		if (*c == '%')
 		{
 			char tmp[3];
+			u_int itmp;
 			tmp[0] = *(c+1);
 			tmp[1] = *(c+2);
 			tmp[2] = 0;
-			sscanf(tmp, "%02X", &tmp[0]);
-			*d++ = tmp[0];
+			sscanf(tmp, "%02X", &itmp);
+			*d++ = itmp;
 			c += 2;
 		}
 		else

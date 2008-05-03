@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.37 2008-05-03 12:01:55 Trocotronic Exp $
+## $Id: Makefile,v 1.38 2008-05-03 12:02:39 Trocotronic Exp $
 
 OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
 	misc.o modulos.o msn.o parseconf.o protocolos.o smtp.o socks.o socksint.o \
@@ -69,7 +69,7 @@ misc.o: misc.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c misc.c
 modulos.o: modulos.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c modulos.c
-msn.o: msns.c $(INCLUDES)
+msn.o: msn.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c msn.c
 parseconf.o: parseconf.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c parseconf.c
