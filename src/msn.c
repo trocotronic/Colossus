@@ -1,9 +1,9 @@
 /*
- * $Id: msn.c,v 1.17 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: msn.c,v 1.18 2008-05-03 12:11:11 Trocotronic Exp $
  */
 
-#ifdef USA_SSL
 #include "struct.h"
+#ifdef USA_SSL
 #include "ircd.h"
 #include "msn.h"
 #include "modulos.h"
@@ -857,7 +857,7 @@ int MSNSynch()
 	{
 	}
 	return 0;
-}	
+}
 int MSNSockClose()
 {
 	MSNCl *mcl;
