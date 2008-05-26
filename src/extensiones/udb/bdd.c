@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.23 2008-04-23 21:36:49 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.24 2008-05-26 22:07:06 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32
@@ -60,6 +60,7 @@ UDBloq *AltaBloque(char letra, char *ruta, Udb **dest)
 	reg->regs = 0;
 	reg->gmt = 0L;
 	reg->res = NULL;
+	reg->ver = 0;
 	*dest = reg->arbol;
 	reg->sig = ultimo;
 	ultimo = reg;
@@ -226,14 +227,14 @@ UDBloq *CogeDeId(u_int id)
 	}
 	return NULL;
 }
-void InsertaRegistroEnHash(Udb *registro, int donde, char *clave)
+void InsertaRegistroEnHash(Udb *registro, u_int donde, char *clave)
 {
 	u_int hashv;
 	hashv = HashCliente(clave) % MAX_HASH;
 	registro->hsig = hash[donde][hashv];
 	hash[donde][hashv] = registro;
 }
-int BorraRegistroDeHash(Udb *registro, int donde, char *clave)
+int BorraRegistroDeHash(Udb *registro, u_int donde, char *clave)
 {
 	Udb *aux, *prev = NULL;
 	u_int hashv;
@@ -277,6 +278,7 @@ Udb *CreaRegistro(Udb *bloque)
 	reg->id = 0;
 	reg->down = NULL;
 	reg->up = bloque;
+	reg->b64 = 0;
 	reg->mid = bloque->down;
 	bloque->down = reg;
 	return reg;
@@ -290,7 +292,17 @@ Udb *DaFormato(char *form, Udb *reg, size_t t)
 	else
 		return reg;
 	if (!BadPtr(reg->item))
-		strlcat(form, reg->item, t);
+	{
+		if (reg->b64)
+		{
+			char tmp[BUFSIZE];
+			b64_encode(reg->item, strlen(reg->item), &tmp[1], BUFSIZE-1);
+			tmp[0] = CHAR_B64;
+			strlcat(form, tmp, t);
+		}
+		else
+			strlcat(form, reg->item, t);
+	}
 	if (reg->down)
 		strlcat(form, "::", t);
 	else
@@ -323,7 +335,6 @@ int GuardaEnArchivo(Udb *reg, u_int tipo)
 	lseek(bloq->fd, 0, SEEK_END);
 	if (write(bloq->fd, form, sizeof(char) * strlen(form)) < 0)
 		return 0;
-	ActualizaHash(bloq);
 	return 1;
 }
 int GuardaEnArchivoInv(Udb *reg, u_int tipo)
@@ -496,6 +507,7 @@ void LiberaMemoriaUdb(u_int tipo, Udb *reg)
 Udb *BorraRegistro(u_int tipo, Udb *reg, int archivo)
 {
 	Udb *aux, *down, *prev = NULL, *up;
+	UDBloq *bloq;
 	if (!(up = reg->up)) /* estamos arriba de todo */
 		return NULL;
 	BorraRegistroDeHash(reg, tipo, reg->item);
@@ -505,8 +517,12 @@ Udb *BorraRegistro(u_int tipo, Udb *reg, int archivo)
 	reg->data_long = 0L;
 	down = reg->down;
 	reg->down = NULL;
+	bloq = CogeDeId(tipo);
 	if (archivo)
+	{
 		GuardaEnArchivo(reg, tipo);
+		ActualizaHash(bloq);
+	}
 	for (aux = up->down; aux; aux = aux->mid)
 	{
 		if (aux == reg)
@@ -521,31 +537,25 @@ Udb *BorraRegistro(u_int tipo, Udb *reg, int archivo)
 	}
 	reg->mid = NULL;
 	reg->down = down;
-	if (!reg->up->up)
-	{
-		UDBloq *root;
-		if ((root = CogeDeId(tipo)))
-			root->regs--;
-	}
+	if (!reg->up->up && bloq)
+		bloq->regs--;
 	LiberaMemoriaUdb(tipo, reg);
 	if (!up->down && up->up)
 		up = BorraRegistro(tipo, up, archivo);
 	return up;
-}	
+}
 Udb *InsertaRegistro(u_int tipo, Udb *bloque, char *item, char *data_char, u_long data_long, int archivo)
 {
 	Udb *reg;
+	UDBloq *bloq;
 	if (!bloque || !item)
 		return NULL;
+	bloq = CogeDeId(tipo);
 	if (!(reg = BuscaBloque(item, bloque)))
 	{
 		reg = CreaRegistro(bloque);
-		if (!bloque->up)
-		{
-			UDBloq *root;
-			if ((root = CogeDeId(tipo)))
-				root->regs++;
-		}
+		if (!bloque->up && bloq)
+			bloq->regs++;
 		reg->id = bloque->id;
 		/*if (*(item+1) == '\0')
 		{
@@ -568,9 +578,12 @@ Udb *InsertaRegistro(u_int tipo, Udb *bloque, char *item, char *data_char, u_lon
 		reg->data_char = strdup(data_char);
 	reg->data_long = data_long;
 	if (archivo && (data_char || data_long))
+	{
 		GuardaEnArchivo(reg, tipo);
+		ActualizaHash(bloq);
+	}
 	return reg;
-}	
+}
 int ParseaLinea(UDBloq *root, char *cur, int archivo)
 {
 	char *ds, *cop, *sp = NULL;
@@ -586,7 +599,17 @@ int ParseaLinea(UDBloq *root, char *cur, int archivo)
 		{
 			*ds++ = '\0';
 			if (*cur)
-				bloq = InsertaRegistro(bloq->id, bloq, cur, NULL, 0, archivo);
+			{
+				if (*cur == CHAR_B64)
+				{
+					char tmp[BUFSIZE];
+					b64_decode(cur+1, tmp, BUFSIZE);
+					bloq = InsertaRegistro(bloq->id, bloq, tmp, NULL, 0, archivo);
+					bloq->b64 = 1;
+				}
+				else
+					bloq = InsertaRegistro(bloq->id, bloq, cur, NULL, 0, archivo);
+			}
 		}
 		else /* ya no son :: */
 			break;
@@ -607,8 +630,18 @@ int ParseaLinea(UDBloq *root, char *cur, int archivo)
 	else
 	{
 		borra:
-		if ((bloq = BuscaBloque(cur, bloq)))
-			bloq = BorraRegistro(bloq->id, bloq, archivo);
+		if (*cur == CHAR_B64)
+		{
+			char tmp[BUFSIZE];
+			b64_decode(cur+1, tmp, BUFSIZE);
+			if ((bloq = BuscaBloque(tmp, bloq)))
+				bloq = BorraRegistro(bloq->id, bloq, archivo);
+		}
+		else
+		{
+			if ((bloq = BuscaBloque(cur, bloq)))
+				bloq = BorraRegistro(bloq->id, bloq, archivo);
+		}
 	}
 	Free(cop);
 	if (bloq)
@@ -771,7 +804,7 @@ int ActualizaDataVer2()
 			"swhois" , "W" ,
 			NULL
 		} ,
-		{		
+		{
 			"fundador" , "F" ,
 			"modos" , "M" ,
 			"topic" , "T" ,
@@ -791,7 +824,7 @@ int ActualizaDataVer2()
 		{ 0 , 1 } ,
 		{ 0 , 1 , 0 } ,
 		{ 0 , 1 }
-	}; 
+	};
 	FILE *fp, *tmp;
 	int i, j, k;
 	char *c, *d, buf[8192], f, p1[PMAX], p2[PMAX];

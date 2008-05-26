@@ -1,15 +1,15 @@
 /*
- * $Id: confver.c,v 1.2 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: confver.c,v 1.3 2008-05-26 22:07:06 Trocotronic Exp $
  */
 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-int main() 
+int main()
 {
 	char buf[1024], *l, *c, d, ver[32];
 	FILE *fp1, *fp2;
-	int v1, v2, v3, rev, comps = 0;
+	int v1, v2, v3, rev, comps = 1;
 	if (!(fp1 = fopen("cambios", "r")))
 		return -1;
 	while (fgets(buf, sizeof(buf)-1, fp1))

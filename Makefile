@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.33 2008-02-14 16:19:28 Trocotronic Exp $
+## $Id: Makefile,v 1.34 2008-05-26 22:08:58 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-NOCORE=1
+#NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####

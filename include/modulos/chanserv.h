@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.13 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: chanserv.h,v 1.14 2008-05-26 22:07:06 Trocotronic Exp $
  */
 
 #define CS_SID 0x1
@@ -28,7 +28,7 @@ struct _cs
 #define CS_OPT_HIDE 0x20 /* canal oculto +h */
 #define CS_OPT_DEBUG 0x40 /* canal en debug +d */
 #define CS_OPT_NODROP 0x80 /* canal no dropable +n */
-
+/* ATENCION: CS_OPT_UDB 0x1000 */
 
 /* Niveles */
 

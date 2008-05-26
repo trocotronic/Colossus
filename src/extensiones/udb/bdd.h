@@ -9,10 +9,11 @@
 typedef struct _udb
 {
 	char *item;
-	int id;
+	u_int id;
 	char *data_char;
 	u_long data_long;
 	struct _udb *hsig, *up, *mid, *down;
+	unsigned b64:1; /* 1 si el item está en b64 */
 }Udb;
 typedef struct _bloque
 {
@@ -42,7 +43,8 @@ typedef struct _bloque
 #define INI_DATA (INI_GMT + sizeof(time_t))
 
 #define DBMAX 64
-#define CHAR_NUM '*'
+#define CHAR_NUM '*' /* caracter para indicar que se trata de un entero largo */
+#define CHAR_B64 '=' /* caracter para indicar que la cadena está cifrada en b64 */
 extern UDBloq *N, *C, *I, *S, *L, *K;
 extern Udb *UDB_NICKS, *UDB_CANALES, *UDB_IPS, *UDB_SET, *UDB_LINKS, *UDB_LINES;
 
@@ -113,6 +115,11 @@ extern int RestauraSeguridad(UDBloq *, char *);
 #define S_FLO "F"	/* pass-flood */
 #define S_PRE "P" /* prefijos */
 #define L_OPT "O"	/* opciones */
+#define K_TIP "T"
+#define K_ACC "A"
+#define K_TKL "K"
+#define K_RAZ "R"
+
 
 #define C_OPT_PBAN 0x1
 #define C_OPT_RMOD 0x2

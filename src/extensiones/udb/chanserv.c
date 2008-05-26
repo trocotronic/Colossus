@@ -11,7 +11,7 @@ ChanServ *chanserv = NULL;
 #else
 extern ChanServ *chanserv;
 #endif
-#define CS_OPT_UDB 0x80
+#define CS_OPT_UDB 0x1000
 #define CS_AUTOMIGRAR 0x1000
 int CSSigDrop(char *);
 int CSSigEOS_U();
@@ -20,8 +20,8 @@ EXTFUNC(CSInfo_U);
 EXTFUNC(CSOpts_U);
 EXTFUNC(CSSuspender_U);
 EXTFUNC(CSLiberar_U);
-EXTFUNC(CSForbid_U); 
-EXTFUNC(CSUnforbid_U); 
+EXTFUNC(CSForbid_U);
+EXTFUNC(CSUnforbid_U);
 EXTFUNC(CSRegister_U);
 BOTFUNC(CSMigrar);
 BOTFUNCHELP(CSHMigrar);
@@ -164,7 +164,6 @@ EXTFUNC(CSOpts_U)
 	}
 	else if (!strcasecmp(param[2], "MODOS"))
 	{
-		
 		if (params > 3)
 		{
 			char *c, *str;

@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.10 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: nickserv.h,v 1.11 2008-05-26 22:07:06 Trocotronic Exp $
  */
 
 #define NS_SID 0x1
@@ -43,6 +43,7 @@ extern NickServ *nickserv;
 #define NS_OPT_QUIT 0x10
 #define NS_OPT_LIST 0x20
 #define NS_OPT_NODROP 0x40
+/* ATENCION: NS_OPT_UDB 0x80 */
 
 #define NS_SQL "nicks"
 #define NS_FORBIDS "nforbids"
