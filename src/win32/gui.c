@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.24 2008-05-31 12:45:30 Trocotronic Exp $
+ * $Id: gui.c,v 1.25 2008-05-31 21:46:04 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -11,8 +11,8 @@
 #endif
 #include <commctrl.h>
 #include <windows.h>
-#include <pthread.h>
 #include <process.h>
+#include <pthread.h>
 
 extern void InitDebug(void);
 extern int IniciaPrograma(int, char **);
@@ -107,7 +107,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	InitDebug();
 	if (WSAStartup(MAKEWORD(1, 1), &wsaData))
 	{
-		MessageBox(hWnd, "No se ha podido inicializar winsock.", "Error", MB_OK|MB_ICONERROR);
+		MessageBox(NULL, "No se ha podido inicializar winsock.", "Error", MB_OK|MB_ICONERROR);
 		exit(-1);
 	}
 	ShowWindow(hWnd, SW_SHOW);
@@ -115,7 +115,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		exit(-1);
 	if ((hThreadPrincipal = (HANDLE)_beginthread(LoopPrincipal, 0, NULL)) < 0)
 	{
-		MessageBox(hWnd, "Ha sido imposible crear el thread.", "Error", MB_OK|MB_ICONERROR);
+		MessageBox(NULL, "Ha sido imposible crear el thread.", "Error", MB_OK|MB_ICONERROR);
 		exit(-1);
 	}
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -149,7 +149,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_CLOSE:
 		{
-			if (MessageBox(hDlg, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
+			if (MessageBox(NULL, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 				return 0;
 			else
 			{
@@ -305,7 +305,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					Refresca();
 					break;
 				case IDM_SHUTDOWN:
-					if (MessageBox(hDlg, "¿Quiere cerrar Colossus?", "¿Está seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
+					if (MessageBox(NULL, "¿Quiere cerrar Colossus?", "¿Está seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 						return 0;
 					else
 						CierraColossus(0);

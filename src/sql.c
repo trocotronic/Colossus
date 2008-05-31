@@ -1,65 +1,130 @@
 /*
- * $Id: sql.c,v 1.14 2008-01-16 15:43:21 Trocotronic Exp $ 
+ * $Id: sql.c,v 1.15 2008-05-31 21:46:05 Trocotronic Exp $
  */
 
 #include "struct.h"
-#include "ircd.h"
-#ifndef _WIN32
-#include <dlfcn.h>
-#endif
-
+#include <stdio.h>
 #ifdef _WIN32
-extern const char *ErrorDl(void);
+#include <mysql.h>
+#include <winerror.h>
+#else
+#include <mysql/mysql.h>
 #endif
+#include "ircd.h"
 
 SQL sql = NULL;
+MYSQL *mysql = NULL;
 void SetSQLErrno();
-
+SQLRes MySQLQuery(const char *);
+static char *server_args[] = {
+	"this_program",       /* this string is not used */
+	"--datadir=./database/mysql/data",
+	"--basedir=./database/mysql",
+	"--key_buffer_size=32M"
+};
+static char *server_groups[] = {
+	"embedded",
+	"server",
+	"this_program_SERVER",
+	(char *)NULL
+};
 void LiberaSQL()
 {
 	int i, j;
 	if (!sql)
 		return;
-	irc_dlclose(sql->hmod);
 	for (i = 0; (sql->tablas[i][0]); i++)
 	{
 		for (j = 1; (sql->tablas[i][j]); j++)
 			ircfree(sql->tablas[i][j]);
 		ircfree(sql->tablas[i][0]);
 	}
+	mysql_library_end();
 	ircfree(sql);
 	sql = NULL;
 }
-int CargaSQL(char *sqlf)
+int CargaSQL()
 {
-	char archivo[MAX_FNAME], tmppath[PMAX];
-	int (*Carga)();
+	char *c;
+	my_bool rec = 1;
+	FILE *fp;
+	mkdir("database/mysql/data",0600);
 	if (sql)
 		LiberaSQL();
 	sql = BMalloc(struct _sql);
-	if ((sql->hmod = CopiaDll(sqlf, archivo, tmppath)))
+	if (mysql_library_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
+		return -1;
+	if (!(mysql = mysql_init(NULL)))
+		return -1;
+	mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "libmysqld_client");
+	mysql_options(mysql, MYSQL_OPT_USE_EMBEDDED_CONNECTION, NULL);
+	if (!mysql_real_connect(mysql, NULL, NULL, NULL, NULL, 0, NULL, 0))
 	{
-		irc_dlsym(sql->hmod, "Carga", Carga);
-		if (!Carga)
+		Alerta(FERR, "MySQL no puede conectar\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+		return -1;
+	}
+	if (mysql_select_db(mysql, "colossus"))
+	{
+#ifdef _WIN32
+		if (MessageBox(NULL, "La base de datos no existe. ¿Quiere crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+#else
+		if (Pregunta("La base de datos no existe. ¿Quiere crearla?") == 1)
+#endif
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (Carga)", archivo);
-			LiberaSQL();
-			return 3;
+			SQLQuery("CREATE DATABASE IF NOT EXISTS colossus");
+			if (sql->_errno)
+			{
+				Alerta(FERR, "Ha sido imposible crear la base de datos\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+				return -3;
+			}
+			else
+				Alerta(FOK, "La base de datos se ha creado con exito");
+			/* Esto no debería ocurrir nunca */
+			if (mysql_select_db(mysql, "colossus"))
+			{
+				Alerta(FERR, "Error fatal\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+				return -4;
+			}
 		}
-		sql->Carga = Carga;
-		if (Carga())
+		else
 		{
-			Alerta(FADV, "Ha sido imposible cargar %s (Carga())", archivo);
-			LiberaSQL();
-			return 3;
+			Alerta(FERR, "Para utilizar los servicios es necesario una base de datos");
+			return -5;
 		}
 	}
-	else
+	mysql_options(mysql, MYSQL_OPT_RECONNECT, &rec);
+	sql->recurso = (void *)mysql;
+	if ((fp = fopen("utils/prev-db[110].sql", "r")))
 	{
-		Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", archivo, irc_dlerror());
-		return 4;
+#ifdef _WIN32
+		if (MessageBox(NULL, "Se ha encontrado una copia del sistema antiguo. ¿Quiere volcar los datos al nuevo sistema (los datos actuales se borrarán)?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+#else
+		if (Pregunta("Se ha encontrado una copia del sistema antiguo. ¿Quiere volcar los datos al nuevo sistema (los datos actuales se borraran)?") == 1)
+#endif
+		{
+			char tmp[8092];
+			int i;
+			SQLCargaTablas();
+			for (i = 0; sql->tablas[i][0]; i++)
+				SQLQuery("DROP TABLE %s", sql->tablas[i][0]);
+			while (fgets(tmp, sizeof(tmp), fp))
+			{
+				if (tmp[0] != '\n' && tmp[0] != '\r')
+					SQLQuery(tmp);
+			}
+			fclose(fp);
+			unlink("utils/prev-db[110].sql");
+		}
+		else
+			fclose(fp);
 	}
-	SetSQLErrno();
+	ircsprintf(sql->servinfo, "MySQL %s", mysql_get_server_info(mysql));
+	ircsprintf(sql->clientinfo, "MySQL %s", mysql_get_client_info());
+	if ((c = strchr(sql->servinfo, '-')))
+		*c = '\0';
+	if ((c = strchr(sql->clientinfo, '-')))
+		*c = '\0';
+	SQLCargaTablas();
 	return 0;
 }
 
@@ -69,7 +134,7 @@ int CargaSQL(char *sqlf)
  * @ret: Devuelve 1 si existe; 0, si no.
  * @cat: SQL
  !*/
- 
+
 int SQLEsTabla(char *tabla)
 {
 	int i = 0;
@@ -92,7 +157,7 @@ int SQLEsTabla(char *tabla)
  * @ret: Devuelve 1 si el campo existe en esa tabla; 0, si no.
  * @cat: SQL
  !*/
- 
+
 int SQLEsCampo(char *tabla, char *campo)
 {
 	int i = 0, j;
@@ -114,7 +179,38 @@ int SQLEsCampo(char *tabla, char *campo)
 	}
 	return 0;
 }
-
+SQLRes MySQLQuery(const char *query)
+{
+	MYSQL_RES *resultado;
+	if (!mysql)
+	{
+		CargaSQL();
+		if (!mysql)
+			return NULL;
+	}
+	if (mysql_ping(mysql))
+		CargaSQL();
+	if (mysql_query(mysql, query) < 0)
+	{
+		Info("SQL ha detectado un error.[Backup Buffer: %s][%i:%s]\n", query, mysql_errno(mysql), mysql_error(mysql));
+		return NULL;
+	}
+	if ((resultado = mysql_store_result(mysql)))
+	{
+		if (!mysql_num_rows(resultado))
+		{
+			mysql_free_result(resultado);
+			return NULL;
+		}
+		return (SQLRes)resultado;
+	}
+	else if (mysql_errno(mysql))
+	{
+		Info("SQL ha detectado un error.\n[Backup Buffer: %s]\n[%i: %s]\n", query, mysql_errno(mysql), mysql_error(mysql));
+		return NULL;
+	}
+	return NULL;
+}
 /*!
  * @desc: Manda un privado a la base de datos SQL.
  * @params: $query [in] Privado. Cadena con formato.
@@ -122,21 +218,23 @@ int SQLEsCampo(char *tabla, char *campo)
  * @ret: Devuelve un recurso de Privado SQL; NULL si hay un error.
  * @cat: SQL
  !*/
- 
+
 SQLRes SQLQuery(const char *query, ...)
 {
 	va_list vl;
 	SQLRes res = NULL;
-	char buf[BUFSIZE];
+	char *buf;
 	if (sql)
 	{
 		va_start(vl, query);
+		buf = (char *)Malloc(sizeof(char) * (strlen(query)*4+1));
 		ircvsprintf(buf, query, vl);
 		va_end(vl);
 #ifdef DEBUG
 		Debug("SQL Query: %s", buf);
 #endif
-		res = sql->Query(buf);
+		res = MySQLQuery(buf);
+		Free(buf);
 		SetSQLErrno();
 	}
 	return res;
@@ -149,13 +247,14 @@ SQLRes SQLQuery(const char *query, ...)
  * @ver: Free
  * @cat: SQL
  !*/
- 
+
 char *SQLEscapa(const char *item)
 {
 	char *esc = NULL;
 	if (sql)
 	{
-		esc = sql->Escapa(item);
+		esc = (char *)Malloc(sizeof(char) * (strlen(item) * 2 + 1));
+		mysql_real_escape_string(mysql, esc, item, strlen(item));
 		SetSQLErrno();
 	}
 	return esc;
@@ -167,12 +266,39 @@ char *SQLEscapa(const char *item)
  * @ver: SQLEsTabla
  * @cat: SQL
  !*/
- 
+
 void SQLCargaTablas()
 {
 	if (sql)
 	{
-		sql->CargaTablas();
+		MYSQL_RES *res, *cp;
+		MYSQL_ROW row;
+		MYSQL_FIELD *field;
+		int i = 0, j;
+		char *tabla;
+		if ((res = mysql_list_tables(mysql, NULL)))
+		{
+			while ((row = mysql_fetch_row(res)))
+			{
+				tabla = row[0];
+				if (strncmp(PREFIJO, tabla, strlen(PREFIJO)))
+					continue;
+				ircstrdup(sql->tablas[i][0], &tabla[strlen(PREFIJO)]);
+				ircsprintf(buf, "SELECT * FROM %s", tabla);
+				if ((mysql_query(mysql, buf)) || (!(cp = mysql_store_result(mysql))))
+				{
+					Alerta(FADV, "SQL ha detectado un error durante la carga de tablas.\n[%i: %s]\n", mysql_errno(mysql), mysql_error(mysql));
+					continue;
+				}
+				for (j = 1; (field = mysql_fetch_field(cp)); j++)
+					ircstrdup(sql->tablas[i][j], field->name);
+				sql->tablas[i][j] = NULL;
+				mysql_free_result(cp);
+				i++;
+			}
+			sql->tablas[i][0] = NULL;
+			mysql_free_result(res);
+		}
 		SetSQLErrno();
 	}
 }
@@ -183,12 +309,12 @@ void SQLCargaTablas()
  * @ver: SQLQuery
  * @cat: SQL
  !*/
- 
+
 void SQLFreeRes(SQLRes res)
 {
 	if (sql)
 	{
-		sql->FreeRes(res);
+		mysql_free_result((MYSQL_RES *)res);
 		SetSQLErrno();
 	}
 }
@@ -200,13 +326,13 @@ void SQLFreeRes(SQLRes res)
  * @ver: SQLQuery
  * @cat: SQL
  !*/
- 
+
 SQLRow SQLFetchRow(SQLRes res)
 {
 	SQLRow row = NULL;
 	if (sql)
 	{
-		row = sql->FetchRow(res);
+		row = (SQLRow)mysql_fetch_row((MYSQL_RES *)res);
 		SetSQLErrno();
 	}
 	return row;
@@ -221,7 +347,7 @@ SQLRow SQLFetchRow(SQLRes res)
  * @ver: SQLInserta SQLBorra
  * @cat: SQL
  !*/
- 
+
 char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
 {
 	SQLRes *res;
@@ -269,7 +395,7 @@ char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
  * @ver: SQLBorra SQLCogeRegistro
  * @cat: SQL
  !*/
- 
+
 void SQLInserta(char *tabla, char *registro, char *campo, char *valor, ...)
 {
 	char *reg_c, *cam_c, *val_c = NULL;
@@ -301,7 +427,7 @@ void SQLInserta(char *tabla, char *registro, char *campo, char *valor, ...)
  * @ver: SQLInserta SQLCogeRegistro
  * @cat: SQL
  !*/
- 
+
 void SQLBorra(char *tabla, char *registro)
 {
 	if (registro)
@@ -324,21 +450,21 @@ void SQLBorra(char *tabla, char *registro)
  * @ver: SQLQuery
  * @cat: SQL
  !*/
- 
+
 int SQLNumRows(SQLRes res)
 {
 	int rows = 0;
 	if (sql)
 	{
-		rows = sql->NumRows(res);
+		rows = (int)mysql_num_rows((MYSQL_RES *)res);
 		SetSQLErrno();
 	}
 	return rows;
 }
 void SetSQLErrno()
 {
-	if (sql && sql->GetErrno)
-		sql->_errno = sql->GetErrno();
+	if (sql)
+		sql->_errno = mysql_errno(mysql);
 }
 /*!
  * @desc: Sitúa el puntero interno de un recurso SQLRes a la fila indicada.
@@ -351,7 +477,7 @@ void SQLSeek(SQLRes res, u_long off)
 {
 	if (sql)
 	{
-		sql->Seek(res, off);
+		mysql_data_seek(res, off);
 		SetSQLErrno();
 	}
 }

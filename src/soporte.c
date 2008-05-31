@@ -1,11 +1,10 @@
 /*
- * $Id: soporte.c,v 1.22 2008-04-05 20:39:22 Trocotronic Exp $ 
+ * $Id: soporte.c,v 1.23 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
-#include <pthread.h>
 #include <iconv.h>
 #ifdef _WIN32
 #include <sys/timeb.h>
@@ -15,7 +14,6 @@
 #include <dlfcn.h>
 #endif
 #include <sys/stat.h>
-extern pthread_mutex_t mutex;
 
 const char NTL_tolower_tab[] = {
        /* x00-x07 */ '\x00', '\x01', '\x02', '\x03', '\x04', '\x05', '\x06', '\x07',
@@ -91,7 +89,7 @@ int strcasecmp(const char *a, const char *b)
 {
 	const char *ra = a;
 	const char *rb = b;
-	while (ToLower(*ra) == ToLower(*rb)) 
+	while (ToLower(*ra) == ToLower(*rb))
 	{
 		if (!*ra++)
 			return 0;
@@ -107,7 +105,7 @@ int strncasecmp(const char *a, const char *b, int len)
 	const char *ra = a;
 	const char *rb = b;
 	int l = 0;
-	while (ToLower(*ra) == ToLower(*rb) && l++ < len) 
+	while (ToLower(*ra) == ToLower(*rb) && l++ < len)
 	{
 		if (!*ra++)
 			return 0;
@@ -147,7 +145,7 @@ size_t strlcat(char *dst, const char *src, size_t size)
 		memcpy(dst + len1, src, len2);
 		dst[len1 + len2] = 0;
 	}
-	
+
 	return ret;
 }
 #endif
@@ -298,7 +296,7 @@ int copyfile(char *src, char *dest)
 	close(srcfd);
 	close(destfd);
 	setfilemodtime(dest, mtime);
-	return 1;	
+	return 1;
 }
 
 /*!
@@ -309,7 +307,7 @@ int copyfile(char *src, char *dest)
  * @ret: Devuelve la cadena reemplazada.
  * @cat: Programa
  !*/
- 
+
 char *str_replace(char *str, char orig, char rep)
 {
 	static char rem[BUFSIZE];
@@ -382,7 +380,7 @@ char *strtoupper(char *str)
  * @ret: Devuelve el número de veces que aparece <i>aguja</i> dentro del <i>pajar</i>
  * @cat: Programa
  !*/
- 
+
 int StrCount(char *pajar, char *aguja)
 {
 	char *c = pajar;
@@ -396,7 +394,7 @@ int StrCount(char *pajar, char *aguja)
 }
 
 static u_int seed = 1;
-void rstart(u_int _seed) 
+void rstart(u_int _seed)
 {
     seed = _seed;
 }
@@ -495,7 +493,7 @@ double microtime()
 	segs = atime.tv_sec;
 	milisegs = atime.tv_usec;
 #endif
-	while (milisegs > 1) 
+	while (milisegs > 1)
 		milisegs /= 10;
 	return (segs + milisegs);
 }
@@ -584,7 +582,7 @@ char *gettok(char *str, int pos, char sep)
  printf("%s", Fecha(&tm));
  * @cat: Programa
  !*/
- 
+
 char *Fecha(time_t *tim)
 {
     static char *wday_name[] = {
@@ -614,7 +612,7 @@ char *Fecha(time_t *tim)
  * @ret: Devuelve la cadena <i>des</i> con el nuevo caracter añadido. NULL, en caso de error.
  * @cat: Programa
  !*/
- 
+
 char *chrcat(char *dest, char car)
 {
 	char *c;
@@ -634,7 +632,7 @@ char *chrcat(char *dest, char car)
  * @ret: Devuelve la cadena <i>dest</i> con el caracter eliminado.
  * @cat: Programa
  !*/
- 
+
 char *chrremove(char *dest, char rem)
 {
 	char *c, *r = dest;
@@ -654,7 +652,7 @@ char *chrremove(char *dest, char rem)
  * @ret: Devuelve una cadena con el caracter repetido varias veces.
  * @cat: Programa
  !*/
- 
+
 char *Repite(char car, int veces)
 {
 	static char ret[128];
@@ -675,7 +673,7 @@ char *Repite(char car, int veces)
  * @ret: Devuelve el valor de esa opción.
  * @cat: Programa
  !*/
- 
+
 int BuscaOpt(char *item, Opts *lista)
 {
 	Opts *ofl;
@@ -694,7 +692,7 @@ int BuscaOpt(char *item, Opts *lista)
  * @ret: Devuelve el ítem de esa opción. NULL si no lo encuentra.
  * @cat: Programa
  !*/
- 
+
 char *BuscaOptItem(int opt, Opts *lista)
 {
 	Opts *ofl;

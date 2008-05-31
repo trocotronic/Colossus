@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.h,v 1.22 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: parseconf.h,v 1.23 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #define MAXSECS 128
@@ -22,7 +22,7 @@
  * @cat: Configuracion
  * @ver: ParseaConfiguracion
  !*/
- 
+
 typedef struct _conf
 {
 	char *item;
@@ -54,6 +54,7 @@ struct Conf_server
 	int escucha;
 	char *bind_ip;
 };
+/*
 struct Conf_db
 {
 	char *host;
@@ -63,6 +64,7 @@ struct Conf_db
 	char *prefijo;
 	int puerto;
 };
+*/
 struct Conf_smtp
 {
 	char *host;
@@ -139,7 +141,7 @@ extern Conf *BuscaEntrada(Conf *, char *);
 extern void DescargaConfiguracion();
 
 extern MODVAR struct Conf_server *conf_server;
-extern MODVAR struct Conf_db *conf_db;
+//extern MODVAR struct Conf_db *conf_db;
 extern MODVAR struct Conf_smtp *conf_smtp;
 extern MODVAR struct Conf_set *conf_set;
 extern MODVAR struct Conf_log *conf_log;
@@ -148,7 +150,8 @@ extern MODVAR struct Conf_ssl *conf_ssl;
 #endif
 extern MODVAR struct Conf_httpd *conf_httpd;
 extern MODVAR struct Conf_msn *conf_msn;
-#define PREFIJO conf_db->prefijo
+//#define PREFIJO conf_db->prefijo
+#define PREFIJO ""
 #define OPC 1
 #define OBL 2
 #ifdef USA_SSL

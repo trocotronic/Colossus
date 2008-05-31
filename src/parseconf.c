@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.39 2008-05-03 12:08:30 Trocotronic Exp $
+ * $Id: parseconf.c,v 1.40 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -16,7 +16,7 @@
 #include "msn.h"
 
 struct Conf_server *conf_server = NULL;
-struct Conf_db *conf_db = NULL;
+//struct Conf_db *conf_db = NULL;
 struct Conf_smtp *conf_smtp = NULL;
 struct Conf_set *conf_set = NULL;
 struct Conf_log *conf_log = NULL;
@@ -29,7 +29,7 @@ struct Conf_msn *conf_msn = NULL;
 #endif
 
 static int TestServer		(Conf *, int *);
-static int TestDb 			(Conf *, int *);
+//static int TestDb 			(Conf *, int *);
 static int TestSmtp		(Conf *, int *);
 static int TestSet		(Conf *, int *);
 static int TestModulos	(Conf *, int *);
@@ -44,7 +44,7 @@ static int TestMSN	(Conf *, int *);
 #endif
 
 static void ConfServer	(Conf *);
-static void ConfDb 		(Conf *);
+//static void ConfDb 		(Conf *);
 static void ConfSmtp		(Conf *);
 static void ConfSet		(Conf *);
 static void ConfLog		(Conf *);
@@ -68,7 +68,7 @@ extern int DetieneHTTPD();
    */
 static cComConf cComs[] = {
 	{ "server" , TestServer, ConfServer , OBL , 1 } ,
-	{ "db" , TestDb, ConfDb , OBL ,  1 } ,
+//	{ "db" , TestDb, ConfDb , OBL ,  1 } ,
 #ifdef _WIN32
 	{ "smtp" , TestSmtp, ConfSmtp , OPC , 5 } , /* es opcional a partir de la version 5 */
 #else
@@ -146,6 +146,7 @@ void LiberaMemoriaServer()
 	ircfree(conf_server->bind_ip);
 	bzero(conf_server, sizeof(struct Conf_server));
 }
+/*
 void LiberaMemoriaDb()
 {
 	if (!conf_db)
@@ -158,6 +159,7 @@ void LiberaMemoriaDb()
 	ircfree(conf_db->prefijo);
 	bzero(conf_db, sizeof(struct Conf_db));
 }
+*/
 void LiberaMemoriaSmtp()
 {
 	if (!conf_smtp)
@@ -234,7 +236,7 @@ void LiberaMemoriaMSN()
 void DescargaConfiguracion()
 {
 	LiberaMemoriaServer();
-	LiberaMemoriaDb();
+//	LiberaMemoriaDb();
 	LiberaMemoriaSmtp();
 	LiberaMemoriaSet();
 	LiberaMemoriaLog();
@@ -570,8 +572,6 @@ void DistribuyeConfiguracion(Conf *config)
 	}
 	if (prot)
 		TestProtocolo(prot, &errores);
-	if (!sql)
-		errores++;
 	if (errores)
 	{
 		Alerta(FERR, "Hay %i error%s en la configuracion. No se puede cargar", errores, errores > 1 ? "es" : "");
@@ -815,6 +815,7 @@ void ConfServer(Conf *config)
 	if (!conf_server->escucha)
 		conf_server->escucha = conf_server->puerto;
 }
+/*
 int TestDb(Conf *config, int *errores)
 {
 	short error_parcial = 0;
@@ -930,9 +931,10 @@ void ConfDb(Conf *config)
 		else if (!strcmp(config->seccion[i]->item ,"puerto"))
 			conf_db->puerto = atoi(config->seccion[i]->data);
 	}
-	if (CargaSQL(config->data))
+	if (CargaSQL())
 		Error("[%s:%s] Ha sido imposible cargar el motor SQL %s.", config->archivo, config->item, config->data);
 }
+*/
 int TestSmtp(Conf *config, int *errores)
 {
 	short error_parcial = 0;

@@ -1,9 +1,9 @@
 #define UDB_VER "3.6"
 #ifdef _WIN32
-#define DB_DIR "database\\"
+#define DB_DIR "database\\udb\\"
 #define DB_DIR_BCK DB_DIR "backup\\"
 #else
-#define DB_DIR "database/"
+#define DB_DIR "database/udb/"
 #define DB_DIR_BCK DB_DIR "backup/"
 #endif
 typedef struct _udb

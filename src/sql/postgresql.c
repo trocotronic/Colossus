@@ -1,5 +1,5 @@
 /*
- * $Id: postgresql.c,v 1.12 2007-08-20 01:46:24 Trocotronic Exp $ 
+ * $Id: postgresql.c,v 1.13 2008-05-31 21:46:07 Trocotronic Exp $ 
  */
 
 #include "struct.h"
@@ -63,7 +63,7 @@ int Carga()
 /*	if (mysql_select_db(mysql, conf_db->bd))
 	{
 #ifdef _WIN32
-		if (MessageBox(hwMain, "La base de datos no existe. ¿Quieres crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+		if (MessageBox(NULL, "La base de datos no existe. ¿Quieres crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
 		if (Pregunta("La base de datos no existe. ¿Quieres crearla?") == 1)
 #endif

@@ -171,7 +171,6 @@ EXPORTS
 	chrremove
 	clientes
 	compilacion
-	conf_db
 	conf_httpd
 	conf_log
 	conf_server

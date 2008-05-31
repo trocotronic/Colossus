@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.13 2007-01-18 13:54:59 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.14 2008-05-31 21:46:04 Trocotronic Exp $ 
  */
 
 #include <process.h>
@@ -277,7 +277,7 @@ LONG __stdcall ExceptionFilter(EXCEPTION_POINTERS *e)
      		DeleteFile(FindFileData.cFileName);
      }
      FindClose(hFind);
-     MessageBox(hwMain, text, "Error fatal", MB_OK);
+     MessageBox(NULL, text, "Error fatal", MB_OK);
 	return EXCEPTION_EXECUTE_HANDLER;
 }
 void InitDebug(void) 

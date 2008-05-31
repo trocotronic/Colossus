@@ -1,12 +1,12 @@
 /*
- * $Id: main.c,v 1.114 2008-04-23 21:13:11 Trocotronic Exp $ 
+ * $Id: main.c,v 1.115 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #ifdef _WIN32
 #include <process.h>
 #include <direct.h>
 #else
-#include <sys/resource.h> 
+#include <sys/resource.h>
 #include <sys/stat.h>
 #include <errno.h>
 #include <unistd.h>
@@ -45,7 +45,7 @@ extern void CpuId();
  !*/
 int refrescando = 0;
 
-int mainversion = COLOSSUS_VERINT;	
+int mainversion = COLOSSUS_VERINT;
 
 #ifdef _WIN32
 LPCSTR cmdLine;
@@ -75,7 +75,7 @@ extern int SigCDestroy(Canal *);
 extern int SiguienteTAsync(int);
 extern char logo[];
 
-/* 
+/*
  * print_r
  * Imprime una estructura de forma legible
  */
@@ -181,6 +181,7 @@ VOIDSIG Reinicia()
 VOIDSIG CierraColossus(int excode)
 {
 	CierraTodo();
+	LiberaSQL();
 	exit(excode);
 }
 #ifdef _WIN32
@@ -216,21 +217,21 @@ int main(int argc, char *argv[])
 		printf("unlimit core size failed; errno = %d\n", errno);
 #endif
 	/* rutina del unreal */
-	while (--argc > 0 && (*++argv)[0] == '-') 
+	while (--argc > 0 && (*++argv)[0] == '-')
 	{
 		char *p = argv[0] + 1;
 		int flag = *p++;
-		if (flag == '\0' || *p == '\0') 
+		if (flag == '\0' || *p == '\0')
 		{
-			if (argc > 1 && argv[1][0] != '-') 
+			if (argc > 1 && argv[1][0] != '-')
 			{
 				p = *++argv;
 				argc--;
-			} 
+			}
 			else
 				p = "";
 		}
-		switch (flag) 
+		switch (flag)
 		{
 #ifndef _WIN32
 		  case 'F':
@@ -305,7 +306,7 @@ int main(int argc, char *argv[])
 #endif
 /*	if (EsArchivo("backup.sql"))
 	{
-#ifdef _WIN32		
+#ifdef _WIN32
 		if (MessageBox(hwMain, "Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?", "SQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
 		if (Pregunta("Se ha encontrado una copia de la base de datos. ¿Quieres restaurarla?") == 1)
@@ -313,7 +314,7 @@ int main(int argc, char *argv[])
 		{
 			if (!SQLRestaura())
 			{
-#ifdef _WIN32				
+#ifdef _WIN32
 				if (MessageBox(hwMain, "Se ha restaurado con éxito. ¿Quieres borrar la copia?", "SQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
 				if (Pregunta("Se ha restaurado con éxito. ¿Quieres borrar la copia?") == 1)
@@ -334,7 +335,7 @@ int main(int argc, char *argv[])
 #else
 	margv = argv;
 #endif
-	SQLCargaTablas();
+	CargaSQL();
 	if (!SQLEsTabla(SQL_VERSIONES))
 	{
 		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
@@ -362,8 +363,8 @@ int main(int argc, char *argv[])
 	}
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
-	LlamaSenyal(SIGN_SQL, 0);
 	SQLCargaTablas();
+	LlamaSenyal(SIGN_SQL, 0);
 	for (i = 0; (sql->tablas[i][0]); i++)
 	{
 		if (!SQLCogeRegistro(SQL_VERSIONES, sql->tablas[i][0], "version"))

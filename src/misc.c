@@ -1,5 +1,5 @@
 /*
- * $Id: misc.c,v 1.23 2008-05-03 12:01:55 Trocotronic Exp $
+ * $Id: misc.c,v 1.24 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -400,7 +400,7 @@ void Alerta(char err, char *error, ...)
 			opts |= MB_ICONINFORMATION;
 			break;
 	}
-	MessageBox(hwMain, buf, "Colossus", opts);
+	MessageBox(NULL, buf, "Colossus", opts);
 #else
 	switch (err)
 	{

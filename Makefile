@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.35 2008-05-31 12:46:26 Trocotronic Exp $
+## $Id: Makefile,v 1.36 2008-05-31 21:46:04 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -32,10 +32,16 @@ OPENSSL_LIB_DIR="C:\dev\openssl\lib"
 PTHREAD_INC="C:\dev\pthreads"
 PTHREAD_LIB="C:\dev\pthreads"
 ###### FIN PTHREAD ######
+
 #### SOPORTE ICONV ####
 ICONV_INC="C:\dev\libiconv\include"
 ICONV_LIB="C:\dev\libiconv\lib"
 ###### FIN ICONV ######
+
+#### SOPORTE MYSQL ####
+MYSQL_INC="C:\dev\mysql-5.1.24-rc-win32\include"
+MYSQL_LIB="C:\dev\mysql-5.1.24-rc-win32\Embedded\DLL\release"
+###### FIN MYSQL ######
 
 !IFDEF DEBUG
 DBGCFLAG=/MD /Zi /W1
@@ -79,7 +85,8 @@ EXECFLAGS=$(DBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ 
 LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
 	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib \
-	/LIBPATH:$(ICONV_LIB) iconv.lib /NODEFAULTLIB:libcmt
+	/LIBPATH:$(ICONV_LIB) iconv.lib /LIBPATH:$(MYSQL_LIB) libmysqld.lib \
+	/NODEFAULTLIB:libcmt
 EXP_OBJ_FILES=SRC/CORE.OBJ SRC/CRIPTO.OBJ SRC/EVENTOS.OBJ SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
 	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/MSN.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
 	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/VERSION.OBJ $(ZLIBOBJ) $(SSLOBJ)
@@ -107,7 +114,10 @@ AUTOCONF: src/win32/autoconf.c
 	-@autoconf.exe
 
 CONFVER: src/utils/confver.c
-	$(CC) src/utils/confver.c
+	$(CC) /D _WIN32 src/utils/confver.c
+	$(CC) src/utils/actualiza_111.c
+	-@copy actualiza_111.exe utils/actualiza_111.exe
+	-@erase actualiza_111.exe
 	-@confver.exe
 	-@erase confver.exe
 
@@ -163,6 +173,7 @@ SETUP:
 	-@copy $(PTHREAD_LIB)\pthreadVC2.dll pthreadVC2.dll >NUL
       -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
       -@copy $(ICONV_LIB)\iconv.dll iconv.dll >NUL
+      -@copy $(MYSQL_LIB)\libmysqld.dll libmysqld.dll >NUL
 
 Colossus.exe: $(OBJ_FILES)
 	$(LINK) $(LFLAGS) $(OBJ_FILES) /MAP
@@ -237,7 +248,7 @@ src/gui.obj: src/win32/gui.c ./include/struct.h ./include/ircd.h ./include/struc
 	$(CC) $(EXECFLAGS) src/win32/gui.c
 
 src/sql.obj: src/sql.c ./include/struct.h ./include/ircd.h
-	$(CC) $(EXECFLAGS) src/sql.c
+	$(CC) $(EXECFLAGS) /I $(MYSQL_INC) src/sql.c
 
 src/eventos.obj: src/eventos.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h
 	$(CC) $(EXECFLAGS) src/eventos.c
@@ -270,7 +281,7 @@ DEF:
 	dlltool --output-def colossus.def.in --export-all-symbols $(EXP_OBJ_FILES)
 	def-clean colossus.def.in colossus.def
 
-MODULOS: $(MOD_DLL) $(PROT_DLL) $(SQL_DLL) $(EXT_DLL)
+MODULOS: $(MOD_DLL) $(PROT_DLL) $(EXT_DLL)
 
 src/modulos/chanserv.dll: src/modulos/chanserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/chanserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)

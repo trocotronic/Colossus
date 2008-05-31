@@ -2,7 +2,7 @@
  * Empiezo este archivo de cambios. Mucho trabajo ya está hecho, por esta razón me es imposible saber cuándo empecé. Así, que digamos que la primera versión es esta y que los cambios que vendrán son a partir de esta primera versión. Cualquier nota será añadida.
  * 10/06/2004 Trocotronic
  *
- * $Id: cambios,v 1.88 2008-05-26 22:08:58 Trocotronic Exp $
+ * $Id: cambios,v 1.89 2008-05-31 21:46:04 Trocotronic Exp $
  */
 
 100604xxx - Empiezo con la versión 0.7. Están hechos los seis módulos nickserv, chanserv, memoserv, operserv, ipserv y proxyserv (.dll) y todo el motor o base (.exe)
@@ -114,7 +114,7 @@
 280704075 - Si un canal se prohibe, se expulsa a todos los usuarios que pueda haber en él.
 290704076 - Añadidas varias rutinas para eliminar memoria al salir de un canal y/o quitar un modo y desconectar un bot.
 290704077 - Arreglado un fallo al sacar un bot del canal.
-300704078 - Ahora se compila usando MSVC7.0, con lo que arregla algunas advertencias y se consigue reducir aún más el tamaño 
+300704078 - Ahora se compila usando MSVC7.0, con lo que arregla algunas advertencias y se consigue reducir aún más el tamaño
 	del ejecutable y sus módulos.
 300704079 - Arreglado un fallo al hacer chghost.
 300704080 - Cambiado el sistema interno de registros UDB por indexación.
@@ -520,3 +520,11 @@
 230408576 - Se añade una tabla de configuración.
 250408577 - Añadido el bloque K de UDB.
 260508578 - *** Vigésimatercera release pública: 1.10 ***
+290508579 - Añadido un aviso para ir a la web para actualizar.
+310508580 - Añadidas directrices de MSN en la documentación.
+310508581 - Arreglado un cuelgue con el complemento MSN.
+310508582 - Mejorado el buffer de SQL.
+310508583 - Se incorpora MySQL Embedded. Esto es un servidor MySQL incorporado en Colossus.
+310508584 - Se eliminan todas las rutinas de SQL.
+310508585 - Se eliminan los soportes PostgreSQL y SQlite porque ya no son necesarios.
+310508586 - Se crea una utilidad para migrar al nuevo sistema.

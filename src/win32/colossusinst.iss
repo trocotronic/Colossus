@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.27 2008-02-14 16:19:29 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.28 2008-05-31 21:46:04 Trocotronic Exp $
 
 ; Instalador de Colossus
 
@@ -38,7 +38,9 @@ Source: ..\..\ejemplo.conf; DestDir: {app}; DestName: ejemplo.conf; Flags: ignor
 Source: ..\..\proximamente; DestDir: {app}; DestName: proximamente.txt; Flags: ignoreversion
 Source: ..\..\pthreadVC2.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\iconv.dll; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\libmysqld.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\colossusdoc.html; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\database\mysql\share\english\errmsg.sys; DestDir: {app}\database\mysql\share\english; Flags: ignoreversion
 Source: ..\..\modulos\chanserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
 Source: ..\..\modulos\nickserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
 Source: ..\..\modulos\operserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
@@ -53,8 +55,9 @@ Source: ..\..\protocolos\*.dll; DestDir: {app}\protocolos; Flags: ignoreversion
 Source: ..\..\protocolos\*.pdb; DestDir: {app}\protocolos; Flags: ignoreversion
 Source: ..\..\protocolos\extensiones\udb.dll; DestDir: {app}\protocolos\extensiones; Flags: ignoreversion
 Source: ..\..\protocolos\extensiones\udb.pdb; DestDir: {app}\protocolos\extensiones; Flags: ignoreversion
-Source: ..\..\sql\*.dll; DestDir: {app}\sql; Flags: ignoreversion
-Source: ..\..\sql\*.pdb; DestDir: {app}\sql; Flags: ignoreversion
+Source: ..\..\utils\actualiza_111.exe; DestDir: {app}\utils; Flags: ignoreversion
+Source: ..\..\utils\mysql.exe; DestDir: {app}\utils; Flags: ignoreversion
+Source: ..\..\utils\mysqldump.exe; DestDir: {app}\utils; Flags: ignoreversion
 #ifdef USA_SSL
 Source: c:\dev\openssl\bin\openssl.exe; DestDir: {app}; Flags: ignoreversion
 Source: c:\dev\openssl\bin\ssleay32.dll; DestDir: {app}; Flags: ignoreversion

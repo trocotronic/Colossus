@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.17 2007-11-10 18:39:50 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.18 2008-05-31 21:46:04 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -37,6 +37,7 @@ build:
 		sh Config; \
 	fi
 	$(CC) -o confver src/utils/confver.c
+	$(CC) -o actualiza_111 src/utils/actualiza_111.c
 	./confver
 	rm -rf confver
 	@for i in $(SUBDIRS); do \

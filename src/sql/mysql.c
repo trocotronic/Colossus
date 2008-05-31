@@ -1,5 +1,5 @@
 /*
- * $Id: mysql.c,v 1.16 2008-01-16 15:43:21 Trocotronic Exp $ 
+ * $Id: mysql.c,v 1.17 2008-05-31 21:46:07 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -24,7 +24,7 @@ void CargaTablas();
 int GetErrno();
 void Seek(SQLRes, u_long);
 #ifdef _WIN32
-struct errentry 
+struct errentry
 {
 	unsigned long oscode;           /* OS return value */
 	int errnocode;  /* System V error code */
@@ -85,9 +85,9 @@ void __cdecl _dosmaperr (unsigned long oserrno)
 {
 	int i;
 	_doserrno = oserrno;        /* set _doserrno */
-	for (i = 0; i < ERRTABLESIZE; ++i) 
+	for (i = 0; i < ERRTABLESIZE; ++i)
 	{
-		if (oserrno == errtable[i].oscode) 
+		if (oserrno == errtable[i].oscode)
 		{
 			errno = errtable[i].errnocode;
 			return;
@@ -101,18 +101,33 @@ void __cdecl _dosmaperr (unsigned long oserrno)
 		errno = EINVAL;
 }
 #endif
-
+static char *server_args[] = {
+	"this_program",       /* this string is not used */
+	"--datadir=./database/mysql/data",
+	"--basedir=./database/mysql",
+	"--key_buffer_size=32M"
+};
+static char *server_groups[] = {
+	"embedded",
+	"server",
+	"this_program_SERVER",
+	(char *)NULL
+};
 int Carga()
 {
 	char *c;
 #if MYSQL_VERSION_ID >= 50013
 	my_bool rec = 1;
 #endif
-	//if (mysql_server_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
-	//	return -1;
+	mkdir("database/mysql/data",0600);
+	if (mysql_library_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
+		return -1;
 	if (!(mysql = mysql_init(NULL)))
 		return -1;
-	if (!mysql_real_connect(mysql, conf_db->host, conf_db->login, conf_db->pass, NULL, conf_db->puerto, NULL, CLIENT_COMPRESS))
+	mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "libmysqld_client");
+	mysql_options(mysql, MYSQL_OPT_USE_EMBEDDED_CONNECTION, NULL);
+	//if (!mysql_real_connect(mysql, conf_db->host, conf_db->login, conf_db->pass, NULL, conf_db->puerto, NULL, CLIENT_COMPRESS))
+	if (!mysql_real_connect(mysql, NULL,NULL,NULL, NULL, 0,NULL,0))
 	{
 		Alerta(FERR, "MySQL no puede conectar\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
 		return -1;
@@ -125,7 +140,7 @@ int Carga()
 	if (mysql_select_db(mysql, conf_db->bd))
 	{
 #ifdef _WIN32
-		if (MessageBox(hwMain, "La base de datos no existe. ¿Quieres crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
+		if (MessageBox(NULL, "La base de datos no existe. ¿Quieres crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
 #else
 		if (Pregunta("La base de datos no existe. ¿Quieres crearla?") == 1)
 #endif

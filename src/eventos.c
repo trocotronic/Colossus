@@ -1,5 +1,5 @@
 /*
- * $Id: eventos.c,v 1.12 2008-02-13 16:47:18 Trocotronic Exp $ 
+ * $Id: eventos.c,v 1.13 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -158,7 +158,7 @@ Timer *IniciaCrono(u_int veces, u_int cada, int (*func)(), void *args)
 
 /*!
  * @desc: Detiene un cronómetro
- * @params: $timer [in] Recurso del cronómetro devuelto por IniciaCrono 
+ * @params: $timer [in] Recurso del cronómetro devuelto por IniciaCrono
  * @ret: Devuelve 1 si se detiene; 0, si no.
  * @ver: IniciaCrono
  * @cat: Cronometros
@@ -360,7 +360,7 @@ char *CogeCache(char *tipo, char *item, int id)
  * @ver: CogeCache BorraCache
  * @cat: Cache
  !*/
- 
+
 void InsertaCache(char *tipo, char *item, int off, int id, char *valor, ...)
 {
 	char *tipo_c, *item_c, *valor_c = NULL, buf[BUFSIZE];
@@ -404,7 +404,7 @@ int ProcCache(Proc *proc)
  * @ver: CogeCache InsertaCache
  * @cat: Cache
  !*/
- 
+
 void BorraCache(char *tipo, char *item, int id)
 {
 	char *tipo_c, *item_c;

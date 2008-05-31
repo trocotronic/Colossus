@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.24 2008-05-26 22:07:06 Trocotronic Exp $ 
+ * $Id: bdd.c,v 1.25 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -725,7 +725,7 @@ char *CifraIpTEA_U(char *ipreal)
 			*ds = '\0';
 		if ((ds = strchr(cur, '\n')))
 			*ds = '\0';
-		else 
+		else
 		{
 			trunca = cur - p;
 			break;
@@ -749,7 +749,7 @@ char *CifraIpTEA_U(char *ipreal)
  	    $... [in] Argumentos variables según cadena con formato.
  * @cat: IRCd
  !*/
- 
+
 void PropagaRegistro(char *item, ...)
 {
 	va_list vl;

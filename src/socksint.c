@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.c,v 1.16 2008-05-31 12:45:52 Trocotronic Exp $
+ * $Id: socksint.c,v 1.17 2008-05-31 21:46:06 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -52,7 +52,7 @@ SOCKFUNC(MotdLee)
 				{
 					Info("Existe una versión más nueva de Colossus. Descárguela de www.redyc.com");
 #ifdef _WIN32
-					if (MessageBox(hwMain, "Existe una versión más nueva de Colossus. ¿Quiere ir a la página de Redyc para descargarla?", "Nueva versión", MB_YESNO|MB_ICONQUESTION) == IDYES)
+					if (MessageBox(NULL, "Existe una versión más nueva de Colossus. ¿Quiere ir a la página de Redyc para descargarla?", "Nueva versión", MB_YESNO|MB_ICONQUESTION) == IDYES)
 						ShellExecute(NULL, "open", "http://www.redyc.com", NULL, NULL, SW_SHOWNORMAL);
 #endif
 				}
