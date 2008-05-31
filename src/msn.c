@@ -1,5 +1,5 @@
 /*
- * $Id: msn.c,v 1.20 2008-05-03 12:14:11 Trocotronic Exp $
+ * $Id: msn.c,v 1.21 2008-05-31 12:47:30 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -114,6 +114,16 @@ int DesconectaMCL(char *cuenta)
 		mcl->cl = NULL;
 	}
 	return 1;
+}
+MSNCl *MSNBuscaClienteCl(Cliente *cl)
+{
+	MSNSB *aux;
+	for (aux = msnsbs; aux; aux = aux->sig)
+	{
+		if (aux->mcl->cl == cl)
+			return aux->mcl;
+	}
+	return NULL;
 }
 SOCKFUNC(MSNLoginOpen)
 {
@@ -892,9 +902,15 @@ int MSNCJoin(Cliente *cl, Canal *cn)
 int MSNCQuit(Cliente *cl, char *msg)
 {
 	LinkCanal *lc;
+	MSNCl *mcl;
 	ircsprintf(buf, "%s Desconecta > %s", cl->nombre, msg ? msg : "");
 	for (lc = cl->canal; lc; lc = lc->sig)
 		EnviaMsgCanal(cl, lc->cn, buf);
+	if ((mcl = MSNBuscaClienteCl(cl)))
+	{
+		SendMSN(mcl->cuenta, "Sesión cerrada (Killed (%s))", msg);
+		mcl->cl = NULL;
+	}
 	return 0;
 }
 #endif
