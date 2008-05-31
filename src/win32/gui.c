@@ -1,5 +1,5 @@
 /*
- * $Id: gui.c,v 1.23 2008-02-13 16:16:11 Trocotronic Exp $ 
+ * $Id: gui.c,v 1.24 2008-05-31 12:45:30 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -32,7 +32,7 @@ void CleanUp(void)
 {
 	Shell_NotifyIcon(NIM_DELETE ,&SysTray);
 }
-void TaskBarCreated() 
+void TaskBarCreated()
 {
 	HICON hIcon = (HICON)LoadImage(hInst, MAKEINTRESOURCE(ICO_MAIN), IMAGE_ICON, 16, 16, 0);
 	SysTray.cbSize = sizeof(NOTIFYICONDATA);
@@ -58,24 +58,24 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	WM_TASKBARCREATED = RegisterWindowMessage("TaskbarCreated");
 	hWnd = CreateDialog(hInstance, "COLOSSUS", 0, (DLGPROC)MainDLG);
 	hwMain = hWnd;
-	hInst = hInstance; 
+	hInst = hInstance;
 	atexit(CleanUp);
 	TaskBarCreated();
 	ShowWindow(hWnd, SW_SHOW);
 	VerInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 	GetVersionEx(&VerInfo);
 	strlcpy(SO, "Windows ", sizeof(SO));
-	if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS) 
+	if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS)
 	{
-		if (VerInfo.dwMajorVersion == 4) 
+		if (VerInfo.dwMajorVersion == 4)
 		{
-			if (VerInfo.dwMinorVersion == 0) 
+			if (VerInfo.dwMinorVersion == 0)
 			{
 				strlcat(SO, "95 ", sizeof(SO));
 				if (!strcmp(VerInfo.szCSDVersion," C"))
 					strlcat(SO, "OSR2 ", sizeof(SO));
 			}
-			else if (VerInfo.dwMinorVersion == 10) 
+			else if (VerInfo.dwMinorVersion == 10)
 			{
 				strlcat(SO, "98 ", sizeof(SO));
 				if (!strcmp(VerInfo.szCSDVersion, " A"))
@@ -85,17 +85,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 				strlcat(SO, "Me ", sizeof(SO));
 		}
 	}
-	else if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_NT) 
+	else if (VerInfo.dwPlatformId == VER_PLATFORM_WIN32_NT)
 	{
 		if (VerInfo.dwMajorVersion == 3 && VerInfo.dwMinorVersion == 51)
 			strlcat(SO, "NT 3.51 ", sizeof(SO));
 		else if (VerInfo.dwMajorVersion == 4 && VerInfo.dwMinorVersion == 0)
 			strlcat(SO, "NT 4.0 ", sizeof(SO));
-		else if (VerInfo.dwMajorVersion == 5) 
+		else if (VerInfo.dwMajorVersion == 5)
 		{
 			if (VerInfo.dwMinorVersion == 0)
 				strlcat(SO, "2000 ", sizeof(SO));
-			else if (VerInfo.dwMinorVersion == 1) 
+			else if (VerInfo.dwMinorVersion == 1)
 				strlcat(SO, "XP ", sizeof(SO));
 			else if (VerInfo.dwMinorVersion == 2)
 				strlcat(SO, "Server 2003 ", sizeof(SO));
@@ -136,18 +136,18 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	switch (message)
 	{
-		case WM_INITDIALOG: 
+		case WM_INITDIALOG:
 		{
 			ShowWindow(hDlg, SW_HIDE);
 			SetWindowText(hDlg, COLOSSUS_VERSION);
 			hTray = GetSubMenu(LoadMenu(hInst, MAKEINTRESOURCE(MENU_SYSTRAY)), 0);
-			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_SMALL, 
+			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_SMALL,
 				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE));
-			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_BIG, 
+			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_BIG,
 				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
 			return TRUE;
 		}
-		case WM_CLOSE: 
+		case WM_CLOSE:
 		{
 			if (MessageBox(hDlg, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 				return 0;
@@ -157,7 +157,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 				CierraColossus(0);
 			}
 		}
-		case WM_SIZE: 
+		case WM_SIZE:
 		{
 			if (wParam & SIZE_MINIMIZED)
 				ShowWindow(hDlg, SW_HIDE);
@@ -165,9 +165,9 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_DESTROY:
 			return 0;
-		case WM_USER: 
+		case WM_USER:
 		{
-			switch(LOWORD(lParam)) 
+			switch(LOWORD(lParam))
 			{
 				case WM_LBUTTONDBLCLK:
 					ShowWindow(hDlg, SW_SHOW);
@@ -211,7 +211,7 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_COMMAND:
 		{
-			if (LOWORD(wParam) >= 60000 && HIWORD(wParam) == 0 && !lParam) 
+			if (LOWORD(wParam) >= 60000 && HIWORD(wParam) == 0 && !lParam)
 			{
 				unsigned char path[MAX_PATH];
 				GetMenuString(hConfig, LOWORD(wParam), path, MAX_PATH, MF_BYCOMMAND);
@@ -305,9 +305,9 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 					Refresca();
 					break;
 				case IDM_SHUTDOWN:
-					if (MessageBox(hDlg, "¿Quieres cerrar Colossus?", "¿Estás seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
+					if (MessageBox(hDlg, "¿Quiere cerrar Colossus?", "¿Está seguro?", MB_YESNO|MB_ICONQUESTION) == IDNO)
 						return 0;
-					else 
+					else
 						CierraColossus(0);
 					break;
 			}
@@ -316,9 +316,9 @@ LRESULT CALLBACK MainDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	}
 	return FALSE;
 }
-LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-	switch (message) 
+	switch (message)
 	{
 		case WM_INITDIALOG:
 			MessageBeep(MB_ICONEXCLAMATION);
@@ -338,20 +338,20 @@ LRESULT CALLBACK ConfErrorDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lPa
 	}
 	return FALSE;
 }
-LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) 
+LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	static HFONT hFont;
 	static HCURSOR hCursor;
-	switch (message) 
+	switch (message)
 	{
-		case WM_INITDIALOG: 
+		case WM_INITDIALOG:
 		{
 			char pth[8];
 			ShowWindow(hDlg, SW_HIDE);
 			SetWindowText(hDlg, "Acerca de Colossus...");
-			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_SMALL, 
+			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_SMALL,
 				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 16, 16, LR_LOADFROMFILE));
-			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_BIG, 
+			SendMessage(hDlg, WM_SETICON, (WPARAM)ICON_BIG,
 				(LPARAM)(HICON)LoadImage(NULL, "src/win32/icon1.ico", IMAGE_ICON, 32, 32, LR_LOADFROMFILE));
 			hFont = CreateFont(8,0,0,0,0,0,1,0,ANSI_CHARSET,0,0,PROOF_QUALITY,0,"MS Sans Serif");
 			SendMessage(GetDlgItem(hDlg, IDC_WEB), WM_SETFONT, (WPARAM)hFont,TRUE);
@@ -369,20 +369,20 @@ LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 			SetDlgItemText(hDlg, IDC_PTHV, pth);
 			return TRUE;
 		}
-		case WM_DRAWITEM: 
+		case WM_DRAWITEM:
 		{
 			LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT)lParam;
 			unsigned char text[500];
 			COLORREF oldtext;
 			RECT focus;
 			GetWindowText(lpdis->hwndItem, text, 500);
-			if (wParam == IDC_WEB) 
+			if (wParam == IDC_WEB)
 			{
 				FillRect(lpdis->hDC, &lpdis->rcItem, GetSysColorBrush(COLOR_3DFACE));
 				oldtext = SetTextColor(lpdis->hDC, RGB(0,0,255));
 				DrawText(lpdis->hDC, text, strlen(text), &lpdis->rcItem, DT_LEFT);
 				SetTextColor(lpdis->hDC, oldtext);
-				if (lpdis->itemState & ODS_FOCUS) 
+				if (lpdis->itemState & ODS_FOCUS)
 				{
 					CopyRect(&focus, &lpdis->rcItem);
 					focus.left += 2;
@@ -395,9 +395,9 @@ LRESULT CALLBACK AcercaDLG(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam
 			}
 		}
 		case WM_COMMAND:
-			if (HIWORD(wParam) == BN_DBLCLK) 
+			if (HIWORD(wParam) == BN_DBLCLK)
 			{
-				if (LOWORD(wParam) == IDC_WEB) 
+				if (LOWORD(wParam) == IDC_WEB)
 					ShellExecute(NULL, "open", "http://www.redyc.com", NULL, NULL, SW_MAXIMIZE);
 				EndDialog(hDlg, TRUE);
 				return 0;
@@ -476,9 +476,9 @@ typedef struct {
 	char *titu;
 }CampoST;
 CampoST preg;
-LRESULT CampoDLG(HWND hDlg, UINT Message, WPARAM wParam, LPARAM lParam) 
+LRESULT CampoDLG(HWND hDlg, UINT Message, WPARAM wParam, LPARAM lParam)
 {
-	switch (Message) 
+	switch (Message)
 	{
 		case WM_INITDIALOG:
 			SetWindowText(hDlg, preg.titu);
@@ -487,12 +487,12 @@ LRESULT CampoDLG(HWND hDlg, UINT Message, WPARAM wParam, LPARAM lParam)
 				SetDlgItemText(hDlg, IDC_PASS, preg.def);
 			return TRUE;
 		case WM_COMMAND:
-			if (LOWORD(wParam) == IDCANCEL) 
+			if (LOWORD(wParam) == IDCANCEL)
 			{
 				preg.resp[0] = '\0';
 				EndDialog(hDlg, TRUE);
 			}
-			else if (LOWORD(wParam) == IDOK) 
+			else if (LOWORD(wParam) == IDOK)
 			{
 				GetDlgItemText(hDlg, IDC_PASS, preg.resp, sizeof(preg.resp));
 				EndDialog(hDlg, TRUE);
@@ -510,7 +510,7 @@ char *PreguntaCampo(char *titu, char *texto, char *def)
 	preg.titu = titu;
 	preg.pregunta = texto;
 	preg.def = def;
-	DialogBoxParam(hInst, "PreguntaCampo", hwMain, (DLGPROC)CampoDLG, (LPARAM)NULL); 
+	DialogBoxParam(hInst, "PreguntaCampo", hwMain, (DLGPROC)CampoDLG, (LPARAM)NULL);
 	if (!preg.resp[0])
 		return NULL;
 	return preg.resp;
