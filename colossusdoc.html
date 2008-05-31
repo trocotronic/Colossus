@@ -8,7 +8,7 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
 </style>
 </head>
 
-<!-- $Id: colossusdoc.html,v 1.41 2008-02-05 22:31:14 Trocotronic Exp $ -->
+<!-- $Id: colossusdoc.html,v 1.42 2008-05-31 12:47:02 Trocotronic Exp $ -->
 
 <body>
 
@@ -49,7 +49,7 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.2 <a href="#chanserv">ChanServ</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.3 <a href="#operserv">OperServ</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.4 <a href="#memoserv">MemoServ</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  11.5 <a href="#ipserv">IpServ</a></font><br> 
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  11.5 <a href="#ipserv">IpServ</a></font><br>
   <font size="+1">12. <a href="#protos">Configuraci&oacute;n de protocolos</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.1 <a href="#unreal">UnrealIRCD</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.2 <a href="#p10">P10</a></font><br>
@@ -60,9 +60,9 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
   <p><br>
     <b><font size="6"><a name="intro"></a>1. Introducci&oacute;n </font></b><br>
     Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
-    Este documento puede imprimirse tantas veces como se desee pero su distribuci&oacute;n est&aacute; vinculada &uacute;nica y 
+    Este documento puede imprimirse tantas veces como se desee pero su distribuci&oacute;n est&aacute; vinculada &uacute;nica y
     exclusivamente a Colossus, debiendo adjuntar el programa con el mismo.</p>
-<p>    <b>Lea detenidamente</b> este archivo para configurar y comprender el uso de este programa. Est&aacute; unido a muchas 
+<p>    <b>Lea detenidamente</b> este archivo para configurar y comprender el uso de este programa. Est&aacute; unido a muchas
 caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 <p>&nbsp;</p>
   <p><b><font size="6"><a name="instalacion"></a>2. Instalaci&oacute;n</font></b></p>
@@ -75,26 +75,26 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <li>Solaris (9, 10)
   </ul>
   <li><b>Versiones Windows:</b>
-  <ul> 
+  <ul>
   <li>Windows 2000 (Pro, Server, Advanced Server)
   <li>Windows XP (Home, Pro)
-  <li>Windows 2003 
+  <li>Windows 2003
   </ul></ul><br>
-    Para instalar el programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix, 
+    Para instalar el programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix,
     o C:\Colossus si usa Windows.
     <p>Una vez descomprimido, crea el archivo colossus.conf y config&uacute;relo a sus necesidades.</p>
     <p>&nbsp;</p>
   <p><b><font size="6"><a name="caracteristicas"></a>3. Caracter&iacute;sticas</font></b></p>
   <p>Estos servicios para IRC est&aacute;n programados en C. </p>
-  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals, 
-  la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base 
-  para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones. 
-  A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos. 
+  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals,
+  la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base
+  para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones.
+  A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos.
   La administraci&oacute;n de la base de datos global funciona bajo MySQL, PostgreSQL o SQLite y permite la memoria de registros de forma permanente. </p>
-  <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro. 
+  <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro.
   Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
-  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll, 
-  en Windows, o archivos .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios 
+  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll,
+  en Windows, o archivos .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios
   servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
   <ul>
     <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.</li>
@@ -118,30 +118,30 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b><font size="6"><a name="sql"></a>5. SQL y bases de datos</font></b></p>
   <p>Colossus utiliza sistemas de bases de datos SQL para guardar informaci&oacute;n de forma permanente. Actualmente se soportan tres motores SQL que deber&aacute;n indicarse en el bloque db { }.<br />Estos bloques son:</p>
   <ul><li><p>MySQL: Descarga de <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
-  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Hecho esto, tendr&aacute; 
-  que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots. 
-  Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>. 
-  Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a> 
+  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Hecho esto, tendr&aacute;
+  que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots.
+  Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>.
+  Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a>
   y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p></li>
   <li><p>PostgreSQL: Descarga de <a href="http://www.postgresql.org/download/" target="_blank">http://www.postgresql.org/download/</a>.</p>
   <p>PostgreSQL es otro motor mucho m&aacute;s flexible y con grandes posibilidades. Para poder administrarlo deber&aacute; instalar el paquete <b>pgAdmin III</b> y leer sus instrucciones.</p>
   <p>As&iacute;mismo, tambi&eacute;n dispone de un editor como <a href="http://phppgadmin.sourceforge.net/" target="_blank">PhpPgAdmin</a>.</p></li>
   <li><p>SQlite: se trata de un servidor SQL en sí mismo. Es decir, no hace falta instalar ningún software adicional ni configurarlo, puesto que se trata de un servidor integrado.<br />
-  Está indicado especialmente para aquellos usuarios que no sepan manejar bases de datos SQL ni montar servidores de estas características. Además, no dispone de ningún administrador de su contenido, 
+  Está indicado especialmente para aquellos usuarios que no sepan manejar bases de datos SQL ni montar servidores de estas características. Además, no dispone de ningún administrador de su contenido,
   puesto que está integrado en el núcleo de Colossus. <br />
   No obstante, es más lento que los motores anteriores. Úsese cuando no tenga más opciones.</p></ul>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="remoto"></a>6. Conexi&oacute;n remota</font></b></p>
-  <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha 
-  el puerto al que se conecta para recibir conexiones remotas. Una vez se ha realizado la conexi&oacute;n, se cierra el puerto para no recibir m&aacute;s conexiones. 
+  <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha
+  el puerto al que se conecta para recibir conexiones remotas. Una vez se ha realizado la conexi&oacute;n, se cierra el puerto para no recibir m&aacute;s conexiones.
   Si se cierra la conexi&oacute;n a la red, se vuelve a poner en escucha para recibir otra vez la conexi&oacute;n y as&iacute; sucesivamente.<br>
     Su sintaxis es sencilla: /connect servidor.colossus (en los servidores que lo soporten).</p>
-  <p><b>Nota</b>: cabe poner una especial atenci&oacute;n en m&aacute;quinas donde se est&eacute; ejecutando el ircd y los servicios a la misma vez. En estas situaciones s&oacute;lo puede haber un mismo puerto en escucha. 
-  As&iacute;, el ircd y los servicios no pueden utilizar el mismo puerto de escucha. Por esta raz&oacute;n, existe la directriz opcional en el bloque server, escucha, para especificar otro puerto de escucha que no est&eacute; 
+  <p><b>Nota</b>: cabe poner una especial atenci&oacute;n en m&aacute;quinas donde se est&eacute; ejecutando el ircd y los servicios a la misma vez. En estas situaciones s&oacute;lo puede haber un mismo puerto en escucha.
+  As&iacute;, el ircd y los servicios no pueden utilizar el mismo puerto de escucha. Por esta raz&oacute;n, existe la directriz opcional en el bloque server, escucha, para especificar otro puerto de escucha que no est&eacute;
   utilizando el ircd. Esta directriz es &uacute;til cuando los dos programas est&aacute;n bajo la misma m&aacute;quina y conectan entre s&iacute;. </p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="zlib"></a>7. SSL y ZLib</font></b></p>
-  <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro 
+  <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro
   considerable del ancho de banda. Ambos servidores (servicios e ircd) tienen que estar configurados con la misma compresi&oacute;n: 1 a 9. </p>
   <p>Tambi&eacute;n se incluye la caracter&iacute;stica SSL para trabajar con conexiones seguras y evitar el robo de informaci&oacute;n.</p>
   <p>Ambas caracter&iacute;sticas son opcionales, siendo en conexiones &quot;localhost&quot; triviales.</p>
@@ -152,7 +152,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   También puede ver la información sobre los jugadores de <i>bidle</i>, el juego de idle.</p>
   <p>Cada servicio ofrecerá distintas posibilidades, pero siempre a través de webs. Para ello, todas las webs deberán colocarse en el directorio <i>html/&lt;nombre_servicio&gt;</i>.<br>
   Por ejemplo, las páginas webs del servicio de estadísticas estarán en <i>html/StatServ</i> y las del juego bidle, en <i>html/bidle</i>.</p>
-  <p>Además también soporta <a href="http://www.php.net/" target="_blank">PHP</a>. Si también tiene instalado <a href="http://www.php.net/" target="_blank">PHP</a>, puede usarlo para que las páginas en ese lenguaje sean preprocesadas y 
+  <p>Además también soporta <a href="http://www.php.net/" target="_blank">PHP</a>. Si también tiene instalado <a href="http://www.php.net/" target="_blank">PHP</a>, puede usarlo para que las páginas en ese lenguaje sean preprocesadas y
   luego devueltas al usuario final. Es opcional pero se recomienda instalarlo.<br>
   Sólo es necesario descargarlo, descomprimirlo y configurarlo. </p>
   <p>Con este servidor HTTPD integrado se le abren un sinfín de posibilidades.</p>
@@ -160,7 +160,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b><font size="6"><a name="msn"></a>9. MSN Messenger</font></b></p>
   <p>Con la versión 1.10, se introduce un servicio MSN. Con este complemento podrá controlar vía Messenger a su servidor Colossus. De igual forma, recibirá notificaciones del sevidor por el MSN.<br>
   Lo primero es tener una compilación de Colossus con soporte SSL. Las de Windows soportan SSL, por lo que podrá usar el complemento MSN. Las de linux, no todas. Asegúrese antes de descargla que sí la soporta.<br>
-  El complemento MSN utiliza una cuenta MSN propia. Eso significa que para comunicarse con Colossus por el Messenger, deberá utilizar una cuenta para Colossus y otra para usted. Si sólo dispone de una cuenta, 
+  El complemento MSN utiliza una cuenta MSN propia. Eso significa que para comunicarse con Colossus por el Messenger, deberá utilizar una cuenta para Colossus y otra para usted. Si sólo dispone de una cuenta,
   diríjase a <a href="https://signup.live.com/newuser.aspx?mkt=es-es&revipc=ES&rollrs=04&lic=1" target="_blank">SignUP Live</a> y registre una cuenta. Una vez la tenga, deberá configurar Colossus con esa cuenta y su contraseña.<br>
   Finalmente, deberá configurar también su cuenta principal, la que utilizará para comunicarte con Colossus. Una vez esté todo configurado, cada vez que arranque Colossus se conectará automáticamente al Messenger.<br>
   Agregue a su MSN la cuenta que ha creado para Colossus y ya tendrá a Colossus en su MSN. Podrá gestionar a Colossus mediante comandos por el MSN y recibirá avisos de la red.</p>
@@ -178,7 +178,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p>Cabe mencionar que si el valor contiene alg&uacute;n s&iacute;mbolo de comentario (#, // o /* */) el uso del entrecomillado es <b>obligatorio</b>, puesto que, de no hacerse as&iacute;, se tomar&iacute;a como un comentario y dar&iacute;a error.<br>
   As&iacute; pues, por ejemplo canal &quot;#canal&quot;; ser&iacute;a correcto; pero canal #canal; ser&iacute;a incorrecto. </p>
   <p>Adem&aacute;s, los comentarios pueden hacerse anteponiendo // para comentar toda esta l&iacute;nea o con /* */ para comentar varias l&iacute;neas.</p>
-  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una sola l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n, 
+  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una sola l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n,
   recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
   <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa.</p>
   <p>El archivo se compone de varios bloques:</p><br>
@@ -238,7 +238,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b>host</b><br>Indica la direcci&oacute;n de la m&aacute;quina smtp. Puede ser ip o host. </p>
   <p><b>login</b><br>Es <i>opcional</i>. Si se especifica, indica que el servidor SMTP no es libre y requiere autentificaci&oacute;n. Si no se especifica, esta directriz, se asume que no es necesaria ninguna identificaci&oacute;n y procede al env&iacute;o an&oacute;nimo. </p>
   <p><b>pass</b><br>Es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
-  <p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP. 
+  <p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP.
   Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra es m&aacute;s inestable que el pasar por un SMTP, ya que de esta forma conecta a distintos sitios; mientras que usando un SMTP, s&oacute;lo conecta a uno.</p>
   <p><b>Nota</b>: bajo sistemas Windows 9x/ME este bloque es <b>obligatorio</b>.</p>
   <p>Ejemplo:</p>
@@ -301,13 +301,13 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 <p><b>rekill</b><br>Hace que el robot sea reconectado en caso de haber sido killeado. </p>
 <p><b>rejoin</b><br>Hace que el robot sea introducido en el canal donde haya sido expulsado. </p>
 <p><b>admin</b><br>Se utiliza para indicar cu&aacute;l es el email del administrador o el de la red. Se utiliza como remitente en el env&iacute;o de emails. </p>
-<p><b>root</b><br>Indica qu&eacute; nick es el superusuario de los robots. Cuando se identifique como administrador de red (+N), tenga el nick registrado e identificado (+r) y figure como root en esta 
+<p><b>root</b><br>Indica qu&eacute; nick es el superusuario de los robots. Cuando se identifique como administrador de red (+N), tenga el nick registrado e identificado (+r) y figure como root en esta
 configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de superusuario o root. </p>
 <p><b>clave_cifrado </b><br>Se utiliza como semilla o clave de cifrado cada vez que se requiera encriptar datos. No puede tener m&aacute;s de 32 caracteres. </p>
-<p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b> 
+<p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b>
 con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 <p><b>debug</b><br>Indica el canal en el que se hace debug de toda la red si est&aacute; presente. </p>
-<p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango. 
+<p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango.
 El par&aacute;metro flags es opcional. Si est&aacute; presente, indica que para adquirir ese nivel necesita poseer este flag. Si no, adquirir&aacute; ese nivel a partir de una rutina propia de alg&uacute;n m&oacute;dulo.<br>
 Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a partir de la directriz root.</p>
 <p><strike><b>auto_actualiza</b><br>Activa el auto-actualizador. Cuando se arranque el programa se comprobará si hay actualizaciones disponibles de los componentes (.dll o .so). Si los hay, los descarga y se reinicia.
@@ -346,9 +346,9 @@ Está desactivado. Conflicto de versiones.</p>
   	config archivo.inc; //opcional
   	serial "clave"; //opcional
 };</pre>
-  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix. 
-  As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa. 
-  Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen. 
+  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix.
+  As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa.
+  Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen.
   Es conveniente que todos los m&oacute;dulos est&eacute;n en la carpeta /modulos.</p>
   <p><b>nick</b><br>Nick del m&oacute;dulo o robot. </p>
   <p><b>ident</b><br>Ident o username del m&oacute;dulo o robot. </p>
@@ -356,7 +356,7 @@ Está desactivado. Conflicto de versiones.</p>
   <p><b>realname</b><br>Nombre o informaci&oacute;n adicional del m&oacute;dulo o robot. </p>
   <p><b>modos</b><br>Modos de usuario que lleva el m&oacute;dulo o robot (no se especifica + ni -). </p>
   <p><b>residente</b><br>Es <i>opcional</i> y son los canales en los que permanece permanentemente. </p>
-  <p><b>config</b><br>Nombre del archivo de configuraci&oacute;n del m&oacute;dulo. Debe estar en la misma carpeta que el m&oacute;dulo.<br>Es opcional, puesto que 
+  <p><b>config</b><br>Nombre del archivo de configuraci&oacute;n del m&oacute;dulo. Debe estar en la misma carpeta que el m&oacute;dulo.<br>Es opcional, puesto que
   no todos los m&oacute;dulos requerir&aacute;n una configuraci&oacute;n extendida. </p>
   <p><b>serial</b><br>Clave de acceso al m&oacute;dulo. Los m&oacute;dulos de acceso privado requieren esta directriz para ser usados. Es <i>opcional</i>.</p>
   <p>Ejemplo:</p>
@@ -466,16 +466,21 @@ Está desactivado. Conflicto de versiones.</p>
   	cuenta nombre@hotmail.com;
   	pass contraseña;
   	master su_cuenta@hotmail.com;
+  	servidor servidor.virtual;
+  	solomaster; //opcional
 };</pre>
   <p>Este bloque configura el complemento MSN. Si dispone de este complemento, podrá comunicarse con Colossus a través del Messenger. Para ello debe disponer de una cuenta adicional que utilizará Colossus.</p>
   <p><b>cuenta</b><br>Cuenta que utilizará Colossus y que debe agregar en su MSN.</p>
   <p><b>pass</b><br>Contraseña de la cuenta de Colossus.</p>
   <p><b>master</b><br>La dirección de su cuenta. La cuenta master es la cuenta que Colossus identificará como root y por la que recibirá las órdenes. Debe ser la cuenta que utilizará para comunicarse con Colossus.</p>
+  <p><b>servidor</b><br>Se trata del servidor virtual que se crea y se linka al servidor principal de los bots. A través de este servidor virtual se conectarán todos los contactos del MSN. Puede ser cualquier valor.</p>
+  <p><b>solomaster</b><br>Es <i>opcional</i>. Indica que sólo aceptará a la cuenta máster. Nadie que no sea el máster podrá agregar al complemento.</p>
   <p>Ejemplo:</p>
   <pre>msn {
 	cuenta cuenta_colossus@hotmail.com;
 	pass contraseña1234;
 	master mi_cuenta@hotmail.com;
+	servidor msn.colossus;
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="bots"></a>11. Configuraci&oacute;n de m&oacute;dulos</font></b></p>
@@ -498,14 +503,14 @@ Está desactivado. Conflicto de versiones.</p>
   <p><b>nivel</b> Declara el nivel m&iacute;nimo de un usuario para poder acceder a este comando. El valor especificado debe pertenecer al bloque <b>niveles { }</b> del bloque <a href="#set"><b>set { }</b></a>.</p>
   <p><b>comando</b> Establece el comando que debe llamarse. Es decir, el comando que ejecutar&aacute; el usuario cuando use /msg Modulo COMANDO.<br />
   Por ejemplo, si carga la funci&oacute;n <i>help</i>, puede establecer <i>comando</i> a "AYUDA". As&iacute;, el comando para activarlo ser&aacute; /msg Modulo AYUDA.</p>
-  <p>Una funci&oacute;n puede ser cargada varias veces, siempre que el comando sea distinto en cada vez. Por ejemplo, puede cargar dos veces la funci&oacute;n <i>help</i> con los comandos AYUDA y HELP por separado. 
+  <p>Una funci&oacute;n puede ser cargada varias veces, siempre que el comando sea distinto en cada vez. Por ejemplo, puede cargar dos veces la funci&oacute;n <i>help</i> con los comandos AYUDA y HELP por separado.
   As&iacute;, los usuarios acceder&aacute;n a la ayuda a trav&eacute;s de estos dos comandos.</p>
   <p>&nbsp;</p>
   <p><b><font size="4"><a name="alias"></a>11.0.3 Bloque alias { }</font></b></p>
   <pre>alias "formato" {
 	sintaxis "sintaxis";
 };</pre>
-  <p>Crean alias para ejecutar. Si un usuario ejecuta un comando que coincide con "formato", ese comando se reemplazar&aacute; por "sintaxis". 
+  <p>Crean alias para ejecutar. Si un usuario ejecuta un comando que coincide con "formato", ese comando se reemplazar&aacute; por "sintaxis".
   Por tanto, en realidad estar&aacute; ejecutando el comando que haya en "sintaxis".</p>
   <p><b>formato</b> Define el patr&oacute;n que el usuario debe ejecutar. Si utiliza % como comod&iacute;n, est&aacute; indicando que en su lugar va una palabra cualquiera.</p>
   <p><b>sintaxis</b> Corresponde a la sintaxis que se reemplazar&aacute; y que realmente se ejecutar&aacute;. Se puede usar %N (%1, %2, etc.) para indicar los par&aacute;metros pasados. Si se usa %N- se asumir&aacute; que se pasan todos los par&aacute;metros desde N hasta el final.
@@ -546,7 +551,7 @@ Está desactivado. Conflicto de versiones.</p>
 	funciones {
 		...
 	};
-	funcion func { 
+	funcion func {
 		nivel nivel;
 		comando comando;
 	};  // Opcional
@@ -556,7 +561,7 @@ Está desactivado. Conflicto de versiones.</p>
 };</pre>
 <p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
 <p><b>secure</b><br>Se utiliza para que los usuarios no falseen sus cuentas de correo. Al registrar un nick, si est&aacute; especificado <b>secure</b>, se le enviar&aacute; una contrase&ntilde;a temporal al mail especificado. </p>
-<p><b>prot</b><br>Especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick. 
+<p><b>prot</b><br>Especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick.
 S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>NICK</b> (se le cambia el nick al usuario). </p>
 <p><b>recovernick</b><br>Patr&oacute;n que se sigue al cambiar el nick a un usuario. El par&aacute;metro %s es sustitu&iacute;do por el nick anterior. Para m&aacute;s informaci&oacute;n lea la secci&oacute;n de <a href="#patrones">par&aacute;metros de patr&oacute;n</a>. </p>
 <p><b>securepass</b><br>Formato a seguir para la creaci&oacute;n de contrase&ntilde;as seguras. </p>
@@ -624,7 +629,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	funcion help {
 		comando AYUDA;
 	};
-	funcion func { 
+	funcion func {
 		nivel nivel;
 		comando comando;
 	};  // Opcional
@@ -647,7 +652,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	funciones {
 		...
 	};
-	funcion func { 
+	funcion func {
 		nivel nivel;
 		comando comando;
 	};  // Opcional
@@ -734,7 +739,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		token;
 		marca;
 	};
-	funcion help { 
+	funcion help {
 		comando AYUDA;
 	};
 };</pre>
@@ -744,11 +749,11 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 <p>Requiere: <b>chanserv</b>, <b>memoserv</b>. </p>
 <pre>OperServ {
 	autoop;
-	maxlist n&ordm;; 
+	maxlist n&ordm;;
 	funciones {
 		...
 	};
-	funcion func { 
+	funcion func {
 		nivel nivel;
 		comando comando;
 	};  // Opcional
@@ -803,7 +808,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		akill;
 		cache;
 	};
-	funcion help { 
+	funcion help {
 		comando AYUDA;
 	};
 };</pre>
@@ -817,7 +822,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	funciones {
 		...
 	};
-	funcion func { 
+	funcion func {
 		nivel nivel;
 		comando comando;
 	};  // Opcional
@@ -857,7 +862,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		info;
 		cancelar;
 	};
-	funcion help { 
+	funcion help {
 		comando AYUDA;
 	};
 };</pre>
@@ -871,7 +876,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 	funciones {
 		...
 	};
-	funcion func { 
+	funcion func {
 		nivel nivel;
 		comando comando;
 	};  // Opcional
@@ -906,7 +911,7 @@ S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>N
 		temphost;
 		clones;
 	};
-	funcion help { 
+	funcion help {
 		comando AYUDA;
 	};
 };</pre>
@@ -1046,7 +1051,7 @@ A continuaci&oacute;n tiene una lista de las extensiones soportados y sus opcion
 };</pre>
 <p><b>autooptimizar</b><br>Ejecuta una optimización cada 24h de los bloques UDB para ahorrar información.</p>
 <p><b>autobackup</b><br>Realiza una copia de seguridad cada 24h de los bloques UDB.</p>
-<p><b>NickServ, IpServ, ChanServ, OperServ</b><br>Complementan distintamente a estos módulos. Estas configuraciones son las mismas que existen para las configuraciones particulares, 
+<p><b>NickServ, IpServ, ChanServ, OperServ</b><br>Complementan distintamente a estos módulos. Estas configuraciones son las mismas que existen para las configuraciones particulares,
 como los bloques <i>funciones</i>, <i>funcion</i> y algún otro parámetro.</p>
 <p><b>automigrar</b><br>Los módulos <i>NickServ</i> y <i>ChanServ</i> permiten automigrar el registro de nicks y canales a los bloques de la red, respectivamente.</p>
 <br>
