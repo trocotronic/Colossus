@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc.tpl,v 1.2 2008-02-13 16:16:11 Trocotronic Exp $
+// $Id: colossus.rc.tpl,v 1.3 2008-05-31 12:47:35 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.
@@ -95,7 +95,7 @@ BEGIN
             VALUE "FileDescription", "Colossus - Servicios de red\0"
             VALUE "FileVersion", "1.9b\0"
             VALUE "InternalName", "Colossus\0"
-            VALUE "LegalCopyright", "Copyright © 2004-2007\0"
+            VALUE "LegalCopyright", "Copyright © 2004-2008\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "\0"
             VALUE "PrivateBuild", "\0"
@@ -160,7 +160,7 @@ CAPTION "Acerca de Colossus..."
 FONT 8, "Tahoma"
 BEGIN
     LTEXT           "Autor: Trocotronic",IDC_STATIC,10,10,76,8	
-    LTEXT           "©2004-2007",IDC_VER,10,20,76,8
+    LTEXT           "©2004-2008",IDC_VER,10,20,76,8
     CONTROL         "http://www.redyc.com/",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
     CONTROL         BMP_LOGO,IDC_STATIC,"Static",SS_BITMAP,111,3,64,64
     GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,60,BS_LEFT
