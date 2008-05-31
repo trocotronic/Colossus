@@ -1,10 +1,10 @@
 /*
- * $Id: version.h,v 1.5 2008-02-15 18:28:54 Trocotronic Exp $ 
+ * $Id: version.h,v 1.6 2008-05-31 12:47:13 Trocotronic Exp $
  */
 
-#define COLOSSUS_VERNUM "1.10"
+#define COLOSSUS_VERNUM "1.10a"
 #define COLOSSUS_VERSION "Colossus " COLOSSUS_VERNUM
-#define COLOSSUS_VERINT 11000
+#define COLOSSUS_VERINT 11001
 extern MODVAR int mainversion;
 extern MODVAR char *creditos[];
 extern MODVAR char *creado;
