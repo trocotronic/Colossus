@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.15 2008-05-31 21:46:05 Trocotronic Exp $
+ * $Id: sql.c,v 1.16 2008-05-31 22:06:33 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -9,6 +9,7 @@
 #include <winerror.h>
 #else
 #include <mysql/mysql.h>
+#include <sys/stat.h>
 #endif
 #include "ircd.h"
 
