@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.120 2008-06-01 16:29:03 Trocotronic Exp $
+ * $Id: main.c,v 1.121 2008-06-01 16:30:31 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -38,6 +38,9 @@ extern void BorraTemporales();
 extern void EscribePid();
 extern int LeePid();
 extern void CpuId();
+#ifdef POSIX_SIGNALS
+void SetSignal(int, void (*)(int));
+#endif
 
 /*!
  * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
@@ -132,9 +135,6 @@ void CierraTodo()
 VOIDSIG Refresca()
 {
 	Conf config;
-#ifdef	POSIX_SIGNALS
-	struct sigaction act;
-#endif
 	Info("Refrescando servicios...");
 	refrescando = 1;
 	DetieneMDS();
@@ -208,9 +208,6 @@ int main(int argc, char *argv[])
 	int i;
 #ifdef FORCE_CORE
 	struct rlimit corelim;
-#endif
-#ifndef _WIN32
-	struct sigaction act;
 #endif
 	char nofork = 0;
 	time_t t;
