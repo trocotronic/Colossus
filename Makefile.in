@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.20 2008-06-01 11:46:38 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.21 2008-06-01 11:48:41 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -71,8 +71,6 @@ install: all
 	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
 	$(INSTALL) -m 0700 -d ~/Colossus/protocolos
 	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos
-	$(INSTALL) -m 0700 -d ~/Colossus/sql
-	$(INSTALL) -m 0700 src/sql/*.so ~/Colossus/sql
 	
 release: install
 	$(RM) -rf ~/Colossus/Colossus
@@ -96,10 +94,6 @@ release: install
 	$(INSTALL) -m 0700 protocolos/p10.so ~/Colossus/Colossus/protocolos/p10.so
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos/extensiones
 	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/Colossus/protocolos/extensiones/udb.so
-	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/sql
-	$(INSTALL) -m 0700 sql/mysql.so ~/Colossus/Colossus/sql/mysql.so
-	$(INSTALL) -m 0700 sql/postgresql.so ~/Colossus/Colossus/sql/postgresql.so
-	$(INSTALL) -m 0700 sql/sqlite.so ~/Colossus/Colossus/sql/sqlite.so
 	tar -cvzf colossus17.tar.gz Colossus
 devel: install
 	$(RM) -rf ~/Colossus/Colossus
