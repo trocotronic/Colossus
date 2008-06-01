@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.40 2008-05-31 22:06:33 Trocotronic Exp $
+## $Id: Makefile,v 1.41 2008-06-01 11:44:46 Trocotronic Exp $
 
 OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
 	misc.o modulos.o msn.o parseconf.o protocolos.o smtp.o socks.o socksint.o \
@@ -19,7 +19,7 @@ modall:
 	cd modulos; ${MAKE} 'EXLIBS=${EXLIBS}' modall
 build: ircd mods prots exts
 ircd: $(OBJS)
-	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB) -lz `mysql_config --libmysqld-libs`
+	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB) `mysql_config --libmysqld-libs`
 	ar -r colossus.a $(OBJS)
 mods:
 	@if [ ! -r include ] ; then \
@@ -84,7 +84,7 @@ socksint.o: socksint.c $(INCLUDES)
 soporte.o: soporte.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c soporte.c
 sql.o: sql.c $(INCLUDES)
-	$(CC) $(CFLAGS) `mysql_config --include` -c sql.c
+	$(CC) $(CFLAGS) -I/usr/local/mysql/include -c sql.c
 ssl.o: ssl.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c ssl.c
 version.o: version.c ../include/version.h
