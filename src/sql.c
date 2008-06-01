@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.17 2008-06-01 12:36:16 Trocotronic Exp $
+ * $Id: sql.c,v 1.18 2008-06-01 12:38:44 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -55,7 +55,7 @@ int CargaSQL()
 	sql = BMalloc(struct _sql);
 	if (mysql_library_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
 	{
-		Error("Ha sido imposible cargar el motor MySQL [library_init](%i:%s)", mysql_errno(), mysql_error());
+		Error("Ha sido imposible cargar el motor MySQL [library_init]");
 		return -1;
 	}
 	if (!(mysql = mysql_init(NULL)))
