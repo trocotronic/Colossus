@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #ifdef _WIN32
 #include <windows.h>
 #define unlink _unlink
@@ -217,7 +218,7 @@ int main()
 	printf("db_name = %s\n", db);
 	printf("prefijo = %s\n\n", pref);
 	printf("Son correctos? [S/n]\n");
-	gets(tmp);
+	fgets(tmp, sizeof(tmp), stdin);
 	if (tmp[0] == 'S' || tmp[0] == 's' || tmp[0] == '\0')
 	{
 		char buf[8092];
