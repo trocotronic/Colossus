@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.19 2008-06-01 12:39:03 Trocotronic Exp $
+ * $Id: sql.c,v 1.20 2008-06-01 15:48:13 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -18,15 +18,13 @@ MYSQL *mysql = NULL;
 void SetSQLErrno();
 SQLRes MySQLQuery(const char *);
 static char *server_args[] = {
-	"this_program",       /* this string is not used */
-	"--datadir=./database/mysql/data",
-	"--basedir=./database/mysql",
-	"--key_buffer_size=32M"
+	"colossus",       /* this string is not used */
+	"--defaults-file=./database/mysql/my.cnf"
 };
 static char *server_groups[] = {
 	"embedded",
 	"server",
-	"this_program_SERVER",
+	"colossus",
 	(char *)NULL
 };
 void LiberaSQL()
