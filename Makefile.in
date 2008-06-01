@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.23 2008-06-01 12:09:29 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.24 2008-06-01 12:10:55 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -97,6 +97,7 @@ release: install
 	$(INSTALL) -m 0700 protocolos/p10.so ~/Colossus/Colossus/protocolos/p10.so
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos/extensiones
 	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/Colossus/protocolos/extensiones/udb.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/tmp
 	tar -cvzf colossus17.tar.gz Colossus
 devel: install
 	$(RM) -rf ~/Colossus/Colossus
