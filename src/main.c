@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.119 2008-06-01 16:15:20 Trocotronic Exp $
+ * $Id: main.c,v 1.120 2008-06-01 16:29:03 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -149,11 +149,7 @@ VOIDSIG Refresca()
 		DistribuyeMe(&me);
 	LlamaSenyal(SIGN_SQL, 0);
 #ifdef POSIX_SIGNALS
-	act.sa_handler = Refresca;
-	act.sa_flags = 0;
-	(void)sigemptyset(&act.sa_mask);
-	(void)sigaddset(&act.sa_mask, SIGHUP);
-	(void)sigaction(SIGHUP, &act, NULL);
+	SetSignal(SIGHUP, Refresca);
 #else
   #ifndef _WIN32
 	(void)signal(SIGHUP, s_rehash);
@@ -172,14 +168,32 @@ VOIDSIG Reinicia()
 #endif
 	exit(-1);
 }
+VOIDSIG ColossusFin()
+{
+	CierraColossus(0);
+}
+#ifdef POSIX_SIGNALS
+void SetSignal(int s, void (*func)(int))
+{
+	struct sigaction s_act;
+	bzero(&s_act, sizeof(s_act));
+	s_act.sa_handler = func;
+	sigemptyset(&s_act.sa_mask);
+	sigaddset(&s_act.sa_mask, s);
+	sigaction(s, &s_act, NULL);
+}
+#endif
 /*!
  * @desc: Cierra el programa
  * @params: $excode [in] Indica el código de salida. Este número es el que se pasa en la llamada exit()
  * @cat: Programa
  !*/
 
-VOIDSIG CierraColossus(int excode)
+int CierraColossus(int excode)
 {
+#ifndef _WIN32
+	Info("Cerrando Colossus...");
+#endif
 	CierraTodo();
 	LiberaSQL();
 	exit(excode);
@@ -376,26 +390,15 @@ int main(int argc, char *argv[])
 	signal(SIGSEGV, CleanUpSegv);
 #else
   #ifdef POSIX_SIGNALS
-	act.sa_handler = Refresca;
-	act.sa_flags = 0;
-	sigemptyset(&act.sa_mask);
-	sigaddset(&act.sa_mask, SIGHUP);
-	sigaction(SIGHUP, &act, NULL);
-	act.sa_handler = Reinicia;
-	sigaddset(&act.sa_mask, SIGINT);
-	sigaction(SIGINT, &act, NULL);
-	act.sa_handler = CierraColossus;
-	sigaddset(&act.sa_mask, SIGTERM);
-	sigaction(SIGTERM, &act, NULL);
-	act.sa_handler = CierraColossus;
-	sigaddset(&act.sa_mask, SIGKILL);
-	sigaction(SIGKILL, &act, NULL);
-	act.sa_handler = AbreSockIrcd;
-	sigaddset(&act.sa_mask, SIGPIPE);
-	sigaction(SIGPIPE, &act, NULL);
+  	SetSignal(SIGHUP, Refresca);
+  	SetSignal(SIGINT, Reinicia);
+  	SetSignal(SIGTERM, ColossusFin);
+  	SetSignal(SIGKILL, ColossusFin);
+  	SetSignal(SIGQUIT, ColossusFin);
+  	SetSignal(SIGPIPE, AbreSockIrcd);
   #elif BSD_RELIABLE_SIGNALS
 	signal(SIGHUP, Refresca);
-	signal(SIGTERM, CierraColossus);
+	signal(SIGTERM, ColossusFin);
 	signal(SIGINT, Reinicia);
 	signal(SIGPIPE, AbreSockIrcd);
   #endif

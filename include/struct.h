@@ -1,5 +1,5 @@
 /*
- * $Id: struct.h,v 1.89 2008-04-23 21:13:11 Trocotronic Exp $ 
+ * $Id: struct.h,v 1.90 2008-06-01 16:29:03 Trocotronic Exp $ 
  */
 
 #include "setup.h"
@@ -442,7 +442,7 @@ extern void Error(char *, ...);
 extern int Info(char *, ...);
 #define LOCAL 0
 #define REMOTO 1
-extern VOIDSIG CierraColossus(int);
+extern int CierraColossus(int);
 extern void Loguea(int, char *, ...);
 /*!
  * @desc: Pone a NULL un puntero y lo libera si es necesario.
