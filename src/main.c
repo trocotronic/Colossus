@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.122 2008-06-01 16:35:03 Trocotronic Exp $
+ * $Id: main.c,v 1.123 2008-06-01 17:44:47 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -285,6 +285,9 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
   #endif
   	fprintf(stderr, "\n");
+  	if (!nofork && fork())
+		exit(0);
+	EscribePid();
 #endif
 	for (i = 0; i < UMAX; i++)
 	{
@@ -410,11 +413,7 @@ int main(int argc, char *argv[])
 	CpuId();
 	SockOpen("colossus.redyc.com", 80, MotdAbre, MotdLee, NULL, NULL);
 	SiguienteTAsync(1);
-#ifndef _WIN32
-	if (!nofork && fork())
-		exit(0);
-	EscribePid();
-#else
+#ifdef _WIN32
 	EscuchaIrcd();
 	return 0;
 }
