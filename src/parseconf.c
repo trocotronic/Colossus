@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.40 2008-05-31 21:46:06 Trocotronic Exp $
+ * $Id: parseconf.c,v 1.41 2008-06-01 12:07:03 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -1410,12 +1410,7 @@ int TestHttpd(Conf *config, int *errores)
 			}
 		}
 	}
-	if (!(eval = BuscaEntrada(config, "ruta_php")))
-	{
-		Error("[%s:%s] No se encuentra la directriz ruta_php.", config->archivo, config->item);
-		error_parcial++;
-	}
-	else
+	if ((eval = BuscaEntrada(config, "ruta_php")))
 	{
 		if (!eval->data)
 		{
