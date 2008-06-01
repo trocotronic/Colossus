@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.123 2008-06-01 17:44:47 Trocotronic Exp $
+ * $Id: main.c,v 1.124 2008-06-01 17:47:49 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -200,7 +200,7 @@ int CierraColossus(int excode)
 	LiberaSQL();
 	CierraTodo();
 #ifndef _WIN32
-	fprintf(stderr, "OK");
+	fprintf(stderr, "OK\n");
 #endif
 	exit(excode);
 }
@@ -285,9 +285,6 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "\t\t+%s\n", OPENSSL_VERSION_TEXT);
   #endif
   	fprintf(stderr, "\n");
-  	if (!nofork && fork())
-		exit(0);
-	EscribePid();
 #endif
 	for (i = 0; i < UMAX; i++)
 	{
@@ -323,6 +320,9 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "\n\t\tTrocotronic - http://www.redyc.com/\n");
 	fprintf(stderr, "\t\t(c)2004-2008\n");
 	fprintf(stderr, "\n");
+	if (!nofork && fork())
+		exit(0);
+	EscribePid();
 #endif
 /*	if (EsArchivo("backup.sql"))
 	{
