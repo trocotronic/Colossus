@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.20 2008-06-01 15:48:13 Trocotronic Exp $
+ * $Id: sql.c,v 1.21 2008-06-01 22:25:37 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -19,7 +19,7 @@ void SetSQLErrno();
 SQLRes MySQLQuery(const char *);
 static char *server_args[] = {
 	"colossus",       /* this string is not used */
-	"--defaults-file=./database/mysql/my.cnf"
+	"--defaults-file=./database/mysql/my.ini"
 };
 static char *server_groups[] = {
 	"embedded",

@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.36 2008-05-31 21:46:04 Trocotronic Exp $
+## $Id: Makefile,v 1.37 2008-06-01 22:25:37 Trocotronic Exp $
 
 CC=cl
 LINK=link
@@ -115,11 +115,13 @@ AUTOCONF: src/win32/autoconf.c
 
 CONFVER: src/utils/confver.c
 	$(CC) /D _WIN32 src/utils/confver.c
+	-@confver.exe
+	-@erase confver.exe
+
+ACT111: 
 	$(CC) src/utils/actualiza_111.c
 	-@copy actualiza_111.exe utils/actualiza_111.exe
 	-@erase actualiza_111.exe
-	-@confver.exe
-	-@erase confver.exe
 
 CLEAN:
 	-@erase src\*.obj >NUL
