@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.117 2008-06-01 15:48:22 Trocotronic Exp $
+ * $Id: main.c,v 1.118 2008-06-01 15:54:10 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -180,7 +180,6 @@ VOIDSIG Reinicia()
 
 VOIDSIG CierraColossus(int excode)
 {
-	Info("Cerrando Colossus...");
 	CierraTodo();
 	LiberaSQL();
 	exit(excode);
@@ -391,7 +390,7 @@ int main(int argc, char *argv[])
 	act.sa_handler = AbreSockIrcd;
 	sigaddset(&act.sa_mask, SIGPIPE);
 	sigaction(SIGPIPE, &act, NULL);
-  #else
+  #elif BSD_RELIABLE_SIGNALS
 	signal(SIGHUP, Refresca);
 	signal(SIGTERM, CierraColossus);
 	signal(SIGINT, Reinicia);
