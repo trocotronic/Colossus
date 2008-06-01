@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.121 2008-06-01 16:30:31 Trocotronic Exp $
+ * $Id: main.c,v 1.122 2008-06-01 16:35:03 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -38,6 +38,9 @@ extern void BorraTemporales();
 extern void EscribePid();
 extern int LeePid();
 extern void CpuId();
+#ifndef _WIN32
+int getpgid(int);
+#endif
 #ifdef POSIX_SIGNALS
 void SetSignal(int, void (*)(int));
 #endif
@@ -192,10 +195,13 @@ void SetSignal(int s, void (*func)(int))
 int CierraColossus(int excode)
 {
 #ifndef _WIN32
-	Info("Cerrando Colossus...");
+	fprintf(stderr, "Cerrando Colossus... ");
 #endif
-	CierraTodo();
 	LiberaSQL();
+	CierraTodo();
+#ifndef _WIN32
+	fprintf(stderr, "OK");
+#endif
 	exit(excode);
 }
 #ifdef _WIN32
