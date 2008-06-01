@@ -94,7 +94,7 @@ int main()
 #else
 		closedir(dir);
 #endif
-		mkdir("../database/udb",0600);
+		mkdir("../database/udb",0744);
 		for (plen = 0; udbfs[plen]; plen++)
 		{
 			printf("Moviendo %s...\n", udbfs[plen]);
@@ -111,7 +111,7 @@ int main()
 		if ((dir = opendir(tmp)))
 #endif
 		{
-			mkdir("../database/udb/backup", 0600);
+			mkdir("../database/udb/backup", 0744);
 #ifdef _WIN32
 			do
 			{

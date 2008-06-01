@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.28 2008-06-01 23:23:32 Trocotronic Exp $
+ * $Id: bdd.c,v 1.29 2008-06-01 23:28:06 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -112,8 +112,8 @@ void printea(Udb *bloq, int escapes)
 int IniciaUDB()
 {
 	int dataver;
-	mkdir(DB_DIR, 0600);
-	mkdir(DB_DIR_BCK, 0600);
+	mkdir(DB_DIR, 0744);
+	mkdir(DB_DIR_BCK, 0744);
 	if (!S)
 		S = AltaBloque('S', DB_DIR "set.udb", &UDB_SET);
 	if (!N)
