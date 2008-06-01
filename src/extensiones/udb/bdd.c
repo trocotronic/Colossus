@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.25 2008-05-31 21:46:06 Trocotronic Exp $
+ * $Id: bdd.c,v 1.26 2008-06-01 23:19:14 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -358,15 +358,15 @@ int FijaCabecera(UDBloq *bloq)
 	u_int ver = 1;
 	ircsprintf(path, "%s.tmp", bloq->path);
 	if ((fd = open(path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
-		return 0;
+		return 1;
 	if (write(fd, &bloq->id, sizeof(bloq->id)) < 0)
-		return 0;
+		return 2;
 	if (write(fd, &ver, sizeof(ver)) < 0)
-		return 0;
+		return 3;
 	if (write(fd, &hash, sizeof(hash)) < 0)
-		return 0;
+		return 4;
 	if (write(fd, &gmt, sizeof(gmt)) < 0)
-		return 0;
+		return 5;
 	lseek(bloq->fd, 0, SEEK_SET);
 	while ((len = read(bloq->fd, buf, sizeof(buf))) > 0)
 		write(fd, buf, len);
@@ -374,35 +374,41 @@ int FijaCabecera(UDBloq *bloq)
 	close(bloq->fd);
 	close(fd);
 	if (unlink(bloq->path) < 0)
-		return 0;
+		return 6;
 	if (rename(path, bloq->path) < 0)
-		return 0;
+		return 7;
 	if ((bloq->fd = open(bloq->path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
-		return 0;
+		return 8;
 	ActualizaHash(bloq);
-	return 1;
+	return 0;
 }
 int CargaCabecera(UDBloq *bloq)
 {
 	u_int id;
 	struct stat inode;
 	if ((bloq->fd = open(bloq->path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
-		return 0;
+		return 1;
 	if (read(bloq->fd, &id, sizeof(id)) < 0)
-		return 0;
-	if (id != bloq->id && !FijaCabecera(bloq))
-		return 0;
+		return 2;
+	if (id != bloq->id)
+	{
+		close(bloq->fd);
+		if (FijaCabecera(bloq))
+			return 3;
+		else
+			CargaCabecera(bloq);
+	}
 	lseek(bloq->fd, INI_VER, SEEK_SET);
 	if (read(bloq->fd, &bloq->ver, sizeof(bloq->ver)) < 0)
-		return 0;
+		return 4;
 	if (read(bloq->fd, &bloq->crc32, sizeof(bloq->crc32)) < 0)
-		return 0;
+		return 5;
 	if (read(bloq->fd, &bloq->gmt, sizeof(bloq->gmt)) < 0)
-		return 0;
+		return 6;
 	if (fstat(bloq->fd, &inode) < 0)
-		return 0;
+		return 7;
 	bloq->lof = inode.st_size - INI_DATA;
-	return 1;
+	return 0;
 }
 int CargaBloque(u_int tipo)
 {
@@ -415,7 +421,7 @@ int CargaBloque(u_int tipo)
 		Info("Ha sido imposible cargar el bloque %i", tipo);
 		return 0;
 	}
-	CargaCabecera(bloq);
+	if (CargaCabecera(bloq))
 	obtiene = ObtieneHash(bloq);
 	if (bloq->crc32 != obtiene)
 	{
