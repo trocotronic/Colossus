@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.26 2008-06-01 23:19:14 Trocotronic Exp $
+ * $Id: bdd.c,v 1.27 2008-06-01 23:21:23 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -386,27 +386,22 @@ int CargaCabecera(UDBloq *bloq)
 {
 	u_int id;
 	struct stat inode;
+	int e;
 	if ((bloq->fd = open(bloq->path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)
-		return 1;
+		return -1;
 	if (read(bloq->fd, &id, sizeof(id)) < 0)
-		return 2;
-	if (id != bloq->id)
-	{
-		close(bloq->fd);
-		if (FijaCabecera(bloq))
-			return 3;
-		else
-			CargaCabecera(bloq);
-	}
+		return -2;
+	if (id != bloq->id && (e = FijaCabecera(bloq)))
+		return e;
 	lseek(bloq->fd, INI_VER, SEEK_SET);
 	if (read(bloq->fd, &bloq->ver, sizeof(bloq->ver)) < 0)
-		return 4;
+		return -3;
 	if (read(bloq->fd, &bloq->crc32, sizeof(bloq->crc32)) < 0)
-		return 5;
+		return -4;
 	if (read(bloq->fd, &bloq->gmt, sizeof(bloq->gmt)) < 0)
-		return 6;
+		return -5;
 	if (fstat(bloq->fd, &inode) < 0)
-		return 7;
+		return -6;
 	bloq->lof = inode.st_size - INI_DATA;
 	return 0;
 }
@@ -415,13 +410,17 @@ int CargaBloque(u_int tipo)
 	UDBloq *bloq;
 	u_long obtiene, bytes = 0L;
 	char linea[BUFSIZE], c;
-	int i = 0;
+	int i = 0, e;
 	if (!(bloq = CogeDeId(tipo)))
 	{
 		Info("Ha sido imposible cargar el bloque %i", tipo);
 		return 0;
 	}
-	if (CargaCabecera(bloq))
+	if ((e = CargaCabecera(bloq)))
+	{
+		Info("Ha sido imposible cargar el bloque %i (%i)", tipo, e);
+		return 0;
+	}
 	obtiene = ObtieneHash(bloq);
 	if (bloq->crc32 != obtiene)
 	{
