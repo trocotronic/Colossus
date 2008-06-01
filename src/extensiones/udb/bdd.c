@@ -1,5 +1,5 @@
 /*
- * $Id: bdd.c,v 1.27 2008-06-01 23:21:23 Trocotronic Exp $
+ * $Id: bdd.c,v 1.28 2008-06-01 23:23:32 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -418,7 +418,7 @@ int CargaBloque(u_int tipo)
 	}
 	if ((e = CargaCabecera(bloq)))
 	{
-		Info("Ha sido imposible cargar el bloque %i (%i)", tipo, e);
+		Info("Ha sido imposible cargar el bloque %i (%i:%i)", tipo, e, ERRNO);
 		return 0;
 	}
 	obtiene = ObtieneHash(bloq);
