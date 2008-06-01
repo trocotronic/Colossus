@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.21 2008-06-01 11:48:41 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.22 2008-06-01 11:51:49 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -36,7 +36,7 @@ build:
 		echo "No parece que hayas ejecutado la configuracion..."; \
 		sh Config; \
 	fi
-	$(INSTALL) -m 0700 -d utils
+	$(INSTALL) -m 0700 -d ~/Colossus/utils
 	$(CC) -o confver src/utils/confver.c
 	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
 	./confver
@@ -71,6 +71,7 @@ install: all
 	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
 	$(INSTALL) -m 0700 -d ~/Colossus/protocolos
 	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos
+	$(INSTALL) -m 0700 -d ~/Colossus/tmp
 	
 release: install
 	$(RM) -rf ~/Colossus/Colossus
