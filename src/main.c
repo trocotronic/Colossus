@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.124 2008-06-01 17:47:49 Trocotronic Exp $
+ * $Id: main.c,v 1.125 2008-06-01 22:56:45 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -197,8 +197,8 @@ int CierraColossus(int excode)
 #ifndef _WIN32
 	fprintf(stderr, "Cerrando Colossus... ");
 #endif
-	LiberaSQL();
 	CierraTodo();
+	LiberaSQL();
 #ifndef _WIN32
 	fprintf(stderr, "OK\n");
 #endif
