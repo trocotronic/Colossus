@@ -1,5 +1,5 @@
 #/************************************************************************
-#*   $Id: Makefile.in,v 1.19 2008-06-01 11:44:46 Trocotronic Exp $
+#*   $Id: Makefile.in,v 1.20 2008-06-01 11:46:38 Trocotronic Exp $
 #*/
 
 CC=@CC@
@@ -36,7 +36,7 @@ build:
 		echo "No parece que hayas ejecutado la configuracion..."; \
 		sh Config; \
 	fi
-	mkdir 0700 utils
+	$(INSTALL) -m 0700 -d utils
 	$(CC) -o confver src/utils/confver.c
 	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
 	./confver
