@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.18 2008-06-01 12:38:44 Trocotronic Exp $
+ * $Id: sql.c,v 1.19 2008-06-01 12:39:03 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -60,7 +60,7 @@ int CargaSQL()
 	}
 	if (!(mysql = mysql_init(NULL)))
 	{
-		Error("Ha sido imposible cargar el motor MySQL [init](%i:%s)", mysql_errno(), mysql_error());
+		Error("Ha sido imposible cargar el motor MySQL [init]");
 		return -1;
 	}
 	mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "libmysqld_client");
