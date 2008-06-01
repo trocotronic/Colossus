@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.118 2008-06-01 15:54:10 Trocotronic Exp $
+ * $Id: main.c,v 1.119 2008-06-01 16:15:20 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
 	signal(SIGSEGV, CleanUpSegv);
 #else
   #ifdef POSIX_SIGNALS
-	act.sa_handler = SIG_IGN;
+	act.sa_handler = Refresca;
 	act.sa_flags = 0;
 	sigemptyset(&act.sa_mask);
 	sigaddset(&act.sa_mask, SIGHUP);
@@ -387,6 +387,9 @@ int main(int argc, char *argv[])
 	act.sa_handler = CierraColossus;
 	sigaddset(&act.sa_mask, SIGTERM);
 	sigaction(SIGTERM, &act, NULL);
+	act.sa_handler = CierraColossus;
+	sigaddset(&act.sa_mask, SIGKILL);
+	sigaction(SIGKILL, &act, NULL);
 	act.sa_handler = AbreSockIrcd;
 	sigaddset(&act.sa_mask, SIGPIPE);
 	sigaction(SIGPIPE, &act, NULL);
