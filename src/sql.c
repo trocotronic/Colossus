@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.16 2008-05-31 22:06:33 Trocotronic Exp $
+ * $Id: sql.c,v 1.17 2008-06-01 12:36:16 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -49,14 +49,20 @@ int CargaSQL()
 	char *c;
 	my_bool rec = 1;
 	FILE *fp;
-	mkdir("database/mysql/data",0600);
+	mkdir("database/mysql/data",0700);
 	if (sql)
 		LiberaSQL();
 	sql = BMalloc(struct _sql);
 	if (mysql_library_init(sizeof(server_args) / sizeof(char *), server_args, server_groups))
+	{
+		Error("Ha sido imposible cargar el motor MySQL [library_init](%i:%s)", mysql_errno(), mysql_error());
 		return -1;
+	}
 	if (!(mysql = mysql_init(NULL)))
+	{
+		Error("Ha sido imposible cargar el motor MySQL [init](%i:%s)", mysql_errno(), mysql_error());
 		return -1;
+	}
 	mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "libmysqld_client");
 	mysql_options(mysql, MYSQL_OPT_USE_EMBEDDED_CONNECTION, NULL);
 	if (!mysql_real_connect(mysql, NULL, NULL, NULL, NULL, 0, NULL, 0))

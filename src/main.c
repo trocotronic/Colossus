@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.115 2008-05-31 21:46:06 Trocotronic Exp $
+ * $Id: main.c,v 1.116 2008-06-01 12:36:16 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -335,7 +335,8 @@ int main(int argc, char *argv[])
 #else
 	margv = argv;
 #endif
-	CargaSQL();
+	if (CargaSQL())
+		CierraColossus(-1);
 	if (!SQLEsTabla(SQL_VERSIONES))
 	{
 		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
