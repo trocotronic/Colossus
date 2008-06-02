@@ -1,5 +1,5 @@
 /*
- * $Id: ircd.c,v 1.61 2008-05-03 12:01:55 Trocotronic Exp $
+ * $Id: ircd.c,v 1.62 2008-06-02 10:29:08 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -882,7 +882,7 @@ Cliente *CreaBotEx(char *nick, char *ident, char *host, char *modos, char *realn
 void DesconectaBot(Cliente *bl, char *motivo)
 {
 	Modulo *ex;
-	if (bl)
+	if (bl && SockIrcd) /* si no hay sockircd no hay clientes */
 	{
 		if ((ex = BuscaModulo(bl->nombre, modulos)))
 			ex->cl = NULL;

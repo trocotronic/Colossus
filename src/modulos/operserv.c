@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.44 2008-01-21 19:46:46 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.45 2008-06-02 10:29:08 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -75,6 +75,7 @@ int OSSigIdOk	(Cliente *);
 int OSSigSQL	();
 int OSSigSynch	();
 int OSSigEOS	();
+int OSSigSockClose	();
 void OSCargaNoticias();
 void OSDescargaNoticias();
 
@@ -89,7 +90,7 @@ ModInfo MOD_INFO(OperServ) = {
 	"Trocotronic" ,
 	"trocotronic@redyc.com"
 };
-	
+
 int MOD_CARGA(OperServ)(Modulo *mod)
 {
 	Conf modulo;
@@ -138,10 +139,11 @@ int MOD_DESCARGA(OperServ)(Modulo *mod)
 	BorraSenyal(SIGN_SQL, OSSigSQL);
 	BorraSenyal(SIGN_SYNCH, OSSigSynch);
 	BorraSenyal(SIGN_EOS, OSSigEOS);
+	//BorraSenyal(SIGN_SOCKCLOSE, OSSigSockClose);
 	OSDescargaNoticias();
 	BotUnset(operserv);
 	return 0;
-}	
+}
 int OSTest(Conf *config, int *errores)
 {
 	int i, error_parcial = 0;
@@ -189,6 +191,7 @@ void OSSet(Conf *config, Modulo *mod)
 	InsertaSenyal(SIGN_SQL, OSSigSQL);
 	InsertaSenyal(SIGN_SYNCH, OSSigSynch);
 	InsertaSenyal(SIGN_EOS, OSSigEOS);
+	//InsertaSenyal(SIGN_SOCKCLOSE, OSSigSockClose);
 	BotSet(operserv);
 }
 Noticia *OSEsBotNoticia(char *botname)
@@ -624,7 +627,7 @@ BOTFUNC(OSOpers)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nivel no existe.");
 			return 1;
 		}
-		SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);		
+		SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1], param[2]);
 		if ((al = BuscaCliente(param[1])))
 			al->nivel |= niv->nivel;
@@ -781,7 +784,7 @@ BOTFUNC(OSGlobal)
 		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{
 			while ((row = SQLFetchRow(res)))
-			{		
+			{
 //				if ((opts & 0x1) && !(level & BDD_OPER))
 //					continue;
 //				if ((opts & 0x2) && !(level & BDD_PREO))
@@ -1149,5 +1152,10 @@ int OSSigEOS()
 		}
 		SQLFreeRes(res);
 	}
+	return 0;
+}
+int OSSigSockClose()
+{
+	OSDescargaNoticias();
 	return 0;
 }
