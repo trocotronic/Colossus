@@ -1,5 +1,5 @@
 /*
- * $Id: zlib.c,v 1.15 2007-11-10 18:28:03 Trocotronic Exp $ 
+ * $Id: zlib.c,v 1.15 2007/11/10 18:28:03 Trocotronic Exp $ 
  */
  
 #include "struct.h"

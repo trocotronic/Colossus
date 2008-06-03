@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.c,v 1.59 2008-05-03 12:15:43 Trocotronic Exp $
+ * $Id: chanserv.c,v 1.59 2008/05/03 12:15:43 Trocotronic Exp $
  */
 
 #ifndef _WIN32

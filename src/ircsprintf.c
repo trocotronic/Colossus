@@ -1,5 +1,5 @@
 /*
- * $Id: ircsprintf.c,v 1.2 2005-09-14 14:45:05 Trocotronic Exp $ 
+ * $Id: ircsprintf.c,v 1.2 2005/09/14 14:45:05 Trocotronic Exp $ 
  */
 
 /*

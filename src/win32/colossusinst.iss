@@ -1,4 +1,4 @@
-; $Id: colossusinst.iss,v 1.28 2008-05-31 21:46:04 Trocotronic Exp $
+; $Id: colossusinst.iss,v 1.28 2008/05/31 21:46:04 Trocotronic Exp $
 
 ; Instalador de Colossus
 

@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.h,v 1.6 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: ipserv.h,v 1.6 2006/10/31 23:49:10 Trocotronic Exp $ 
  */
 
 typedef struct _is IpServ;

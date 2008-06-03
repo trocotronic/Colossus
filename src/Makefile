@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.41 2008-06-01 11:44:46 Trocotronic Exp $
+## $Id: Makefile,v 1.41 2008/06/01 11:44:46 Trocotronic Exp $
 
 OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
 	misc.o modulos.o msn.o parseconf.o protocolos.o smtp.o socks.o socksint.o \

@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.20 2008-02-15 18:31:10 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.20 2008/02/15 18:31:10 Trocotronic Exp $ 
  */
 
 #ifndef _modulos_

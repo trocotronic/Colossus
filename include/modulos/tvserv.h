@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.h,v 1.4 2006-10-31 23:49:10 Trocotronic Exp $ 
+ * $Id: tvserv.h,v 1.4 2006/10/31 23:49:10 Trocotronic Exp $ 
  */
 
 #define XS_MAX_PORTS 32

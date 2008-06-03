@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.11 2008-06-01 23:28:06 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.10 2008/01/21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32

@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.16 2008-02-14 21:32:11 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.16 2008/02/14 21:32:11 Trocotronic Exp $ 
  */
 
 #define XML_STATIC

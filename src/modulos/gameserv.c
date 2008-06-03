@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.10 2007-08-26 11:36:13 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.10 2007/08/26 11:36:13 Trocotronic Exp $ 
  */
 
 #include <time.h>

@@ -1,5 +1,5 @@
 //
-// $Id: colossus.rc.tpl,v 1.3 2008-05-31 12:47:35 Trocotronic Exp $
+// $Id: colossus.rc.tpl,v 1.2 2008/02/13 16:16:11 Trocotronic Exp $
 //
 
 //Microsoft Developer Studio generated resource script.

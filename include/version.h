@@ -1,5 +1,5 @@
 /*
- * $Id: version.h,v 1.7 2008-05-31 21:46:12 Trocotronic Exp $
+ * $Id: version.h,v 1.5 2008/02/15 18:28:54 Trocotronic Exp $
  */
 
 #define COLOSSUS_VERNUM "1.11"

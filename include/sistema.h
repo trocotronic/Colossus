@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.23 2008-02-14 16:19:29 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.23 2008/02/14 16:19:29 Trocotronic Exp $ 
  */
 
 #ifndef MODVAR

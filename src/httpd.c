@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.c,v 1.29 2008-02-13 16:16:08 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.29 2008/02/13 16:16:08 Trocotronic Exp $ 
  */
  
 #ifdef _WIN32

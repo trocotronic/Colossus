@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.14 2007-02-14 16:14:48 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.14 2007/02/14 16:14:48 Trocotronic Exp $ 
  */
 
 #include "struct.h"

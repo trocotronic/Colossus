@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.h,v 1.8 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: operserv.h,v 1.8 2006/04/17 14:19:44 Trocotronic Exp $ 
  */
 
 #define OS_OPTS_AOP 0x1

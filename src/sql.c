@@ -1,5 +1,5 @@
 /*
- * $Id: sql.c,v 1.21 2008-06-01 22:25:37 Trocotronic Exp $
+ * $Id: sql.c,v 1.21 2008/06/01 22:25:37 Trocotronic Exp $
  */
 
 #include "struct.h"

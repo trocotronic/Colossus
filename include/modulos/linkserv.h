@@ -1,5 +1,5 @@
 /*
- * $Id: linkserv.h,v 1.3 2005-07-13 14:06:24 Trocotronic Exp $ 
+ * $Id: linkserv.h,v 1.3 2005/07/13 14:06:24 Trocotronic Exp $ 
  */
 
 #define LS_MAX_COMS 256

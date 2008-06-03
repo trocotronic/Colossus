@@ -1,5 +1,5 @@
 /*
- * $Id: httpd.h,v 1.5 2007-06-02 15:50:29 Trocotronic Exp $ 
+ * $Id: httpd.h,v 1.5 2007/06/02 15:50:29 Trocotronic Exp $ 
  */
 
 #define HTTP_GET 1

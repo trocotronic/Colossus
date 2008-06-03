@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.30 2008-04-09 15:12:29 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.27 2008/02/16 23:19:43 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32

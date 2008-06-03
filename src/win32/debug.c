@@ -1,5 +1,5 @@
 /*
- * $Id: debug.c,v 1.14 2008-05-31 21:46:04 Trocotronic Exp $ 
+ * $Id: debug.c,v 1.14 2008/05/31 21:46:04 Trocotronic Exp $ 
  */
 
 #include <process.h>

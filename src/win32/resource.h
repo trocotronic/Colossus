@@ -1,5 +1,5 @@
 /*
- * $Id: resource.h,v 1.7 2008-02-13 16:16:11 Trocotronic Exp $ 
+ * $Id: resource.h,v 1.7 2008/02/13 16:16:11 Trocotronic Exp $ 
  */
 
 //{{NO_DEPENDENCIES}}

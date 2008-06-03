@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.h,v 1.2 2007-08-20 01:46:25 Trocotronic Exp $ 
+ * $Id: gameserv.h,v 1.2 2007/08/20 01:46:25 Trocotronic Exp $ 
  */
 
 typedef struct _gs GameServ;

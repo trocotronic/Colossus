@@ -1,5 +1,5 @@
 /*
- * $Id: match.c,v 1.5 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: match.c,v 1.5 2007/01/18 13:54:58 Trocotronic Exp $ 
  */
 
 /*

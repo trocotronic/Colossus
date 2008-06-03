@@ -1,5 +1,5 @@
 /*
- * $Id: socksint.h,v 1.2 2007-02-02 17:43:03 Trocotronic Exp $ 
+ * $Id: socksint.h,v 1.2 2007/02/02 17:43:03 Trocotronic Exp $ 
  */
 
 #include "setup.h"

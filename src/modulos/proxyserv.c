@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.42 2008-02-13 16:16:10 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.42 2008/02/13 16:16:10 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32

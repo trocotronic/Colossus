@@ -1,5 +1,5 @@
 /*
- * $Id: zip.h,v 1.6 2005-09-14 14:45:04 Trocotronic Exp $ 
+ * $Id: zip.h,v 1.6 2005/09/14 14:45:04 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32

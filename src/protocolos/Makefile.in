@@ -1,4 +1,4 @@
-## $Id: Makefile.in,v 1.7 2005-12-25 22:21:43 Trocotronic Exp $
+## $Id: Makefile.in,v 1.7 2005/12/25 22:21:43 Trocotronic Exp $
 
 INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \

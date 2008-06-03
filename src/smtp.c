@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.28 2008-04-05 20:39:22 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.28 2008/04/05 20:39:22 Trocotronic Exp $ 
  */
 
 #include "struct.h"

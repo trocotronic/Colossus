@@ -1,5 +1,5 @@
 /*
- * $Id: chanserv.h,v 1.14 2008-05-26 22:07:06 Trocotronic Exp $
+ * $Id: chanserv.h,v 1.14 2008/05/26 22:07:06 Trocotronic Exp $
  */
 
 #define CS_SID 0x1

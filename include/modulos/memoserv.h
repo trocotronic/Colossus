@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.h,v 1.6 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: memoserv.h,v 1.6 2006/04/17 14:19:44 Trocotronic Exp $ 
  */
 
 typedef struct _ms MemoServ;

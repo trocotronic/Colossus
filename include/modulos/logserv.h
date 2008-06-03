@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.h,v 1.1 2006-11-01 11:38:26 Trocotronic Exp $ 
+ * $Id: logserv.h,v 1.1 2006/11/01 11:38:26 Trocotronic Exp $ 
  */
 
 typedef struct _ls LogServ;

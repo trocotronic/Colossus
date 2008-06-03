@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.13 2008-02-13 16:16:10 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.13 2008/02/13 16:16:10 Trocotronic Exp $ 
  */
 
 #include "struct.h"

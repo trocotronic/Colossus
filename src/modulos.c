@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.25 2007-05-31 23:06:37 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.25 2007/05/31 23:06:37 Trocotronic Exp $ 
  */
 
 #include "struct.h"

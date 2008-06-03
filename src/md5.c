@@ -1,5 +1,5 @@
 /*
- * $Id: md5.c,v 1.11 2007-01-18 13:54:58 Trocotronic Exp $ 
+ * $Id: md5.c,v 1.11 2007/01/18 13:54:58 Trocotronic Exp $ 
  */
 
 #include <stdio.h>

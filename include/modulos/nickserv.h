@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.h,v 1.11 2008-05-26 22:07:06 Trocotronic Exp $
+ * $Id: nickserv.h,v 1.11 2008/05/26 22:07:06 Trocotronic Exp $
  */
 
 #define NS_SID 0x1

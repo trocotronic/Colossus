@@ -1,5 +1,5 @@
 /*
- * $Id: sql.h,v 1.7 2008-05-31 21:46:06 Trocotronic Exp $
+ * $Id: sql.h,v 1.7 2008/05/31 21:46:06 Trocotronic Exp $
  */
 
 typedef char ** SQLRow;

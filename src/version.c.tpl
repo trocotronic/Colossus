@@ -1,5 +1,5 @@
 /*
- * $Id: version.c.tpl,v 1.2 2007-11-10 18:43:16 Trocotronic Exp $ 
+ * $Id: version.c.tpl,v 1.2 2007/11/10 18:43:16 Trocotronic Exp $ 
  */
 
 #ifndef __TIMESTAMP__

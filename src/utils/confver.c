@@ -1,5 +1,5 @@
 /*
- * $Id: confver.c,v 1.3 2008-05-26 22:07:06 Trocotronic Exp $
+ * $Id: confver.c,v 1.2 2008/01/21 19:46:45 Trocotronic Exp $
  */
 
 #include <stdio.h>

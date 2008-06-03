@@ -1,4 +1,4 @@
-## $Id: Makefile,v 1.37 2008-06-01 22:25:37 Trocotronic Exp $
+## $Id: Makefile,v 1.37 2008/06/01 22:25:37 Trocotronic Exp $
 
 CC=cl
 LINK=link

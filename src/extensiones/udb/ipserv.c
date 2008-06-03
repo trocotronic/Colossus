@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.10 2007-05-27 19:14:36 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.10 2007/05/27 19:14:36 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32

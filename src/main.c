@@ -1,5 +1,5 @@
 /*
- * $Id: main.c,v 1.125 2008-06-01 22:56:45 Trocotronic Exp $
+ * $Id: main.c,v 1.125 2008/06/01 22:56:45 Trocotronic Exp $
  */
 
 #ifdef _WIN32

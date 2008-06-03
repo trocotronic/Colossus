@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.59 2008-01-21 19:46:45 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.59 2008/01/21 19:46:45 Trocotronic Exp $ 
  */
 
 #ifndef _WIN32

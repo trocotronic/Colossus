@@ -1,5 +1,5 @@
 /*
- * $Id: msn.h,v 1.4 2008-02-16 23:19:43 Trocotronic Exp $ 
+ * $Id: msn.h,v 1.4 2008/02/16 23:19:43 Trocotronic Exp $ 
  */
 
 typedef struct _msnsb MSNSB;

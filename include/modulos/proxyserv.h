@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.h,v 1.10 2007-04-11 20:13:13 Trocotronic Exp $ 
+ * $Id: proxyserv.h,v 1.10 2007/04/11 20:13:13 Trocotronic Exp $ 
  */
 
 #define MAX_PATRON 16

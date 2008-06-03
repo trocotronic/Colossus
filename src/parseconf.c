@@ -1,5 +1,5 @@
 /*
- * $Id: parseconf.c,v 1.41 2008-06-01 12:07:03 Trocotronic Exp $
+ * $Id: parseconf.c,v 1.41 2008/06/01 12:07:03 Trocotronic Exp $
  */
 
 #ifdef _WIN32

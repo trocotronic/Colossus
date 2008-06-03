@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.42 2008-02-13 16:16:09 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.42 2008/02/13 16:16:09 Trocotronic Exp $ 
  */
 
 #ifdef _WIN32

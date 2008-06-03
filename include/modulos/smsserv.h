@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.h,v 1.2 2006-04-17 14:19:44 Trocotronic Exp $ 
+ * $Id: smsserv.h,v 1.2 2006/04/17 14:19:44 Trocotronic Exp $ 
  */
 
 typedef struct _ss SmsServ;
