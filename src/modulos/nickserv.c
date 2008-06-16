@@ -1,5 +1,5 @@
 /*
- * $Id: nickserv.c,v 1.59 2008/01/21 19:46:45 Trocotronic Exp $ 
+ * $Id: nickserv.c,v 1.59 2008/01/21 19:46:45 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -84,7 +84,7 @@ static bCom nickserv_coms[] = {
 	{ "register" , NSRegister , N0 , "Registra el nick que lleves puesto." , NSHRegister } ,
 	{ "identify" , NSIdentify , N0 , "Te identifica como propietario del nick." , NSHIdentify } ,
 	{ "set" , NSOpts , N1 , "Permite fijar distintas opciones para tu nick." , NSHSet } ,
-	{ "drop" , NSDrop , N2 , "Desregistra un usuario." , NSHDrop } , 
+	{ "drop" , NSDrop , N2 , "Desregistra un usuario." , NSHDrop } ,
 	{ "sendpass" , NSSendpass , N2 , "Genera un password para el usuario y se lo envía a su correo." , NSHSendpass } ,
 	{ "info" , NSInfo , N0 , "Muestra información de un nick." , NSHInfo } ,
 	{ "list" , NSList, N0 , "Lista todos los nicks que coinciden con un patrón." , NSHList } ,
@@ -104,7 +104,7 @@ ModInfo MOD_INFO(NickServ) = {
 	"Trocotronic" ,
 	"trocotronic@redyc.com"
 };
-	
+
 int MOD_CARGA(NickServ)(Modulo *mod)
 {
 	Conf modulo;
@@ -144,9 +144,10 @@ int MOD_CARGA(NickServ)(Modulo *mod)
 	else
 		NSSet(NULL, mod);
 	return errores;
-}	
+}
 int MOD_DESCARGA(NickServ)()
 {
+	DetieneProceso(NSDropanicks);
 	BorraSenyal(SIGN_PRE_NICK, NSCmdPreNick);
 	BorraSenyal(SIGN_POST_NICK, NSCmdPostNick);
 	BorraSenyal(SIGN_UMODE, NSCmdUmode);
@@ -598,7 +599,7 @@ BOTFUNC(NSRegister)
 	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
 	m_c = SQLEscapa(cl->info);
-	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)", 
+	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)",
 			PREFIJO, NS_SQL,
 			cl->nombre, pass ? MDString(pass, 0) : "null",
 			mail, m_c,
@@ -816,7 +817,7 @@ BOTFUNC(NSInfo)
 			while ((row = SQLFetchRow(res)))
 			{
 				ircsprintf(tokbuf, " \003[\00312%s\003]", protocolo->modcl);
-				Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s%s\003 (\00312FUNDADOR\003)", row[0], 
+				Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s%s\003 (\00312FUNDADOR\003)", row[0],
 					ModosAFlags(CS_LEV_ALL, cFlags, NULL), tokbuf);
 			}
 			SQLFreeRes(res);
@@ -939,7 +940,7 @@ BOTFUNC(NSLiberar)
 	}
 	SQLInserta(NS_SQL, param[1], "suspend", "");
 	NSMarca(cl, param[1], "Suspenso levantado.");
-	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);			
+	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);
 	if ((al = BuscaCliente(param[1])))
 		NSCambiaInv(al);
 	EOI(nickserv, 10);
@@ -1089,7 +1090,7 @@ BOTFUNC(NSOptsNick)
 	ret = NickOpts(cl, param[1], &param[1], params-1, fc);
 	EOI(nickserv, 15);
 	return ret;
-}	
+}
 int NSCmdUmode(Cliente *cl, char *modos)
 {
 	//if (conf_set->modos && conf_set->modos->usuarios)
@@ -1141,7 +1142,7 @@ int NSCmdPostNick(Cliente *cl, int nuevo)
 		}
 		else
 			LlamaSenyal(NS_SIGN_IDOK, 1, cl);
-	}		
+	}
 	return 0;
 }
 int NSSigSQL()
@@ -1184,7 +1185,7 @@ int NSSigSQL()
 		if (!SQLEsCampo(NS_SQL, "marcas"))
 			SQLQuery("ALTER TABLE %s%s ADD COLUMN marcas text", PREFIJO, NS_SQL);
 		SQLQuery("ALTER TABLE %s%s CHANGE item item VARCHAR( 255 )", PREFIJO, NS_SQL);
-	}	
+	}
 	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);*/

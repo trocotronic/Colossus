@@ -1,5 +1,5 @@
 /*
- * $Id: newsserv.c,v 1.16 2008/02/14 21:32:11 Trocotronic Exp $ 
+ * $Id: newsserv.c,v 1.16 2008/02/14 21:32:11 Trocotronic Exp $
  */
 
 #define XML_STATIC
@@ -59,13 +59,13 @@ Opts urls[MAX_RSS+1] = {
 	{ 0x40 , "alicante" } ,
 	{ 0x80 , "barcelona" } ,
 	{ 0x100 , "bilbao" } ,
-	{ 0x200 , "cordoba" } , 
+	{ 0x200 , "cordoba" } ,
 	{ 0x400 , "granada" } ,
 	{ 0x800 , "madrid" } ,
-	{ 0x1000 , "malaga" } , 
+	{ 0x1000 , "malaga" } ,
 	{ 0x2000 , "murcia" } ,
 	{ 0x4000 , "sevilla" } ,
-	{ 0x8000 , "valencia" } , 
+	{ 0x8000 , "valencia" } ,
 	{ 0x10000 , "valladolid" } ,
 	{ 0x20000 , "vigo" } ,
 	{ 0x40000 , "zaragoza" } ,
@@ -156,6 +156,7 @@ int MOD_DESCARGA(NewsServ)()
 	BorraSenyal(SIGN_SQL, WSSigSQL);
 	BorraSenyal(CS_SIGN_DROP, WSSigDrop);
 	BorraSenyal(NS_SIGN_DROP, WSSigDrop);
+	DetieneProceso(WSEmiteRSS);
 	return 0;
 }
 int WSTest(Conf *config, int *errores)
@@ -163,7 +164,7 @@ int WSTest(Conf *config, int *errores)
 	int i, error_parcial = 0;
 	for (i = 0; i < config->secciones; i++)
 	{
-		
+
 	}
 	*errores += error_parcial;
 	return error_parcial;
@@ -226,7 +227,7 @@ Noticia *InsertaNoticia(u_int id, char *titular, char *descripcion, u_int servic
 		return not;
 //	}
 //	return NULL;
-}	
+}
 void XMLCALL xmlInicio(Rss *rs, const XML_Char *nombre, const XML_Char **atts)
 {
 	int i;
@@ -301,7 +302,7 @@ void XMLCALL xmlFin(Rss *rs, const char *nombre)
 						Responde((Cliente *)cn, CLI(newsserv), rs->not.descripcion);
 					Responde((Cliente *)cn, CLI(newsserv), "\x1F\00312http://noticias.redyc.com/?%u", rs->not.id);
 				}*/
-			}	
+			}
 		}
 		if (rs->q < rs->items)
 			rs->tmp[rs->q++] = rs->not.id;
@@ -486,7 +487,7 @@ BOTFUNC(WSBaja)
 			Responde(cl, CLI(newsserv), "El canal \00312%s\003 ha sido dado de baja de algunos servicios de noticias.", t);
 		else
 			Responde(cl, CLI(newsserv), "Has sido dado de baja de algunos servicios de noticias.");
-	}	
+	}
 	return 0;
 }
 BOTFUNC(WSHelp)
@@ -628,7 +629,7 @@ char *WSEntities(char *str, int *len)
 			for (j = 160; j < 256; j++)
 			{
 				l = strlen(iso_8859_1[j-160]);
-				
+
 				if (str[i+l] == ';' && !strncmp(iso_8859_1[j-160], &str[i], l))
 				{
 					str[k++] = j;
