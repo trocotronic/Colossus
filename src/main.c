@@ -44,6 +44,7 @@ int getpgid(int);
 #ifdef POSIX_SIGNALS
 void SetSignal(int, void (*)(int));
 #endif
+extern int ProcCache();
 
 /*!
  * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
@@ -140,6 +141,7 @@ VOIDSIG Refresca()
 	Conf config;
 	Info("Refrescando servicios...");
 	refrescando = 1;
+	DetieneProceso(ProcCache);
 	DetieneMDS();
 	DescargaExtensiones(protocolo);
 	DescargaModulos();
@@ -158,6 +160,7 @@ VOIDSIG Refresca()
 	(void)signal(SIGHUP, s_rehash);
   #endif
 #endif
+	IniciaProceso(ProcCache);
 	SiguienteTAsync(1);
 }
 VOIDSIG Reinicia()
