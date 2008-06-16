@@ -204,7 +204,8 @@ void ProcesosAuxiliares()
 	for (aux = procs; aux; aux = sig)
 	{
 		sig = aux->sig;
-		aux->func(aux);
+		if (aux->func)
+			aux->func(aux);
 	}
 }
 
