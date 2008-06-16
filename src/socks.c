@@ -1,5 +1,5 @@
 /*
- * $Id: socks.c,v 1.42 2008/02/13 16:16:09 Trocotronic Exp $ 
+ * $Id: socks.c,v 1.42 2008/02/13 16:16:09 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -38,9 +38,9 @@ struct in_addr *Resuelve(char *host)
 	struct hostent *he;
 	if (BadPtr(host))
 		return NULL;
-	if (!(he = gethostbyname(host))) 
+	if (!(he = gethostbyname(host)))
 		return NULL;
-	else 
+	else
 		return (struct in_addr *)he->h_addr;
 }
 int SockNoBlock(int pres)
@@ -173,7 +173,7 @@ Sock *SockOpen(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc),
  * @ver: SockClose SockListen SockOpen
  * @cat: Conexiones
  !*/
-  
+
 Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), u_int contout, u_int recvtout, u_int opts)
 {
 	Sock *sck;
@@ -197,7 +197,7 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 		WSAGetLastError() != WSAEINPROGRESS && WSAGetLastError() != WSAEWOULDBLOCK)
 #else
 	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) < 0 && errno != EINPROGRESS)
-#endif			
+#endif
 			return NULL;
 	if (!(opts & OPT_NORECVQ))
 		sck->recvQ = BMalloc(DBuf);
@@ -249,12 +249,12 @@ if (!(escucha = SockListen(123, Abre, NULL, NULL, NULL)))
  * @ver: SockOpen SockClose
  * @cat: Conexiones
  !*/
- 
+
 Sock *SockListen(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc))
 {
 	return SockListenEx(puerto, openfunc, readfunc, writefunc, closefunc, 0);
 }
- 
+
 Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUNC(*writefunc), SOCKFUNC(*closefunc), u_int opts)
 {
 	Sock *sck;
@@ -280,13 +280,20 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	sck->server.sin_addr.s_addr = inet_addr(ipname);
 	sck->server.sin_port = htons((u_short)puerto);
 	sck->puerto = puerto;
-	sck->host = strdup("127.0.0.1");
-	if (bind(sck->pres, (struct sockaddr *)&sck->server,
-		    sizeof(sck->server)) == -1)
+	if (bind(sck->pres, (struct sockaddr *)&sck->server, sizeof(sck->server)) == -1)
+	{
+		CLOSE_SOCK(sck->pres);
+		Free(sck);
 		return NULL;
+	}
 	SockList(sck);
 	if (SockNoBlock(sck->pres) == -1)
+	{
+		CLOSE_SOCK(sck->pres);
+		Free(sck);
 		return NULL;
+	}
+	sck->host = strdup("127.0.0.1");
 #ifdef DEBUG
 	Debug("Escuchando puerto %i (%i)", puerto, sck->pres);
 #endif
@@ -318,13 +325,14 @@ Sock *SockAccept(Sock *list, int pres)
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_port = list->server.sin_port;
 	memcpy(&sck->server.sin_addr, &addr.sin_addr, sizeof(struct sockaddr_in));
-	sck->host = strdup(inet_ntoa(addr.sin_addr));
 	sck->puerto = list->puerto;
 	if (SockNoBlock(sck->pres) == -1)
 	{
+		CLOSE_SOCK(sck->pres);
 		Free(sck);
 		return NULL;
 	}
+	sck->host = strdup(inet_ntoa(addr.sin_addr));
 	if (!(list->opts & OPT_NORECVQ))
 		sck->recvQ = BMalloc(DBuf);
 	sck->sendQ = BMalloc(DBuf);
@@ -345,7 +353,7 @@ Sock *SockAccept(Sock *list, int pres)
 		}
 		SSL_set_fd(sck->ssl, pres);
 		SSLSockNoBlock(sck->ssl);
-		if (!SSLAccept(sck, pres)) 
+		if (!SSLAccept(sck, pres))
 		{
 			SSL_set_shutdown(sck->ssl, SSL_RECEIVED_SHUTDOWN);
 			SSLShutDown(sck->ssl);
@@ -391,7 +399,7 @@ void SockWriteEx(Sock *sck, int opts, char *formato, ...)
 	va_list vl;
 	va_start(vl, formato);
 	SockWriteExVL(sck, opts, formato, vl);
-	va_end(vl);	
+	va_end(vl);
 }
 void SockWriteBin(Sock *sck, u_long len, char *data)
 {
@@ -409,7 +417,7 @@ void SockWriteBin(Sock *sck, u_long len, char *data)
  * @ver: SockWrite
  * @cat: Conexiones
  !*/
- 
+
 void SockWriteVL(Sock *sck, char *formato, va_list vl)
 {
 	SockWriteExVL(sck, OPT_CRLF, formato, vl);
@@ -423,7 +431,7 @@ void SockWriteVL(Sock *sck, char *formato, va_list vl)
  * @ver: SockWriteVL
  * @cat: Conexiones
  !*/
- 
+
 void SockWrite(Sock *sck, char *formato, ...)
 {
 	va_list vl;
@@ -453,7 +461,7 @@ void SockClose(Sock *sck)
  * @ver: SockOpen SockListen
  * @cat: Conexiones
  !*/
- 
+
 void SockCloseEx(Sock *sck, int closef)
 {
 	if (!sck || EsCerr(sck))
@@ -508,7 +516,7 @@ void LiberaSock(Sock *sck)
 	}
 	CLOSE_SOCK(sck->pres);
 #ifdef USA_SSL
-	if (EsSSL(sck) && sck->ssl) 
+	if (EsSSL(sck) && sck->ssl)
 	{
 		SSL_set_shutdown((SSL *)sck->ssl, SSL_RECEIVED_SHUTDOWN);
 		SSLShutDown((SSL *)sck->ssl);
@@ -526,14 +534,11 @@ void LiberaSock(Sock *sck)
 void CierraSocks()
 {
 	int i;
-	for (i = ListaSocks.tope; i >= 0; i--)
+	Sock *sck;
+	for (i = ListaSocks.tope; i > -1; i--)
 	{
-		if (ListaSocks.socket[i] && ListaSocks.socket[i]->pres >= 0)
-		{
-			CLOSE_SOCK(ListaSocks.socket[i]->pres);
-			if (ListaSocks.socket[i])
-				ListaSocks.socket[i]->pres = -2;
-		}
+		if (ListaSocks.socket[i])
+			LiberaSock(ListaSocks.socket[i]);
 	}
 	ListaSocks.tope = -1;
 #ifdef _WIN32
@@ -758,7 +763,7 @@ int CreaMensaje(Sock *sck, char *msg, int len)
 			char g = (*b = *p++);
 			if (g == '\n' || g == '\r') /* asumo que terminan en \r\n o \r o \n, pero nunca \n\r */
 			{
-				if (b == sck->buffer) 
+				if (b == sck->buffer)
 					continue;
 				if (!(sck->opts & OPT_BIN))
 				{

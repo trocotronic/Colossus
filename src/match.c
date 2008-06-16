@@ -1,41 +1,8 @@
-/*
- * $Id: match.c,v 1.5 2007/01/18 13:54:58 Trocotronic Exp $ 
- */
-
-/*
- *   Unreal Internet Relay Chat Daemon, src/match.c
- *   Copyright (C) 1990 Jarkko Oikarinen
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 1, or (at your option)
- *   any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
- */
-
-/*
- *  Compare if a given string (name) matches the given
- *  mask (which can contain wild cards: '*' - match any
- *  number of chars, '?' - match any single character.
- *
- *	return	0, if match
- *		1, if no match
- */
 #ifndef NULL
 #define NULL 0
 #endif
 extern const char NTL_tolower_tab[];
-extern const char NTL_toupper_tab[];
 #define ToLower(c) (NTL_tolower_tab[(int)(c)])
-#define ToUpper(c) (NTL_toupper_tab[(int)(c)])
 /*
  * match()
  *  written by binary
@@ -90,7 +57,7 @@ static int match2(char *mask, char *name)
 			cm = *m;
 			if (cm == '\\')	/* don't do ? checking if a \ */
 			{
-				
+
 				cm = *(++m);	/* just skip this char, no ? checking */
 				/* In case of something like: '*\', return false. */
 				if (!*m)
@@ -172,8 +139,8 @@ static int match2(char *mask, char *name)
  * @ret: Devuelve 0 si coincide y se ajusta al patrón; 0, si no.
  * @cat: Programa
  !*/
- 
-int match(char *mask, char *name) 
+
+int match(char *mask, char *name)
 {
 	if (mask[0] == '*' && mask[1] == '!') {
 		mask += 2;
@@ -183,7 +150,7 @@ int match(char *mask, char *name)
 			return 1;
 		name++;
 	}
-		
+
 	if (mask[0] == '*' && mask[1] == '@') {
 		mask += 2;
 		while (*name != '@' && *name)
