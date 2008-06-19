@@ -1,5 +1,5 @@
 /*
- * $Id: sistema.h,v 1.23 2008/02/14 16:19:29 Trocotronic Exp $ 
+ * $Id: sistema.h,v 1.23 2008/02/14 16:19:29 Trocotronic Exp $
  */
 
 #ifndef MODVAR
@@ -40,10 +40,11 @@ typedef DIR * Directorio;
 #endif
 
 
-/* 
+/*
  * Macros de portabilidad
  */
 #ifndef _WIN32
+#include <errno.h>
 #define SET_ERRNO(x) errno = x
 #define READ_SOCK(fd, buf, len) read((fd), (buf), (len))
 #define WRITE_SOCK(fd, buf, len) write((fd), (buf), (len))
@@ -76,7 +77,7 @@ typedef DIR * Directorio;
 #endif
 #else /* _WIN32 */
 #define NETDB_INTERNAL -1
-#define NETDB_SUCCESS 0 
+#define NETDB_SUCCESS 0
 
 #define READ_SOCK(fd, buf, len) recv((fd), (buf), (len), 0)
 #define WRITE_SOCK(fd, buf, len) send((fd), (buf), (len), 0)

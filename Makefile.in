@@ -26,7 +26,7 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 modulo:
 	cd src; ${MAKE} ${MAKEARGS} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
 	$(CP) src/modulos/$(FUENTE).so modulos/$(FUENTE).so
-	
+
 modall:
 	cd src; ${MAKE} ${MAKEARGS} 'EXLIBS=${EXLIBS}' modall
 
@@ -74,7 +74,7 @@ install: all
 	$(INSTALL) -m 0700 -d ~/Colossus/tmp
 	$(INSTALL) -m 0700 -d ~/Colossus/protocolos/extensiones
 	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/protocolos/extensiones/udb.so
-	
+
 release: install
 	$(RM) -rf ~/Colossus/Colossus
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
@@ -98,7 +98,9 @@ release: install
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos/extensiones
 	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/Colossus/protocolos/extensiones/udb.so
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/tmp
-	tar -cvzf colossus17.tar.gz Colossus
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/utils
+	$(INSTALL) -m 0700 src/utils/actualiza_111 ~/Colossus/Colossus/utils/actualiza_111
+	tar -cvzf colossus111.tar.gz Colossus
 devel: install
 	$(RM) -rf ~/Colossus/Colossus
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
@@ -112,7 +114,7 @@ devel: install
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/src/modulos
 	$(INSTALL) -m 0600 src/modulos/Makefile.dev ~/Colossus/Colossus/src/modulos/Makefile
 	$(INSTALL) -m 0600 src/modulos/probserv.c ~/Colossus/Colossus/src/modulos/probserv.c
-	tar -cvzf colossus17-devel.tar.gz Colossus
+	tar -cvzf colossus111-devel.tar.gz Colossus
 
 pem:	src/ssl.cnf
 	@echo "Generating certificate request .. "
