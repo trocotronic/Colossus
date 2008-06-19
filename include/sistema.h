@@ -68,6 +68,7 @@ typedef DIR * Directorio;
 #define P_ENOTCONN ENOTCONN
 #define P_EMSGSIZE EMSGSIZE
 
+#else /* _WIN32 */
 #if defined(_MSC_VER) && (_MSV_VER >= 1400)
 	#define open _open
 	#define getpid _getpid
@@ -75,7 +76,6 @@ typedef DIR * Directorio;
 	#define close _close
 	#define getcwd _getcwd
 #endif
-#else /* _WIN32 */
 #define NETDB_INTERNAL -1
 #define NETDB_SUCCESS 0
 
