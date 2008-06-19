@@ -99,7 +99,7 @@ release: install
 	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/Colossus/protocolos/extensiones/udb.so
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/tmp
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/utils
-	$(INSTALL) -m 0700 src/utils/actualiza_111 ~/Colossus/Colossus/utils/actualiza_111
+	$(INSTALL) -m 0700 utils/actualiza_111 ~/Colossus/Colossus/utils/actualiza_111
 	tar -cvzf colossus111.tar.gz Colossus
 devel: install
 	$(RM) -rf ~/Colossus/Colossus
