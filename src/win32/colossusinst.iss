@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.10
+AppVerName=Colossus 1.11
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.redyc.com/
 AppSupportURL=http://www.redyc.com/
@@ -40,7 +40,8 @@ Source: ..\..\pthreadVC2.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\iconv.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\libmysqld.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\colossusdoc.html; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\database\mysql\share\english\errmsg.sys; DestDir: {app}\database\mysql\share\english; Flags: ignoreversion
+Source: ..\..\database\mysql\errmsg.sys; DestDir: {app}\database\mysql; Flags: ignoreversion
+Source: ..\..\database\mysql\my.ini; DestDir: {app}\database\mysql; Flags: ignoreversion
 Source: ..\..\modulos\chanserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
 Source: ..\..\modulos\nickserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
 Source: ..\..\modulos\operserv.dll; DestDir: {app}\modulos; Flags: ignoreversion
@@ -55,9 +56,7 @@ Source: ..\..\protocolos\*.dll; DestDir: {app}\protocolos; Flags: ignoreversion
 Source: ..\..\protocolos\*.pdb; DestDir: {app}\protocolos; Flags: ignoreversion
 Source: ..\..\protocolos\extensiones\udb.dll; DestDir: {app}\protocolos\extensiones; Flags: ignoreversion
 Source: ..\..\protocolos\extensiones\udb.pdb; DestDir: {app}\protocolos\extensiones; Flags: ignoreversion
-Source: ..\..\utils\actualiza_111.exe; DestDir: {app}\utils; Flags: ignoreversion
-Source: ..\..\utils\mysql.exe; DestDir: {app}\utils; Flags: ignoreversion
-Source: ..\..\utils\mysqldump.exe; DestDir: {app}\utils; Flags: ignoreversion
+Source: ..\..\utils\*.exe; DestDir: {app}\utils; Flags: ignoreversion
 #ifdef USA_SSL
 Source: c:\dev\openssl\bin\openssl.exe; DestDir: {app}; Flags: ignoreversion
 Source: c:\dev\openssl\bin\ssleay32.dll; DestDir: {app}; Flags: ignoreversion
