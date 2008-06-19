@@ -26,18 +26,12 @@ mods:
 		ln -s ../include include; \
 	fi
 	cd modulos; $(MAKE) all
-	
+
 prots:
 	@if [ ! -r include ] ; then \
 		ln -s ../include include; \
 	fi
 	cd protocolos; $(MAKE) all
-	
-sqldb:
-	@if [ ! -r include ] ; then \
-		ln -s ../include include; \
-	fi
-	cd sql; $(MAKE) all
 
 exts:
 	@if [ ! -r include ] ; then \
@@ -97,5 +91,3 @@ clean:
 	cd modulos; make clean; cd ..; \
 	cd protocolos; make clean; cd ..; \
 	cd extensiones; make clean; cd ..; \
-	cd sql; make clean
-	
