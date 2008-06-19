@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-NOCORE=1
+#NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -97,15 +97,12 @@ MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.D
 #	SRC/MODULOS/LINKSERV.DLL
 OBJ_FILES=$(EXP_OBJ_FILES) SRC/WIN32/COLOSSUS.RES SRC/DEBUG.OBJ
 PROT_DLL=SRC/PROTOCOLOS/UNREAL.DLL SRC/PROTOCOLOS/P10.DLL
-SQL_DLL=SRC/SQL/MYSQL.DLL SRC/SQL/POSTGRESQL.DLL SRC/SQL/SQLITE.DLL
 EXT_DLL=SRC/EXTENSIONES/UDB/UDB.DLL SRC/EXTENSIONES/HISPANO/HISPANO.DLL
 
 MODCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/modulos/ /Fosrc/modulos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ws2_32.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS)
 PROTCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) ws2_32.lib
-SQLCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/sql/ /Fosrc/sql/ /D ENLACE_DINAMICO /D MODULE_COMPILE
-SQLLFLAGS=/link /def:src/sql/sql.def colossus.lib
 
 ALL: SETUP CONFVER Colossus.exe MODULOS
 
@@ -137,8 +134,6 @@ CLEAN:
 	-@erase modulos\*.pdb >NUL
 	-@erase protocolos\*.dll >NUL
 	-@erase protocolos\*.pdb >NUL
-	-@erase sql\*.dll >NUL
-	-@erase sql\*.pdb >NUL
 	-@erase src\modulos\*.exp >NUL
 	-@erase src\modulos\*.lib >NUL
 	-@erase src\modulos\*.pdb >NUL
@@ -153,13 +148,6 @@ CLEAN:
 	-@erase src\protocolos\*.dll >NUL
 	-@erase src\protocolos\*.obj >NUL
 	-@erase src\protocolos\*.manifest >NUL
-	-@erase src\sql\*.exp >NUL
-	-@erase src\sql\*.lib >NUL
-	-@erase src\sql\*.pdb >NUL
-	-@erase src\sql\*.ilk >NUL
-	-@erase src\sql\*.dll >NUL
-	-@erase src\sql\*.obj >NUL
-	-@erase src\sql\*.manifest >NUL
 	-@erase src\extensiones\udb\*.exp >NUL
 	-@erase src\extensiones\udb\*.lib >NUL
 	-@erase src\extensiones\udb\*.pdb >NUL
@@ -369,27 +357,6 @@ src/protocolos/p10.dll: src/protocolos/p10.c ./include/struct.h ./include/ircd.h
 	$(CC) $(PROTCFLAGS) src/protocolos/p10.c $(PROTLFLAGS)
 	-@copy src\protocolos\p10.dll protocolos\p10.dll >NUL
 	-@copy src\protocolos\p10.pdb protocolos\p10.pdb >NUL
-
-src/sql/mysql.dll: src/sql/mysql.c ./include/struct.h ./include/ircd.h
-	$(CC) $(SQLCFLAGS) /I "C:\dev\mysql-5.1.24-rc-win32\include" src/sql/mysql.c \
-	$(SQLLFLAGS) /LIBPATH:"C:\dev\mysql-5.1.24-rc-win32\Embedded\DLL\release" libmysqld.lib \
-	user32.lib ws2_32.lib Advapi32.lib /NODEFAULTLIB:libcmt /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib
-	-@copy src\sql\mysql.dll sql\mysql.dll >NUL
-	-@copy src\sql\mysql.pdb sql\mysql.pdb >NUL
-
-src/sql/postgresql.dll: src/sql/postgresql.c ./include/struct.h ./include/ircd.h
-	$(CC) $(SQLCFLAGS) /I "C:\dev\postgresql-8.2.3\src\interfaces\libpq" /I "C:\dev\postgresql-8.2.3\src\include" \
-	src/sql/postgresql.c $(SQLLFLAGS) /LIBPATH:"C:\dev\postgresql-8.2.3\src\interfaces\libpq\Release" libpq.lib \
-	user32.lib ws2_32.lib Advapi32.lib shell32.lib
-	-@copy src\sql\postgresql.dll sql\postgresql.dll >NUL
-	-@copy src\sql\postgresql.pdb sql\postgresql.pdb >NUL
-
-src/sql/sqlite.dll: src/sql/sqlite.c ./include/struct.h
-	$(CC) $(SQLCFLAGS) /I "C:\dev\sqlite\win32" src/sql/sqlite.c \
-	$(SQLLFLAGS) /LIBPATH:"C:\dev\sqlite\win32\sqlite\Release" sqlite.lib \
-	/LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib
-	-@copy src\sql\sqlite.dll sql\sqlite.dll >NUL
-	-@copy src\sql\sqlite.pdb sql\sqlite.pdb >NUL
 
 UDB_FILES=src/extensiones/udb/udb.c \
 	src/extensiones/udb/bdd.c \

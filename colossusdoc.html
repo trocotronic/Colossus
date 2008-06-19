@@ -14,8 +14,8 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
 
 <div align="center"><b><font size="+7">Colossus</font></b><br>
   <a href="http://www.redyc.com" target="_blank"><font size="3">http://www.redyc.com/</font></a><font size="3"><br>
-    <b>Versi&oacute;n actual:</b> 1.10<br>
-  <b>&Uacute;ltima modificaci&oacute;n:</b> 05/04/2007</font><br>
+    <b>Versi&oacute;n actual:</b> 1.11<br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 19/06/2008</font><br>
 </div>
   <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
   Tiene una recopilación de las cuestiones más preguntadas en <a href="#faq">FAQ</a>.<br>
@@ -33,14 +33,13 @@ pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
   <font size="+1">10. <a href="#configuracion">Configuraci&oacute;n</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.1 <a href="#server">Bloque server { }</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.2 <a href="#smtp">Bloque smtp { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.3 <a href="#db">Bloque db { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.4 <a href="#set">Bloque set { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.5 <a href="#modulos">Bloque modulo { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.6 <a href="#log">Bloque log { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.7 <a href="#ssl">Bloque ssl { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.8 <a href="#protocolo">Bloque protocolo { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.9 <a href="#bloque_httpd">Bloque httpd { }</a></font><br>
-  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.10 <a href="#bloque_msn">Bloque msn { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.3 <a href="#set">Bloque set { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.4 <a href="#modulos">Bloque modulo { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.5 <a href="#log">Bloque log { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.6 <a href="#ssl">Bloque ssl { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.7 <a href="#protocolo">Bloque protocolo { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.8 <a href="#bloque_httpd">Bloque httpd { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 10.9 <a href="#bloque_msn">Bloque msn { }</a></font><br>
   <font size="+1">11. <a href="#bots">Configuraci&oacute;n de m&oacute;dulos</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.0.1 <a href="#funciones">Bloque funciones { }</a></font><br>
   <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.0.2 <a href="#funcion">Bloque funcion { }</a></font><br>
@@ -90,7 +89,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base
   para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones.
   A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos.
-  La administraci&oacute;n de la base de datos global funciona bajo MySQL, PostgreSQL o SQLite y permite la memoria de registros de forma permanente. </p>
+  La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
   <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro.
   Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
   <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll,
@@ -116,20 +115,10 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   </ul></p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="sql"></a>5. SQL y bases de datos</font></b></p>
-  <p>Colossus utiliza sistemas de bases de datos SQL para guardar informaci&oacute;n de forma permanente. Actualmente se soportan tres motores SQL que deber&aacute;n indicarse en el bloque db { }.<br />Estos bloques son:</p>
-  <ul><li><p>MySQL: Descarga de <a href="http://dev.mysql.com/downloads/" target="_blank">http://dev.mysql.com/downloads/</a>.</p>
-  <p>Una vez instalado deber&aacute; a&ntilde;adir un superusuario con una contrase&ntilde;a para que tenga acceso a todos los permisos. Hecho esto, tendr&aacute;
-  que crear una base de datos, que m&aacute;s adelante especificar&aacute; en la configuraci&oacute;n. Esta base de datos es la que se usar&aacute; para los robots.
-  Tiene m&aacute;s informaci&oacute;n sobre la creaci&oacute;n de usuarios en <a href="http://www.ignside.net/man/mysql/users.php" target="_blank">http://www.ignside.net/man/mysql/users.php</a>.
-  Si no quiere complicarse la vida puede utilizar <a href="http://dev.mysql.com/downloads/administrator/index.html" target="_blank">http://dev.mysql.com/downloads/administrator/index.html</a>
-  y entrar con los nombres por defecto login: root y sin ninguna contrase&ntilde;a.</p></li>
-  <li><p>PostgreSQL: Descarga de <a href="http://www.postgresql.org/download/" target="_blank">http://www.postgresql.org/download/</a>.</p>
-  <p>PostgreSQL es otro motor mucho m&aacute;s flexible y con grandes posibilidades. Para poder administrarlo deber&aacute; instalar el paquete <b>pgAdmin III</b> y leer sus instrucciones.</p>
-  <p>As&iacute;mismo, tambi&eacute;n dispone de un editor como <a href="http://phppgadmin.sourceforge.net/" target="_blank">PhpPgAdmin</a>.</p></li>
-  <li><p>SQlite: se trata de un servidor SQL en sí mismo. Es decir, no hace falta instalar ningún software adicional ni configurarlo, puesto que se trata de un servidor integrado.<br />
-  Está indicado especialmente para aquellos usuarios que no sepan manejar bases de datos SQL ni montar servidores de estas características. Además, no dispone de ningún administrador de su contenido,
-  puesto que está integrado en el núcleo de Colossus. <br />
-  No obstante, es más lento que los motores anteriores. Úsese cuando no tenga más opciones.</p></ul>
+  <p>Colossus utiliza un sistema de base de datos SQL para guardar informaci&oacute;n de forma permanente.</p>
+  <p>Dicho sistema está constituido por un motor MySQL que está integrado en el propio Colossus. Actúa de servidor y cliente a la vez, por lo que <b>no es necesario instalar ningún servidor MySQL</b>.<br />
+  Otra de las ventajas de este sistema integrado, es que facilita enormemente la instalación, por lo que el usuario no debe preocuparse de instalar ningún software externo. El sistema está preparado para funcionar
+  correctamente con Colossus.</p>
   <p>&nbsp;</p>
   <p><b><font size="6"><a name="remoto"></a>6. Conexi&oacute;n remota</font></b></p>
   <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha
@@ -248,34 +237,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	pass mipass;
 };</pre>
   <p>&nbsp;</p>
-  <p><b><font size="5"><a name="db"></a>10.3 Bloque db { } <font color="#FF0000">(obligatorio)</font></font></b></p>
-  <pre>db &quot;ruta/archivo.[dll|so]&quot; {
-	host host;
-	puerto puerto;
-	login login;
-	pass pass;
-	nombre db;
-	prefijo prefijo_;
-};</pre>
-  <p>Establece la configuraci&oacute;n para utilizar el motor SQL. </p>
-  <p><b>host</b><br>Indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>.<br />
-  Para SQLite, utilice el valor "localhost".</p>
-  <p><b>puerto</b><br>Indica el puerto de escucha del servidor SQL. Es <i>opcional</i>. Si no se especifica, se usa por defecto el puerto usado por cada motor SQL.</p>
-  <p><b>login</b><br>Es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios.<br />
-  Para SQLite, utilice cualquier valor.</p>
-  <p><b>pass</b><br>Es <i>opcional</i>. Define una contrase&ntilde;a si fuera necesario para el login anterior. </p>
-  <p><b>nombre</b><br>Es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. </p>
-  <p><b>prefijo</b><br>Se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
-  <p>Ejemplo:</p>
-  <pre>db sql/mysql.dll {
-	host localhost;
-	login milogin;
-	pass mipass;
-	nombre redyc;
-	prefijo colossus_;
-};</pre>
-  <p>&nbsp;</p>
-  <p><b><font size="5"><a name="set"></a>10.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+   <p><b><font size="5"><a name="set"></a>10.3 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
   <pre>set {
 	autobop;  //opcional
 	respuesta PRIVMSG|NOTICE;
@@ -293,7 +255,6 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		nombre [flags];
 		...
 	};
-	auto_actualiza; //opcional
 };</pre>
 <p>Este bloque configura los par&aacute;metros del programa. </p>
 <p><b>autobop</b><br>Indica que los robots obtienen el estado de @ al entrar en un canal. </p>
@@ -310,9 +271,6 @@ con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 <p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango.
 El par&aacute;metro flags es opcional. Si est&aacute; presente, indica que para adquirir ese nivel necesita poseer este flag. Si no, adquirir&aacute; ese nivel a partir de una rutina propia de alg&uacute;n m&oacute;dulo.<br>
 Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a partir de la directriz root.</p>
-<p><strike><b>auto_actualiza</b><br>Activa el auto-actualizador. Cuando se arranque el programa se comprobará si hay actualizaciones disponibles de los componentes (.dll o .so). Si los hay, los descarga y se reinicia.
-Esta característica sólo afecta a los componentes como módulos, protocolos, motores sql o extensiones. No se aplica al programa principal, que deberá descargarse de su web.</strike>.
-Está desactivado. Conflicto de versiones.</p>
 <p>Ejemplo:</p>
 <pre>set {
 	autobop;
@@ -335,7 +293,7 @@ Está desactivado. Conflicto de versiones.</p>
 	};
 };</pre>
   <p>&nbsp;</p>
-  <p><b><font size="5"><a name="modulos"></a>10.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>
+  <p><b><font size="5"><a name="modulos"></a>10.4 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>
 <pre>modulo &quot;ruta/archivo.[dll|so]&quot; {
   	nick nick;
   	ident ident;
@@ -370,7 +328,7 @@ Está desactivado. Conflicto de versiones.</p>
 	config chanserv.inc;
 };</pre>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="log"></a>10.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="log"></a>10.5 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>log archivo {
 	tama&ntilde;o kbytes; // opcional
 	opciones {
@@ -397,7 +355,7 @@ Está desactivado. Conflicto de versiones.</p>
 	};
 };</pre>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="ssl"></a>10.7 Bloque ssl { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="ssl"></a>10.6 Bloque ssl { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>ssl {
 	egd archivo;
 	certificado archivo;
@@ -433,7 +391,7 @@ Está desactivado. Conflicto de versiones.</p>
 	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;
 };</pre>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="protocolo"></a>10.8 Bloque protocolo { } <font color="#FF0000">(obligatorio)</font></b></font></p>
+  <p><font size="5"><b><a name="protocolo"></a>10.7 Bloque protocolo { } <font color="#FF0000">(obligatorio)</font></b></font></p>
   <pre>protocolo &quot;ruta/archivo.[dll|so]&quot; {
   	/* opciones */
   	...
@@ -441,7 +399,7 @@ Está desactivado. Conflicto de versiones.</p>
   <p>Carga un protocolo de red. Seg&uacute;n al IRCd al que conecten, requerir&aacute;n un protocolo u otro. Las opciones y caracter&iacute;sticas var&iacute;an de cada protocolo.<br>
   Tiene m&aacute;s informaci&oacute;n sobre los protocolos soportados actualmente en <a href="#protos">Configuraci&oacute;n de protocolos</a>.</p>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="bloque_httpd"></a>10.9 Bloque httpd { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="bloque_httpd"></a>10.8 Bloque httpd { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>httpd {
   	url ruta;
   	puerto número; //opcional
@@ -461,7 +419,7 @@ Está desactivado. Conflicto de versiones.</p>
 };</pre>
   <p>Por ejemplo, los usuarios accederán vía <i>http://irc.redyc.com:81/servicio/pagina.php</i>.</p>
   <p>&nbsp;</p>
-  <p><font size="5"><b><a name="bloque_msn"></a>10.10 Bloque msn { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <p><font size="5"><b><a name="bloque_msn"></a>10.9 Bloque msn { } <font color="#0000FF">(opcional)</font></b></font></p>
   <pre>msn {
   	cuenta nombre@hotmail.com;
   	pass contraseña;

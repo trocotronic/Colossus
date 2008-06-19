@@ -535,3 +535,5 @@
 020608591 - Arreglado un fallo de permisos en linux.
 020608592 - Arreglado un fallo al refrescar en linux.
 020608593 - Arreglado un fallo al refrescar en windows.
+160608594 - Arreglados varios fallos con los procesos.
+190608595 - *** Vigésimacuarta release pública: 1.11 ***
