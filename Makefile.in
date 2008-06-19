@@ -100,6 +100,10 @@ release: install
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/tmp
 	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/utils
 	$(INSTALL) -m 0700 utils/actualiza_111 ~/Colossus/Colossus/utils/actualiza_111
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/database
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/database/mysql
+	$(INSTALL) -m 0700 database/mysql/errmsg.sys ~/Colossus/Colossus/database/mysql/errmsg.sys
+	$(INSTALL) -m 0700 database/mysql/my.ini ~/Colossus/Colossus/database/mysql/my.ini
 	tar -cvzf colossus111.tar.gz Colossus
 devel: install
 	$(RM) -rf ~/Colossus/Colossus
