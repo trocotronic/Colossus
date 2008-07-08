@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.c,v 1.25 2007/05/31 23:06:37 Trocotronic Exp $ 
+ * $Id: modulos.c,v 1.25 2007/05/31 23:06:37 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -178,7 +178,7 @@ bCom *BuscaComMod(bCom *coms, char *func)
  * @cat: Modulos
  * @ret: Devuelve 1 si existe una función de ayuda asociada a ese comando. 0, si no.
  * @ver: ListaDescrips
- !*/	
+ !*/
 int MuestraAyudaComando(Cliente *cl, char *com, Modulo *mod, char **param, int params)
 {
 	Funcion *func;
@@ -251,7 +251,7 @@ Funcion *CreaCom(bCom *padre)
  * @cat: Modulos
  * @ver: ParseaConfiguracion TieneNivel BuscaFuncion BuscaComMod
  !*/
- 
+
 int ProcesaComsMod(Conf *config, Modulo *mod, bCom *coms)
 {
 	int p, errores = 0;
@@ -308,7 +308,7 @@ int TestComMod(Conf *config, bCom *coms, int avisa)
 		{
 			if (!strcmp(config->seccion[p]->item, "nivel"))
 			{
-				if (BuscaOptNiv(config->seccion[p]->data) < 0)
+				if (!BuscaOptNiv(config->seccion[p]->data))
 				{
 					if (avisa)
 						Error("[%s:%i] No se encuentra el nivel %s", config->archivo, config->linea, config->seccion[p]->data);
@@ -349,7 +349,7 @@ bCom *BuscaComModRemoto(char *remoto, Recurso *hmod)
 	}
 	return NULL;
 }
-	
+
 /*!
  * @desc: Setea en memoria una función a partir de su bloque funcion { }
  * @params: $config [in] Bloque función de configuración.

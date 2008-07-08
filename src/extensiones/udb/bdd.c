@@ -384,7 +384,7 @@ int FijaCabecera(UDBloq *bloq)
 }
 int CargaCabecera(UDBloq *bloq)
 {
-	u_int id;
+	u_int id = 0xFFFFFFFF;
 	struct stat inode;
 	int e;
 	if ((bloq->fd = open(bloq->path, O_CREAT | O_BINARY | O_RDWR, 0600)) < 0)

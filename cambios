@@ -537,3 +537,5 @@
 020608593 - Arreglado un fallo al refrescar en windows.
 160608594 - Arreglados varios fallos con los procesos.
 190608595 - *** Vigésimacuarta release pública: 1.11 ***
+020708596 - Arreglado un fallo al eliminar un oper vía OperServ, aviso de Dream (#0000304).
+070708597 - Arreglado un fallo al mostrar un nivel no existente.

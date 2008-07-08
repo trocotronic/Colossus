@@ -79,7 +79,7 @@ Opts pens[] = {
 	{ 20, "pen_logout" } ,
 	{ 250 , "pen_kick" } ,
 	{ 0 , "pen_msg" } ,
-	{ 15 , "pen_quest" } 
+	{ 15 , "pen_quest" }
 };
 
 int BidleParseaConf(Conf *cnf)
@@ -100,29 +100,29 @@ int BidleParseaConf(Conf *cnf)
 	{
 		if (!strcmp(cnf->seccion[i]->item, "nick"))
 			ircstrdup(bidle->nick, cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "base"))	
+		else if (!strcmp(cnf->seccion[i]->item, "base"))
 			bidle->base = atoi(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "paso"))
 			bidle->paso = atof(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "paso_pen"))
 			bidle->paso_pen = atof(cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "voz"))	
+		else if (!strcmp(cnf->seccion[i]->item, "voz"))
 			bidle->voz = 1;
-		else if (!strcmp(cnf->seccion[i]->item, "nocodes"))	
+		else if (!strcmp(cnf->seccion[i]->item, "nocodes"))
 			bidle->nocodes = 1;
-		else if (!strcmp(cnf->seccion[i]->item, "eventos"))	
+		else if (!strcmp(cnf->seccion[i]->item, "eventos"))
 			bidle->eventos = atoi(cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "limit_pen"))	
+		else if (!strcmp(cnf->seccion[i]->item, "limit_pen"))
 			bidle->limit_pen = atoi(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "canal"))
 			ircstrdup(bidle->canal, cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "topic"))
 			ircstrdup(bidle->topic, cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "max_x"))	
+		else if (!strcmp(cnf->seccion[i]->item, "max_x"))
 			bidle->maxx = atoi(cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "max_y"))	
+		else if (!strcmp(cnf->seccion[i]->item, "max_y"))
 			bidle->maxy = atoi(cnf->seccion[i]->data);
-		else if (!strcmp(cnf->seccion[i]->item, "max_top"))	
+		else if (!strcmp(cnf->seccion[i]->item, "max_top"))
 			bidle->maxtop = atoi(cnf->seccion[i]->data);
 		else if (!strcmp(cnf->seccion[i]->item, "paso_vende"))
 			bidle->paso_vende = atof(cnf->seccion[i]->data);
@@ -579,7 +579,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					if (bidle->quest.user[3].user)
 						Responde(cl, bl, "%s, %s, %s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, bidle->quest.user[3].user, BDura(bidle->quest.tiempo - time(0)));
 					else if (bidle->quest.user[2].user)
-						Responde(cl, bl, "%s, %s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, BDura(bidle->quest.tiempo - time(0)));	
+						Responde(cl, bl, "%s, %s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, bidle->quest.user[2].user, BDura(bidle->quest.tiempo - time(0)));
 					else if (bidle->quest.user[1].user)
 						Responde(cl, bl, "%s y %s deben terminar la misión en %s.", bidle->quest.user[0].user, bidle->quest.user[1].user, BDura(bidle->quest.tiempo - time(0)));
 				}
@@ -610,7 +610,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				}
 				opt = strchr(msg, ' ')+1;
 				if ((opt = strchr(opt, ' ')))
-					opt++; 
+					opt++;
 				if (!strcasecmp(acc, "CREAR"))
 				{
 					char *clan;
@@ -828,7 +828,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					Responde(cl, bl, GS_ERR_PARA, "CLAN", "{CREAR|ENTRAR|ACEPTAR|RECHAZAR|LISTAR|SALIR|CLANER} [opción]");
 					return 1;
 				}
-				
+
 			}
 			else if (!strcasecmp(com, "COMPRAR"))
 			{
@@ -978,7 +978,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 							Responde(cl, bl, GS_ERR_EMPT, "Este usuario no existe");
 						SQLFreeRes(res1);
 					}
-				}		
+				}
 			}
 			else if (!strcasecmp(com, "HELP"))
 			{
@@ -1207,11 +1207,8 @@ int BidlePreNick(Cliente *cl, char *nuevo)
 }
 int BidlePostNick(Cliente *cl, int cambio)
 {
-	if (IsId(cl) && cambio && SQLCogeRegistro(GS_BIDLE, cl->nombre, "nombre")) // proviene de un cambio, lo penalizamos igual y logueamos
-	{
-		SQLInserta(GS_BIDLE, cl->nombre, "online", "1");
-		SQLInserta(GS_BIDLE, cl->nombre, "lastlogin", "%lu", time(0));
-	}
+	if (cambio)
+		BidleJoin(cl, bidle->cn);
 	return 0;
 }
 int BidleQuit(Cliente *cl, char *msg)
@@ -1606,7 +1603,7 @@ int BidleOscuridad()
 				{
 					SQLInserta(GS_BIDLE, row[0][0], items[val], row[1][BIDLE_ITEMS_POS+val]);
 					SQLInserta(GS_BIDLE, row[1][0], items[val], row[0][BIDLE_ITEMS_POS+val]);
-					BCMsg("%s roba %s %s nivel %s de %s mientras dormía! Mientras aprovecha para dejarle %s %s nivel %s.", 
+					BCMsg("%s roba %s %s nivel %s de %s mientras dormía! Mientras aprovecha para dejarle %s %s nivel %s.",
 						row[0][0], plrs[val], items[val], row[1][BIDLE_ITEMS_POS+val], row[1][0],
 						plrs2[val], items[val], row[0][BIDLE_ITEMS_POS+val]);
 				}
@@ -1869,7 +1866,7 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 		oprow = op;
 		opuser = op[0];
 	}
-	else 
+	else
 	{
 		if (!combate && atoi(mirow[5]) < 25 && BAlea(4) > 0)
 			return 0;
@@ -1917,15 +1914,15 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 		}
 		if (!BadPtr(mirow[2]))
 		{
-			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.", 
-				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s del reloj de todos los miembros de %s.",
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""),
 				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc), mirow[2]);
 			BidleClan(mirow[2], opuser, -inc);
 		}
 		else
 		{
-			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s de su reloj.", 
-				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha ganado! Se han descontado %s de su reloj.",
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""),
 				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig-inc);
 		}
@@ -1969,15 +1966,15 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 		}
 		if (!BadPtr(mirow[2]))
 		{
-			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.", 
-				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s al reloj de todos los miembros de %s.",
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""),
 				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc), mirow[2]);
 			BidleClan(mirow[2], opuser, inc);
 		}
 		else
 		{
-			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s a su reloj.", 
-				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""), 
+			BCMsg("%s [%i/%i]%s%s ha retado a %s [%i/%i]%s%s en combate y ha perdido! Se han añadido %s a su reloj.",
+				mirow[0], mirol-mimej, misum, (mimej ? "+" : ""), (mimej ? mirow[31] : ""),
 				opuser, oprol-opmej, opsum, (opmej ? "+" : ""), (opmej ? oprow[31] : ""), BDura(inc));
 			SQLInserta(GS_BIDLE, mirow[0], "sig", "%li", sig+inc);
 		}
