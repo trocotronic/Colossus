@@ -2662,7 +2662,7 @@ ProcFunc(CSDropachans)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' LIMIT 30 OFFSET %i ", PREFIJO, CS_SQL, time(0) - 86400 * chanserv->autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item,ultimo from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' LIMIT 30 OFFSET %i ", PREFIJO, CS_SQL, time(0) - 86400 * chanserv->autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);
@@ -2671,7 +2671,7 @@ ProcFunc(CSDropachans)
 		}
 		while ((row = SQLFetchRow(res)))
 		{
-			if (atoi(row[1]) + 86400 * chanserv->autodrop < time(0))
+			if (*row[1] != '0' && atoi(row[1]) + 86400 * chanserv->autodrop < time(0))
 				CSBaja(row[0], 0);
 		}
 		proc->proc += 30;
