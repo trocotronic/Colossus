@@ -10,17 +10,16 @@ int main()
 	char buf[1024], *l, *c, d, ver[32];
 	FILE *fp1, *fp2;
 	int v1, v2, v3, rev, comps = 1;
-	if (!(fp1 = fopen("cambios", "r")))
-		return -1;
-	while (fgets(buf, sizeof(buf)-1, fp1))
+	if (!(fp1 = fopen(".svn/entries", "r")))
 	{
-		l = buf;
+		if (!(fp1 = fopen("_svn/entries", "r")))
+			return -1;
 	}
+	fgets(buf, sizeof(buf)-1, fp1);
+	fgets(buf, sizeof(buf)-1, fp1);
+	fgets(buf, sizeof(buf)-1, fp1);
+	fscanf(fp1, "%i", &rev);
 	fclose(fp1);
-	if (!(c = strchr(l, ' ')))
-		return -1;
-	*c = '\0';
-	rev = atoi(l+6);
 	if (!(fp1 = fopen("include/version.h", "r")))
 		return -1;
 	while (fgets(buf, sizeof(buf)-1, fp1))

@@ -540,3 +540,4 @@
 020708596 - Arreglado un fallo al eliminar un oper vía OperServ, aviso de Dream (#0000304).
 070708597 - Arreglado un fallo al mostrar un nivel no existente.
 120808598 - Arreglado un fallo con el drop de canales.
+130808599 - Se cambia el extract de revisión para usar el de SVN.

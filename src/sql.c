@@ -228,18 +228,16 @@ SQLRes SQLQuery(const char *query, ...)
 {
 	va_list vl;
 	SQLRes res = NULL;
-	char *buf;
+	char buf[8192]; //presupongo que un query no superará los 8KB (son muchos KB)
 	if (sql)
 	{
 		va_start(vl, query);
-		buf = (char *)Malloc(sizeof(char) * (strlen(query)*4+1));
 		ircvsprintf(buf, query, vl);
 		va_end(vl);
 #ifdef DEBUG
 		Debug("SQL Query: %s", buf);
 #endif
 		res = MySQLQuery(buf);
-		Free(buf);
 		SetSQLErrno();
 	}
 	return res;
