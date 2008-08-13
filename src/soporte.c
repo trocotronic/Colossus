@@ -502,7 +502,7 @@ double microtime()
 /*!
  * @desc: Convierte un array a una cadena, cuyos elementos se separan con espacios.
  * @params: $array [in] Array a concatenar.
-  	    $total [in] Número total de elementos.
+  	    $total [in] Número total de elementos en el array.
  	    $parte [in] Inicio de la concatenación.
  	    $hasta [in] Final de la concatenación. Si vale -1, se une hasta el final del array.
  * @ret: Devuelve la cadena concatenada.
@@ -521,21 +521,14 @@ double microtime()
 char *Unifica(char *array[], int total, int parte, int hasta)
 {
 	static char imp[BUFSIZE];
-	int i, len = sizeof(imp), j;
+	int i, len = sizeof(imp);
 	imp[0] = '\0';
 	for (i = parte; i < total; i++)
 	{
-		if (len > 0)
-		{
-			j = strlen(array[i]);
-			strncat(imp, array[i], MIN(j, len));
-			len -= MIN(j, len);
-			if (i != total - 1)
-				strlcat(imp, " ", sizeof(imp));
-			if (i == hasta)
-				break;
-		}
-		else
+		strlcat(imp, array[i], sizeof(imp));
+		if (i != total - 1)
+			strlcat(imp, " ", sizeof(imp));
+		if (i == hasta)
 			break;
 	}
 	return imp;
