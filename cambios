@@ -543,4 +543,5 @@
 130808599 - Se cambia el extract de revisión para usar el de SVN.
 130808600 - Arreglado un cuelgue producido por un desbordamiento de memoria, aviso de JimeMC (#0000309).
 140808601 - Colossus 1.11a
-140808602 - *** Vigésimaquinta release pública: 1.11a ***
+140808602 - Arreglo para parsear correctamente las respuestas por stdin.
+140808603 - *** Vigésimaquinta release pública: 1.11a ***
