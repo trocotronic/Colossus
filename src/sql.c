@@ -70,31 +70,19 @@ int CargaSQL()
 	}
 	if (mysql_select_db(mysql, "colossus"))
 	{
-#ifdef _WIN32
-		if (MessageBox(NULL, "La base de datos no existe. ¿Quiere crearla?", "MySQL", MB_YESNO|MB_ICONQUESTION) == IDYES)
-#else
-		if (Pregunta("La base de datos no existe. ¿Quiere crearla?") == 1)
-#endif
+		SQLQuery("CREATE DATABASE IF NOT EXISTS colossus");
+		if (sql->_errno)
 		{
-			SQLQuery("CREATE DATABASE IF NOT EXISTS colossus");
-			if (sql->_errno)
-			{
-				Alerta(FERR, "Ha sido imposible crear la base de datos\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
-				return -3;
-			}
-			else
-				Alerta(FOK, "La base de datos se ha creado con exito");
-			/* Esto no debería ocurrir nunca */
-			if (mysql_select_db(mysql, "colossus"))
-			{
-				Alerta(FERR, "Error fatal\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
-				return -4;
-			}
+			Alerta(FERR, "Ha sido imposible crear la base de datos\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+			return -3;
 		}
 		else
+			Alerta(FOK, "La base de datos se ha creado con exito");
+		/* Esto no debería ocurrir nunca */
+		if (mysql_select_db(mysql, "colossus"))
 		{
-			Alerta(FERR, "Para utilizar los servicios es necesario una base de datos");
-			return -5;
+			Alerta(FERR, "Error fatal\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
+			return -4;
 		}
 	}
 	mysql_options(mysql, MYSQL_OPT_RECONNECT, &rec);
