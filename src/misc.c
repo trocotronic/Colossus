@@ -453,8 +453,9 @@ void Debug(char *formato, ...)
 #ifndef _WIN32
 int Pregunta(char *preg)
 {
+	char tmp[8];
 	fprintf(stderr, "%s (s/n)\n", preg);
-	if (getc(stdin) == 's')
+	if (fgets(tmp, sizeof(tmp), stdin) && (ToLower(tmp[0]) == 's' || tmp[0] == 0))
 		return 1;
 	return 0;
 }

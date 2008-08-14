@@ -521,7 +521,7 @@ double microtime()
 char *Unifica(char *array[], int total, int parte, int hasta)
 {
 	static char imp[BUFSIZE];
-	int i, len = sizeof(imp);
+	int i;
 	imp[0] = '\0';
 	for (i = parte; i < total; i++)
 	{
