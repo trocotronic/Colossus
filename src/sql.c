@@ -265,7 +265,7 @@ void SQLCargaTablas()
 		MYSQL_RES *res, *cp;
 		MYSQL_ROW row;
 		MYSQL_FIELD *field;
-		int i = 0, j;
+		int i = 0, j, c = 0;
 		char *tabla;
 		if ((res = mysql_list_tables(mysql, NULL)))
 		{
@@ -275,11 +275,27 @@ void SQLCargaTablas()
 				if (strncmp(PREFIJO, tabla, strlen(PREFIJO)))
 					continue;
 				ircstrdup(sql->tablas[i][0], &tabla[strlen(PREFIJO)]);
+				retry:
 				ircsprintf(buf, "SELECT * FROM %s", tabla);
-				if ((mysql_query(mysql, buf)) || (!(cp = mysql_store_result(mysql))))
+				if (mysql_query(mysql, buf) || !(cp = mysql_store_result(mysql)))
 				{
-					Alerta(FADV, "SQL ha detectado un error durante la carga de tablas.\n[%i: %s]\n", mysql_errno(mysql), mysql_error(mysql));
-					continue;
+					if (mysql_errno(mysql) == 1035 && !c)
+					{
+						c = 1;
+						ircsprintf(buf, "REPAIR TABLE %s", tabla);
+						if (!mysql_query(mysql, buf))
+							goto retry;
+						else
+						{
+							Alerta(FADV, "SQL ha intentado reparar la tabla %s sin éxito.\n[%i: %s]\n", tabla, mysql_errno(mysql), mysql_error(mysql));
+							continue;
+						}
+					}
+					else
+					{
+						Alerta(FADV, "SQL ha detectado un error durante la carga de la tabla %s.\n[%i: %s]\n", tabla, mysql_errno(mysql), mysql_error(mysql));
+						continue;
+					}
 				}
 				for (j = 1; (field = mysql_fetch_field(cp)); j++)
 					ircstrdup(sql->tablas[i][j], field->name);

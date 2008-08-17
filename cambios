@@ -546,3 +546,7 @@
 140808602 - Arreglo para parsear correctamente las respuestas por stdin.
 140808603 - Se elimina la pregunta para crear la base de datos, puesto que es igualmente necesaria.
 140808604 - *** Vigésimaquinta release pública: 1.11a ***
+150808605 - Arreglado un fallo con los kicks y el Complemento MSN, aviso de Davidlig (#0000310).
+150808606 - Arreglado un fallo con los kicks de bidle.
+170808607 - Se actualiza el archivo de errores MySQL.
+170808608 - Se añade una comprobación para reparar una tabla dañada, aviso de Davidlig (#0000311).
