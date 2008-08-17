@@ -1,0 +1,7 @@
+EXPORTS
+	Prot_Info
+	Prot_Carga
+	Prot_Descarga
+	Prot_Inicia
+	Prot_Parsea
+	
