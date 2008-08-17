@@ -52,7 +52,7 @@ int BidlePart(Cliente *, Canal *, char *);
 int BidlePreNick(Cliente *, char *);
 int BidlePostNick(Cliente *, int);
 int BidleQuit(Cliente *, char *);
-int BidleKick(Cliente *, Canal *, char *);
+int BidleKick(Cliente *, Cliente *, Canal *, char *);
 int BidleCMsg(Cliente *, Canal *, char *);
 int BPen(Cliente *, Penas, char *);
 long BDato(char *, char *);
@@ -1217,7 +1217,7 @@ int BidleQuit(Cliente *cl, char *msg)
 		SQLInserta(GS_BIDLE, cl->nombre, "online", "0");
 	return 0;
 }
-int BidleKick(Cliente *cl, Canal *cn, char *msg)
+int BidleKick(Cliente *cl, Cliente *al, Canal *cn, char *msg)
 {
 	if (IsId(cl) && cn == bidle->cn && BDato(cl->nombre, "online") == 1 && BPen(cl, PEN_KICK, NULL))
 		SQLInserta(GS_BIDLE, cl->nombre, "online", "0");

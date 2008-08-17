@@ -30,7 +30,7 @@ int MSNSynch();
 int MSNSockClose();
 int MSNCMsg(Cliente *, Canal *, char *);
 int MSNCPart(Cliente *, Canal *, char *);
-int MSNCKick(Cliente *, Canal *, char *);
+int MSNCKick(Cliente *, Cliente *, Canal *, char *);
 int MSNCJoin(Cliente *, Canal *);
 int MSNCQuit(Cliente *, char *);
 int SendMSN(char *, char *, ...);
@@ -887,9 +887,9 @@ int MSNCPart(Cliente *cl, Canal *cn, char *msg)
 	EnviaMsgCanal(cl, cn, buf);
 	return 0;
 }
-int MSNCKick(Cliente *cl, Canal *cn, char *msg)
+int MSNCKick(Cliente *cl, Cliente *al, Canal *cn, char *msg)
 {
-	ircsprintf(buf, "%s Pateado de %s > %s", cl->nombre, cn->nombre, msg ? msg : "");
+	ircsprintf(buf, "%s Patea a %s de %s > %s", cl->nombre, al->nombre, cn->nombre, msg ? msg : "");
 	EnviaMsgCanal(cl, cn, buf);
 	return 0;
 }
