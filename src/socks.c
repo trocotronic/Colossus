@@ -534,7 +534,6 @@ void LiberaSock(Sock *sck)
 void CierraSocks()
 {
 	int i;
-	Sock *sck;
 	for (i = ListaSocks.tope; i > -1; i--)
 	{
 		if (ListaSocks.socket[i])
