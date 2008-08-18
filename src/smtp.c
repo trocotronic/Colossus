@@ -531,7 +531,7 @@ SOCKFUNC(ProcesaSmtp)
 	}
 	if (!ParseSmtp(data, 354))
 	{
-		char timebuf[128], *tipo;
+		char timebuf[128], *tipo, *uniqid = MDString(AleatorioEx("**************"));
 		Opts *ofl;
 		time_t ahora = time(0);
 #ifdef _WIN32
@@ -548,10 +548,11 @@ SOCKFUNC(ProcesaSmtp)
 #else
 		strftime(timebuf, sizeof(timebuf), "%a, %d %b %Y %H:%M:%S %z", localtime(&ahora));
 #endif
+		SockWrite(sck, "Message-ID: <%s@colossus>", uniqid);
 		SockWrite(sck, "Date: %s", timebuf);
 		SockWrite(sck, "MIME-Version: 1.0");
 		SockWrite(sck, "Content-Type: multipart/mixed;");
-		SockWrite(sck, "\tboundary=\"-=_NextPart\"");
+		SockWrite(sck, "\tboundary=\"b1_%s\"", uniqid);
 		SockWrite(sck, "X-Priority: 3");
 		SockWrite(sck, "X-MSMail-Priority: Normal");
 		SockWrite(sck, "X-Mailer: " COLOSSUS_VERSION);
@@ -559,7 +560,7 @@ SOCKFUNC(ProcesaSmtp)
 		SockWrite(sck, "");
 		SockWrite(sck, "This is a multi-part message in MIME format.");
 		SockWrite(sck, "");
-		SockWrite(sck, "---=_NextPart");
+		SockWrite(sck, "--b1_%s", uniqid);
 		SockWrite(sck, "Content-Type: text/plain;");
 		SockWrite(sck, "\tformat=flowed;");
 		SockWrite(sck, "\tcharset=\"iso-8859-1\";");
@@ -567,6 +568,7 @@ SOCKFUNC(ProcesaSmtp)
 		SockWrite(sck, "Content-Transfer-Encoding: 7bit");
 		SockWrite(sck, "");
 		SockWrite(sck, "%s", smtp->cuerpo);
+		SockWrite(sck, "--b1_%s--", uniqid);
 		for (ofl = smtp->fps; ofl && ofl->item; ofl++)
 		{
 			struct stat inode;
@@ -575,7 +577,7 @@ SOCKFUNC(ProcesaSmtp)
 			if (ofl->opt == -1)
 				continue;
 			SockWrite(sck, "");
-			SockWrite(sck, "---=_NextPart");
+			SockWrite(sck, "--b1_%s");
 			if (!(tipo = BuscaTipo(strrchr(ofl->item, '.'))))
 				tipo = "text/plain";
 			SockWrite(sck, "Content-Type: %s;", tipo);
@@ -617,10 +619,11 @@ SOCKFUNC(ProcesaSmtp)
 				Free(t);
 				//Debug("%u %u", r, inode.st_size);
 			}
+			SockWrite(sck, "--b1_%s--", uniqid);
 			//close(ofl->opt);
 		}
 		SockWrite(sck, "");
-		SockWrite(sck, "---=_NextPart");
+		SockWrite(sck, "--b1_%s", uniqid);
 		SockWrite(sck, "");
 		SockWrite(sck, ".");
 		SockWrite(sck, "QUIT");
