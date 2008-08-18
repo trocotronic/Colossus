@@ -4,6 +4,7 @@
 
 #include "struct.h"
 #include "httpd.h"
+#include "md5.h"
 #ifdef _WIN32
 #else
 #include <arpa/nameser.h>
@@ -529,9 +530,9 @@ SOCKFUNC(ProcesaSmtp)
 		SockWrite(sck, "DATA");
 		smtp->estado++;
 	}
-	if (!ParseSmtp(data, 354))
+	else if (!ParseSmtp(data, 354))
 	{
-		char timebuf[128], *tipo, *uniqid = MDString(AleatorioEx("**************"));
+		char timebuf[128], *tipo, *uniqid = strdup(MDString(AleatorioEx("**************"), 0));
 		Opts *ofl;
 		time_t ahora = time(0);
 #ifdef _WIN32
@@ -562,13 +563,13 @@ SOCKFUNC(ProcesaSmtp)
 		SockWrite(sck, "");
 		SockWrite(sck, "--b1_%s", uniqid);
 		SockWrite(sck, "Content-Type: text/plain;");
-		SockWrite(sck, "\tformat=flowed;");
-		SockWrite(sck, "\tcharset=\"iso-8859-1\";");
-		SockWrite(sck, "\treply-type=original");
+//		SockWrite(sck, "\tformat=flowed;");
+		SockWrite(sck, "\tcharset=\"iso-8859-1\"");
+//		SockWrite(sck, "\treply-type=original");
 		SockWrite(sck, "Content-Transfer-Encoding: 7bit");
 		SockWrite(sck, "");
 		SockWrite(sck, "%s", smtp->cuerpo);
-		SockWrite(sck, "--b1_%s--", uniqid);
+//		SockWrite(sck, "--b1_%s--", uniqid);
 		for (ofl = smtp->fps; ofl && ofl->item; ofl++)
 		{
 			struct stat inode;
@@ -576,16 +577,15 @@ SOCKFUNC(ProcesaSmtp)
 			int b64 = 1;
 			if (ofl->opt == -1)
 				continue;
-			SockWrite(sck, "");
-			SockWrite(sck, "--b1_%s");
+			SockWrite(sck, "--b1_%s", uniqid);
 			if (!(tipo = BuscaTipo(strrchr(ofl->item, '.'))))
 				tipo = "text/plain";
 			SockWrite(sck, "Content-Type: %s;", tipo);
-			SockWrite(sck, "\tname=\"%s\";", ofl->item);
+			SockWrite(sck, "\tname=\"%s\"", ofl->item);
 			if (!strncmp(tipo, "text", 4))
 			{
-				SockWrite(sck, "\tformat=flowed;");
-				SockWrite(sck, "\treply-type=original");
+//				SockWrite(sck, "\tformat=flowed;");
+//				SockWrite(sck, "\treply-type=original");
 				SockWrite(sck, "Content-Transfer-Encoding: quoted-printable");
 				b64 = 0;
 			}
@@ -610,7 +610,7 @@ SOCKFUNC(ProcesaSmtp)
 						len += len / 72 + 1;
 						dst = (char *)Malloc(sizeof(char) * len);
 						if (b64_encode(t, inode.st_size, dst, sizeof(char) * len) > 0)
-							SockWriteBin(sck, sizeof(char) * len, dst);
+							SockWriteBin(sck, strlen(dst), dst);
 						Free(dst);
 					}
 					else
@@ -619,17 +619,18 @@ SOCKFUNC(ProcesaSmtp)
 				Free(t);
 				//Debug("%u %u", r, inode.st_size);
 			}
-			SockWrite(sck, "--b1_%s--", uniqid);
 			//close(ofl->opt);
 		}
 		SockWrite(sck, "");
-		SockWrite(sck, "--b1_%s", uniqid);
+		SockWrite(sck, "--b1_%s--", uniqid);
 		SockWrite(sck, "");
 		SockWrite(sck, ".");
-		SockWrite(sck, "QUIT");
 		smtp->enviado = 1;
+		Free(uniqid);
 	}
-	if (!ParseSmtp(data, 221))
+	else if (!ParseSmtp(data, 250) && smtp->estado == 6)
+		SockWrite(sck, "QUIT");
+	else if (!ParseSmtp(data, 221))
 		SockClose(sck);
 	return 0;
 }
