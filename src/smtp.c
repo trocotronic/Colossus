@@ -511,17 +511,17 @@ SOCKFUNC(ProcesaSmtp)
 	}
 	else if (!ParseSmtp(data, 235))
 	{
-		SockWrite(sck, "MAIL FROM: %s", smtp->de);
+		SockWrite(sck, "MAIL FROM: <%s>", smtp->de);
 		smtp->estado++;
 	}
 	else if (!ParseSmtp(data, 250) && smtp->estado == 3)
 	{
-		SockWrite(sck, "MAIL FROM: %s", smtp->de);
+		SockWrite(sck, "MAIL FROM: <%s>", smtp->de);
 		smtp->estado++;
 	}
 	else if (!ParseSmtp(data, 250) && smtp->estado == 4)
 	{
-		SockWrite(sck, "RCPT TO: %s", smtp->para);
+		SockWrite(sck, "RCPT TO: <%s>", smtp->para);
 		smtp->estado++;
 	}
 	else if (!ParseSmtp(data, 250) && smtp->estado == 5)
