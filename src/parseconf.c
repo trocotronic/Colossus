@@ -1006,15 +1006,17 @@ void ConfSmtp(Conf *config)
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup(conf_smtp->host), config->seccion[i]->data);
+			ircstrdup(conf_smtp->host, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "login"))
-			ircstrdup(conf_smtp->login), config->seccion[i]->data);
+			ircstrdup(conf_smtp->login, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "pass"))
-			ircstrdup(conf_smtp->pass), config->seccion[i]->data);
+			ircstrdup(conf_smtp->pass, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "puerto"))
 			conf_smtp->puerto = atoi(config->seccion[i]->data);
+#ifdef USA_SSL
 		else if (!strcmp(config->seccion[i]->item, "ssl"))
 			conf_smtp->ssl = 1;
+#endif
 	}
 }
 int TestSet(Conf *config, int *errores)

@@ -224,19 +224,25 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 	host host.del.servidor.smtp;
 	login &quot;milogin&quot;;
 	pass &quot;mipass&quot;;
+	puerto &quot;puerto&quot;; //opcional
+	ssl; //opcional
 };</pre>
   <p>Este bloque configura los par&aacute;metros para enviar emails desde el programa. </p>
   <p><b>host</b><br>Indica la direcci&oacute;n de la m&aacute;quina smtp. Puede ser ip o host. </p>
   <p><b>login</b><br>Es <i>opcional</i>. Si se especifica, indica que el servidor SMTP no es libre y requiere autentificaci&oacute;n. Si no se especifica, esta directriz, se asume que no es necesaria ninguna identificaci&oacute;n y procede al env&iacute;o an&oacute;nimo. </p>
   <p><b>pass</b><br>Es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
+  <p><b>puerto</b><br>Es <i>opcional</i>. Puerto del servidor SMTP.</p>
+  <p><b>ssl</b><br>Es <i>opcional</i>. Indica que la conexión se realiza mediante SSL.</p>
   <p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP.
-  Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra es m&aacute;s inestable que el pasar por un SMTP, ya que de esta forma conecta a distintos sitios; mientras que usando un SMTP, s&oacute;lo conecta a uno.</p>
+  Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra muchos servidores pueden descartar el email o marcarlo como spam.</p>
   <p><b>Nota</b>: bajo sistemas Windows 9x/ME este bloque es <b>obligatorio</b>.</p>
   <p>Ejemplo:</p>
   <pre>smtp {
-	host smtp.telefonica.net;
-	login milogin$telefonica.net;
+	host smtp.gmail.com;
+	login usuario@gmail.com;
 	pass mipass;
+	puerto 465;
+	ssl;
 };</pre>
   <p>&nbsp;</p>
   <p><b><font size="5"><a name="db"></a>10.3 Bloque db { } <font color="#0000FF">(opcional)</font></font></b></p>

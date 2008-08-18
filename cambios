@@ -551,3 +551,5 @@
 170808607 - Se actualiza el archivo de errores MySQL.
 170808608 - Se añade una comprobación para reparar una tabla dañada, aviso de Davidlig (#0000311).
 180808609 - Se permite de forma opcional el uso de bases de datos MySQL externas.
+180808610 - Añadido la directriz smtp::puerto.
+180808611 - Añadida la directriz smtp::ssl para enviar emails a SMTP con SSL (como Gmail).

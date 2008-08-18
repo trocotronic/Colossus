@@ -69,7 +69,9 @@ struct Conf_smtp
 	char *login;
 	char *pass;
 	int puerto;
+#ifdef USA_SSL
 	unsigned ssl:1;
+#endif
 };
 struct Conf_set
 {

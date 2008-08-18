@@ -1,5 +1,5 @@
 /*
- * $Id: smtp.c,v 1.28 2008/04/05 20:39:22 Trocotronic Exp $ 
+ * $Id: smtp.c,v 1.28 2008/04/05 20:39:22 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -48,14 +48,14 @@ int b64_encode(char const *src, size_t srclength, char *target, size_t targsize)
 		target[datalength++] = Base64[output[2]];
 		target[datalength++] = Base64[output[3]];
 	}
-    
+
 	/* Now we worry about padding. */
 	if (0 != srclength) {
 		/* Get what's left. */
 		input[0] = input[1] = input[2] = '\0';
 		for (i = 0; i < srclength; i++)
 			input[i] = *src++;
-	
+
 		output[0] = input[0] >> 2;
 		output[1] = ((input[0] & 0x03) << 4) + (input[1] >> 4);
 		output[2] = ((input[1] & 0x0f) << 2) + (input[2] >> 6);
@@ -211,7 +211,7 @@ int ParseSmtp(char *data, int numeric)
 	return 0;
 }
 #ifndef _WIN32
-struct mx 
+struct mx
 {
     int pref;
     char host[1024];
@@ -228,18 +228,18 @@ struct mx
 #endif
 int mxcomp(int p1, int p2)
 {
-	if (p1 > p2) 
+	if (p1 > p2)
     		return(1);
-	else if (p1 < p2) 
+	else if (p1 < p2)
 		return(0);
-	else 
+	else
 		return(rand() % 2);
 }
 void sort_mxrecs (struct mx *mxrecs, int nmx)
 {
 	int a, b;
 	struct mx t1, t2;
-	if (nmx < 2) 
+	if (nmx < 2)
 		return;
 	for (a = nmx - 2; a >= 0; --a)
 	{
@@ -272,14 +272,14 @@ char *getmx(char *dest)
 	struct mx *mxrecs = NULL;
 	int nmx = 0;
 	ret = res_query(dest, C_IN, T_MX, (unsigned char *)ans.bytes, sizeof(ans));
-	if (ret < 0) 
+	if (ret < 0)
 	{
 		mxrecs = malloc(sizeof(struct mx));
 		mxrecs[0].pref = 0;
 		strlcpy(mxrecs[0].host, dest, sizeof(mxrecs[0].host));
 		nmx = 0;
 	}
-	else 
+	else
 	{
 		if (ret > sizeof(ans))
 			ret = sizeof(ans);
@@ -288,20 +288,20 @@ char *getmx(char *dest)
 		ptr = startptr + HFIXEDSZ;	/* skip header */
 		for (qdcount = ntohs(ans.header.qdcount); qdcount--; ptr += ret + QFIXEDSZ)
 		{
-			if ((ret = dn_skipname(ptr, endptr)) < 0) 
+			if ((ret = dn_skipname(ptr, endptr)) < 0)
 				return NULL;
 		}
 		while(1)
 		{
 			bzero(expanded_buf, sizeof(expanded_buf));
 			ret = dn_expand (startptr, endptr, ptr, expanded_buf, sizeof(expanded_buf));
-			if (ret < 0) 
+			if (ret < 0)
 				break;
 			ptr += ret;
 			GETSHORT (type, ptr);
 			ptr += INT16SZ + INT32SZ;
 			GETSHORT (n, ptr);
-			if (type != T_MX) 
+			if (type != T_MX)
 				ptr += n;
 			else
 			{
@@ -390,7 +390,12 @@ SmtpData *EncolaSmtp(char *para, char *de, char *tema, char *cuerpo, Opts *fps, 
 	smtp->fps = fps;
 	smtp->closefunc = closefunc;
 	smtp->estado = 0;
-	smtp->sck = SockOpen(hostmx, 25, NULL, ProcesaSmtp, NULL, CierraSmtp);
+#ifdef USA_SSL
+	if (conf_smtp->ssl)
+		smtp->sck = SockOpenEx(hostmx, conf_smtp->puerto, NULL, ProcesaSmtp, NULL, CierraSmtp, 30, 0, OPT_SSL);
+	else
+#endif
+		smtp->sck = SockOpen(hostmx, conf_smtp->puerto, NULL, ProcesaSmtp, NULL, CierraSmtp);
 	AddItem(smtp, smtps);
 	return smtp;
 }
@@ -434,7 +439,7 @@ int LiberaSmtp(SmtpData *smtp)
  	    $... [in] Argumentos variables según cadena con formato.
  * @cat: Programa
  !*/
- 
+
 void Email(char *para, char *tema, char *cuerpo, ...)
 {
 	va_list vl;
@@ -448,7 +453,7 @@ void Email(char *para, char *tema, char *cuerpo, ...)
  		$tema [in] Tema del mensaje.
  		$fps [in] Matriz de <i>Opts</i> correspondiente a los archivos a adjuntar. Debe crearse por <i>Malloc()</i>.
  		El campo <i>item</i> corresponde al nombre del archivo. Debe ser una copia por <i>strdup()</i>.
- 		El campo <i>opt</i> corresponde a un descriptor devuelto por <i>open()</i>. 
+ 		El campo <i>opt</i> corresponde a un descriptor devuelto por <i>open()</i>.
  		El último elemento debe ser NULL para indicar el fin de la matriz.
  		Al final de la función, se ejecutará <i>Free()</i> sobre el campo <i>item</i> y sobre el puntero <i>fps</i>.
  		$closefunc [in] Función que se llama una vez se ha enviado el correo correctamente. Se pasa como puntero <i>SmtpData</i> referente al correo.
@@ -631,7 +636,14 @@ SOCKFUNC(CierraSmtp)
 	if (!(smtp = BuscaSmtp(sck)))
 		return 1;
 	if (!smtp->enviado && ++(smtp->intentos) < INTSMTP)
-		smtp->sck = SockOpen(sck->host, 25, NULL, ProcesaSmtp, NULL, CierraSmtp);
+	{
+#ifdef USA_SSL
+		if (conf_smtp->ssl)
+			smtp->sck = SockOpenEx(sck->host, conf_smtp->puerto, NULL, ProcesaSmtp, NULL, CierraSmtp, 30, 0, OPT_SSL);
+		else
+#endif
+			smtp->sck = SockOpen(sck->host, conf_smtp->puerto, NULL, ProcesaSmtp, NULL, CierraSmtp);
+	}
 	else
 		LiberaSmtp(smtp);
 	return 0;
