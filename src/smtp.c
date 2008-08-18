@@ -538,7 +538,7 @@ SOCKFUNC(ProcesaSmtp)
 		int hora;
 #endif
 		SockWrite(sck, "From: \"%s\" <%s>", conf_set->red, smtp->de);
-		SockWrite(sck, "To: <%s>", smtp->para);
+		SockWrite(sck, "To: \"%s\" <%s>", smtp->para, smtp->para);
 		SockWrite(sck, "Subject: %s", smtp->tema);
 #ifdef _WIN32
 		hora = abs(_timezone)+_daylight*3600*(_timezone < 0 ? 1 : -1);
