@@ -62,7 +62,7 @@ extern int strcasecmp(const char *, const char *);
 #define ircstrdup(destino, origen) strcopia(&destino, origen)
 extern void strcopia(char **, const char *);
 /*!
- * @desc: Libera una zona de memoria apuntada por un puntero. Es un alias de free() pero se recomienda usar ï¿½ste con fines de debug.
+ * @desc: Libera una zona de memoria apuntada por un puntero. Es un alias de free() pero se recomienda usar éste con fines de debug.
  * @params: $x [in] Puntero a liberar.
  * @cat: Programa
  * @sntx: void Free(void *x)
@@ -81,10 +81,10 @@ typedef struct _sock Sock;
 
 #ifndef MIN
 /*!
- * @desc: Devuelve el mï¿½nimo de dos nï¿½meros.
- * @params: $x [in] Primer nï¿½mero.
- 	    $y [in] Segundo nï¿½mero.
- * @ret: Devuelve el mï¿½nimo de dos nï¿½meros.
+ * @desc: Devuelve el mínimo de dos números.
+ * @params: $x [in] Primer número.
+ 	    $y [in] Segundo número.
+ * @ret: Devuelve el mínimo de dos números.
  * @cat: Programa
  * @sntx: int MIN(int x, int y)
  !*/
@@ -94,10 +94,10 @@ typedef struct _sock Sock;
 
 #ifndef MAX
 /*!
- * @desc: Devuelve el mï¿½ximo de dos nï¿½meros.
- * @params: $x [in] Primer nï¿½mero.
- 	    $y [in] Segundo nï¿½mero.
- * @ret: Devuelve el mï¿½ximo de dos nï¿½meros.
+ * @desc: Devuelve el máximo de dos números.
+ * @params: $x [in] Primer número.
+ 	    $y [in] Segundo número.
+ * @ret: Devuelve el máximo de dos números.
  * @cat: Programa
  * @sntx: int MAX(int x, int y)
  !*/
@@ -110,7 +110,7 @@ typedef struct _dbuf
 	u_int len; /* para datos binarios */
 	u_int slots;
 	struct _dbufdata *wslot, *rslot; /* al slot de escritura y lectura: nunca wslot < rslot */
-	char *wchar, *rchar; /* a la posiciï¿½n para escribir y leer */
+	char *wchar, *rchar; /* a la posición para escribir y leer */
 }DBuf;
 typedef struct _dbufdata
 {
@@ -120,34 +120,34 @@ typedef struct _dbufdata
 }DbufData;
 
 /*!
- * @desc: Es un recurso de conexiï¿½n.
- * @params: $host Host o ip de la conexiï¿½n.
+ * @desc: Es un recurso de conexión.
+ * @params: $host Host o ip de la conexión.
  	    $puerto Puerto remoto.
  	    $pres Recurso de red (no modificar).
- 	    $server Estructura de direcciï¿½n de conexiï¿½n.
- 	    $openfunc Funciï¿½n a ejecutar cuando se abra la conexiï¿½n.
- 	    $readfunc Funciï¿½n a ejecutar cuando se reciban datos en la conexiï¿½n.
- 	    $closefunc Funciï¿½n a ejecutar cuando se cierre la conexiï¿½n.
- 	    $writefunc Funciï¿½n a ejecutar cuando se escriban datos en la conexiï¿½n.
+ 	    $server Estructura de dirección de conexión.
+ 	    $openfunc Función a ejecutar cuando se abra la conexión.
+ 	    $readfunc Función a ejecutar cuando se reciban datos en la conexión.
+ 	    $closefunc Función a ejecutar cuando se cierre la conexión.
+ 	    $writefunc Función a ejecutar cuando se escriban datos en la conexión.
  	    $recvQ Cola de datos entrante.
  	    $sendQ Cola de datos saliente.
- 	    $estado Tipos de estado de la conexiï¿½n.
+ 	    $estado Tipos de estado de la conexión.
  	    	- EST_DESC: Estado desconocido.
  	    	- EST_CONN: Conectando.
- 	    	- EST_LIST: Conexiï¿½n de escucha.
- 	    	- EST_OK: Conexiï¿½n establecida.
- 	    	- EST_CERR: Conexiï¿½n cerrada.
- 	    $opts: Opciones para la conexiï¿½n.
- 	    	- OPT_SSL: Conexiï¿½n bajo SSL.
- 	    	- OPT_ZLIB: Conexiï¿½n con compresiï¿½n de datos ZLib.
- 	    $slot: Posiciï¿½n de la lista de conexiones.
+ 	    	- EST_LIST: Conexión de escucha.
+ 	    	- EST_OK: Conexión establecida.
+ 	    	- EST_CERR: Conexión cerrada.
+ 	    $opts: Opciones para la conexión.
+ 	    	- OPT_SSL: Conexión bajo SSL.
+ 	    	- OPT_ZLIB: Conexión con compresión de datos ZLib.
+ 	    $slot: Posición de la lista de conexiones.
  	    $buffer: Buffer de parseo de datos.
- 	    $pos: Posiciï¿½n de escritura en el buffer.
+ 	    $pos: Posición de escritura en el buffer.
  	    $inicio: Instante en el que fue creado.
- 	    $recibido: Momento desde el ï¿½ltimo recibo de datos.
+ 	    $recibido: Momento desde el último recibo de datos.
  	    $contout: Timeout para conectar.
  	    $recvtout: Timeout para recibir datos.
- 	    $zlib: Estructura del manejo de compresiï¿½n de datos.
+ 	    $zlib: Estructura del manejo de compresión de datos.
  	    $ssl: Estructura del manejo de ssl.
  * @ver: SockOpen SockClose SockListen
  * @cat: Conexiones
@@ -247,35 +247,35 @@ typedef struct _senyal
 #define MAXSIGS 256
 extern MODVAR Senyal *senyals[MAXSIGS];
 /*!
- * @desc: Inserta una seï¿½al
- * Durante el transcurso del programa se generan varias seï¿½ales. Cada vez que salta una seï¿½al se ejecutan las funciones que estï¿½n asociadas a ella.
- * @params: $senyal [in] Tipo de seï¿½al a seguir. Estas seï¿½ales pueden pasar un nï¿½mero indefinido de parï¿½metros, segï¿½n sea el tipo de seï¿½al
- * 	    Sï¿½lo se aceptan las siguientes seï¿½ales (entre parï¿½ntesis se detallan los parï¿½metros que aceptan):
+ * @desc: Inserta una señal
+ * Durante el transcurso del programa se generan varias señales. Cada vez que salta una señal se ejecutan las funciones que están asociadas a ella.
+ * @params: $senyal [in] Tipo de señal a seguir. Estas señales pueden pasar un número indefinido de parámetros, según sea el tipo de señal
+ * 	    Sólo se aceptan las siguientes señales (entre paréntesis se detallan los parámetros que aceptan):
  		- SIGN_SQL (): Ha terminado la carga del motor SQL
  		- SIGN_UMODE (Cliente *cl, char *umodos): Se ha producido un cambio en los modos de usuario del cliente <i>cl</i>. La cadena <i>umodos</i> contiene los cambios.
  		- SIGN_QUIT (Cliente *cl, char *mensaje): El cliente <i>cl</i> ha sido desconectado con el mensaje <i>mensaje</i>.
- 		- SIGN_EOS (): Se ha terminado la uniï¿½n entre servidores.
+ 		- SIGN_EOS (): Se ha terminado la unión entre servidores.
  		- SIGN_MODE (Cliente *cl, Canal *cn, char *modos): El cliente <i>cl</i> ha efectuado el cambio de modos <i>modos</i> del canal <i>cn</i>.
  		- SIGN_JOIN (Cliente *cl, Canal *cn): El cliente <i>cl</i> se une al canal <i>cn</i>.
- 		- SIGN_SYNCH (): Se inicia la sincronizaciï¿½n con el servidor.
+ 		- SIGN_SYNCH (): Se inicia la sincronización con el servidor.
  		- SIGN_KICK (Cliente *cl, Cliente *al, Canal *cn, char *motivo): El cliente <i>cl</i> expulsa al cliente <i>al</i> del canal <i>cn</i> con el motivo <i>motivo</i>.
  		- SIGN_TOPIC (Cliente *cl, Canal *cn, char *topic): El cliente <i>cl</i> pone el topic <i>topic</i> en el canal <i>cn</i>.
  		- SIGN_PRE_NICK (Cliente *cl, char *nuevo): El cliente <i>cl</i> va a cambiarse el nick a <i>nuevo</i>.
- 		- SIGN_POST_NICK (Cliente *cl, int modo): El cliente <i>cl</i> ha efectuado una operaciï¿½n de nick. Si es una nueva conexiï¿½n, <i>modo</i> vale 0.
+ 		- SIGN_POST_NICK (Cliente *cl, int modo): El cliente <i>cl</i> ha efectuado una operación de nick. Si es una nueva conexión, <i>modo</i> vale 0.
  		- SIGN_AWAY (Cliente *cl, char *mensaje): El cliente <i>cl</i> se pone away con el mensaje <i>mensaje</i>. Si mensaje apunta a NULL, el cliente regresa de away.
  		- SIGN_PART (Cliente *cl, Canal *cn, char *mensaje): El cliente <i>cl</i> abandona el canal <i>cn</i> con el mensaje <i>mensaje</i>. Si no hay mensaje, apunta a NULL.
- 		- SIGN_STARTUP (): Se ha cargado el programa. Sï¿½lo se ejecuta una vez.
- 		- SIGN_SOCKOPEN (): Se ha establecido la conexiï¿½n con el ircd. Todavï¿½a no se han mandado datos. Se llama antes de mandar PROTOCTL.
+ 		- SIGN_STARTUP (): Se ha cargado el programa. Sólo se ejecuta una vez.
+ 		- SIGN_SOCKOPEN (): Se ha establecido la conexión con el ircd. Todavía no se han mandado datos. Se llama antes de mandar PROTOCTL.
  		- SIGN_CDESTROY (Canal *cn): Se borra este canal de la memoria. Se ha vaciado el canal.
- 		- SIGN_CMSG (Cliente *cl, Canal *cn, char *msg): El cliente <i>cl</i> envï¿½a el mensaje <i>msg</i> al canal <i>cn</i>.
- 		- SIGN_PMSG (Cliente *cl, Cliente *bl, char *msg, int respuesta): El cliente <i>cl</i> envï¿½a el mensaje <i>msg</i> al bot <i>bl</i>.
- 			El valor respuesta toma el valor de respuesta del bot anfitriï¿½n. Si es 0, el bot anfitriï¿½n ha ejecutado el comando correctamente.
- 			Si es 1, el bot anfitriï¿½n ha emitido algï¿½n error y ha abortado. Si es -1, no existe bot anfitriï¿½n.
- 			NOTA: esta seï¿½al se ejecuta <u>despuï¿½s</u> de haber ejecutado la funciï¿½n del bot anfitriï¿½n, en el caso de que hubiera.
+ 		- SIGN_CMSG (Cliente *cl, Canal *cn, char *msg): El cliente <i>cl</i> envía el mensaje <i>msg</i> al canal <i>cn</i>.
+ 		- SIGN_PMSG (Cliente *cl, Cliente *bl, char *msg, int respuesta): El cliente <i>cl</i> envía el mensaje <i>msg</i> al bot <i>bl</i>.
+ 			El valor respuesta toma el valor de respuesta del bot anfitrión. Si es 0, el bot anfitrión ha ejecutado el comando correctamente.
+ 			Si es 1, el bot anfitrión ha emitido alg?n error y ha abortado. Si es -1, no existe bot anfitrión.
+ 			NOTA: esta señal se ejecuta <u>después</u> de haber ejecutado la función del bot anfitrión, en el caso de que hubiera.
  		- SIGN_SERVER (Cliente *cl, int primer): Se ha conectado un servidor nuevo. Si es el primer link, primero vale 1.
- 		- SIGN_SOCKCLOSE (): La conexiï¿½n con el ircd se ha perdido.
- *	    $func [in] Funciï¿½n a ejecutar. Esta funciï¿½n debe estar definida segï¿½n sea el tipo de seï¿½al que controla.
- 		Recibirï¿½ los parï¿½metros que se han descrito arriba. Por ejemplo, si es una funciï¿½n para una seï¿½al SIGN_UMODE, recibirï¿½ 2 parï¿½metros.
+ 		- SIGN_SOCKCLOSE (): La conexión con el ircd se ha perdido.
+ *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
+ 		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
  * @ex: 	int Umodos(Cliente *, char *);
  	InsertaSenyal(SIGN_UMODE, Umodos);
  	...
@@ -286,7 +286,7 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  		return 0;
  	}
  * @ver: BorraSenyal
- * @cat: Seï¿½ales
+ * @cat: señales
  * @sntx: void InsertaSenyal(int senyal, int (*func)())
  !*/
 #define InsertaSenyal(x,y) InsertaSenyalEx(x,y,FIN)
@@ -314,11 +314,11 @@ extern char *Unifica(char *[], int, int, int);
 extern char *gettok(char *, int, char);
 extern int StrCount(char *, char *);
 /*!
- * @desc: Estructura que se pasa a una funciï¿½n de tipo Proceso.
+ * @desc: Estructura que se pasa a una función de tipo Proceso.
  * @params: $sig [in] Obviar.
- 	    $func [in] Funciï¿½n que se ejecuta.
- 	    $proc [in] ï¿½ndice que se estï¿½ siguiendo. Una vez se ha llegado a su fin, hay que ponerlo a 0 y setear el miembro time para la siguiente hora a ejecutar.
- 	    $time [in] Contiene el timestamp en el que hay que ejecutar la funciï¿½n.
+ 	    $func [in] Función que se ejecuta.
+ 	    $proc [in] Índice que se está siguiendo. Una vez se ha llegado a su fin, hay que ponerlo a 0 y setear el miembro time para la siguiente hora a ejecutar.
+ 	    $time [in] Contiene el timestamp en el que hay que ejecutar la función.
  * @cat: Procesos
  * @ver: IniciaProceso DetieneProceso
  !*/
@@ -343,7 +343,7 @@ extern char **margv;
 #define Malloc(x) ExMalloc(x, 0, __FILE__, __LINE__)
 /*!
  * @desc: Aloja memoria y pone a 0 toda la cantidad de memoria solicitada. Es un alias de malloc y memset.
- * @params: $s [in] Tamaï¿½o o tipo de puntero (char, int, algï¿½n typedef, etc.). Se usa el operador sizeof() implï¿½citamente.
+ * @params: $s [in] Tamaño o tipo de puntero (char, int, algún typedef, etc.). Se usa el operador sizeof() implícitamente.
  * @ex: 	MiEstructura *puntero;
  	puntero = BMalloc(MiEstructura);
  	//Hace lo mismo que
