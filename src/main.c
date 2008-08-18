@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
 #else
 	margv = argv;
 #endif
-	if (CargaSQL())
+	if (!sql && CargaSQL())
 		CierraColossus(-1);
 	if (!SQLEsTabla(SQL_VERSIONES))
 	{

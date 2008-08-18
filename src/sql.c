@@ -38,16 +38,20 @@ void LiberaSQL()
 			ircfree(sql->tablas[i][j]);
 		ircfree(sql->tablas[i][0]);
 	}
+	if (conf_db)
+		mysql_close(mysql);
 	mysql_library_end();
 	ircfree(sql);
 	sql = NULL;
 }
 int CargaSQL()
 {
-	char *c;
+	char *c, *host = NULL, *user = NULL, *pass = NULL, *bdd = "colossus";
 	my_bool rec = 1;
+	int puerto = 0;
 	FILE *fp;
-	mkdir("database/mysql/data",0700);
+	if (!conf_db)
+		mkdir("database/mysql/data",0700);
 	if (sql)
 		LiberaSQL();
 	sql = BMalloc(struct _sql);
@@ -61,14 +65,30 @@ int CargaSQL()
 		Error("Ha sido imposible cargar el motor MySQL [init]");
 		return -1;
 	}
-	mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "libmysqld_client");
-	mysql_options(mysql, MYSQL_OPT_USE_EMBEDDED_CONNECTION, NULL);
-	if (!mysql_real_connect(mysql, NULL, NULL, NULL, NULL, 0, NULL, 0))
+	if (!conf_db)
+	{
+		mysql_options(mysql, MYSQL_READ_DEFAULT_GROUP, "libmysqld_client");
+		mysql_options(mysql, MYSQL_OPT_USE_EMBEDDED_CONNECTION, NULL);
+	}
+	else
+	{
+		host = conf_db->host;
+		user = conf_db->login;
+		pass = conf_db->pass;
+		bdd = conf_db->bd;
+		puerto = conf_db->puerto;
+	}
+	if (!mysql_real_connect(mysql, host, user, pass, NULL, puerto, NULL, 0))
 	{
 		Alerta(FERR, "MySQL no puede conectar\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
 		return -1;
 	}
-	if (mysql_select_db(mysql, "colossus"))
+	if (conf_db && mysql_get_server_version(mysql) < 40100)
+	{
+		Alerta(FERR, "Versión incorrecta de SQL. Use almenos la versión 4.1.0");
+		return -2;
+	}
+	if (mysql_select_db(mysql, bdd))
 	{
 		SQLQuery("CREATE DATABASE IF NOT EXISTS colossus");
 		if (sql->_errno)
@@ -85,7 +105,9 @@ int CargaSQL()
 			return -4;
 		}
 	}
+#if MYSQL_VERSION_ID >= 50013
 	mysql_options(mysql, MYSQL_OPT_RECONNECT, &rec);
+#endif
 	sql->recurso = (void *)mysql;
 	if ((fp = fopen("utils/prev-db[110].sql", "r")))
 	{

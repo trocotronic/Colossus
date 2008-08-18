@@ -16,7 +16,7 @@
 #include "msn.h"
 
 struct Conf_server *conf_server = NULL;
-//struct Conf_db *conf_db = NULL;
+struct Conf_db *conf_db = NULL;
 struct Conf_smtp *conf_smtp = NULL;
 struct Conf_set *conf_set = NULL;
 struct Conf_log *conf_log = NULL;
@@ -29,7 +29,7 @@ struct Conf_msn *conf_msn = NULL;
 #endif
 
 static int TestServer		(Conf *, int *);
-//static int TestDb 			(Conf *, int *);
+static int TestDb 			(Conf *, int *);
 static int TestSmtp		(Conf *, int *);
 static int TestSet		(Conf *, int *);
 static int TestModulos	(Conf *, int *);
@@ -44,7 +44,7 @@ static int TestMSN	(Conf *, int *);
 #endif
 
 static void ConfServer	(Conf *);
-//static void ConfDb 		(Conf *);
+static void ConfDb 		(Conf *);
 static void ConfSmtp		(Conf *);
 static void ConfSet		(Conf *);
 static void ConfLog		(Conf *);
@@ -68,7 +68,7 @@ extern int DetieneHTTPD();
    */
 static cComConf cComs[] = {
 	{ "server" , TestServer, ConfServer , OBL , 1 } ,
-//	{ "db" , TestDb, ConfDb , OBL ,  1 } ,
+	{ "db" , TestDb, ConfDb , OPC ,  1 } ,
 #ifdef _WIN32
 	{ "smtp" , TestSmtp, ConfSmtp , OPC , 5 } , /* es opcional a partir de la version 5 */
 #else
@@ -146,7 +146,6 @@ void LiberaMemoriaServer()
 	ircfree(conf_server->bind_ip);
 	bzero(conf_server, sizeof(struct Conf_server));
 }
-/*
 void LiberaMemoriaDb()
 {
 	if (!conf_db)
@@ -159,7 +158,6 @@ void LiberaMemoriaDb()
 	ircfree(conf_db->prefijo);
 	bzero(conf_db, sizeof(struct Conf_db));
 }
-*/
 void LiberaMemoriaSmtp()
 {
 	if (!conf_smtp)
@@ -236,7 +234,7 @@ void LiberaMemoriaMSN()
 void DescargaConfiguracion()
 {
 	LiberaMemoriaServer();
-//	LiberaMemoriaDb();
+	LiberaMemoriaDb();
 	LiberaMemoriaSmtp();
 	LiberaMemoriaSet();
 	LiberaMemoriaLog();
@@ -815,16 +813,17 @@ void ConfServer(Conf *config)
 	if (!conf_server->escucha)
 		conf_server->escucha = conf_server->puerto;
 }
-/*
 int TestDb(Conf *config, int *errores)
 {
 	short error_parcial = 0;
 	Conf *eval;
+	/*
 	if (BadPtr(config->data))
 	{
 		Error("[%s:%s::%i] Falta nombre de archivo.", config->archivo, config->item, config->linea);
 		error_parcial++;
 	}
+	*/
 	if (!(eval = BuscaEntrada(config, "host")))
 	{
 		Error("[%s:%s] No se encuentra la directriz host.", config->archivo, config->item);
@@ -927,14 +926,13 @@ void ConfDb(Conf *config)
 		else if (!strcmp(config->seccion[i]->item, "nombre"))
 			ircstrdup(conf_db->bd, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "prefijo"))
-			ircstrdup(PREFIJO, config->seccion[i]->data);
+			ircstrdup(conf_db->prefijo, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item ,"puerto"))
 			conf_db->puerto = atoi(config->seccion[i]->data);
 	}
-	if (CargaSQL())
+	if (!sql && CargaSQL())
 		Error("[%s:%s] Ha sido imposible cargar el motor SQL %s.", config->archivo, config->item, config->data);
 }
-*/
 int TestSmtp(Conf *config, int *errores)
 {
 	short error_parcial = 0;
@@ -978,6 +976,24 @@ int TestSmtp(Conf *config, int *errores)
 			error_parcial++;
 		}
 	}
+	if ((eval = BuscaEntrada(config, "puerto")))
+	{
+		if (!eval->data)
+		{
+			Error("[%s:%s::%s::%i] La directriz puerto esta vacia.", config->archivo, config->item, eval->item, eval->linea);
+			error_parcial++;
+		}
+		else
+		{
+			int puerto;
+			puerto = atoi(eval->data);
+			if (puerto < 1 || puerto > 65535)
+			{
+				Error("[%s:%s::%s::%i] El puerto debe estar entre 1 y 65535.", config->archivo, config->item, eval->item, eval->linea);
+				error_parcial++;
+			}
+		}
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -986,14 +1002,19 @@ void ConfSmtp(Conf *config)
 	int i;
 	if (!conf_smtp)
 		conf_smtp = BMalloc(struct Conf_smtp);
+	conf_smtp->puerto = 25;
 	for (i = 0; i < config->secciones; i++)
 	{
 		if (!strcmp(config->seccion[i]->item, "host"))
-			ircstrdup((conf_smtp->host), config->seccion[i]->data);
+			ircstrdup(conf_smtp->host), config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "login"))
-			ircstrdup((conf_smtp->login), config->seccion[i]->data);
+			ircstrdup(conf_smtp->login), config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "pass"))
-			ircstrdup((conf_smtp->pass), config->seccion[i]->data);
+			ircstrdup(conf_smtp->pass), config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "puerto"))
+			conf_smtp->puerto = atoi(config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "ssl"))
+			conf_smtp->ssl = 1;
 	}
 }
 int TestSet(Conf *config, int *errores)
