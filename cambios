@@ -558,3 +558,5 @@
 190808614 - Añadido un control de creación de tablas.
 190808615 - Corregido un fallo en el programa de act111.
 190808616 - Se optimiza enormemente la carga de tablas.
+190808617 - Se crea un dump de toda la base de datos.
+190808618 - Se crea la función BACKUP de OperServ.

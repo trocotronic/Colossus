@@ -50,6 +50,8 @@ BOTFUNC(OSAkill);
 BOTFUNCHELP(OSHAkill);
 BOTFUNC(OSCache);
 BOTFUNCHELP(OSHCache);
+BOTFUNC(OSBackup);
+BOTFUNCHELP(OSHBackup);
 
 static bCom operserv_coms[] = {
 	{ "help" , OSHelp , N3 , "Muestra esta ayuda." , NULL } ,
@@ -68,6 +70,7 @@ static bCom operserv_coms[] = {
 	{ "vaciar" , OSVaciar , N5 , "Elimina todos los registros de la base de datos." , OSHVaciar } ,
 	{ "akill" , OSAkill , N3 , "Prohibe la conexión de una ip/host o usuario permanentemente." , OSHAkill } ,
 	{ "cache" , OSCache , N5 , "Elimina toda la cache interna de los servicios." , OSHCache } ,
+	{ "backup" , OSBackup , N5 , "Crea una copia de seguridad de la base de datos." , OSHBackup } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -495,6 +498,14 @@ BOTFUNCHELP(OSHCache)
 	Responde(cl, CLI(operserv), "Requiere confirmación.");
 	Responde(cl, CLI(operserv), " ");
 	Responde(cl, CLI(operserv), "Sintaxis: \00312CACHE");
+	return 0;
+}
+BOTFUNCHELP(OSHBackup)
+{
+	Responde(cl, CLI(operserv), "Crea una copia de seguridad de la base de datos.");
+	Responde(cl, CLI(operserv), "NOTA: tenga en cuenta de que sólo se hará la copia de aquellas tablas que estén cargadas. Si existe alguna tabla de un módulo descargado, no se hará su copia.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312BACKUP [etiqueta]");
 	return 0;
 }
 BOTFUNC(OSHelp)
@@ -990,6 +1001,7 @@ BOTFUNC(OSClose)
 BOTFUNC(OSVaciar)
 {
 	static char *confirm = NULL;
+	int i;
 	if (params < 2)
 	{
 		confirm = AleatorioEx("********");
@@ -1009,8 +1021,11 @@ BOTFUNC(OSVaciar)
 			return 1;
 		}
 		confirm = NULL;
-		while (sql->tablas[i][0])
-			SQLQuery("TRUNCATE %s", sql->tablas[i++][0]);
+		for (i = 0; i < sql->tablas; i++)
+		{
+			if (sql->tabla[i].cargada)
+				SQLQuery("TRUNCATE %s", sql->tabla[i].tabla);
+		}
 		Responde(cl, CLI(operserv), "Se ha vaciado toda la base de datos. Se procederá a reiniciar el programa en 5 segundos...");
 		IniciaCrono(1, 5, OSReinicia, NULL);
 	}
@@ -1042,6 +1057,16 @@ BOTFUNC(OSCache)
 		Responde(cl, CLI(operserv), "Se ha vaciado toda la cache interna.");
 	}
 	EOI(operserv, 15);
+	return 0;
+}
+BOTFUNC(OSBackup)
+{
+	if (SQLDump(param[1]))
+	{
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Se ha producido un error y no es posible hacer la copia.");
+		return 1;
+	}
+	Responde(cl, CLI(operserv), "Copia realizada con éxito.");
 	return 0;
 }
 int OSCmdNick(Cliente *cl, int nuevo)
