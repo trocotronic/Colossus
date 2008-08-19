@@ -556,3 +556,4 @@
 190808612 - Corregido todo el sistema SMTP para ajutarse al RFC 2821.
 190808613 - Los emails a través de Gmail por fin llegan.
 190808614 - Añadido un control de creación de tablas.
+190808615 - Corregido un fallo en el programa de act111.
