@@ -1,5 +1,5 @@
 /*
- * $Id: statserv.c,v 1.37 2008/02/16 23:19:42 Trocotronic Exp $ 
+ * $Id: statserv.c,v 1.37 2008/02/16 23:19:42 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -45,7 +45,7 @@ char *vers[] = {
 	NULL
 };
 char *tlds[] = {
-	"zw", "Zimbabwe", 
+	"zw", "Zimbabwe",
 	"zm", "Zambia",
 	"zr", "Zaire",
 	"yu", "Yugoslavia",
@@ -789,7 +789,7 @@ int SSRefresca(int val)
 	{
 		SQLQuery("INSERT INTO %s%s (dia, users, users_time, canales, canales_time, servers, servers_time, opers, opers_time) VALUES "
 			"('%s', %u, %lu, %u, %lu, %u, %lu, %u, %lu)",
-			PREFIJO, SS_SQL, buf, 
+			PREFIJO, SS_SQL, buf,
 			stats.users, t, stats.chans, t, stats.servs, t, stats.opers, t);
 	}
 	return 0;
@@ -997,7 +997,7 @@ BOTFUNC(SSStats)
 			Responde(cl, CLI(statserv), "Dominio: \00312.%s\003 - Lugar: \00312%s\003 Usuarios: \00312%u", sts->item, sts->valor, sts->users);
 	}
 	else
-		Responde(cl, CLI(statserv), SS_ERR_EMPT, "Opción incorrecta");	
+		Responde(cl, CLI(statserv), SS_ERR_EMPT, "Opción incorrecta");
 	return 0;
 }
 BOTFUNCHELP(SSHStats)
@@ -1025,23 +1025,18 @@ int SSSigEOS()
 }
 int SSSigSQL()
 {
-	if (!SQLEsTabla(SS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-			"dia date default NULL, "
-  			"users int, "
-  			"users_time int, "
-  			"canales int, "
-  			"canales_time int, "
-  			"servers int, "
-  			"servers_time int, "
-  			"opers int, "
-  			"opers_time int, "
-			"KEY dia (dia) "
-			");", PREFIJO, SS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
-	}
+	SQLNuevaTabla(SS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"dia date default NULL, "
+  		"users int, "
+  		"users_time int, "
+  		"canales int, "
+  		"canales_time int, "
+  		"servers int, "
+  		"servers_time int, "
+  		"opers int, "
+  		"opers_time int, "
+		"KEY dia (dia) "
+		");", PREFIJO, SS_SQL);
 	return 0;
 }
 int SSSigSockClose()
@@ -1105,14 +1100,14 @@ void ParseaTemplate(char *f)
 	strncpy(buf, f, sizeof(buf));
 	if ((c = strrchr(buf, '.')))
 		*c = '\0';
-#ifdef _WIN32					
+#ifdef _WIN32
 	if ((fdin = CreateFile(f, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL)) == INVALID_HANDLE_VALUE)
 #else
 	if ((fdin = open(f, O_RDONLY)) == -1)
 #endif
 		return;
 #ifdef _WIN32
-					
+
 	len = GetFileSize(fdin, NULL);
 	if (!(mp = CreateFileMapping(fdin, NULL, PAGE_READONLY|SEC_COMMIT, 0, len, NULL)))
 	{
@@ -1131,7 +1126,7 @@ void ParseaTemplate(char *f)
 		CloseHandle(fdin);
 		return;
 	}
-#else	
+#else
 	if (fstat(fdin, &sb) == -1)
 	{
 		close(fdin);
@@ -1304,7 +1299,7 @@ void ParseaTemplate(char *f)
 			}
 		}
 		s = d+1;
-	}		
+	}
 	write(fdout, s, p+len-s);
 #ifdef _WIN32
 	UnmapViewOfFile(p);

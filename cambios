@@ -553,3 +553,6 @@
 180808609 - Se permite de forma opcional el uso de bases de datos MySQL externas.
 180808610 - Añadido la directriz smtp::puerto.
 180808611 - Añadida la directriz smtp::ssl para enviar emails a SMTP con SSL (como Gmail).
+190808612 - Corregido todo el sistema SMTP para ajutarse al RFC 2821.
+190808613 - Los emails a través de Gmail por fin llegan.
+190808614 - Añadido un control de creación de tablas.

@@ -185,7 +185,7 @@ int BidleSQL()
 {
 	if (!SQLEsTabla(GS_BIDLE))
 	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLNuevaTabla(GS_BIDLE, "CREATE TABLE IF NOT EXISTS %s%s ( "
 			"item varchar(255), "
 			"nombre varchar(255), "
 			"clan varchar(255), "
@@ -216,8 +216,6 @@ int BidleSQL()
 			"sig_combate int, "
 			"PRIMARY KEY item (item) "
 			");", PREFIJO, GS_BIDLE);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_BIDLE);
 	}
 	else
 	{

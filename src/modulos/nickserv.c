@@ -1147,30 +1147,25 @@ int NSCmdPostNick(Cliente *cl, int nuevo)
 }
 int NSSigSQL()
 {
-	if (!SQLEsTabla(NS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"n SERIAL, "
-  			"item varchar(255), "
-  			"pass varchar(255), "
-  			"email varchar(255), "
-  			"url varchar(255), "
-  			"gecos text, "
-  			"host varchar(255), "
-  			"opts int2 default '0', "
-  			"id int4 default '0', "
-  			"reg int4 default '0', "
-  			"last int4 default '0', "
-  			"quit text, "
-  			"suspend text, "
-  			"killtime int2 default '0', "
-  			"swhois text, "
-  			"marcas text, "
-  			"KEY item (item) "
-			");", PREFIJO, NS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_SQL);
-	}
+	SQLNuevaTabla(NS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"n SERIAL, "
+		"item varchar(255), "
+		"pass varchar(255), "
+		"email varchar(255), "
+		"url varchar(255), "
+		"gecos text, "
+		"host varchar(255), "
+		"opts int2 default '0', "
+		"id int4 default '0', "
+		"reg int4 default '0', "
+		"last int4 default '0', "
+		"quit text, "
+		"suspend text, "
+		"killtime int2 default '0', "
+		"swhois text, "
+		"marcas text, "
+		"KEY item (item) "
+		");", PREFIJO, NS_SQL);
 	/*else
 	{
 		if (!SQLEsCampo(NS_SQL, "killtime"))
@@ -1189,16 +1184,11 @@ int NSSigSQL()
 	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);*/
-	if (!SQLEsTabla(NS_FORBIDS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"motivo varchar(255) default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, NS_FORBIDS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, NS_FORBIDS);
-	}
+	SQLNuevaTabla(NS_FORBIDS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"motivo varchar(255) default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, NS_FORBIDS);
 	umodreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
 	return 0;
 }

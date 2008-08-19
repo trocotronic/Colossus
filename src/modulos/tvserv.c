@@ -1,5 +1,5 @@
 /*
- * $Id: tvserv.c,v 1.30 2008/02/13 16:16:11 Trocotronic Exp $ 
+ * $Id: tvserv.c,v 1.30 2008/02/13 16:16:11 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -204,7 +204,7 @@ char *prov49[] = { "Valencia","Aldaya","Alfafar","Alzira","Canet d'Enberenger","
 char *prov50[] = { "Valladolid","Medina del Campo","Medina de Rio Seco","Peñafiel","Zaratan",NULL };
 char *prov51[] = { "Zamora",NULL };
 char *prov52[] = { "Zaragoza","Calatayud",NULL };
-char **pueblos[] = { 
+char **pueblos[] = {
 	prov1 , prov2 , prov3 , prov4 , prov5 , prov6 , prov7 , prov8 , prov9 , prov10 ,
 	prov11 , prov12 , prov13 , prov14 , prov15 , prov16 , prov17 , prov18 , prov19 , prov20 ,
 	prov21 , prov22 , prov23 , prov24 , prov25 , prov26 , prov27 , prov28 , prov29 , prov30 ,
@@ -537,7 +537,7 @@ char *TSFecha(time_t ts)
 	static char TSFecha[9];
 	struct tm *timeptr;
 	ts -= hora * 3600;
-    	timeptr = localtime(&ts); 
+    	timeptr = localtime(&ts);
     	ircsprintf(TSFecha, "%.2d/%.2d/%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100);
     	//ircsprintf(TSFecha, "%.2d/%.2d/%.2d %.2d:%.2d:%.2d", timeptr->tm_mday, timeptr->tm_mon + 1, timeptr->tm_year - 100, timeptr->tm_hour, timeptr->tm_min, timeptr->tm_sec);
     	return TSFecha;
@@ -651,7 +651,7 @@ BOTFUNC(TSTiempo)
 	}
 	else
 		strlcpy(pueblo, param[1], sizeof(pueblo));
-	
+
 	i++;
 	if (*param[i] == '\'')
 	{
@@ -1035,7 +1035,7 @@ SOCKFUNC(TSLeeTiempo)
 					*d = '\0';
 				ircsprintf(buf, "/%s-%i.html", c, ++dia);
 				strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
-				SockClose(sck);	
+				SockClose(sck);
 				if ((dts = InsertaCola(buf, 0, cl)))
 					dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 			}
@@ -1057,7 +1057,7 @@ SOCKFUNC(TSLeeTiempo)
 					}
 					c = d+1;
 				}
-				SockClose(sck);	
+				SockClose(sck);
 			}
 			else if (dts->numero > regs)
 			{
@@ -1078,8 +1078,8 @@ SOCKFUNC(TSLeeTiempo)
 						{
 							*d = '\0';
 							ircsprintf(buf, "/%s-%i.html", c, ++dia);
-							strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));	
-							SockClose(sck);	
+							strlcpy(buf, str_replace(buf, ' ', '+'), sizeof(buf));
+							SockClose(sck);
 							if ((dts = InsertaCola(buf, 0, cl)))
 								dts->sck = SockOpen("tiempo.meteored.com", 80, TSAbreDataSock, TSLeeTiempo, NULL, TSCierraDataSock);
 						}
@@ -1369,7 +1369,7 @@ SOCKFUNC(TSLeeLiga)
 				strlcat(tmp2, "\t", sizeof(tmp2));
 			}
 		}
-	}	
+	}
 	else if (!strncmp(data, "<!-- v", 6))
 	{
 		tmp2[0] = '\0';
@@ -1384,40 +1384,25 @@ SOCKFUNC(TSLeeLiga)
 }
 int TSSigSQL()
 {
-	if (!SQLEsTabla(TS_TV))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"fecha varchar(255) default NULL, "
-  			"programacion text default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, TS_TV);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_TV);
-	}
-	if (!SQLEsTabla(TS_HO))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"fecha varchar(255) default NULL, "
-  			"prediccion text default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, TS_HO);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_HO);
-	}
-	if (!SQLEsTabla(TS_LI))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"fecha varchar(255) default NULL, "
-  			"puntos int2 default '0', "
-  			"division int2 default '0', "
-  			"KEY item (item) "
-			");", PREFIJO, TS_LI);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, TS_LI);
-	}
+	SQLNuevaTabla(TS_TV, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255) default NULL, "
+		"fecha varchar(255) default NULL, "
+		"programacion text default NULL, "
+		"KEY item (item) "
+		");", PREFIJO, TS_TV);
+	SQLNuevaTabla(TS_HO, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"fecha varchar(255) default NULL, "
+  		"prediccion text default NULL, "
+		"KEY item (item) "
+		");", PREFIJO, TS_HO);
+	SQLNuevaTabla(TS_LI, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255) default NULL, "
+		"fecha varchar(255) default NULL, "
+		"puntos int2 default '0', "
+		"division int2 default '0', "
+		"KEY item (item) "
+		");", PREFIJO, TS_LI);
 	return 0;
 }
 int TSSigQuit(Cliente *cl, char *mensaje)

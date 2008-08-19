@@ -1,5 +1,5 @@
 /*
- * $Id: logserv.c,v 1.10 2008/01/21 19:46:45 Trocotronic Exp $ 
+ * $Id: logserv.c,v 1.10 2008/01/21 19:46:45 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -344,7 +344,7 @@ BOTFUNCHELP(LSHOpts)
 	else
 		Responde(cl, CLI(logserv), LS_ERR_EMPT, "Opción desconocida.");
 	return 0;
-}		
+}
 BOTFUNC(LSHelp)
 {
 	if (params < 2)
@@ -443,18 +443,13 @@ BOTFUNC(LSOpts)
 }
 int LSSigSQL()
 {
-	if (!SQLEsTabla(LS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"email varchar(255) default NULL, "
-  			"solicitud int4, "
-  			"solicitante varchar(255) default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, LS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, LS_SQL);
-	}
+	SQLNuevaTabla(LS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"email varchar(255) default NULL, "
+  		"solicitud int4, "
+  		"solicitante varchar(255) default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, LS_SQL);
 	return 0;
 }
 int LSCmdJoin(Cliente *cl, Canal *cn)

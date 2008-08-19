@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.34 2008/04/23 21:13:11 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.34 2008/04/23 21:13:11 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -27,7 +27,7 @@ BOTFUNCHELP(ISHClones);
 DLLFUNC int ISSigIdOk 		(Cliente *);
 char *ISMakeVirtualhost 	(Cliente *, int);
 DLLFUNC int ISSigUmode		(Cliente *, char *);
-DLLFUNC int ISSigNick		(Cliente *, int);	
+DLLFUNC int ISSigNick		(Cliente *, int);
 int ISSigDrop	(char *);
 int ISSigEOS	();
 int ISSigSQL	();
@@ -53,7 +53,7 @@ ModInfo MOD_INFO(IpServ) = {
 	"Trocotronic" ,
 	"trocotronic@redyc.com"
 };
-	
+
 int MOD_CARGA(IpServ)(Modulo *mod)
 {
 	Conf modulo;
@@ -93,7 +93,7 @@ int MOD_CARGA(IpServ)(Modulo *mod)
 	else
 		ISSet(NULL, mod);
 	return errores;
-}	
+}
 int MOD_DESCARGA(IpServ)()
 {
 	BorraSenyal(SIGN_UMODE, ISSigUmode);
@@ -241,7 +241,7 @@ BOTFUNC(ISSetipv)
 			buf[0] = '\0';
 			ircsprintf(buf, "%s.%s", param[2], ipserv->sufijo);
 			ipv = buf;
-		} 
+		}
 		else
 			ipv = param[2];
 		SQLInserta(IS_SQL, param[1], "ip", ipv);
@@ -306,7 +306,7 @@ BOTFUNC(ISClones)
 	}
 	EOI(ipserv, 3);
 	return 0;
-}	
+}
 int ISSigNick(Cliente *cl, int nuevo)
 {
 	if (!nuevo)
@@ -342,27 +342,17 @@ int ISSigIdOk(Cliente *al)
 }
 int ISSigSQL()
 {
-	if (!SQLEsTabla(IS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"ip varchar(255) default NULL, "
-  			"caduca int4 default '0', "
-  			"KEY item (item) "
-			");", PREFIJO, IS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_SQL);
-	}
-	if (!SQLEsTabla(IS_CLONS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"clones varchar(255) default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, IS_CLONS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, IS_CLONS);
-	}
+	SQLNuevaTabla(IS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"ip varchar(255) default NULL, "
+  		"caduca int4 default '0', "
+  		"KEY item (item) "
+		");", PREFIJO, IS_SQL);
+	SQLNuevaTabla(IS_CLONS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"clones varchar(255) default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, IS_CLONS);
 	return 0;
 }
 int ISSigDrop(char *nick)
@@ -412,7 +402,7 @@ char *CifraIpTEA(char *ipreal)
 		}
 	}
 	return cifrada;
-}	
+}
 char *ISMakeVirtualhost(Cliente *al, int mostrar)
 {
 	char *cifrada, buf[BUFSIZE], *sufix, *vip;

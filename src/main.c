@@ -360,34 +360,22 @@ int main(int argc, char *argv[])
 #endif
 	if (!sql && CargaSQL())
 		CierraColossus(-1);
-	if (!SQLEsTabla(SQL_VERSIONES))
+	if (!SQLNuevaTabla(SQL_VERSIONES, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"version int default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, SQL_VERSIONES))
 	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"version int default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, SQL_VERSIONES);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_VERSIONES);
-		else
-		{
-			for (i = 0; (sql->tablas[i][0]); i++)
-				SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
-		}
+		for (i = 0; (sql->tablas[i][0]); i++)
+			SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
 	}
-	if (!SQLEsTabla(SQL_CONFIG))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"valor text default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, SQL_CONFIG);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CONFIG);
-	}
+	SQLNuevaTabla(SQL_CONFIG, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"valor text default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, SQL_CONFIG);
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
-	SQLCargaTablas();
 	LlamaSenyal(SIGN_SQL, 0);
 	for (i = 0; (sql->tablas[i][0]); i++)
 	{

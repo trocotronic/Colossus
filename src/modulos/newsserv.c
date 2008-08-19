@@ -688,16 +688,11 @@ SOCKFUNC(WSCierra)
 }
 int WSSigSQL()
 {
-	if (!SQLEsTabla(WS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255), "
-  			"servicios int4, "
-  			"KEY item (item) "
-			");", PREFIJO, WS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, WS_SQL);
-	}
+	SQLNuevaTabla(WS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255), "
+  		"servicios int4, "
+  		"KEY item (item) "
+		");", PREFIJO, WS_SQL);
 	return 0;
 }
 int WSEmiteRSS(Proc *proc)

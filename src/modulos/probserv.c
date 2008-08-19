@@ -1,4 +1,4 @@
-	
+
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -148,15 +148,10 @@ BOTFUNC(PBSSql)
 }
 int PBSSigSQL()
 {
-	if (!SQLEsTabla(PBS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"campo1 varchar(255) default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, PBS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, PBS_SQL);
-	}
+	SQLNuevaTabla(PBS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"campo1 varchar(255) default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, PBS_SQL);
 	return 0;
 }

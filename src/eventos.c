@@ -281,7 +281,7 @@ int CargaCache()
 {
 	if (!SQLEsTabla(SQL_CACHE))
 	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		SQLNuevaTabla(SQL_CACHE, "CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"valor varchar(255) default NULL, "
   			"hora int4 default '0', "
@@ -289,8 +289,6 @@ int CargaCache()
   			"tipo text default NULL, "
   			"KEY item (item) "
 			");", PREFIJO, SQL_CACHE);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SQL_CACHE);
 	}
 	else
 	{

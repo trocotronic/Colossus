@@ -1,5 +1,5 @@
 /*
- * $Id: memoserv.c,v 1.35 2008/01/21 19:46:46 Trocotronic Exp $ 
+ * $Id: memoserv.c,v 1.35 2008/01/21 19:46:46 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -61,7 +61,7 @@ ModInfo MOD_INFO(MemoServ) = {
 	"Trocotronic" ,
 	"trocotronic@redyc.com"
 };
-	
+
 int MOD_CARGA(MemoServ)(Modulo *mod)
 {
 	Conf modulo;
@@ -101,7 +101,7 @@ int MOD_CARGA(MemoServ)(Modulo *mod)
 	else
 		MSSet(NULL, mod);
 	return errores;
-}	
+}
 int MOD_DESCARGA(MemoServ)()
 {
 	BorraSenyal(SIGN_AWAY, MSCmdAway);
@@ -724,7 +724,7 @@ BOTFUNC(MSInfo)
 			Responde(cl, CLI(memoserv), "-Cuando regreses del away.");
 		if (opts & MS_OPT_NEW)
 			Responde(cl, CLI(memoserv), "-Cuando recibas un mensaje nuevo.");
-	}	
+	}
 	return 0;
 }
 BOTFUNC(MSCancelar)
@@ -833,7 +833,7 @@ int MSSend(char *para, char *de, char *mensaje)
 				{
 					if (!al->away || !(opts & MS_OPT_AWY))
 							MSNotifica(al);
-				}	
+				}
 			}
 		}
 		return 0;
@@ -854,32 +854,24 @@ int MSSigIdOk(Cliente *al)
 }
 int MSSigSQL()
 {
-	if (!SQLEsTabla(MS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"mensaje text, "
-  			"para varchar(255), "
-  			"de varchar(255), "
-  			"fecha int4 default '0', "
-  			"leido int4 default '0', "
-  			"KEY para (para) "
-			");", PREFIJO, MS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SQL);
-	}
+	SQLNuevaTabla(MS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"mensaje text, "
+  		"para varchar(255), "
+  		"de varchar(255), "
+  		"fecha int4 default '0', "
+  		"leido int4 default '0', "
+  		"KEY para (para) "
+		");", PREFIJO, MS_SQL);
 	if (!SQLEsTabla(MS_SET))
 	{
 		SQLRes res;
 		SQLRow row;
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
+		if (!SQLNuevaTabla(MS_SET, "CREATE TABLE IF NOT EXISTS %s%s ( "
   			"item varchar(255) default NULL, "
   			"opts varchar(255) default NULL, "
   			"limite int4 default '%i', "
   			"KEY item (item) "
-			");", PREFIJO, MS_SET, memoserv->def);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, MS_SET);
-		else
+			");", PREFIJO, MS_SET, memoserv->def))
 		{
 			if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 			{

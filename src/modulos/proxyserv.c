@@ -1,5 +1,5 @@
 /*
- * $Id: proxyserv.c,v 1.42 2008/02/13 16:16:10 Trocotronic Exp $ 
+ * $Id: proxyserv.c,v 1.42 2008/02/13 16:16:10 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -56,7 +56,7 @@ ModInfo MOD_INFO(ProxyServ) = {
 	"Trocotronic" ,
 	"trocotronic@redyc.com"
 };
-	
+
 int MOD_CARGA(ProxyServ)(Modulo *mod)
 {
 	Conf modulo;
@@ -382,7 +382,7 @@ void PSEscanea(char *host)
 		struct hostent *he;
 		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
 		ircsprintf(buf, "%u.%u.%u.%u.opm.blitzed.org", tmp4, tmp3, tmp2, tmp1);
-		if ((he = gethostbyname(buf))) 
+		if ((he = gethostbyname(buf)))
 		{
 			char tmp[128], motivo[256];
 			tmp[0] = '\0';
@@ -431,15 +431,10 @@ void PSEscanea(char *host)
 }
 int PSSigSQL()
 {
-	if (!SQLEsTabla(XS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, XS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, XS_SQL);
-	}
+	SQLNuevaTabla(XS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, XS_SQL);
 	return 0;
 }
 int PSSigEOS()
@@ -598,7 +593,7 @@ SOCKFUNC(PSAbre)
 		{
 			u_long laddr;
 			laddr = htonl(inet_addr(proxyserv->scan_ip));
-			sprintf(buf, "%c%c%c%c%c%c%c%c%c", 
+			sprintf(buf, "%c%c%c%c%c%c%c%c%c",
 				4, 1,
 				(((u_short)proxyserv->scan_puerto)>>8) & 0xFF,
 				((u_short)proxyserv->scan_puerto) & 0xFF,
@@ -639,7 +634,7 @@ SOCKFUNC(PSAbre)
 			SockWrite(sck, "GET http://colossus.redyc.com/chkproxy.txt HTTP/1.0");
 			SockWrite(sck, "");
 		}
-	}	
+	}
 	return 0;
 }
 SOCKFUNC(PSLee)

@@ -11,6 +11,8 @@ typedef struct _sql {
 	char clientinfo[128];
 	char *tablas[MAX_TAB][MAX_TAB]; /* la posicion [x][0] siempre contendrá el nombre de la tabla */
 	int _errno;
+	char *tablecreate[MAX_TAB]; /* rutinas para la creacion de tablas */
+	int numtablas;
 }*SQL;
 
 extern MODVAR SQL sql;
@@ -31,3 +33,6 @@ extern int SQLNumRows(SQLRes);
 extern int SQLEsCampo(char *, char *);
 extern void SQLSeek(SQLRes, u_long);
 extern int SQLVersionTabla(char *);
+extern int SQLNuevaTabla(char *, char *, ...);
+extern SQLRes SQLQueryVL(const char *, va_list);
+extern SQLDump(char *);

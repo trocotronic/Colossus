@@ -77,6 +77,7 @@ int CargaSQL()
 		pass = conf_db->pass;
 		bdd = conf_db->bd;
 		puerto = conf_db->puerto;
+		mysql_options(mysql, MYSQL_OPT_USE_REMOTE_CONNECTION, NULL);
 	}
 	if (!mysql_real_connect(mysql, host, user, pass, NULL, puerto, NULL, 0))
 	{
@@ -236,20 +237,27 @@ SQLRes MySQLQuery(const char *query)
 
 SQLRes SQLQuery(const char *query, ...)
 {
-	va_list vl;
 	SQLRes res = NULL;
-	char buf[8192]; //presupongo que un query no superará los 8KB (son muchos KB)
 	if (sql)
 	{
+		va_list vl;
 		va_start(vl, query);
-		ircvsprintf(buf, query, vl);
+		res = SQLQueryVL(query, vl);
 		va_end(vl);
-#ifdef DEBUG
-		Debug("SQL Query: %s", buf);
-#endif
-		res = MySQLQuery(buf);
-		SetSQLErrno();
 	}
+	return res;
+}
+
+SQLRes SQLQueryVL(const char *query, va_list vl)
+{
+	SQLRes res = NULL;
+	char buf[8192]; //presupongo que un query no superará los 8KB (son muchos KB)
+	ircvsprintf(buf, query, vl);
+#ifdef DEBUG
+	Debug("SQL Query: %s", buf);
+#endif
+	res = MySQLQuery(buf);
+	SetSQLErrno();
 	return res;
 }
 
@@ -514,8 +522,9 @@ void SQLSeek(SQLRes res, u_long off)
 /*!
  * @desc: Devuelve la versión de una tabla.
  * @params: $tabla [in] Nombre de la tabla.
- * @ver SQLInserta SQLCogeRegistro
+ * @ver: SQLInserta SQLCogeRegistro
  * @cat: SQL
+ * @ret: Devuelve la versión de la tabla.
  !*/
 int SQLVersionTabla(char *tabla)
 {
@@ -524,4 +533,40 @@ int SQLVersionTabla(char *tabla)
 		return -1;
 	else
 		return atoi(reg);
+}
+
+/*!
+ * @desc: Añade una nueva tabla.
+ * @params: $query [in] Sintaxis del comando CREATE TABLE. Cadena con formato.
+ 		$... [in] Argumentos variables según cadena con formato.
+ * @ver: SQLQuery
+ * @cat: SQL
+ * @ret: Devuelve 0 si no ha habido ningún fallo o distinto a 0 si ha ocurrido un fallo.
+ !*/
+int SQLNuevaTabla(char *tabla, char *str, ...)
+{
+	int ret = -1;
+	if (sql->numtablas == MAX_TAB)
+		return -1;
+	if (sql)
+	{
+		if (!SQLEsTabla(tabla))
+		{
+			va_list vl;
+			SQLRes res = NULL;
+			char buf[8192];
+			va_start(vl, str);
+			res = SQLQueryVL(str, vl);
+			ircvsprintf(buf, str, vl);
+			va_end(vl);
+			if ((ret = sql->_errno))
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, tabla);
+			else
+			{
+				sql->tablecreate[sql->numtablas++] = strdup(buf);
+				SQLCargaTablas();
+			}
+		}
+	}
+	return ret;
 }

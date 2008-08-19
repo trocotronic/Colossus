@@ -2357,32 +2357,27 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 }
 int CSSigSQL()
 {
-	if (!SQLEsTabla(CS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"n SERIAL, "
-  			"item varchar(255), "
-			"founder varchar(255), "
-  			"pass varchar(255), "
-  			"descripcion text, "
-  			"modos varchar(255) default '+nt', "
-  			"opts int4 default '0', "
-  			"topic varchar(255) default 'El canal ha sido registrado.', "
-  			"entry varchar(255) default 'El canal ha sido registrado.', "
-  			"registro int4 default '0', "
-  			"ultimo int4 default '0', "
-  			"ntopic text, "
-  			"limite int2 default '5', "
-  			"bjoins int4 default '0', "
-  			"suspend text, "
-  			"url varchar(255), "
-  			"email varchar(255), "
-  			"marcas text, "
-  			"KEY item (item) "
-			");", PREFIJO, CS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_SQL);
-	}
+	SQLNuevaTabla(CS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"n SERIAL, "
+  		"item varchar(255), "
+		"founder varchar(255), "
+  		"pass varchar(255), "
+  		"descripcion text, "
+  		"modos varchar(255) default '+nt', "
+  		"opts int4 default '0', "
+  		"topic varchar(255) default 'El canal ha sido registrado.', "
+  		"entry varchar(255) default 'El canal ha sido registrado.', "
+  		"registro int4 default '0', "
+  		"ultimo int4 default '0', "
+  		"ntopic text, "
+  		"limite int2 default '5', "
+  		"bjoins int4 default '0', "
+  		"suspend text, "
+  		"url varchar(255), "
+  		"email varchar(255), "
+  		"marcas text, "
+  		"KEY item (item) "
+		");", PREFIJO, CS_SQL);
 	/*else
 	{
 		if (!SQLEsCampo(CS_SQL, "marcas"))
@@ -2394,38 +2389,24 @@ int CSSigSQL()
 	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, CS_SQL);
 	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, CS_SQL);
 	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, CS_SQL);*/
-	if (!SQLEsTabla(CS_TOK))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-			"item varchar(255) default NULL, "
-			"nick varchar(255) default NULL, "
-			"hora int4 default '0', "
-			"KEY item (item) "
-			");", PREFIJO, CS_TOK);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_TOK);
-	}
-	if (!SQLEsTabla(CS_FORBIDS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"motivo varchar(255) default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, CS_FORBIDS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_FORBIDS);
-	}
-	if (!SQLEsTabla(CS_ACCESS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"canal varchar(255) default NULL, "
-  			"nick varchar(255) default NULL, "
-  			"nivel int8 default '0', "
-  			"automodos varchar(32) default NULL, "
-  			"KEY canal (canal) "
-			");", PREFIJO, CS_ACCESS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_ACCESS);
+	SQLNuevaTabla(CS_TOK, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255) default NULL, "
+		"nick varchar(255) default NULL, "
+		"hora int4 default '0', "
+		"KEY item (item) "
+		");", PREFIJO, CS_TOK);
+	SQLNuevaTabla(CS_FORBIDS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"motivo varchar(255) default NULL, "
+  		"KEY item (item) "
+		");", PREFIJO, CS_FORBIDS);
+	SQLNuevaTabla(CS_ACCESS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"canal varchar(255) default NULL, "
+		"nick varchar(255) default NULL, "
+		"nivel int8 default '0', "
+		"automodos varchar(32) default NULL, "
+ 		"KEY canal (canal) "
+		");", PREFIJO, CS_ACCESS);
 		/*else
 		{
 			SQLRes res;
@@ -2473,20 +2454,15 @@ int CSSigSQL()
 			}
 			SQLQuery("ALTER TABLE %s%s DROP accesos", PREFIJO, CS_SQL);
 		}*/
-	}
 	//else
 	//	SQLQuery("ALTER TABLE %s%s CHANGE automodos automodos VARCHAR(32) NOT NULL", PREFIJO, CS_ACCESS);
-	if (!SQLEsTabla(CS_AKICKS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"canal varchar(255) default NULL, "
-  			"mascara varchar(255) default NULL, "
-  			"motivo varchar(255) default '0', "
-  			"autor varchar(64) default NULL, "
-  			"KEY canal (canal) "
-			");", PREFIJO, CS_AKICKS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, CS_AKICKS);
+	SQLNuevaTabla(CS_AKICKS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"canal varchar(255) default NULL, "
+		"mascara varchar(255) default NULL, "
+		"motivo varchar(255) default '0', "
+		"autor varchar(64) default NULL, "
+		"KEY canal (canal) "
+		");", PREFIJO, CS_AKICKS);
 		/*else
 		{
 			SQLRes res;
@@ -2515,7 +2491,6 @@ int CSSigSQL()
 			SQLFreeRes(res);
 			SQLQuery("ALTER TABLE %s%s DROP akick", PREFIJO, CS_SQL);
 		}*/
-	}
 	cmodreg = BuscaModoProtocolo(CHMODE_RGSTR, protocolo->cmodos);
 	return 0;
 }

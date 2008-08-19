@@ -1,5 +1,5 @@
 /*
- * $Id: noteserv.c,v 1.12 2008/01/21 19:46:45 Trocotronic Exp $ 
+ * $Id: noteserv.c,v 1.12 2008/01/21 19:46:45 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -398,7 +398,7 @@ char *santos[] = {
 	"Los Santos Inocentes y San Gaspar del Búfalo" ,
 	"Santo Tomás Becket, obispo y mártir" ,
 	"La Sagrada Familia de Jesús, María y José" ,
-	"San Silvestre I, Santa Melania , Santa Colomba y San Mario" 
+	"San Silvestre I, Santa Melania , Santa Colomba y San Mario"
 };
 Opts horos[] = {
 	{ 21 , "Capricornio" } ,
@@ -672,18 +672,13 @@ BOTFUNC(ESVer)
 }
 int ESSigSQL()
 {
-	if (!SQLEsTabla(ES_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255), "
-  			"fecha int4, "
-  			"avisar int4, "
-  			"nota varchar(255), "
-  			"KEY item (item) "
-			");", PREFIJO, ES_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, ES_SQL);
-	}
+	SQLNuevaTabla(ES_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255), "
+  		"fecha int4, "
+  		"avisar int4, "
+  		"nota varchar(255), "
+  		"KEY item (item) "
+		");", PREFIJO, ES_SQL);
 	return 0;
 }
 int CompruebaNotas()

@@ -131,8 +131,10 @@ EXPORTS
 	SQLFetchRow
 	SQLFreeRes
 	SQLInserta
+	SQLNuevaTabla
 	SQLNumRows
 	SQLQuery
+	SQLQueryVL
 	SQLSeek
 	SQLVersionTabla
 	SacaBot

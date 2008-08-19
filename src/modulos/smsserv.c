@@ -1,5 +1,5 @@
 /*
- * $Id: smsserv.c,v 1.13 2008/02/13 16:16:10 Trocotronic Exp $ 
+ * $Id: smsserv.c,v 1.13 2008/02/13 16:16:10 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -561,17 +561,12 @@ BOTFUNC(SSSaldo)
 }
 int SSSigSQL()
 {
-	if (!SQLEsTabla(SS_SQL))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"numero varchar(16) default NULL, "
-  			"lista text, "
-  			"KEY item (item) "
-			");", PREFIJO, SS_SQL);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, SS_SQL);
-	}
+	SQLNuevaTabla(SS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"numero varchar(16) default NULL, "
+  		"lista text, "
+  		"KEY item (item) "
+		");", PREFIJO, SS_SQL);
 	return 0;
 }
 int SSSigQuit(Cliente *cl, char *mensaje)

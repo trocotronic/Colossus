@@ -39,7 +39,7 @@ int Procesa13J(KyrhosUser *);
 KyrhosObj objs[] = {
 	{ "guantes" , POS14H , 1 , 0 , 0 , 1 , 2 } ,
 	{ "pala" , POS13J , 0 , 0 , 0 , 0 , 1 } ,
-	{ "migas" , POS13J , 0 , 0 , 5 , 0 , 3 } 
+	{ "migas" , POS13J , 0 , 0 , 5 , 0 , 3 }
 };
 KyrhosEnemigo enems[] = {
 	{ "lagarto" , POS14G , 1 , 1 , 8 , 0.5 , 0 }
@@ -524,7 +524,7 @@ int ProcesaKyrhos(Cliente *cl, char *msg)
 			if (C1(objs[i].nombre))
 				break;
 		}
-		if (i == O_OBJS)	
+		if (i == O_OBJS)
 			P("Recapacitas y te das cuenta de que no vale la pena cogerlo.");
 		else if (Tiene(i))
 			Responde(kus->cl, kyrhos->cl, "Ya %s tienes.", Articulo(objs[i].art, 1));
@@ -543,7 +543,7 @@ int ProcesaKyrhos(Cliente *cl, char *msg)
 			}
 			kus->objetos |= ID(i);
 			kus->posobjs[i] = 0;
-		}	
+		}
 	}
 	else if (C0("USAR") || C0("U"))
 	{
@@ -720,16 +720,11 @@ int KyrhosEOS()
 }
 int KyrhosSQL()
 {
-	if (!SQLEsTabla(GS_KYRHOS))
-	{
-		SQLQuery("CREATE TABLE IF NOT EXISTS %s%s ( "
-			"item varchar(255), "
-			"pos int, "
-			"KEY item (item) "
-			");", PREFIJO, GS_KYRHOS);
-		if (sql->_errno)
-			Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, GS_KYRHOS);
-	}
+	SQLNuevaTabla(GS_KYRHOS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255), "
+		"pos int, "
+		"KEY item (item) "
+		");", PREFIJO, GS_KYRHOS);
 	return 0;
 }
 int KyrhosDescarga()
