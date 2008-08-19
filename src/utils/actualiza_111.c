@@ -197,7 +197,7 @@ int main()
 				continue;
 			}
 		}
-		else if (strstr(tmp, "mysql.dll"))
+		else if (strstr(tmp, "db {"))
 		{
 			printf("OK\n");
 			mysql = 1;
@@ -208,7 +208,10 @@ int main()
 	fclose(fp);
 	fclose(fw);
 	if (mysql == -1)
+	{
+		unlink("colossus.tmp");
 		Error("FALLA\nNo se encuentra bloque db { }");
+	}
 	plen = strlen(pref);
 	printf("Escaneado finalizado\n\nSe utilizaran los siguientes datos:\n\n");
 	printf("host = %s\n", host);
