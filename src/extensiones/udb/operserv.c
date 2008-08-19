@@ -1,5 +1,5 @@
 /*
- * $Id: operserv.c,v 1.9 2007/02/18 18:58:53 Trocotronic Exp $ 
+ * $Id: operserv.c,v 1.9 2007/02/18 18:58:53 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -22,10 +22,10 @@ BOTFUNC(OSSnomask);
 BOTFUNCHELP(OSHSnomask);
 BOTFUNC(OSOptimizar);
 BOTFUNCHELP(OSHOptimizar);
-BOTFUNC(OSBackup);
-BOTFUNCHELP(OSHBackup);
-BOTFUNC(OSRestaurar);
-BOTFUNCHELP(OSHRestaurar);
+BOTFUNC(OSBackupUDB);
+BOTFUNCHELP(OSHBackupUDB);
+BOTFUNC(OSRestaurarUDB);
+BOTFUNCHELP(OSHRestaurarUDB);
 BOTFUNC(OSSetUDB);
 BOTFUNCHELP(OSHSetUDB);
 BOTFUNC(OSLines);
@@ -39,8 +39,8 @@ bCom operserv_coms[] = {
 	{ "modos" , OSModos , N4 , "Fija los modos de operador que se obtiene automáticamente (BDD)." , OSHModos } ,
 	{ "snomask" , OSSnomask , N4 , "Fija las máscaras de operador que se obtiene automáticamente (BDD)." , OSHSnomask } ,
 	{ "optimizar" , OSOptimizar , N4 , "Optimiza la base de datos (BDD)." , OSHOptimizar } ,
-	{ "backup" , OSBackup , N4 , "Realiza una copia de seguridad de los bloques (BDD)." , OSHBackup } ,
-	{ "restaurar" , OSRestaurar , N4 , "Restaura una copia de seguridad realizada con el comando \00312backup\003." , OSHRestaurar } ,
+	{ "backupudb" , OSBackupUDB , N4 , "Realiza una copia de seguridad de los bloques UDB." , OSHBackupUDB } ,
+	{ "restaurarudb" , OSRestaurarUDB , N4 , "Restaura una copia de seguridad realizada con el comando \00312backupudb\003." , OSHRestaurarUDB } ,
 	{ "setudb" , OSSetUDB , N4 , "Fija distintos parámetros UDB de red." , OSHSetUDB } ,
 	{ "lines" , OSLines , N4 , "Propaga por la red *lines (spamfilters, glines, zlines, shuns y qlines)" , OSHLines } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
@@ -101,20 +101,20 @@ BOTFUNCHELP(OSHOptimizar)
 	Responde(cl, CLI(operserv), "Sintaxis: \00312OPTIMIZA");
 	return 0;
 }
-BOTFUNCHELP(OSHBackup)
+BOTFUNCHELP(OSHBackupUDB)
 {
 	Responde(cl, CLI(operserv), "Realiza una copia de seguridad de todos los bloques UDB.");
 	Responde(cl, CLI(operserv), " ");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312BACKUP");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312BACKUPUDB");
 	return 0;
 }
-BOTFUNCHELP(OSHRestaurar)
+BOTFUNCHELP(OSHRestaurarUDB)
 {
-	Responde(cl, CLI(operserv), "Restaura una copia de seguridad realizada con \00312BACKUP\003.");
+	Responde(cl, CLI(operserv), "Restaura una copia de seguridad realizada con \00312BACKUPUDB\003.");
 	Responde(cl, CLI(operserv), " ");
 	Responde(cl, CLI(operserv), "Si no se especifican parámetros, listará todas las copias de seguridad que estén disponibles.");
 	Responde(cl, CLI(operserv), " ");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURAR [punto_restauración]");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312RESTAURARUDB [punto_restauración]");
 	return 0;
 }
 BOTFUNCHELP(OSHSetUDB)
@@ -294,7 +294,7 @@ BOTFUNC(OSOptimizar)
 	Responde(cl, CLI(operserv), "Se han optimizado todos los bloques");
 	return 0;
 }
-BOTFUNC(OSBackup)
+BOTFUNC(OSBackupUDB)
 {
 	u_int i;
 	time_t hora = time(0);
@@ -320,7 +320,7 @@ BOTFUNC(OSBackup)
 	Responde(cl, CLI(operserv), "Se ha realizado una copia de seguridad de todos los bloques");
 	return 0;
 }
-BOTFUNC(OSRestaurar)
+BOTFUNC(OSRestaurarUDB)
 {
 	u_int i;
 	time_t tshora = time(0);
