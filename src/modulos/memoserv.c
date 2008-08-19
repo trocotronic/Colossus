@@ -862,29 +862,26 @@ int MSSigSQL()
   		"leido int4 default '0', "
   		"KEY para (para) "
 		");", PREFIJO, MS_SQL);
-	if (!SQLEsTabla(MS_SET))
+	if (!SQLNuevaTabla(MS_SET, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255) default NULL, "
+		"opts varchar(255) default NULL, "
+		"limite int4 default '%i', "
+		"KEY item (item) "
+		");", PREFIJO, MS_SET, memoserv->def))
 	{
 		SQLRes res;
 		SQLRow row;
-		if (!SQLNuevaTabla(MS_SET, "CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"opts varchar(255) default NULL, "
-  			"limite int4 default '%i', "
-  			"KEY item (item) "
-			");", PREFIJO, MS_SET, memoserv->def))
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
 		{
-			if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
-			{
-				while ((row = SQLFetchRow(res)))
-					SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
-				SQLFreeRes(res);
-			}
-			if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
-			{
-				while ((row = SQLFetchRow(res)))
-					SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
-				SQLFreeRes(res);
-			}
+			while ((row = SQLFetchRow(res)))
+				SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
+			SQLFreeRes(res);
+		}
+		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, CS_SQL)))
+		{
+			while ((row = SQLFetchRow(res)))
+				SQLInserta(MS_SET, row[0], "opts", "%i", MS_OPT_ALL);
+			SQLFreeRes(res);
 		}
 	}
 	return 0;

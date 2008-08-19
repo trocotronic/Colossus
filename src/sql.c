@@ -294,7 +294,7 @@ void SQLCargaTablas()
 	{
 		MYSQL_RES *res;
 		MYSQL_ROW row;
-		int i;
+		int i = 0;
 		char *tabla;
 		if ((res = mysql_list_tables(mysql, NULL)))
 		{
@@ -524,23 +524,28 @@ int SQLNuevaTabla(char *tabla, char *str, ...)
 		return -1;
 	if (sql)
 	{
+		char buf[8192];
+		va_list vl;
+		va_start(vl, str);
+		sql->_errno = 0;
 		if (!SQLEsTabla(tabla))
 		{
-			va_list vl;
 			SQLRes res = NULL;
-			char buf[8192];
-			va_start(vl, str);
 			res = SQLQueryVL(str, vl);
-			ircvsprintf(buf, str, vl);
-			va_end(vl);
 			if ((ret = sql->_errno))
-				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, tabla);
-			else
 			{
-				sql->tablecreate[sql->numtablas++] = strdup(buf);
-				SQLRefrescaTabla(tabla);
+				Alerta(FADV, "Ha sido imposible crear la tabla '%s%s'.", PREFIJO, tabla);
+				return sql->_errno;
 			}
+			SQLInserta(SQL_VERSIONES, tabla, "version", "1");
 		}
+		else
+			ret = -2;
+		ircvsprintf(buf, str, vl);
+		va_end(vl);
+		Debug("** %s",buf);
+		sql->tablecreate[sql->numtablas++] = strdup(buf);
+		SQLRefrescaTabla(tabla);
 	}
 	return ret;
 }
@@ -593,5 +598,54 @@ void SQLRefrescaTabla(char *tabla)
  !*/
 int SQLDump(char *file)
 {
+	FILE *fp;
+	int i, j, m;
+	SQLRes res;
+	SQLRow row;
+	if (!file)
+	{
+		struct tm *tt;
+		time_t t = time(0);
+		tt = localtime(&t);
+		sprintf(buf, "database/mysql/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", tt->tm_year+1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+	}
+	else
+		strcpy(buf, file);
+	if (!(fp = fopen(buf, "w")))
+		return 1;
+	for (i = 0; i < sql->numtablas; i++)
+	{
+		fputs(sql->tablecreate[i], fp);
+		fputs("\n", fp);
+	}
+	for (i = 0; sql->tablas[i][0]; i++)
+	{
+		if ((res = SQLQuery("SELECT * FROM %s%s", PREFIJO, sql->tablas[i][0])))
+		{
+			while ((row = SQLFetchRow(res)))
+			{
+				fprintf(fp, "INSERT INTO `%s%s` VALUES (", PREFIJO, sql->tablas[i][0]);
+				m = mysql_num_fields(res);
+				for (j = 0; j < m; j++)
+				{
+					if (!row[j])
+						fputs("NULL", fp);
+					else
+					{
+						ircsprintf(tokbuf, "%li", atol(row[j]));
+						if (!strcmp(tokbuf, row[j])) /* es numero */
+							fputs(tokbuf, fp);
+						else
+						fprintf(fp, "'%s'", row[j]);
+					}
+					if (j < m-1)
+						fputs(",", fp);
+				}
+				fputs(");\n", fp);
+			}
+			SQLFreeRes(res);
+		}
+	}
+	fclose(fp);
 	return 0;
 }

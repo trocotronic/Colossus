@@ -279,24 +279,21 @@ int DetieneProceso(int (*func)())
 }
 int CargaCache()
 {
-	if (!SQLEsTabla(SQL_CACHE))
-	{
-		SQLNuevaTabla(SQL_CACHE, "CREATE TABLE IF NOT EXISTS %s%s ( "
-  			"item varchar(255) default NULL, "
-  			"valor varchar(255) default NULL, "
-  			"hora int4 default '0', "
-  			"owner int4 default '0', "
-  			"tipo text default NULL, "
-  			"KEY item (item) "
-			");", PREFIJO, SQL_CACHE);
-	}
-	else
+	SQLNuevaTabla(SQL_CACHE, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255) default NULL, "
+		"valor varchar(255) default NULL, "
+		"hora int4 default '0', "
+		"owner int4 default '0', "
+		"tipo text default NULL, "
+		"KEY item (item) "
+		");", PREFIJO, SQL_CACHE);
+	/*else
 	{
 		if (!SQLEsCampo(SQL_CACHE, "owner"))
 			SQLQuery("ALTER TABLE %s%s ADD owner int4 NOT NULL default '0';", PREFIJO, SQL_CACHE);
 		if (!SQLEsCampo(SQL_CACHE, "tipo"))
 			SQLQuery("ALTER TABLE %s%s ADD tipo VARCHAR(255) default NULL;", PREFIJO, SQL_CACHE);
-	}
+	}*/
 	IniciaProceso(ProcCache);
 	return 1;
 }

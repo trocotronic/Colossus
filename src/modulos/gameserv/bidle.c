@@ -183,49 +183,43 @@ int BidleSynch()
 }
 int BidleSQL()
 {
-	if (!SQLEsTabla(GS_BIDLE))
+	SQLNuevaTabla(GS_BIDLE, "CREATE TABLE IF NOT EXISTS %s%s ( "
+		"item varchar(255), "
+		"nombre varchar(255), "
+		"clan varchar(255), "
+		"lado varchar(32), "
+		"admin int, "
+		"nivel int, "
+		"online int, "
+		"idle int, "
+		"sig int, "
+		"x int, y int, "
+		"pen_msg int, pen_nick int, pen_part int, pen_kick int, pen_quit int, pen_quest int, pen_logout int, "
+		"creado int, "
+		"lastlogin int, "
+		"amuleto varchar(32), "
+		"coraza varchar(32), "
+		"casco varchar(32), "
+		"botas varchar(32), "
+		"guantes varchar(32), "
+		"anillo varchar(32), "
+		"pantalones varchar(32), "
+		"escudo varchar(32), "
+		"tunica varchar(32), "
+		"arma varchar(32), "
+		"oro int, "
+		"mejora int, "
+		"claner int, "
+		"combates int, "
+		"sig_combate int, "
+		"PRIMARY KEY item (item) "
+		");", PREFIJO, GS_BIDLE);
+	SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
+	if (SQLVersionTabla(GS_BIDLE) < 2)
 	{
-		SQLNuevaTabla(GS_BIDLE, "CREATE TABLE IF NOT EXISTS %s%s ( "
-			"item varchar(255), "
-			"nombre varchar(255), "
-			"clan varchar(255), "
-			"lado varchar(32), "
-			"admin int, "
-			"nivel int, "
-			"online int, "
-			"idle int, "
-			"sig int, "
-			"x int, y int, "
-			"pen_msg int, pen_nick int, pen_part int, pen_kick int, pen_quit int, pen_quest int, pen_logout int, "
-			"creado int, "
-			"lastlogin int, "
-			"amuleto varchar(32), "
-			"coraza varchar(32), "
-			"casco varchar(32), "
-			"botas varchar(32), "
-			"guantes varchar(32), "
-			"anillo varchar(32), "
-			"pantalones varchar(32), "
-			"escudo varchar(32), "
-			"tunica varchar(32), "
-			"arma varchar(32), "
-			"oro int, "
-			"mejora int, "
-			"claner int, "
-			"combates int, "
-			"sig_combate int, "
-			"PRIMARY KEY item (item) "
-			");", PREFIJO, GS_BIDLE);
-	}
-	else
-	{
-		SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
-		if (SQLVersionTabla(GS_BIDLE) < 2)
-		{
-			SQLQuery("ALTER TABLE %s%s ADD combates int default '0'", PREFIJO, GS_BIDLE);
-			SQLQuery("ALTER TABLE %s%s ADD sig_combate int default '0'", PREFIJO, GS_BIDLE);
-			SQLInserta(SQL_VERSIONES, GS_BIDLE, "version", "2");
-		}
+		SQLQuery("ALTER TABLE %s%s ADD combates int default '0'", PREFIJO, GS_BIDLE);
+		SQLQuery("ALTER TABLE %s%s ADD sig_combate int default '0'", PREFIJO, GS_BIDLE);
+		SQLInserta(SQL_VERSIONES, GS_BIDLE, "version", "2");
 	}
 	return 0;
 }

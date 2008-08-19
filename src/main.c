@@ -377,6 +377,7 @@ int main(int argc, char *argv[])
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
 	LlamaSenyal(SIGN_SQL, 0);
+	SQLDump(NULL);
 	for (i = 0; (sql->tablas[i][0]); i++)
 	{
 		if (!SQLCogeRegistro(SQL_VERSIONES, sql->tablas[i][0], "version"))
