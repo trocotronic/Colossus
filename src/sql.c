@@ -292,10 +292,9 @@ void SQLCargaTablas()
 {
 	if (sql)
 	{
-		MYSQL_RES *res, *cp;
+		MYSQL_RES *res;
 		MYSQL_ROW row;
-		MYSQL_FIELD *field;
-		int i = 0, j, c = 0;
+		int i;
 		char *tabla;
 		if ((res = mysql_list_tables(mysql, NULL)))
 		{
@@ -305,32 +304,7 @@ void SQLCargaTablas()
 				if (strncmp(PREFIJO, tabla, strlen(PREFIJO)))
 					continue;
 				ircstrdup(sql->tablas[i][0], &tabla[strlen(PREFIJO)]);
-				retry:
-				ircsprintf(buf, "SELECT * FROM %s", tabla);
-				if (mysql_query(mysql, buf) || !(cp = mysql_store_result(mysql)))
-				{
-					if (mysql_errno(mysql) == 1035 && !c)
-					{
-						c = 1;
-						ircsprintf(buf, "REPAIR TABLE %s", tabla);
-						if (!mysql_query(mysql, buf))
-							goto retry;
-						else
-						{
-							Alerta(FADV, "SQL ha intentado reparar la tabla %s sin éxito.\n[%i: %s]\n", tabla, mysql_errno(mysql), mysql_error(mysql));
-							continue;
-						}
-					}
-					else
-					{
-						Alerta(FADV, "SQL ha detectado un error durante la carga de la tabla %s.\n[%i: %s]\n", tabla, mysql_errno(mysql), mysql_error(mysql));
-						continue;
-					}
-				}
-				for (j = 1; (field = mysql_fetch_field(cp)); j++)
-					ircstrdup(sql->tablas[i][j], field->name);
-				sql->tablas[i][j] = NULL;
-				mysql_free_result(cp);
+				SQLRefrescaTabla(&tabla[strlen(PREFIJO)]);
 				i++;
 			}
 			sql->tablas[i][0] = NULL;
@@ -564,9 +538,60 @@ int SQLNuevaTabla(char *tabla, char *str, ...)
 			else
 			{
 				sql->tablecreate[sql->numtablas++] = strdup(buf);
-				SQLCargaTablas();
+				SQLRefrescaTabla(tabla);
 			}
 		}
 	}
 	return ret;
+}
+
+void SQLRefrescaTabla(char *tabla)
+{
+	MYSQL_RES *cp;
+	MYSQL_ROW row;
+	MYSQL_FIELD *field;
+	int i, j, c = 0;
+	retry:
+	ircsprintf(buf, "SELECT * FROM %s%s", PREFIJO, tabla);
+	if (mysql_query(mysql, buf) || !(cp = mysql_store_result(mysql)))
+	{
+		if (mysql_errno(mysql) == 1035 && !c)
+		{
+			c = 1;
+			ircsprintf(buf, "REPAIR TABLE %s", tabla);
+			if (!mysql_query(mysql, buf))
+				goto retry;
+			else
+			{
+				Alerta(FADV, "SQL ha intentado reparar la tabla %s sin éxito.\n[%i: %s]\n", tabla, mysql_errno(mysql), mysql_error(mysql));
+				return;
+			}
+		}
+		else
+		{
+			Alerta(FADV, "SQL ha detectado un error durante la carga de la tabla %s.\n[%i: %s]\n", tabla, mysql_errno(mysql), mysql_error(mysql));
+			return;
+		}
+	}
+	for (i = 0; sql->tablas[i][0]; i++)
+	{
+		if (!strcmp(sql->tablas[i][0], tabla))
+			break;
+	}
+	for (j = 1; (field = mysql_fetch_field(cp)); j++)
+		ircstrdup(sql->tablas[i][j], field->name);
+	sql->tablas[i][j] = NULL;
+	mysql_free_result(cp);
+}
+
+/*!
+ * @desc: Crea una copia de seguridad de toda la base de datos. Sólo se hará la copia de las tablas creadas a partir de SQLNuevaTabla.
+ * @params: $file [in] Nombre del archivo al que se volcará la copia. Si es NULL, se usará la fecha actual.
+ * @ver: SQLNuevaTabla
+ * @cat: SQL
+ * @ret: Devuelve 0 si todo ha ido bien; distinto de 0 si ha ocurrido un error.
+ !*/
+int SQLDump(char *file)
+{
+	return 0;
 }

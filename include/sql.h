@@ -35,4 +35,5 @@ extern void SQLSeek(SQLRes, u_long);
 extern int SQLVersionTabla(char *);
 extern int SQLNuevaTabla(char *, char *, ...);
 extern SQLRes SQLQueryVL(const char *, va_list);
-extern SQLDump(char *);
+extern int SQLDump(char *);
+extern void SQLRefrescaTabla(char *);
