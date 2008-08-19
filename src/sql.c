@@ -32,11 +32,12 @@ void LiberaSQL()
 	int i, j;
 	if (!sql)
 		return;
-	for (i = 0; (sql->tablas[i][0]); i++)
+	for (i = 0; i < sql->tablas; i++)
 	{
-		for (j = 1; (sql->tablas[i][j]); j++)
-			ircfree(sql->tablas[i][j]);
-		ircfree(sql->tablas[i][0]);
+		for (j = 0; j < sql->tabla[i].campos; j++)
+			ircfree(sql->tabla[i].campo[j]);
+		ircfree(sql->tabla[i].tabla);
+		ircfree(sql->tabla[i].create);
 	}
 	if (conf_db)
 		mysql_close(mysql);
@@ -121,8 +122,8 @@ int CargaSQL()
 			char tmp[8092];
 			int i;
 			SQLCargaTablas();
-			for (i = 0; sql->tablas[i][0]; i++)
-				SQLQuery("DROP TABLE %s", sql->tablas[i][0]);
+			for (i = 0; i < sql->tablas; i++)
+				SQLQuery("DROP TABLE %s", sql->tabla[i].tabla);
 			while (fgets(tmp, sizeof(tmp), fp))
 			{
 				if (tmp[0] != '\n' && tmp[0] != '\r')
@@ -147,23 +148,22 @@ int CargaSQL()
 /*!
  * @desc: Mira si una tabla existe o no.
  * @params: $tabla [in] Nombre de la tabla.
- * @ret: Devuelve 1 si existe; 0, si no.
+ * @ret: Devuelve su índice si existe; -1, si no.
  * @cat: SQL
  !*/
 
 int SQLEsTabla(char *tabla)
 {
-	int i = 0;
+	int i;
 	if (sql)
 	{
-		while (sql->tablas[i][0])
+		for (i = 0; i < sql->tablas; i++)
 		{
-			if (!strcasecmp(sql->tablas[i][0], tabla))
-				return 1;
-			i++;
+			if (!strcasecmp(sql->tabla[i].tabla, tabla))
+				return i;
 		}
 	}
-	return 0;
+	return -1;
 }
 
 /*!
@@ -176,21 +176,17 @@ int SQLEsTabla(char *tabla)
 
 int SQLEsCampo(char *tabla, char *campo)
 {
-	int i = 0, j;
+	int i, j;
 	if (sql)
 	{
-		while (sql->tablas[i][0])
+		if ((i = SQLEsTabla(tabla)) != -1)
 		{
-			if (!strcasecmp(sql->tablas[i][0], tabla))
+			for (j = 0; j < sql->tabla[i].campos; j++)
 			{
-				for (j = 1; sql->tablas[i][j]; j++)
-				{
-					if (!strcasecmp(sql->tablas[i][j], campo))
-						return 1;
-				}
-				return 0;
+				if (!strcasecmp(sql->tabla[i].campo[j], campo))
+					return 1;
 			}
-			i++;
+			return 0;
 		}
 	}
 	return 0;
@@ -294,7 +290,6 @@ void SQLCargaTablas()
 	{
 		MYSQL_RES *res;
 		MYSQL_ROW row;
-		int i = 0;
 		char *tabla;
 		if ((res = mysql_list_tables(mysql, NULL)))
 		{
@@ -303,11 +298,12 @@ void SQLCargaTablas()
 				tabla = row[0];
 				if (strncmp(PREFIJO, tabla, strlen(PREFIJO)))
 					continue;
-				ircstrdup(sql->tablas[i][0], &tabla[strlen(PREFIJO)]);
-				SQLRefrescaTabla(&tabla[strlen(PREFIJO)]);
-				i++;
+				if (SQLEsTabla(&tabla[strlen(PREFIJO)]) == -1)
+				{
+					ircstrdup(sql->tabla[sql->tablas++].tabla, &tabla[strlen(PREFIJO)]);
+					SQLRefrescaTabla(&tabla[strlen(PREFIJO)]);
+				}
 			}
-			sql->tablas[i][0] = NULL;
 			mysql_free_result(res);
 		}
 		SetSQLErrno();
@@ -519,8 +515,8 @@ int SQLVersionTabla(char *tabla)
  !*/
 int SQLNuevaTabla(char *tabla, char *str, ...)
 {
-	int ret = -1;
-	if (sql->numtablas == MAX_TAB)
+	int ret = -1, i;
+	if (sql->tablas == MAX_TAB)
 		return -1;
 	if (sql)
 	{
@@ -528,7 +524,7 @@ int SQLNuevaTabla(char *tabla, char *str, ...)
 		va_list vl;
 		va_start(vl, str);
 		sql->_errno = 0;
-		if (!SQLEsTabla(tabla))
+		if ((i = SQLEsTabla(tabla)) == -1)
 		{
 			SQLRes res = NULL;
 			res = SQLQueryVL(str, vl);
@@ -538,13 +534,15 @@ int SQLNuevaTabla(char *tabla, char *str, ...)
 				return sql->_errno;
 			}
 			SQLInserta(SQL_VERSIONES, tabla, "version", "1");
+			i = sql->tablas++;
+			ircstrdup(sql->tabla[i].tabla, tabla);
 		}
 		else
 			ret = -2;
+		sql->tabla[i].cargada = 1;
 		ircvsprintf(buf, str, vl);
 		va_end(vl);
-		Debug("** %s",buf);
-		sql->tablecreate[sql->numtablas++] = strdup(buf);
+		sql->tabla[i].create = strdup(buf);
 		SQLRefrescaTabla(tabla);
 	}
 	return ret;
@@ -578,14 +576,12 @@ void SQLRefrescaTabla(char *tabla)
 			return;
 		}
 	}
-	for (i = 0; sql->tablas[i][0]; i++)
+	if ((i = SQLEsTabla(tabla)) != -1)
 	{
-		if (!strcmp(sql->tablas[i][0], tabla))
-			break;
+		for (j = 0; (field = mysql_fetch_field(cp)); j++)
+			ircstrdup(sql->tabla[i].campo[j], field->name);
+		sql->tabla[i].campos = j;
 	}
-	for (j = 1; (field = mysql_fetch_field(cp)); j++)
-		ircstrdup(sql->tablas[i][j], field->name);
-	sql->tablas[i][j] = NULL;
 	mysql_free_result(cp);
 }
 
@@ -599,7 +595,7 @@ void SQLRefrescaTabla(char *tabla)
 int SQLDump(char *file)
 {
 	FILE *fp;
-	int i, j, m;
+	int i, j;
 	SQLRes res;
 	SQLRow row;
 	if (!file)
@@ -613,20 +609,22 @@ int SQLDump(char *file)
 		strcpy(buf, file);
 	if (!(fp = fopen(buf, "w")))
 		return 1;
-	for (i = 0; i < sql->numtablas; i++)
+	for (i = 0; i < sql->tablas; i++)
 	{
-		fputs(sql->tablecreate[i], fp);
-		fputs("\n", fp);
+		if (sql->tabla[i].cargada)
+		{
+			fputs(sql->tabla[i].create, fp);
+			fputs("\n", fp);
+		}
 	}
-	for (i = 0; sql->tablas[i][0]; i++)
+	for (i = 0; i < sql->tablas; i++)
 	{
-		if ((res = SQLQuery("SELECT * FROM %s%s", PREFIJO, sql->tablas[i][0])))
+		if (sql->tabla[i].cargada && (res = SQLQuery("SELECT * FROM %s%s", PREFIJO, sql->tabla[i].tabla)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
-				fprintf(fp, "INSERT INTO `%s%s` VALUES (", PREFIJO, sql->tablas[i][0]);
-				m = mysql_num_fields(res);
-				for (j = 0; j < m; j++)
+				fprintf(fp, "INSERT INTO `%s%s` VALUES (", PREFIJO, sql->tabla[i].tabla);
+				for (j = 0; j < sql->tabla[i].campos; j++)
 				{
 					if (!row[j])
 						fputs("NULL", fp);
@@ -638,7 +636,7 @@ int SQLDump(char *file)
 						else
 						fprintf(fp, "'%s'", row[j]);
 					}
-					if (j < m-1)
+					if (j < sql->tabla[i].campos-1)
 						fputs(",", fp);
 				}
 				fputs(");\n", fp);

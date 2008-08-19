@@ -9,10 +9,16 @@ typedef struct _sql {
 	void *recurso;
 	char servinfo[128];
 	char clientinfo[128];
-	char *tablas[MAX_TAB][MAX_TAB]; /* la posicion [x][0] siempre contendrá el nombre de la tabla */
+	struct sqltabla
+	{
+		char *tabla;
+		int campos;
+		char *create;
+		unsigned cargada:1;
+		char *campo[MAX_TAB];
+	}tabla[MAX_TAB];
 	int _errno;
-	char *tablecreate[MAX_TAB]; /* rutinas para la creacion de tablas */
-	int numtablas;
+	int tablas;
 }*SQL;
 
 extern MODVAR SQL sql;
