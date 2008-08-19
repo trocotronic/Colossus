@@ -366,8 +366,8 @@ int main(int argc, char *argv[])
   		"KEY item (item) "
 		");", PREFIJO, SQL_VERSIONES))
 	{
-		for (i = 0; (sql->tablas[i][0]); i++)
-			SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
+		for (i = 0; i < sql->tablas; i++)
+			SQLInserta(SQL_VERSIONES, sql->tabla[i].tabla, "version", "1");
 	}
 	SQLNuevaTabla(SQL_CONFIG, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
@@ -377,11 +377,10 @@ int main(int argc, char *argv[])
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
 	LlamaSenyal(SIGN_SQL, 0);
-	SQLDump(NULL);
-	for (i = 0; (sql->tablas[i][0]); i++)
+	for (i = 0; i < sql->tablas; i++)
 	{
-		if (!SQLCogeRegistro(SQL_VERSIONES, sql->tablas[i][0], "version"))
-			SQLInserta(SQL_VERSIONES, sql->tablas[i][0], "version", "1");
+		if (!SQLCogeRegistro(SQL_VERSIONES, sql->tabla[i].tabla, "version"))
+			SQLInserta(SQL_VERSIONES, sql->tabla[i].tabla, "version", "1");
 	}
 	pthread_mutex_init(&mutex, NULL);
 #ifdef _WIN32

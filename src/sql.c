@@ -587,26 +587,27 @@ void SQLRefrescaTabla(char *tabla)
 
 /*!
  * @desc: Crea una copia de seguridad de toda la base de datos. Sólo se hará la copia de las tablas creadas a partir de SQLNuevaTabla.
- * @params: $file [in] Nombre del archivo al que se volcará la copia. Si es NULL, se usará la fecha actual.
+ * @params: $tag [in] Tag o etiqueta con el que se nombrará el archivo al que se volcarán los datos. Si existe, se eliminará. Si es NULL, se usará la fecha actual.
  * @ver: SQLNuevaTabla
  * @cat: SQL
  * @ret: Devuelve 0 si todo ha ido bien; distinto de 0 si ha ocurrido un error.
  !*/
-int SQLDump(char *file)
+int SQLDump(char *tag)
 {
 	FILE *fp;
 	int i, j;
 	SQLRes res;
 	SQLRow row;
-	if (!file)
+	mkdir("database/mysql/backup", 660);
+	if (!tag)
 	{
 		struct tm *tt;
 		time_t t = time(0);
 		tt = localtime(&t);
-		sprintf(buf, "database/mysql/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", tt->tm_year+1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+		sprintf(buf, "database/mysql/backup/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", tt->tm_year+1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
 	}
 	else
-		strcpy(buf, file);
+		sprintf(buf, "database/mysql/backup/backup-%s.sql", tag);
 	if (!(fp = fopen(buf, "w")))
 		return 1;
 	for (i = 0; i < sql->tablas; i++)

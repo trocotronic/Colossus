@@ -122,6 +122,7 @@ EXPORTS
 	Resuelve
 	ResuelveHost
 	SO
+	SQLDump
 	SQLBorra
 	SQLCargaTablas
 	SQLCogeRegistro
