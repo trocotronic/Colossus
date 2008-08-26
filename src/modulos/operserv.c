@@ -1073,13 +1073,15 @@ BOTFUNC(OSImportar)
 		if ((dir = AbreDirectorio(SQL_BCK_DIR)))
 		{
 			char *f, *c;
+			Responde(cl, CLI(operserv), "Etiquetas existentes:");
+			Responde(cl, CLI(operserv), " ");
 			while ((f = LeeDirectorio(dir)))
 			{
 				if ((c = strrchr(f, '.')) && !strcmp(c, ".sql"))
 				{
 					*c = 0;
 					if ((c = strchr(f, '-')))
-						Responde(cl, CLI(operserv), c+1);
+						Responde(cl, CLI(operserv), "Tag: \00312 %s", c+1);
 				}
 			}
 		}
