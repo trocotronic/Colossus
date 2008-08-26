@@ -43,3 +43,5 @@ extern int SQLNuevaTabla(char *, char *, ...);
 extern SQLRes SQLQueryVL(const char *, va_list);
 extern int SQLDump(char *);
 extern void SQLRefrescaTabla(char *);
+extern int SQLImportar(char *);
+#define SQL_BCK_DIR "database/mysql/backup"

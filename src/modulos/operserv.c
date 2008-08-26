@@ -50,8 +50,10 @@ BOTFUNC(OSAkill);
 BOTFUNCHELP(OSHAkill);
 BOTFUNC(OSCache);
 BOTFUNCHELP(OSHCache);
-BOTFUNC(OSBackup);
-BOTFUNCHELP(OSHBackup);
+BOTFUNC(OSExportar);
+BOTFUNCHELP(OSHExportar);
+BOTFUNC(OSImportar);
+BOTFUNCHELP(OSHImportar);
 
 static bCom operserv_coms[] = {
 	{ "help" , OSHelp , N3 , "Muestra esta ayuda." , NULL } ,
@@ -70,7 +72,8 @@ static bCom operserv_coms[] = {
 	{ "vaciar" , OSVaciar , N5 , "Elimina todos los registros de la base de datos." , OSHVaciar } ,
 	{ "akill" , OSAkill , N3 , "Prohibe la conexión de una ip/host o usuario permanentemente." , OSHAkill } ,
 	{ "cache" , OSCache , N5 , "Elimina toda la cache interna de los servicios." , OSHCache } ,
-	{ "backup" , OSBackup , N5 , "Crea una copia de seguridad de la base de datos." , OSHBackup } ,
+	{ "exportar" , OSExportar , N5 , "Crea una copia de seguridad de la base de datos." , OSHExportar } ,
+	{ "importar" , OSImportar , N5 , "Restaura una copia de seguridad de la base de datos." , OSHImportar } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -500,12 +503,23 @@ BOTFUNCHELP(OSHCache)
 	Responde(cl, CLI(operserv), "Sintaxis: \00312CACHE");
 	return 0;
 }
-BOTFUNCHELP(OSHBackup)
+BOTFUNCHELP(OSHExportar)
 {
 	Responde(cl, CLI(operserv), "Crea una copia de seguridad de la base de datos.");
 	Responde(cl, CLI(operserv), "NOTA: tenga en cuenta de que sólo se hará la copia de aquellas tablas que estén cargadas. Si existe alguna tabla de un módulo descargado, no se hará su copia.");
 	Responde(cl, CLI(operserv), " ");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312BACKUP [etiqueta]");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312EXPORTAR [etiqueta]");
+	return 0;
+}
+BOTFUNCHELP(OSHImportar)
+{
+	Responde(cl, CLI(operserv), "Restaura una copia de seguridad de la base de datos.");
+	Responde(cl, CLI(operserv), "Esta copia debe haberse realizado con el comando EXPORTAR.");
+	Responde(cl, CLI(operserv), "Para listar las copias existentes, no utilice ningún parámetro.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "NOTA: no cargue una base de datos con datos que pertenezcan a módulos no cargados. Debe tener los mismos módulos cargados que cuando hizo la copia de seguridad.");
+	Responde(cl, CLI(operserv), "NOTA: no realice importaciones de bases de datos que pertenezcan a otras versiones de Colossus.");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312IMPORTAR [etiqueta]");
 	return 0;
 }
 BOTFUNC(OSHelp)
@@ -552,24 +566,6 @@ BOTFUNC(OSRehash)
 	//EOI(operserv, 3); *** PROHIBIDO ***
 	return -1; /* stop stop stop. paramos todo lo que venga a continuación */
 }
-/*
-BOTFUNC(OSBackup)
-{
-	if (SQLBackup())
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error al intentar hacer una copia de seguridad de la base de datos.");
-	else
-		Responde(cl, CLI(operserv), "Base de datos copiada con éxito.");
-	return 0;
-}
-BOTFUNC(OSRestaura)
-{
-	if (SQLRestaura())
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Ha ocurrido un error al intentar restaurar la base de datos.");
-	else
-		Responde(cl, CLI(operserv), "Base de datos restaurada con éxito.");
-	return 0;
-}
-*/
 BOTFUNC(OSGline)
 {
 	char *user, *host;
@@ -1059,7 +1055,7 @@ BOTFUNC(OSCache)
 	EOI(operserv, 15);
 	return 0;
 }
-BOTFUNC(OSBackup)
+BOTFUNC(OSExportar)
 {
 	if (SQLDump(param[1]))
 	{
@@ -1067,6 +1063,36 @@ BOTFUNC(OSBackup)
 		return 1;
 	}
 	Responde(cl, CLI(operserv), "Copia realizada con éxito.");
+	return 0;
+}
+BOTFUNC(OSImportar)
+{
+	if (params < 2)
+	{
+		Directorio dir;
+		if ((dir = AbreDirectorio(SQL_BCK_DIR)))
+		{
+			char *f, *c;
+			while ((f = LeeDirectorio(dir)))
+			{
+				if ((c = strrchr(f, '.')) && !strcmp(c, ".sql"))
+				{
+					*c = 0;
+					if ((c = strchr(f, '-')))
+						Responde(cl, CLI(operserv), c+1);
+				}
+			}
+		}
+		else
+			Responde(cl, CLI(operserv), "No existen copias de seguridad.");
+	}
+	else if (params == 2)
+	{
+		if (SQLImportar(param[1]) == 1)
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Esta etiqueta no existe.");
+		else
+			Responde(cl, CLI(operserv), "Copia restaurada con éxito. Se recomienda que realice un restart de Colossus.");
+	}
 	return 0;
 }
 int OSCmdNick(Cliente *cl, int nuevo)

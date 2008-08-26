@@ -131,6 +131,7 @@ EXPORTS
 	SQLEscapa
 	SQLFetchRow
 	SQLFreeRes
+	SQLImportar
 	SQLInserta
 	SQLNuevaTabla
 	SQLNumRows

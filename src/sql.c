@@ -588,7 +588,7 @@ void SQLRefrescaTabla(char *tabla)
 /*!
  * @desc: Crea una copia de seguridad de toda la base de datos. Sólo se hará la copia de las tablas creadas a partir de SQLNuevaTabla.
  * @params: $tag [in] Tag o etiqueta con el que se nombrará el archivo al que se volcarán los datos. Si existe, se eliminará. Si es NULL, se usará la fecha actual.
- * @ver: SQLNuevaTabla
+ * @ver: SQLNuevaTabla SQLImportar
  * @cat: SQL
  * @ret: Devuelve 0 si todo ha ido bien; distinto de 0 si ha ocurrido un error.
  !*/
@@ -598,16 +598,16 @@ int SQLDump(char *tag)
 	int i, j;
 	SQLRes res;
 	SQLRow row;
-	mkdir("database/mysql/backup", 660);
+	mkdir(SQL_BCK_DIR, 660);
 	if (!tag)
 	{
 		struct tm *tt;
 		time_t t = time(0);
 		tt = localtime(&t);
-		sprintf(buf, "database/mysql/backup/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", tt->tm_year+1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+		sprintf(buf, SQL_BCK_DIR "/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", tt->tm_year+1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
 	}
 	else
-		sprintf(buf, "database/mysql/backup/backup-%s.sql", tag);
+		sprintf(buf, SQL_BCK_DIR "/backup-%s.sql", tag);
 	if (!(fp = fopen(buf, "w")))
 		return 1;
 	for (i = 0; i < sql->tablas; i++)
@@ -645,6 +645,27 @@ int SQLDump(char *tag)
 			SQLFreeRes(res);
 		}
 	}
+	fclose(fp);
+	return 0;
+}
+/*!
+ * @desc: Restaura una copia de seguridad a partir de una etiqueta.
+ * @params: $tag [in] Tag o etiqueta del archivo a importar.
+ * @ver: SQLNuevaTabla SQLDump
+ * @cat: SQL
+ * @ret: Devuelve 0 si todo ha ido bien; 1 si no puede abrir el archivo.
+ !*/
+int SQLImportar(char *tag)
+{
+	FILE *fp;
+	int i;
+	sprintf(buf, SQL_BCK_DIR "/backup-%s.sql", tag);
+	if (!(fp = fopen(buf, "r")))
+		return 1;
+	for (i = 0; i < sql->tablas; i++)
+		SQLQuery("DROP TABLE %s", sql->tabla[i].tabla);
+	while (fgets(buf, sizeof(buf), fp))
+		SQLQuery(buf);
 	fclose(fp);
 	return 0;
 }

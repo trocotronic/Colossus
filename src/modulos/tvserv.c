@@ -1021,7 +1021,7 @@ SOCKFUNC(TSLeeTiempo)
 	{
 		int regs;
 		TSQuitaTags(data, tmp);
-		sscanf(tmp, "Número de resultados encontrados: %i", &regs);
+		sscanf(tmp, "N&uacute;mero de resultados encontrados: %i", &regs);
 		c = strstr(data, "jo'>");
 		c += 5;
 		if (regs == 1)
