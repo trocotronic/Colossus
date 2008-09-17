@@ -563,3 +563,7 @@
 260808619 - Se crea un import de copias.
 260808620 - Se crea la función IMPORTAR de OperServ.
 170908621 - Se crea una API de localizador de IPs.
+170908622 - Se incluye un campo de localización en los nicks.
+170908623 - Se añade la opción HIDE LOC para ocultar la localización en el info de nicks de NickServ.
+170908624 - Se añade el campo para visualizar desde dónde conecta cada nick al hacerle un INFO de NickServ.
+170908625 - Se arregla un cuelgue con la librería de MySQL.

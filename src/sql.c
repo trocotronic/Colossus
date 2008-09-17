@@ -17,11 +17,11 @@ SQL sql = NULL;
 MYSQL *mysql = NULL;
 void SetSQLErrno();
 SQLRes MySQLQuery(const char *);
-static char *server_args[] = {
+char *server_args[] = {
 	"colossus",       /* this string is not used */
 	"--defaults-file=./database/mysql/my.ini"
 };
-static char *server_groups[] = {
+char *server_groups[] = {
 	"embedded",
 	"server",
 	"colossus",
@@ -41,9 +41,8 @@ void LiberaSQL()
 	}
 	if (conf_db)
 		mysql_close(mysql);
-	mysql_library_end();
+	//mysql_library_end(); //si lo descomento, casca al refrescar (wtf?)
 	ircfree(sql);
-	sql = NULL;
 }
 int CargaSQL()
 {

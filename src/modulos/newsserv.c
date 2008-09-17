@@ -792,9 +792,9 @@ BOTFUNC(Prueba)
 		rs->fp = -1;
 		rs->sck = NULL;
 		rs->pxml = NULL;
-		}
-		if (noticias)
-			IniciaProceso(WSEmiteRSS);
+	}
+	if (noticias)
+		IniciaProceso(WSEmiteRSS);
 	return 0;
 }
 int WSSigDrop(char *dropado)
