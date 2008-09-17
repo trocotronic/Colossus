@@ -44,6 +44,7 @@ extern NickServ *nickserv;
 #define NS_OPT_LIST 0x20
 #define NS_OPT_NODROP 0x40
 /* ATENCION: NS_OPT_UDB 0x80 */
+#define NS_OPT_LOC 0x100
 
 #define NS_SQL "nicks"
 #define NS_FORBIDS "nforbids"

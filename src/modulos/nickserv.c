@@ -418,6 +418,7 @@ BOTFUNCHELP(NSHSet)
 		Responde(cl, CLI(nickserv), "\00312TIME\003 Muestra la última hora que fuiste visto en la red.");
 		Responde(cl, CLI(nickserv), "\00312QUIT\003 Muestra tu último quit.");
 		Responde(cl, CLI(nickserv), "\00312LIST\003 Se te mostrará cuando alguien haga un LIST.");
+		Responde(cl, CLI(nickserv), "\00312LOC\003 Muestra la posición geográfica desde dónde estás conectado");
 		Responde(cl, CLI(nickserv), " ");
 		Responde(cl, CLI(nickserv), "Sintaxis: \00312SET HIDE opcion on|off");
 	}
@@ -775,7 +776,11 @@ BOTFUNC(NSInfo)
 	{
 		Cliente *al;
 		if ((al = BuscaCliente(param[1])) && IsId(al))
+		{
 			Responde(cl, CLI(nickserv), "Este usuario está conectado. Utiliza /WHOIS %s para más información.", param[1]);
+			if (al->loc && (!(opts & NS_OPT_LOC) || (!comp && IsId(cl)) || IsOper(cl)))
+				Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
+		}
 		else
 		{
 			reg = (time_t)atol(row[6]);
@@ -1391,6 +1396,13 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 				opts |= NS_OPT_LIST;
 			else
 				opts &= ~NS_OPT_LIST;
+		}
+		else if (!strcasecmp(param[2], "LOC"))
+		{
+			if (!strcasecmp(param[3], "ON"))
+				opts |= NS_OPT_LOC;
+			else
+				opts &= ~NS_OPT_LOC;
 		}
 		else
 		{
