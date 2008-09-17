@@ -353,6 +353,7 @@ int main(int argc, char *argv[])
 	}
 	*/
 	//IniciaXML();
+	IniciaIPLoc();
 #ifdef _WIN32
 	cmdLine = GetCommandLine();
 #else

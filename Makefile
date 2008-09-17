@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-#NOCORE=1
+NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -42,6 +42,8 @@ ICONV_LIB="C:\dev\libiconv\lib"
 MYSQL_INC="C:\dev\mysql-5.1.24-rc-win32\include"
 MYSQL_LIB="C:\dev\mysql-5.1.24-rc-win32\Embedded\DLL\release"
 ###### FIN MYSQL ######
+
+EXPAT_LIB="C:\dev\expat\lib\Release_static" libexpatMD.lib
 
 !IFDEF DEBUG
 DBGCFLAG=/MD /Zi /W1
@@ -83,13 +85,13 @@ INC_FILES = /I ./INCLUDE $(ZLIB_INC) $(OPENSSL_INC) /I $(PTHREAD_INC)
 CFLAGS=/J /D _WIN32 /D _CRT_NONSTDC_NO_DEPRECATE /D _CRT_SECURE_NO_DEPRECATE /D _USE_32BIT_TIME_T /nologo
 EXECFLAGS=$(DBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c
 LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
-	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib dbghelp.lib \
+	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) /LIBPATH:$(EXPAT_LIB) pthreadVC2.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib \
 	/LIBPATH:$(ICONV_LIB) iconv.lib /LIBPATH:$(MYSQL_LIB) libmysqld.lib \
 	/NODEFAULTLIB:libcmt
-EXP_OBJ_FILES=SRC/CORE.OBJ SRC/CRIPTO.OBJ SRC/EVENTOS.OBJ SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IRCD.OBJ SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ \
-	SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/MSN.OBJ SRC/PARSECONF.OBJ SRC/PROTOCOLOS.OBJ \
-	SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/VERSION.OBJ $(ZLIBOBJ) $(SSLOBJ)
+EXP_OBJ_FILES=SRC/CORE.OBJ SRC/CRIPTO.OBJ SRC/EVENTOS.OBJ SRC/GUI.OBJ SRC/HASH.OBJ SRC/HTTPD.OBJ SRC/IPLOC.OBJ SRC/IRCD.OBJ \
+	SRC/IRCSPRINTF.OBJ SRC/MAIN.OBJ SRC/MATCH.OBJ SRC/MD5.OBJ SRC/MISC.OBJ SRC/MODULOS.OBJ SRC/MSN.OBJ SRC/PARSECONF.OBJ \
+	SRC/PROTOCOLOS.OBJ SRC/SMTP.OBJ SRC/SOCKS.OBJ SRC/SOCKSINT.OBJ SRC/SOPORTE.OBJ SRC/SQL.OBJ SRC/VERSION.OBJ $(ZLIBOBJ) $(SSLOBJ)
 MOD_DLL=SRC/MODULOS/CHANSERV.DLL SRC/MODULOS/NICKSERV.DLL SRC/MODULOS/MEMOSERV.DLL \
 	SRC/MODULOS/OPERSERV.DLL SRC/MODULOS/IPSERV.DLL SRC/MODULOS/PROXYSERV.DLL SRC/MODULOS/SMSSERV.DLL SRC/MODULOS/TVSERV.DLL \
 	SRC/MODULOS/NEWSSERV.DLL SRC/MODULOS/HELPSERV.DLL SRC/MODULOS/LOGSERV.DLL SRC/MODULOS/NOTESERV.DLL SRC/MODULOS/GAMESERV.DLL \
@@ -185,7 +187,10 @@ src/hash.obj: src/hash.c ./include/struct.h ./include/ircd.h
 src/httpd.obj: src/httpd.c ./include/struct.h ./include/httpd.h
         $(CC) $(EXECFLAGS) src/httpd.c
 
-src/ircd.obj: src/ircd.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h
+src/iploc.obj: src/ircd.c ./include/struct.h ./include/iploc.h
+        $(CC) /I "C:\dev\expat\lib" $(EXECFLAGS) src/iploc.c
+
+src/ircd.obj: src/ircd.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/iploc.h
         $(CC) $(EXECFLAGS) src/ircd.c
 
 src/main.obj: src/main.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/socksint.h $(ZIP_HEAD)
@@ -315,8 +320,8 @@ src/modulos/smsserv.dll: src/modulos/smsserv.c ./include/struct.h ./include/ircd
 
 src/modulos/newsserv.dll: src/modulos/newsserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/modulos/chanserv.h ./include/modulos/nickserv.h ./include/modulos/newsserv.h
 	$(CC) /I "C:\dev\expat\lib" $(MODCFLAGS) src/modulos/newsserv.c \
-	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:"C:\dev\expat\lib\Release_static" \
-	libexpatMD.lib /NODEFAULTLIB:libcmt
+	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:$(EXPAT_LIB) \
+	/NODEFAULTLIB:libcmt
 	-@copy src\modulos\newsserv.dll modulos\newsserv.dll >NUL
 	-@copy src\modulos\newsserv.pdb modulos\newsserv.pdb >NUL
 

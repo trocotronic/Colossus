@@ -1,6 +1,6 @@
 ## $Id: Makefile,v 1.41 2008/06/01 11:44:46 Trocotronic Exp $
 
-OBJS=core.o cripto.o eventos.o hash.o httpd.o ircd.o ircsprintf.o main.o match.o md5.o \
+OBJS=core.o cripto.o eventos.o hash.o httpd.o iploc.o ircd.o ircsprintf.o main.o match.o md5.o \
 	misc.o modulos.o msn.o parseconf.o protocolos.o smtp.o socks.o socksint.o \
 	soporte.o sql.o ssl.o version.o zlib.o
 SRC=$(OBJS:%.o=%.c)
@@ -9,7 +9,7 @@ MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
 		'INCLUDEDIR=${INCLUDEDIR}' 'CRYPTOLIB=${CRYPTOLIB}' \
 		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}' 'SHELL=${SHELL}'
 MAKE = make $(MAKEARGS)
-INCLUDES = ../include/ircd.h ../include/md5.h \
+INCLUDES = ../include/ircd.h ../include/md5.h ../include/iploc.h \
 	../include/modulos.h ../include/protocolos.h ../include/parseconf.h \
 	../include/ircsprintf.h ../include/struct.h ../include/socksint.h ../include/version.h
 all: build
@@ -49,6 +49,8 @@ hash.o: hash.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c hash.c
 httpd.o: httpd.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c httpd.c
+iploc.o: iploc.c $(INCLUDES)
+	$(CC) $(CFLAGS) -c iploc.c
 ircd.o: ircd.c $(INCLUDES)
 	$(CC) $(CFLAGS) -c ircd.c
 ircsprintf.o: ircsprintf.c $(INCLUDES)

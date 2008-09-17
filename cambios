@@ -562,3 +562,4 @@
 190808618 - Se crea la función EXPORTAR de OperServ.
 260808619 - Se crea un import de copias.
 260808620 - Se crea la función IMPORTAR de OperServ.
+170908621 - Se crea una API de localizador de IPs.

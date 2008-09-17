@@ -3,6 +3,7 @@
  */
 
 #include "hash.h"
+#include "iploc.h"
 
 extern SOCKFUNC(IniciaIrcd);
 extern SOCKFUNC(ProcesaIrcd);
@@ -46,6 +47,7 @@ typedef struct _mallaparam MallaParam;
  	    $info Realname.
  	    $away Si está away, apunta al motivo away. Si no, a NULL.
  	    $datos Para guardar todo tipo de datos.
+ 	    $loc Estructura de tipo IPLoc que contiene la localización geográfica del usuario.
  * @cat: IRCd
  * @ver: EsCliente EsServidor EsBot TipoMascara MascaraIrcd
  !*/
@@ -72,6 +74,7 @@ struct _cliente
 	char *away;
 	u_int nivel;
 	char *datos;
+	IPLoc *loc;
 };
 /*!
  * @desc: Malla de clientes para canales.
