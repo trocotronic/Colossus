@@ -567,3 +567,4 @@
 170908623 - Se añade la opción HIDE LOC para ocultar la localización en el info de nicks de NickServ.
 170908624 - Se añade el campo para visualizar desde dónde conecta cada nick al hacerle un INFO de NickServ.
 170908625 - Se arregla un cuelgue con la librería de MySQL.
+170908626 - Actualizada la documentación.
