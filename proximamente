@@ -70,3 +70,9 @@ Pendiente:
 [ ] Soporte varios idiomas
 
 [ ] Administración y configuración por web
+
+[ ] BotServ como alias de ChanServ
+
+[ ] Ajoin, noexpire, regcode, en NickServ
+
+[ ] Power, clearaccess by time, en ChanServ

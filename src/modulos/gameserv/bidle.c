@@ -70,6 +70,7 @@ int BidleEncuentraItem(SQLRow);
 int BidleReta(SQLRow, SQLRow, int);
 int BidleQuest();
 int BidleHaceQuest(char *);
+int BAlea(u_int);
 HDIRFUNC(BidleLeeHDir);
 
 Opts pens[] = {
@@ -923,15 +924,14 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 			}
 			else if (!strcasecmp(com, "COMBATE"))
 			{
-				int sig;
-				u_long fecha;
+				time_t fecha;
 				char *opt = strtok(NULL, " ");
 				if (BDato(cl->nombre, "online") != 1)
 				{
 					Responde(cl, bl, GS_ERR_EMPT, "No estás logueado.");
 					return 1;
 				}
-				if ((fecha = BDato(cl->nombre, "sig_combate")) > time(0))
+				if ((fecha = (time_t)BDato(cl->nombre, "sig_combate")) > time(0))
 				{
 					ircsprintf(buf, "No puedes combatir hasta el %s", Fecha(&fecha));
 					Responde(cl, bl, GS_ERR_EMPT, buf);
@@ -1228,14 +1228,14 @@ int BidleDrop(char *nick)
 }
 int BPen(Cliente *cl, Penas pena, char *msg)
 {
-	int nivel, pen;
-	char *motivo;
+	int nivel;
+	char *motivo = NULL;
 	long inc;
 	if (BDato(cl->nombre, "online") == 1 && (nivel = BDato(cl->nombre, "nivel")) > 0)
 	{
 		if (BidleHaceQuest(cl->nombre))
 		{
-			int i, rows;
+			int i;
 			inc = (long)(pens[PEN_QUEST].opt * pow(bidle->paso_pen, nivel));
 			if (bidle->limit_pen)
 				inc = MIN(bidle->limit_pen, inc);
@@ -1558,7 +1558,7 @@ int BidleLuz()
 {
 	SQLRes res;
 	SQLRow row[2];
-	int i, rows, inc;
+	int rows, inc;
 	if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND lado='Luz' ORDER BY RAND() LIMIT 2", PREFIJO, GS_BIDLE)))
 	{
 		if ((rows = SQLNumRows(res)) == 2)

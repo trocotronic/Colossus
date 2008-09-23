@@ -568,3 +568,4 @@
 170908624 - Se añade el campo para visualizar desde dónde conecta cada nick al hacerle un INFO de NickServ.
 170908625 - Se arregla un cuelgue con la librería de MySQL.
 170908626 - Actualizada la documentación.
+210908627 - Optimizado el proceso de envío de emails.

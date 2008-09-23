@@ -402,7 +402,7 @@ void PSEscanea(char *host)
 				if (res & 0x20)
 					strlcat(tmp, ",GET", sizeof(tmp));
 			}
-			ircsprintf(motivo, "Posible PROXY %s ilegal", !BadPtr(tmp) ? &tmp[1] : "");
+			ircsprintf(motivo, "Posible PROXY %s ilegal", tmp[0] != 0 ? &tmp[1] : "");
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
 			return;
 		}
@@ -537,7 +537,7 @@ void CompruebaProxy(Proxy *px, int forzar)
 		{
 			char motivo[BUFSIZE];
 			if (proxyserv->detalles)
-				ircsprintf(motivo, "Posible PROXY %s ilegal (%s)", !BadPtr(psbuf) ? &psbuf[1]: "", &ptbuf[1]);
+				ircsprintf(motivo, "Posible PROXY %s ilegal (%s)", psbuf[0] != 0 ? &psbuf[1]: "", &ptbuf[1]);
 			else
 				strlcpy(motivo, "Posible PROXY ilegal", sizeof(motivo));
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);

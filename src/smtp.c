@@ -335,6 +335,8 @@ char *Mx(char *dominio)
 	char *host = NULL;
 	if (!dominio)
 		return NULL;
+	if (conf_smtp)
+		return conf_smtp->host;
 	if ((host = CogeCache(CACHE_MX, dominio, 0)))
 		return host;
 #ifdef _WIN32
@@ -365,7 +367,7 @@ char *Mx(char *dominio)
 		InsertaCache(CACHE_MX, dominio, 86400, 0, host);
 	return host;
 #endif
-	return (conf_smtp ? conf_smtp->host : NULL);
+	return NULL;
 }
 SmtpData *EncolaSmtp(char *para, char *de, char *tema, char *cuerpo, Opts *fps, int (*closefunc)(SmtpData *))
 {
