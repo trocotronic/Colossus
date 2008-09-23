@@ -874,7 +874,7 @@ BOTFUNC(CSInfo)
 	SQLRow row;
 	time_t reg;
 	int opts;
-	char *forb, *susp, *modos;
+	char *forb, *susp, *modos, *cc;
 	if (params < 2)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
@@ -890,7 +890,9 @@ BOTFUNC(CSInfo)
 		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
-	res = SQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(param[1]));
+	cc = SQLEscapa(param[1]);
+	res = SQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(cc));
+	Free(cc);
 	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
 	Responde(cl, CLI(chanserv), "*** Información del canal \00312%s\003 ***", param[1]);
@@ -1526,13 +1528,17 @@ BOTFUNC(CSAkick)
 	else if (params > 3)
 	{
 		Cliente *al;
-		char *motivo = Unifica(param, params, 3, -1), *m_c;
+		char *motivo = Unifica(param, params, 3, -1), *m_c, *cc, *ll, *mm;
 		m_c = SQLEscapa(motivo);
+		cc = SQLEscapa(param[1]);
+		ll = SQLEscapa(cl->nombre);
+		mm = SQLEscapa(param[2]);
 		SQLQuery("INSERT INTO %s%s (canal,mascara,motivo,autor) values ('%s','%s','%s','%s')",
-			PREFIJO, CS_AKICKS,
-			param[1], param[2],
-			m_c, cl->nombre);
+			PREFIJO, CS_AKICKS, cc, mm, m_c, ll);
 		Free(m_c);
+		Free(mm);
+		Free(cc);
+		Free(ll);
 		if ((al = BuscaCliente(param[2])))
 			ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
 		Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2]);
@@ -1705,8 +1711,9 @@ BOTFUNC(CSList)
 			switch(*(param[1] + 1))
 			{
 				case 'r':
-					rep = str_replace(param[2], '*', '%');
+					rep = SQLEscapa(str_replace(param[2], '*', '%'));
 					res = SQLQuery("SELECT item,descripcion from %s%s where LOWER(item) LIKE '%s' AND registro='0'", PREFIJO, CS_SQL, strtolower(rep));
+					Free(rep);
 					if (!res)
 					{
 						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
@@ -1731,8 +1738,9 @@ BOTFUNC(CSList)
 			Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-r] patrón");
 			return 1;
 		}
-		rep = str_replace(param[1], '*', '%');
+		rep = SQLEscapa(str_replace(param[1], '*', '%'));
 		res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s' AND registro!='0'", PREFIJO, CS_SQL, strtolower(rep));
+		Free(rep);
 		if (!res)
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
@@ -2262,7 +2270,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	SQLRes res;
 	SQLRow row;
 	int opts, i, max;
-	char *entry, *modos, *topic, *susp, *forb;
+	char *entry, *modos, *topic, *susp, *forb, *cc;
 	if (!cl || !cn)
 		return 1;
 	if (!IsOper(cl) && (forb = IsChanForbid(cn->nombre)))
@@ -2274,10 +2282,16 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		}
 		return 0;
 	}
-	if (IsChanReg(cn->nombre))
+	cc = SQLEscapa(cn->nombre);
+	if ((res = SQLQuery("SELECT opts,entry,modos,topic,registro from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(cc))))
 	{
-		res = SQLQuery("SELECT opts,entry,modos,topic from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(cn->nombre));
 		row = SQLFetchRow(res);
+		Free(cc);
+		if (!strcmp(row[4], "0")) /* está preg */
+		{
+			SQLFreeRes(res);
+			return 0;
+		}
 		opts = atoi(row[0]);
 		entry = strdup(row[1]);
 		modos = strdup(row[2]);
@@ -2353,6 +2367,8 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		Free(modos);
 		Free(topic);
 	}
+	else
+		Free(cc);
 	return 0;
 }
 int CSSigSQL()
@@ -2659,8 +2675,7 @@ int ChanReg(char *canal)
 	char *res;
 	if (!canal)
 		return 0;
-	res = SQLCogeRegistro(CS_SQL, canal, "registro");
-	if (res)
+	if ((res = SQLCogeRegistro(CS_SQL, canal, "registro")))
 	{
 		if (strcmp(res, "0"))
 			return 1; /* registrado */

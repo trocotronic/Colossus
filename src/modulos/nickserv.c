@@ -536,7 +536,7 @@ BOTFUNC(NSHelp)
 BOTFUNC(NSRegister)
 {
 	u_int i, opts;
-	char *dominio, *mail, *pass, *usermask, *m_c;
+	char *dominio, *mail, *pass, *usermask, *m_c, *ll, *hh;
 	SQLRes res = NULL;
 	usermask = strchr(cl->mask, '!') + 1;
 	if (strlen(cl->nombre) > (u_int)(protocolo->nicklen - 7)) /* 6 minimo de contraseña +1 de los ':' */
@@ -600,11 +600,13 @@ BOTFUNC(NSRegister)
 	SQLFreeRes(res);
 	opts = NS_OPT_MASK;
 	m_c = SQLEscapa(cl->info);
+	ll = SQLEscapa(cl->nombre);
+	hh = SQLEscapa(cl->ident);
 	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)",
 			PREFIJO, NS_SQL,
-			cl->nombre, pass ? MDString(pass, 0) : "null",
+			ll, pass ? MDString(pass, 0) : "null",
 			mail, m_c,
-			cl->ident, cl->host,
+			hh, cl->host,
 			opts, nickserv->opts & NS_SMAIL ? 0 : time(0),
 			time(0), time(0));
 	Free(m_c);
@@ -750,6 +752,7 @@ BOTFUNC(NSInfo)
 	SQLRow row;
 	time_t reg;
 	int opts;
+	char *ll;
 	if (params < 2)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
@@ -761,7 +764,9 @@ BOTFUNC(NSInfo)
 		return 1;
 	}
 	comp = strcasecmp(param[1], cl->nombre);
-	res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, strtolower(param[1]));
+	ll = SQLEscapa(strtolower(param[1]));
+	res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, ll);
+	Free(ll);
 	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
 	Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
@@ -801,10 +806,8 @@ BOTFUNC(NSInfo)
 	SQLFreeRes(res);
 	if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
 	{
-		char *n_c;
-		n_c = SQLEscapa(strtolower(param[1]));
 		Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
-		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, n_c)))
+		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, ll)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
@@ -817,7 +820,7 @@ BOTFUNC(NSInfo)
 			}
 			SQLFreeRes(res);
 		}
-		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, n_c)))
+		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, ll)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
@@ -827,8 +830,8 @@ BOTFUNC(NSInfo)
 			}
 			SQLFreeRes(res);
 		}
-		Free(n_c);
 	}
+	Free(ll);
 	return 0;
 }
 BOTFUNC(NSList)
@@ -842,12 +845,14 @@ BOTFUNC(NSList)
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "patrón");
 		return 1;
 	}
-	rep = str_replace(param[1], '*', '%');
+	rep = SQLEscapa(str_replace(param[1], '*', '%'));
 	if (!(res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s'", PREFIJO, NS_SQL, strtolower(rep))))
 	{
+		Free(rep);
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
 		return 1;
 	}
+	Free(rep);
 	Responde(cl, CLI(nickserv), "*** Nicks que coinciden con el patrón \00312%s\003 ***", param[1]);
 	for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 	{
