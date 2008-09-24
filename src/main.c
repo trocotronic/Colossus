@@ -254,25 +254,29 @@ int main(int argc, char *argv[])
 		switch (flag)
 		{
 #ifndef _WIN32
-		  case 'F':
-			  nofork = 1;
-			  break;
-		  case 's':
-			  (void)printf("sizeof(Cliente) == %li\n", (long)sizeof(Cliente));
-			  (void)printf("sizeof(Canal) == %li\n", (long)sizeof(Cliente));
-			  (void)printf("sizeof(Sock) == %li\n", (long)sizeof(Sock));
-			  (void)printf("sizeof(Modulo) == %li\n", (long)sizeof(Modulo));
-			  (void)printf("sizeof(SQL) == %li\n", (long)sizeof(SQL));
-			  (void)printf("sizeof(Protocolo) == %li\n", (long)sizeof(Protocolo));
-			  exit(0);
-			  break;
-		  case 'v':
-			  (void)printf("%s\n", COLOSSUS_VERNUM);
+			case 'F':
+				nofork = 1;
+				break;
+			case 's':
+				(void)printf("sizeof(Cliente) == %li\n", (long)sizeof(Cliente));
+				(void)printf("sizeof(Canal) == %li\n", (long)sizeof(Cliente));
+				(void)printf("sizeof(Sock) == %li\n", (long)sizeof(Sock));
+				(void)printf("sizeof(Modulo) == %li\n", (long)sizeof(Modulo));
+				(void)printf("sizeof(SQL) == %li\n", (long)sizeof(SQL));
+				(void)printf("sizeof(Protocolo) == %li\n", (long)sizeof(Protocolo));
+				exit(0);
+				break;
+			case 'c':
+				(void)printf("cpuid %s\n", sgn.cpuid);
+				(void)printf("sgn %s\n", sgn.sgn);
+				exit(0);
+			case 'v':
+				(void)printf("%s (rv%i)\n", COLOSSUS_VERNUM, rev);
 #else
-		  case 'v':
-			  MessageBox(NULL, COLOSSUS_VERSION, "Versión Colossus/Win32", MB_OK);
+			case 'v':
+				MessageBox(NULL, COLOSSUS_VERSION, "Versión Colossus/Win32", MB_OK);
 #endif
-			  exit(0);
+				exit(0);
 		}
 	}
 #if !defined(_WIN32) && defined(DEFAULT_PERMISSIONS)
