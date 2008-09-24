@@ -831,7 +831,6 @@ BOTFUNC(NSInfo)
 			SQLFreeRes(res);
 		}
 	}
-	Free(ll);
 	return 0;
 }
 BOTFUNC(NSList)
