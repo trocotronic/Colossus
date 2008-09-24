@@ -1,0 +1,1087 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Colossus</title>
+<style type="text/css">
+pre { font: "times new roman"; font-style: normal; background-color: #eeeeee;}
+</style>
+</head>
+
+<!-- $Id: colossusdoc.html,v 1.42 2008/05/31 12:47:02 Trocotronic Exp $ -->
+
+<body>
+
+<div align="center"><b><font size="+7">Colossus</font></b><br>
+  <a href="http://www.redyc.com" target="_blank"><font size="3">http://www.redyc.com/</font></a><font size="3"><br>
+    <b>Versi&oacute;n actual:</b> 1.12<br>
+  <b>&Uacute;ltima modificaci&oacute;n:</b> 17/09/2008</font><br>
+</div>
+  <p><b><font size="3">Desarrollador:</font></b><font size="3"> Trocotronic<br>
+  Tiene una recopilación de las cuestiones más preguntadas en <a href="#faq">FAQ</a>.<br>
+  <br>
+  <b><font size="6">&Iacute;NDICE</font></b><br>
+  <font size="+1">1. <a href="#intro">Introducci&oacute;n</a></font><br>
+  <font size="+1">2. <a href="#instalacion">Instalaci&oacute;n</a></font><br>
+  <font size="+1">3. <a href="#caracteristicas">Caracter&iacute;sticas</a></font><br>
+  <font size="+1">4. <a href="#ext">Extensiones</a></font><br>
+  <font size="+1">5. <a href="#sql">SQL y bases de datos</a></font><br>
+  <font size="+1">6. <a href="#remoto">Conexi&oacute;n remota</a> </font><br>
+  <font size="+1">7. <a href="#zlib">SSL y ZLib</a></font><br>
+  <font size="+1">8. <a href="#httpd">Servidor HTTPD</a></font><br>
+  <font size="+1">9. <a href="#msn">MSN Messenger</a></font><br>
+  <font size="+1">10. <a href="#iploc">IP Locator</a></font><br>
+  <font size="+1">11. <a href="#configuracion">Configuraci&oacute;n</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.1 <a href="#server">Bloque server { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.2 <a href="#smtp">Bloque smtp { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.3 <a href="#db">Bloque db { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.4 <a href="#set">Bloque set { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.5 <a href="#modulos">Bloque modulo { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.6 <a href="#log">Bloque log { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.7 <a href="#ssl">Bloque ssl { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.8 <a href="#protocolo">Bloque protocolo { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.9 <a href="#bloque_httpd">Bloque httpd { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 11.10 <a href="#bloque_msn">Bloque msn { }</a></font><br>
+  <font size="+1">12. <a href="#bots">Configuraci&oacute;n de m&oacute;dulos</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.0.1 <a href="#funciones">Bloque funciones { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.0.2 <a href="#funcion">Bloque funcion { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.0.3 <a href="#alias">Bloque alias { }</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.1 <a href="#nickserv">NickServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.2 <a href="#chanserv">ChanServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.3 <a href="#operserv">OperServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 12.4 <a href="#memoserv">MemoServ</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;  12.5 <a href="#ipserv">IpServ</a></font><br>
+  <font size="+1">13. <a href="#protos">Configuraci&oacute;n de protocolos</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 13.1 <a href="#unreal">UnrealIRCD</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 13.2 <a href="#p10">P10</a></font><br>
+  <font size="+1">14. <a href="#exts">Configuraci&oacute;n de extensiones</a></font><br>
+  <font size="+1"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 14.1 <a href="#udb">UDB</a></font><br>
+  <font size="+1">15. <a href="#faq">FAQ (Cuestiones Más Preguntadas)</a></font><br>
+  <font size="+1">16. <a href="#patrones">Par&aacute;metros de patr&oacute;n</a></font></p>
+  <p><br>
+    <b><font size="6"><a name="intro"></a>1. Introducci&oacute;n </font></b><br>
+    Colossus es una aplicaci&oacute;n que permite gestionar y controlar infrastructuras de comunidades IRC.<br>
+    Este documento puede imprimirse tantas veces como se desee pero su distribuci&oacute;n est&aacute; vinculada &uacute;nica y
+    exclusivamente a Colossus, debiendo adjuntar el programa con el mismo.</p>
+<p>    <b>Lea detenidamente</b> este archivo para configurar y comprender el uso de este programa. Est&aacute; unido a muchas
+caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
+<p>&nbsp;</p>
+  <p><b><font size="6"><a name="instalacion"></a>2. Instalaci&oacute;n</font></b></p>
+<p>Sistemas operativos soportados:</p>
+  <ul>
+  <li><b>Versiones *NIX:</b>
+  <ul>
+  <li>Linux (2.2.*, 2.4.*, 2.6.*)
+  <li>FreeBSD (4.*, 5.*)
+  <li>Solaris (9, 10)
+  </ul>
+  <li><b>Versiones Windows:</b>
+  <ul>
+  <li>Windows 2000 (Pro, Server, Advanced Server)
+  <li>Windows XP (Home, Pro)
+  <li>Windows 2003
+  </ul></ul><br>
+    Para instalar el programa s&oacute;lo tiene que descomprimir el archivo .zip a una carpeta, preferiblemente ~/Colossus en *nix,
+    o C:\Colossus si usa Windows.
+    <p>Una vez descomprimido, crea el archivo colossus.conf y config&uacute;relo a sus necesidades.</p>
+    <p>&nbsp;</p>
+  <p><b><font size="6"><a name="caracteristicas"></a>3. Caracter&iacute;sticas</font></b></p>
+  <p>Estos servicios para IRC est&aacute;n programados en C. </p>
+  <p>Se compone de un n&uacute;cleo o kernel que lo integran la gesti&oacute;n de conexiones o sockets, la de procesos o se&ntilde;ales, la de eventos o signals,
+  la de retardos o timers, la de paginaci&oacute;n o cache y la de gesti&oacute;n de m&oacute;dulos o DLL's/SO's. Junto al n&uacute;cleo se une la base
+  para la gesti&oacute;n de IRC que contiene varias macros que permiten modularizar los comandos y los robots de gesti&oacute;n de funciones.
+  A su vez, estos robots poseen varias herramientas que optimizan su uso para que sean independientes entre s&iacute; y que puedan comunicarse mediante eventos.
+  La administraci&oacute;n de la base de datos global funciona bajo MySQL y permite la memoria de registros de forma permanente. </p>
+  <p>Tiene un simulador de servidor SMTP que permite enviar emails sin la necesidad de un servidor intermediario que requiera configuraci&oacute;n o registro.
+  Adem&aacute;s, si un email no llega a enviarse se pone en la cola para volverlo a intentar hasta un m&aacute;ximo de tres veces. </p>
+  <p>Las caracter&iacute;sticas culminan con los robots que son los m&oacute;dulos visibles ante los usuarios que conforman la red. Los m&oacute;dulos son archivos .dll,
+  en Windows, o archivos .so, en plataformas *nix (Linux, Unix, FreeBSD, etc.). Cada uno tiene una funci&oacute;n concreta y determinada dentro de la red y ofrece varios
+  servicios que permiten agilizar, a&ntilde;adir o incluso potenciar comandos (del propio IRCd o inexistentes). Estos robots son:</p>
+  <ul>
+    <li><b>NickServ:</b> gestiona los nicks y todo lo referente a ellos.</li>
+    <li><b>ChanServ:</b> administra los canales y todo lo que les englobe.  </li>
+    <li><b>OperServ:</b> exclusivo para operadores de red.</li>
+    <li><b>MemoServ:</b> servicio de mensajer&iacute;a entre usuarios.   </li>
+    <li><b>IpServ: </b>servicio de ips virtuales.  </li>
+  </ul>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="ext"></a>4. Extensiones</font></b></p>
+  <p>A partir de la versión 1.3, se crea un sistema de extensiones para protocolos. Estas extensiones permiten modificar el protocolo actual. Por ejemplo, para añadir nuevos modos de canal o añadir algún comando adicional.</p>
+  <p>Así pues, hay protocolos estándar (UnrealIRCd o P10) y otras variantes (como UDB o Irc-Hispano), que se basan en protocolos más robustos.</p>
+  <p>Además, no sólo modifican el protocolo sino que complementan las funciones de los servicios cargados.<br />
+  Por ejemplo, es posible añadir comandos para gestionar tablas a través de algún servicio.</p>
+  <p>Estas extensiones se cargan a través del bloque <i>extension{ }</i> dentro del bloque <i>protocolo { }</i>. <br />
+  Actualmente se soportan las siguientes extensiones:<br />
+  <ul><li><b>udb.dll</b>: extensión que contiene todo lo necesario para usar el protocolo UDB con todas sus prestaciones.<br />
+  Añade varios comandos a ChanServ, OperServ, IpServ y NickServ. También modifica algunas funciones de estos servicios ya existentes.<br /></li>
+  </ul></p>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="sql"></a>5. SQL y bases de datos</font></b></p>
+  <p>Colossus utiliza un sistema de base de datos SQL para guardar informaci&oacute;n de forma permanente.</p>
+  <p>Dicho sistema está constituido por un motor MySQL que está integrado en el propio Colossus. Actúa de servidor y cliente a la vez, por lo que <b>no es necesario instalar ningún servidor MySQL</b>.<br />
+  Otra de las ventajas de este sistema integrado, es que facilita enormemente la instalación, por lo que el usuario no debe preocuparse de instalar ningún software externo. El sistema está preparado para funcionar
+  correctamente con Colossus.</p>
+  <p>No obstante, también se permite la utilización de servidores externos MySQL. Esto significa que Colossus puede intercambiar información con servidores MySQL alojados en la misma u otras máquinas.</p>
+  <p>Desde Colossus, se recomienda el uso de un servidor SQL externo por seguridad y porque también permite el acceso externo a los datos (como por ejemplo, vía PHP).</p>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="remoto"></a>6. Conexi&oacute;n remota</font></b></p>
+  <p>Desde la versi&oacute;n 1.0a, Colossus incorpora un sistema para conectarlos a la red de forma remota mediante el comando /connect. Cuando se arranca el programa se pone en escucha
+  el puerto al que se conecta para recibir conexiones remotas. Una vez se ha realizado la conexi&oacute;n, se cierra el puerto para no recibir m&aacute;s conexiones.
+  Si se cierra la conexi&oacute;n a la red, se vuelve a poner en escucha para recibir otra vez la conexi&oacute;n y as&iacute; sucesivamente.<br>
+    Su sintaxis es sencilla: /connect servidor.colossus (en los servidores que lo soporten).</p>
+  <p><b>Nota</b>: cabe poner una especial atenci&oacute;n en m&aacute;quinas donde se est&eacute; ejecutando el ircd y los servicios a la misma vez. En estas situaciones s&oacute;lo puede haber un mismo puerto en escucha.
+  As&iacute;, el ircd y los servicios no pueden utilizar el mismo puerto de escucha. Por esta raz&oacute;n, existe la directriz opcional en el bloque server, escucha, para especificar otro puerto de escucha que no est&eacute;
+  utilizando el ircd. Esta directriz es &uacute;til cuando los dos programas est&aacute;n bajo la misma m&aacute;quina y conectan entre s&iacute;. </p>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="zlib"></a>7. SSL y ZLib</font></b></p>
+  <p>A partir de la versi&oacute;n 1.0, Colossus incluye las librer&iacute;as de compresi&oacute;n ZLib y SSL. La primera establece una compresi&oacute;n de los datos que se env&iacute;an en el servidor, con lo que supone un ahorro
+  considerable del ancho de banda. Ambos servidores (servicios e ircd) tienen que estar configurados con la misma compresi&oacute;n: 1 a 9. </p>
+  <p>Tambi&eacute;n se incluye la caracter&iacute;stica SSL para trabajar con conexiones seguras y evitar el robo de informaci&oacute;n.</p>
+  <p>Ambas caracter&iacute;sticas son opcionales, siendo en conexiones &quot;localhost&quot; triviales.</p>
+  <p>&nbsp; </p>
+  <p><b><font size="6"><a name="httpd"></a>8. Servidor HTTPD</font></b></p>
+  <p>A partir de la versi&oacute;n 1.10, Colossus incluye un servidor httpd integrado. Esto significa que puede conectarse a los servicios vía HTTP, usando su navegador habitual, e interactuar con los servicios que se brinden. </p>
+  <p>Por ejemplo, puede ver estadísticas en tiempo real, ya que el servicio de StatServ acepta peticiones HTTP y devuelve un estado global y detallado sobre la red.<br>
+  También puede ver la información sobre los jugadores de <i>bidle</i>, el juego de idle.</p>
+  <p>Cada servicio ofrecerá distintas posibilidades, pero siempre a través de webs. Para ello, todas las webs deberán colocarse en el directorio <i>html/&lt;nombre_servicio&gt;</i>.<br>
+  Por ejemplo, las páginas webs del servicio de estadísticas estarán en <i>html/StatServ</i> y las del juego bidle, en <i>html/bidle</i>.</p>
+  <p>Además también soporta <a href="http://www.php.net/" target="_blank">PHP</a>. Si también tiene instalado <a href="http://www.php.net/" target="_blank">PHP</a>, puede usarlo para que las páginas en ese lenguaje sean preprocesadas y
+  luego devueltas al usuario final. Es opcional pero se recomienda instalarlo.<br>
+  Sólo es necesario descargarlo, descomprimirlo y configurarlo. </p>
+  <p>Con este servidor HTTPD integrado se le abren un sinfín de posibilidades.</p>
+  <p>&nbsp; </p>
+  <p><b><font size="6"><a name="msn"></a>9. MSN Messenger</font></b></p>
+  <p>Con la versión 1.10, se introduce un servicio MSN. Con este complemento podrá controlar vía Messenger a su servidor Colossus. De igual forma, recibirá notificaciones del sevidor por el MSN.<br>
+  Lo primero es tener una compilación de Colossus con soporte SSL. Las de Windows soportan SSL, por lo que podrá usar el complemento MSN. Las de linux, no todas. Asegúrese antes de descargla que sí la soporta.<br>
+  El complemento MSN utiliza una cuenta MSN propia. Eso significa que para comunicarse con Colossus por el Messenger, deberá utilizar una cuenta para Colossus y otra para usted. Si sólo dispone de una cuenta,
+  diríjase a <a href="https://signup.live.com/newuser.aspx?mkt=es-es&revipc=ES&rollrs=04&lic=1" target="_blank">SignUP Live</a> y registre una cuenta. Una vez la tenga, deberá configurar Colossus con esa cuenta y su contraseña.<br>
+  Finalmente, deberá configurar también su cuenta principal, la que utilizará para comunicarte con Colossus. Una vez esté todo configurado, cada vez que arranque Colossus se conectará automáticamente al Messenger.<br>
+  Agregue a su MSN la cuenta que ha creado para Colossus y ya tendrá a Colossus en su MSN. Podrá gestionar a Colossus mediante comandos por el MSN y recibirá avisos de la red.</p>
+  <p>&nbsp; </p>
+  <p><b><font size="6"><a name="iploc"></a>10. IP Locator</font></b></p>
+  <p>A partir de la versión 1.12 se añade una completa API para localizar geográficamente los clientes que se conectan a la red.</p>
+  <p>Esta información incluye la ciudad, la región y el país, entre muchos otros datos, desde dónde se conectan. De esta forma los usuarios pueden conocer de dónde son sus amigos y otros nicks.<br />
+  Esta información está accesible a través del comando INFO de NickServ.<br />
+  Adicionalmente, esta información puede ocultarse a voluntad del usuario mediante el comando SET HIDE LOC ON de NickServ.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="configuracion"></a>11. Configuraci&oacute;n</font></b></p>
+  <p>El archivo de configuraci&oacute;n se compone con la siguiente estructura:</p>
+  <pre>bloque valor {
+	directriz valor;
+};</pre>
+  <p>Ambos valores son opcionales, seg&uacute;n lo requiera el bloque o la directriz. Si el valor contiene varias palabras, deber&aacute; entrecomillarse todo el valor. Si s&oacute;lo tiene una palabra, el entrecomillado es opcional. Por ejemplo:</p>
+  <p>servidor &quot;Colossus&quot;; // es correcto<br>
+  servidor Colossus; // es correcto<br>
+    servidor &quot;Mi servidor&quot;; // es correcto<br>
+    servidor Mi servidor; // es incorrecto </p>
+  <p>Cabe mencionar que si el valor contiene alg&uacute;n s&iacute;mbolo de comentario (#, // o /* */) el uso del entrecomillado es <b>obligatorio</b>, puesto que, de no hacerse as&iacute;, se tomar&iacute;a como un comentario y dar&iacute;a error.<br>
+  As&iacute; pues, por ejemplo canal &quot;#canal&quot;; ser&iacute;a correcto; pero canal #canal; ser&iacute;a incorrecto. </p>
+  <p>Adem&aacute;s, los comentarios pueden hacerse anteponiendo // para comentar toda esta l&iacute;nea o con /* */ para comentar varias l&iacute;neas.</p>
+  <p>El archivo puede contener cada l&iacute;nea una directriz, o simplemente meter toda la configuraci&oacute;n en una sola l&iacute;nea. Aunque por motivos de simplicidad y facilidad de manejo y configuraci&oacute;n,
+  recomiendo usar l&iacute;nea por l&iacute;nea, distinguiendo claramente los bloques y directrices. </p>
+  <p>El archivo principal deber&aacute; llamarse <b>colossus.conf</b> y deber&aacute; localizarse en la misma carpeta donde se sit&uacute;e el ejecutable del programa.</p>
+  <p>El archivo se compone de varios bloques:</p><br>
+  <p><b><font size="5"><a name="server"></a>11.1 Bloque server { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <pre>server {
+	addr ip.a.conectar;
+	puerto puerto;
+	password {
+		local &quot;pass local&quot;;
+		remoto &quot;pass remoto&quot;;
+	};
+	host nombre.del.servidor;
+	info &quot;informaci&oacute;n adicional&quot;;
+	numeric numerico-del-servidor;
+	compresion nivel;
+	escucha {
+		puerto nº;
+		enlace ip;
+	};
+	ssl;
+};</pre>
+  <p>Los valores se deducen f&aacute;cilmente. </p>
+  <p><b>addr</b><br>Indica a qu&eacute; ip o host debe conectar.</p>
+  <p><b>puerto</b><br>Es el puerto donde tiene que conectar.</p>
+  <p><b>password::local</b><br>Indica la contraseña local de conexión de la máquina a la que se va a conectar. </p>
+  <p><b>password::remoto</b><br>Indica la contraseña remota de conexión de la máquina a la que se va a conectar. </p>
+  <p><b>host</b><br>Es el servidor visible, el que ver&aacute;n los usuarios y en el que estar&aacute;n albergados los robots de servicio. </p>
+  <p><b>numeric</b><br>Es la identificaci&oacute;n del servidor. Debe ser un n&uacute;mero entre 0 y 255 (ambos inclu&iacute;dos) y <b>NO</b> debe estar repetido en la red. Es decir, ning&uacute;n otro servidor de la red deber&aacute; tener el mismo numeric. </p>
+  <p><b>compresion</b><br>Es <i>opcional</i> e indica que el flujo de datos entre servidores debe hacerse con compresi&oacute;n de nivel especificado. Ambos extremos deben disponer de soporte ZLib y tener la misma compresi&oacute;n. </p>
+  <p><b>escucha::puerto</b><br>Es <i>opcional</i> y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. </p>
+  <p><b>escucha::enlace</b><br>Es <i>opcional</i> y define una ip de enlace para poner en escucha y recibir conexiones remotas. Debe usarse en caso de disponer varios dispositivos.</p>
+  <p><b>ssl</b><br>Es <i>opcional</i>. Indica que la conexión con el servidor IRCd debe hacerse por SSL.</p>
+  <p>Ejemplo:</p>
+  <pre>server {
+	addr 127.0.0.1;
+	puerto 6667;
+	password {
+		local openaccess;
+		remoto openaccess;
+	};
+	host Servicios.Colossus;
+	info &quot;Servidor en C&quot;;
+	numeric 1;
+	escucha {
+		puerto 6666;
+	};
+	compresion 9;
+};</pre>
+<p>&nbsp;</p>
+  <p><b><font size="5"><a name="smtp"></a>11.2 Bloque smtp { } <font color="#0000FF">(opcional)</font></font></b></p>
+  <pre>smtp {
+	host host.del.servidor.smtp;
+	login &quot;milogin&quot;;
+	pass &quot;mipass&quot;;
+	puerto &quot;puerto&quot;; //opcional
+	ssl; //opcional
+};</pre>
+  <p>Este bloque configura los par&aacute;metros para enviar emails desde el programa. </p>
+  <p><b>host</b><br>Indica la direcci&oacute;n de la m&aacute;quina smtp. Puede ser ip o host. </p>
+  <p><b>login</b><br>Es <i>opcional</i>. Si se especifica, indica que el servidor SMTP no es libre y requiere autentificaci&oacute;n. Si no se especifica, esta directriz, se asume que no es necesaria ninguna identificaci&oacute;n y procede al env&iacute;o an&oacute;nimo. </p>
+  <p><b>pass</b><br>Es necesario en caso de haber especificado un <b>login</b>. Si no, puede omitirse.</p>
+  <p><b>puerto</b><br>Es <i>opcional</i>. Puerto del servidor SMTP.</p>
+  <p><b>ssl</b><br>Es <i>opcional</i>. Indica que la conexión se realiza mediante SSL.</p>
+  <p>Si este bloque no se especifica, el programa usar&aacute; su propio servidor smtp. As&iacute;, cuando sea necesario enviar un email lo enviar&aacute; directamente al servidor POP del usuario, sin la necesidad de pasar por un SMTP.
+  Esto ofrece una ventaja, ya que no es necesario el registro en ning&uacute;n servidor SMTP. Pero por contra muchos servidores pueden descartar el email o marcarlo como spam.</p>
+  <p><b>Nota</b>: bajo sistemas Windows 9x/ME este bloque es <b>obligatorio</b>.</p>
+  <p>Ejemplo:</p>
+  <pre>smtp {
+	host smtp.gmail.com;
+	login usuario@gmail.com;
+	pass mipass;
+	puerto 465;
+	ssl;
+};</pre>
+  <p>&nbsp;</p>
+  <p><b><font size="5"><a name="db"></a>11.3 Bloque db { } <font color="#0000FF">(opcional)</font></font></b></p>
+  <pre>db {
+	host host;
+	puerto puerto;
+	login login;
+	pass pass;
+	nombre db;
+	prefijo prefijo_;
+};</pre>
+  <p>Establece la configuraci&oacute;n para utilizar el motor SQL. Este bloque es opcional. Si no se especifica este bloque, Colossus utilizará su sistema de base de datos interno.<br />
+  Este bloque <b>sólo</b> debe usarse si existe un servidor MySQL instalado.</p>
+  <p><b>host</b><br>Indica d&oacute;nde se ubica el servidor. Generalmente es <i>localhost</i> o <i>127.0.0.1</i>.</p>
+  <p><b>puerto</b><br>Indica el puerto de escucha del servidor SQL. Es <i>opcional</i>. Si no se especifica, se usa el puerto por defecto.</p>
+  <p><b>login</b><br>Es el que se utiliza para conectar como usuario. Se recomienda encarecidamente usar un login de superusuario para utilizar todos los privilegios.</p>
+  <p><b>pass</b><br>Es <i>opcional</i>. Define una contrase&ntilde;a si fuera necesario para el login anterior. </p>
+  <p><b>nombre</b><br>Es el nombre de la base de datos. Al arrancar los robots, si esta base de datos no se encuentra, se pregunta al usuario si quiere crearla. Y en caso de tener privilegios, Colossus se encarga de crearla. </p>
+  <p><b>prefijo</b><br>Se utiliza para que las tablas que utiliza Colossus est&eacute;n precedidas por un prefijo con el fin de distinguirlas de las dem&aacute;s que pueda tener el usuario.</p>
+  <p>Ejemplo:</p>
+  <pre>db {
+	host localhost;
+	login milogin;
+	pass mipass;
+	nombre redyc;
+	prefijo colossus_;
+};</pre>
+  <p>&nbsp;</p>
+   <p><b><font size="5"><a name="set"></a>11.4 Bloque set { } <font color="#FF0000">(obligatorio)</font></font></b></p>
+  <pre>set {
+	autobop;  //opcional
+	respuesta PRIVMSG|NOTICE;
+	rekill;  //opcional
+	rejoin;  //opcional
+	admin mail@admin.com;
+	root nickdelroot;
+	clave_cifrado clave;
+	reconectar {
+		intentos n&ordm;-intentos;
+		intervalo n&ordm;-intervalo;
+	};
+	debug &quot;#canal&quot;; //opcional
+	niveles {
+		nombre [flags];
+		...
+	};
+};</pre>
+<p>Este bloque configura los par&aacute;metros del programa. </p>
+<p><b>autobop</b><br>Indica que los robots obtienen el estado de @ al entrar en un canal. </p>
+<p><b>respuesta</b><br>Indica c&oacute;mo debe procederse: por <b>PRIVMSG</b> o por <b>NOTICE</b>. S&oacute;lo acepta estas dos opciones. </p>
+<p><b>rekill</b><br>Hace que el robot sea reconectado en caso de haber sido killeado. </p>
+<p><b>rejoin</b><br>Hace que el robot sea introducido en el canal donde haya sido expulsado. </p>
+<p><b>admin</b><br>Se utiliza para indicar cu&aacute;l es el email del administrador o el de la red. Se utiliza como remitente en el env&iacute;o de emails. </p>
+<p><b>root</b><br>Indica qu&eacute; nick es el superusuario de los robots. Cuando se identifique como administrador de red (+N), tenga el nick registrado e identificado (+r) y figure como root en esta
+configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de superusuario o root. </p>
+<p><b>clave_cifrado </b><br>Se utiliza como semilla o clave de cifrado cada vez que se requiera encriptar datos. No puede tener m&aacute;s de 32 caracteres. </p>
+<p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b>
+con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
+<p><b>debug</b><br>Indica el canal en el que se hace debug de toda la red si est&aacute; presente. </p>
+<p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango.
+El par&aacute;metro flags es opcional. Si est&aacute; presente, indica que para adquirir ese nivel necesita poseer este flag. Si no, adquirir&aacute; ese nivel a partir de una rutina propia de alg&uacute;n m&oacute;dulo.<br>
+Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a partir de la directriz root.</p>
+<p>Ejemplo:</p>
+<pre>set {
+	autobop;
+	respuesta PRIVMSG;
+	rekill;
+	rejoin;
+	admin mi@email.com;
+	root Trocotronic;
+	clave_cifrado lerele;
+	reconectar {
+		intentos 3;
+		intervalo 5;
+	};
+	debug &quot;#debug&quot;;
+	niveles {
+		USER r;
+		OPER h;
+		ADMIN N;
+		ROOT;
+	};
+};</pre>
+  <p>&nbsp;</p>
+  <p><b><font size="5"><a name="modulos"></a>11.5 Bloque modulo { } <font color="#0000FF">(opcional)</font></font></b></p>
+<pre>modulo &quot;ruta/archivo.[dll|so]&quot; {
+  	nick nick;
+  	ident ident;
+  	host host;
+  	realname "Info adicional";
+  	modos modos;
+  	residente "#canal1,...,#canalN"; //opcional
+  	config archivo.inc; //opcional
+  	serial "clave"; //opcional
+};</pre>
+  <p>Indica qu&eacute; m&oacute;dulo debe cargarse. Cada m&oacute;dulo es una DLL, en Windows, o un SO, en *nix.
+  As&iacute;, puedes descargar m&oacute;dulos de terceras personas e integrarlos a Colossus sin ni siquiera reiniciar el programa.
+  Para cargarlos basta con a&ntilde;adirlos al archivo de configuraci&oacute;n y usar /rehash servidor.de.colossus para que se refresquen.
+  Es conveniente que todos los m&oacute;dulos est&eacute;n en la carpeta /modulos.</p>
+  <p><b>nick</b><br>Nick del m&oacute;dulo o robot. </p>
+  <p><b>ident</b><br>Ident o username del m&oacute;dulo o robot. </p>
+  <p><b>host</b><br>Host virtual del m&oacute;dulo o robot. </p>
+  <p><b>realname</b><br>Nombre o informaci&oacute;n adicional del m&oacute;dulo o robot. </p>
+  <p><b>modos</b><br>Modos de usuario que lleva el m&oacute;dulo o robot (no se especifica + ni -). </p>
+  <p><b>residente</b><br>Es <i>opcional</i> y son los canales en los que permanece permanentemente. </p>
+  <p><b>config</b><br>Nombre del archivo de configuraci&oacute;n del m&oacute;dulo. Debe estar en la misma carpeta que el m&oacute;dulo.<br>Es opcional, puesto que
+  no todos los m&oacute;dulos requerir&aacute;n una configuraci&oacute;n extendida. </p>
+  <p><b>serial</b><br>Clave de acceso al m&oacute;dulo. Los m&oacute;dulos de acceso privado requieren esta directriz para ser usados. Es <i>opcional</i>.</p>
+  <p>Ejemplo:</p>
+<pre>modulo &quot;modulos/chanserv.[dll|so]&quot; {
+	nick ChanServ;
+	ident colossus;
+	host Servicios.Colossus;
+	realname "Servicio de gesti&oacute;n de canales";
+	modos owhraAkNCqBvd;
+	residente "#redyc";
+	config chanserv.inc;
+};</pre>
+  <p>&nbsp;</p>
+  <p><font size="5"><b><a name="log"></a>11.6 Bloque log { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <pre>log archivo {
+	tama&ntilde;o kbytes; // opcional
+	opciones {
+		servidores;
+		conexiones;
+		errores;
+		msn;
+	};
+};</pre>
+  <p>Este bloque se utiliza para loguear en <b>archivo</b> los eventos que sean de inter&eacute;s y a su elecci&oacute;n. Estos eventos se escogen mediante el bloque <b>opciones</b>. Estas <b>opciones</b> son:</p>
+  <ul>
+    <li><b>servidores</b>: cuando se conecta un servidor a la red.</li>
+    <li><b>conexiones</b>: cuando se abre una conexi&oacute;n a una m&aacute;quina remota.</li>
+    <li><b>errores</b>: cuando se causa una desconexi&oacute;n del servidor con mensaje de error.</li>
+    <li><b>msn</b>: eventos relacionados con MSN Messenger.</li>
+  </ul>
+  <p>Adem&aacute;s, puede especificar de forma opcional el <b>tama&ntilde;o</b> m&aacute;ximo que quiere que ocupe el archivo. Su valor se especifica en KiloBytes. </p>
+  <p>Ejemplo:</p>
+  <pre>log colossus.log {
+	tama&ntilde;o 4;
+	opciones {
+		conexiones;
+		servidores;
+	};
+};</pre>
+  <p>&nbsp;</p>
+  <p><font size="5"><b><a name="ssl"></a>11.7 Bloque ssl { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <pre>ssl {
+	egd archivo;
+	certificado archivo;
+	clave archivo;
+	certificados-seguros archivo;
+	opciones {
+		certificado-cliente;
+		solo-oficiales;
+		verificar-certificado;
+	};
+	cifrados metodos;
+};</pre>
+  </p>
+  <p>Este bloque define que todas las conexiones relacionadas con el ircd ser&aacute;n SSL. </p>
+  <p><b>egd</b><br>Especifica que el soporte EGD (Entropy Gathering Daemon) est&aacute; activo. </p>
+  <p><b>certificado</b><br>Indica el archivo donde el certificado SSL est&aacute; localizado. </p>
+  <p><b>clave</b><br>Indica el archivo donde se encuentra la clave privada SSL. </p>
+  <p><b>certificados-seguros</b><br>Indican en qu&eacute; archivo se encuentran. </p>
+  <p><b>opciones</b><br>Definen as&iacute;:</p>
+  <ul>
+    <li><b>certificado-cliente</b>: s&oacute;lo autoriza conexiones con certificado.</li>
+    <li><b>solo-oficiales</b>: s&oacute;lo autoriza certificados oficiales (no self-signed).</li>
+    <li><b>verificar-certificado</b>: se verifica el certificado antes de permitir la conexi&oacute;n </li>
+  </ul>
+  <p><b>cifrados</b><br>Es <i>opcional</i> y se&ntilde;alan qu&eacute; cifrados se disponen. Para tener una lista use 'openssl ciphers'. &Uacute;sese ':' para separar varios m&eacute;todos.</p>
+  <p>Ejemplo:</p>
+  <pre>ssl {
+	egd;
+	clave &quot;server.key.pem&quot;;
+	opciones {
+		certificado-cliente;
+	};
+	cifrados DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA;
+};</pre>
+  <p>&nbsp;</p>
+  <p><font size="5"><b><a name="protocolo"></a>11.8 Bloque protocolo { } <font color="#FF0000">(obligatorio)</font></b></font></p>
+  <pre>protocolo &quot;ruta/archivo.[dll|so]&quot; {
+  	/* opciones */
+  	...
+  };</pre>
+  <p>Carga un protocolo de red. Seg&uacute;n al IRCd al que conecten, requerir&aacute;n un protocolo u otro. Las opciones y caracter&iacute;sticas var&iacute;an de cada protocolo.<br>
+  Tiene m&aacute;s informaci&oacute;n sobre los protocolos soportados actualmente en <a href="#protos">Configuraci&oacute;n de protocolos</a>.</p>
+  <p>&nbsp;</p>
+  <p><font size="5"><b><a name="bloque_httpd"></a>11.9 Bloque httpd { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <pre>httpd {
+  	url ruta;
+  	puerto número; //opcional
+  	edad_maxima segundos; //opcional
+  	ruta_php &quot;ruta/php&quot;; //opcional
+};</pre>
+  <p>Este bloque configura el servidor httpd. Recuerde que todas las webs se sitúan en <i>html/&lt;nombre_servicio&gt;</i>.</p>
+  <p><b>ruta</b><br>Ruta o host principal de la web. Todas las webs se accederán a través de <i>http://ruta/nombre_servicio/pagina.html</i>. Puede ser el host de su irc o una ip.</p>
+  <p><b>puerto</b><br>Puerto de escucha por el que se aceptan las conexiones entrantes. Si no se especifica ninguno, se asume por defecto el puerto 80.</p>
+  <p><b>edad_maxima</b><br>Número de segundos de vida de los elementos de una web. Se utiliza para que cada usuario guarde durante estos segundos los elementos en su caché y ahorrar ancho de banda.</p>
+  <p><b>ruta_php</b><br>Ruta o path al binario PHP para procesar páginas php. Es opcional pero se recomienda instalar PHP.</p>
+  <p>Ejemplo:</p>
+  <pre>httpd {
+	puerto 81;
+	url irc.redyc.com;
+	ruta_php "C:\php\php.exe";
+};</pre>
+  <p>Por ejemplo, los usuarios accederán vía <i>http://irc.redyc.com:81/servicio/pagina.php</i>.</p>
+  <p>&nbsp;</p>
+  <p><font size="5"><b><a name="bloque_msn"></a>11.10 Bloque msn { } <font color="#0000FF">(opcional)</font></b></font></p>
+  <pre>msn {
+  	cuenta nombre@hotmail.com;
+  	pass contraseña;
+  	master su_cuenta@hotmail.com;
+  	servidor servidor.virtual;
+  	solomaster; //opcional
+};</pre>
+  <p>Este bloque configura el complemento MSN. Si dispone de este complemento, podrá comunicarse con Colossus a través del Messenger. Para ello debe disponer de una cuenta adicional que utilizará Colossus.</p>
+  <p><b>cuenta</b><br>Cuenta que utilizará Colossus y que debe agregar en su MSN.</p>
+  <p><b>pass</b><br>Contraseña de la cuenta de Colossus.</p>
+  <p><b>master</b><br>La dirección de su cuenta. La cuenta master es la cuenta que Colossus identificará como root y por la que recibirá las órdenes. Debe ser la cuenta que utilizará para comunicarse con Colossus.</p>
+  <p><b>servidor</b><br>Se trata del servidor virtual que se crea y se linka al servidor principal de los bots. A través de este servidor virtual se conectarán todos los contactos del MSN. Puede ser cualquier valor.</p>
+  <p><b>solomaster</b><br>Es <i>opcional</i>. Indica que sólo aceptará a la cuenta máster. Nadie que no sea el máster podrá agregar al complemento.</p>
+  <p>Ejemplo:</p>
+  <pre>msn {
+	cuenta cuenta_colossus@hotmail.com;
+	pass contraseña1234;
+	master mi_cuenta@hotmail.com;
+	servidor msn.colossus;
+};</pre>
+  <p>&nbsp;</p>
+  <p><b><font size="6"><a name="bots"></a>12. Configuraci&oacute;n de m&oacute;dulos</font></b></p>
+  <p><br>Colossus incorpora varios m&oacute;dulos de serie. Los siguientes m&oacute;dulos de a continuaci&oacute;n requieren una configuraci&oacute;n aparte. Estas configuraci&oacute;nes deben localizarse en la carpeta /modulos (o donde se ubique la .dll o .so que lo carga) dentro de la carpeta principal.</p>
+  <p>Esta configuraci&oacute;n puede ser opcional (mediante la directriz <b>config</b> del bloque <b>modulo{ }</b>). Si no se especifica &eacute;sta, se tomar&aacute; la configuraci&oacute;n por defecto.</p>
+  <p>&nbsp;</p>
+  <p>Adem&aacute;s, poseen tres bloques comunes en todos los m&oacute;dulos</p>
+  <p><b><font size="4"><a name="funciones"></a>12.0.1 Bloque funciones { }</font></b></p>
+  <pre>funciones {
+  ...
+};</pre>
+  <p>Se trata de una lista de todas las funciones que se van a cargar. Lo har&aacute;n con su nivel y comando por defecto.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="4"><a name="funcion"></a>12.0.2 Bloque funcion { }</font></b></p>
+  <pre>funcion func {
+  	nivel nivel;
+  	comando comando;
+};</pre>
+  <p>Este bloque carga y permite configurar individualmente una funci&oacute;n. Permite modificar los valores por defecto.</p>
+  <p><b>nivel</b> Declara el nivel m&iacute;nimo de un usuario para poder acceder a este comando. El valor especificado debe pertenecer al bloque <b>niveles { }</b> del bloque <a href="#set"><b>set { }</b></a>.</p>
+  <p><b>comando</b> Establece el comando que debe llamarse. Es decir, el comando que ejecutar&aacute; el usuario cuando use /msg Modulo COMANDO.<br />
+  Por ejemplo, si carga la funci&oacute;n <i>help</i>, puede establecer <i>comando</i> a "AYUDA". As&iacute;, el comando para activarlo ser&aacute; /msg Modulo AYUDA.</p>
+  <p>Una funci&oacute;n puede ser cargada varias veces, siempre que el comando sea distinto en cada vez. Por ejemplo, puede cargar dos veces la funci&oacute;n <i>help</i> con los comandos AYUDA y HELP por separado.
+  As&iacute;, los usuarios acceder&aacute;n a la ayuda a trav&eacute;s de estos dos comandos.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="4"><a name="alias"></a>12.0.3 Bloque alias { }</font></b></p>
+  <pre>alias "formato" {
+	sintaxis "sintaxis";
+};</pre>
+  <p>Crean alias para ejecutar. Si un usuario ejecuta un comando que coincide con "formato", ese comando se reemplazar&aacute; por "sintaxis".
+  Por tanto, en realidad estar&aacute; ejecutando el comando que haya en "sintaxis".</p>
+  <p><b>formato</b> Define el patr&oacute;n que el usuario debe ejecutar. Si utiliza % como comod&iacute;n, est&aacute; indicando que en su lugar va una palabra cualquiera.</p>
+  <p><b>sintaxis</b> Corresponde a la sintaxis que se reemplazar&aacute; y que realmente se ejecutar&aacute;. Se puede usar %N (%1, %2, etc.) para indicar los par&aacute;metros pasados. Si se usa %N- se asumir&aacute; que se pasan todos los par&aacute;metros desde N hasta el final.
+  <br>
+  Ejemplo:
+  <pre>alias op {
+	sintaxis "modo %1 o %2-";
+};</pre>
+  <p>Cuando el usuario ejecute /msg ChanServ op #canal nick1 nick2, en realidad se estar&aacute; ejecutando /msg ChanServ modo #canal o nick1 nick2.</p>
+  <pre>alias "clear % ops" {
+	sintaxis "clear %1 o";
+};</pre>
+  <p>Si el usuario ejecuta /msg ChanServ clear #canal ops, en realidad se ejecutar&aacute; /msg ChanServ clear #canal o</p>
+  <p>Este bloque se utiliza b&aacute;sicamente para acortar comandos que requieran trabajar con modos de canal propios de protocolos.</p>
+  <p>Pueden usarse tantos alias como se quiera. Pero no lo sobrecargue puesto que los privados ir&aacute;n lentos.</p>
+  <p>&nbsp;</p>
+  <p><b>NOTA:</b> Algunos m&oacute;dulos requieren que antes est&eacute;n cargados otros m&oacute;dulos.</p>
+  <p>&nbsp;</p>
+  <p><b><font size="5"><a name="nickserv"></a>12.1 NickServ</font></b></p>
+  <p>Nombre del archivo <b>nickserv.inc</b>.</p>
+  <p>Requiere: <b>chanserv</b>. </p>
+  <pre>NickServ {
+  	sid;  //opcional
+  	secure;  //opcional
+  	prot KILL|NICK;
+  	recovernick formato-%s;
+  	securepass formato;
+  	min_reg n&ordm;;
+  	autodrop n&ordm;;  //opcional
+  	nicks n&ordm;;  //opcional
+  	intentos n&ordm;;
+  	maxlist n&ordm;;
+  	forbmails {
+  		dominio1;
+		dominio2;
+		...
+	};  //opcional
+	funciones {
+		...
+	};
+	funcion func {
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
+};</pre>
+<p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
+<p><b>secure</b><br>Se utiliza para que los usuarios no falseen sus cuentas de correo. Al registrar un nick, si est&aacute; especificado <b>secure</b>, se le enviar&aacute; una contrase&ntilde;a temporal al mail especificado. </p>
+<p><b>prot</b><br>Especifica qu&eacute; tipo de acci&oacute;n hay que tomar cuando se rebasa el tiempo de espera necesario para identificarse como due&ntilde;o de un nick.
+S&oacute;lo acepta dos opciones: <b>KILL </b>(el usuario es desconectado) o <b>NICK</b> (se le cambia el nick al usuario). </p>
+<p><b>recovernick</b><br>Patr&oacute;n que se sigue al cambiar el nick a un usuario. El par&aacute;metro %s es sustitu&iacute;do por el nick anterior. Para m&aacute;s informaci&oacute;n lea la secci&oacute;n de <a href="#patrones">par&aacute;metros de patr&oacute;n</a>. </p>
+<p><b>securepass</b><br>Formato a seguir para la creaci&oacute;n de contrase&ntilde;as seguras. </p>
+<p><b>min_reg</b><br>N&uacute;mero que indica cu&aacute;ntas horas deben pasar antes de poder volver a registrar un nick. </p>
+<p><b>autodrop</b><br>N&uacute;mero que indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un nick para que sea dropado autom&aacute;ticamente. </p>
+<p><b>nicks</b><br>N&uacute;mero para indicar cu&aacute;ntos nicks se pueden registrar bajo una misma cuenta. </p>
+<p><b>intentos</b><br>N&uacute;mero de intentos que tiene un usuario para identificarse como propietario de su nick. Si sobrepasa este n&uacute;mero, se ejecuta la acci&oacute;n especificada en <b>prot</b>. </p>
+<p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
+<p><b>forbmails { }</b><br>No permite el registro de nicks bajo cuentas email con los dominios especificados. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>0 (2)</td><td>HELP</td></tr>
+<tr><td>register</td><td>0</td><td>REGISTER</td></tr>
+<tr><td>identify</td><td>1</td><td>IDENTIFY</td></tr>
+<tr><td>set</td><td>1</td><td>SET</td></tr>
+<tr><td>drop</td><td>2</td><td>DROP</td></tr>
+<tr><td>sendpass</td><td>2</td><td>SENDPASS</td></tr>
+<tr><td>info</td><td>0</td><td>INFO</td></tr>
+<tr><td>list</td><td>0</td><td>LIST</td></tr>
+<tr><td>ghost</td><td>0</td><td>GHOST</td></tr>
+<tr><td>suspender</td><td>3</td><td>SUSPENDER</td></tr>
+<tr><td>liberar</td><td>3</td><td>LIBERAR</td></tr>
+<tr><td>swhois</td><td>2</td><td>SWHOIS</td></tr>
+<tr><td>rename</td><td>3</td><td>RENAME</td></tr>
+<tr><td>forbid</td><td>4</td><td>FORBID</td></tr>
+<tr><td>marca</td><td>3</td><td>MARCA</td></tr>
+<tr><td>setnick</td><td>3</td><td>SETNICK</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
+<p>Ejemplo:</p>
+<pre>NickServ {
+	sid;
+	secure;
+	automigrar;
+	prot kill;
+	recovernick inv-%s-????;
+	securepass *******;
+	min_reg 24;
+	autodrop 15;
+	nicks 3;
+	intentos 3;
+	maxlist 30;
+	forbmails {
+		hotmail.com;
+	};
+	funciones {
+		help;
+		register;
+		identify;
+		set;
+		drop;
+		sendpass;
+		info;
+		list;
+		ghost;
+		suspender;
+		liberar;
+		swhois;
+		rename;
+	};
+	funcion help {
+		comando AYUDA;
+	};
+	funcion func {
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="5"><a name="chanserv"></a>12.2 ChanServ</font></b></p>
+<p>Nombre del archivo <b>chanserv.inc</b>.</p>
+<pre>ChanServ {
+	sid;  //opcional
+	autodrop n&ordm;;
+	maxlist n&ordm;;
+	bantype n&ordm;;
+	automigrar;  //opcional
+	tokens {
+		formato format;
+		vigencia n&ordm;;
+		necesarios n&ordm;;
+		antig n&ordm;;
+	};
+	funciones {
+		...
+	};
+	funcion func {
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
+};</pre>
+<p><b>sid</b><br>Indica identificaci&oacute;n segura. El comando para identificarse deber&aacute; usarse con /msg nick@servidor, en vez del cl&aacute;sico /msg nick. </p>
+<p><b>autodrop</b><br>Indica cu&aacute;ntos d&iacute;as deben de pasar sin usarse un canal para que sea dropado autom&aacute;ticamente. </p>
+<p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
+<p><b>bantype</b><br>Tipo de ban que se usar&aacute; en las listas de auto-kick. </p>
+<p><b>automigrar</b><br>Realiza la migraci&oacute;n autom&aacute;tica del registro del canal a las tablas de toda la red. </p>
+<p><b>tokens { }</b><br>Configura todo el sistema de tokens o 'firmas digitales'. </p>
+<p><b>tokens::formato</b><br>Indica qu&eacute; forma deben tener los tokens. </p>
+<p><b>tokens::vigencia</b><br>Indica cu&aacute;ntas horas tiene de vida el token solicitado. </p>
+<p><b>tokens::necesarios</b><br>N&uacute;mero que indica cu&aacute;ntos tokens son necesarios para presentar una petici&oacute;n de registro de un canal. </p>
+<p><b>tokens::antig</b><br>Indica cu&aacute;ntos d&iacute;as tiene que tener registrado el nick como m&iacute;nimo para solicitar un token. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>0 (2)</td><td>HELP</td></tr>
+<tr><td>deauth</td><td>1</td><td>DEAUTH</td></tr>
+<tr><td>drop</td><td>3</td><td>DROP</td></tr>
+<tr><td>register</td><td>1</td><td>REGISTER</td></tr>
+<tr><td>identify</td><td>1</td><td>IDENTIFY</td></tr>
+<tr><td>info</td><td>0</td><td>INFO</td></tr>
+<tr><td>invite</td><td>1</td><td>INVITE</td></tr>
+<tr><td>kick</td><td>1</td><td>KICK</td></tr>
+<tr><td>modo</td><td>1</td><td>MODO</td></tr>
+<tr><td>clear</td><td>1</td><td>CLEAR</td></tr>
+<tr><td>set</td><td>1</td><td>SET</td></tr>
+<tr><td>akick</td><td>1</td><td>AKICK</td></tr>
+<tr><td>access</td><td>1</td><td>ACCESS</td></tr>
+<tr><td>list</td><td>0</td><td>LIST</td></tr>
+<tr><td>join</td><td>1</td><td>JOIN</td></tr>
+<tr><td>sendpass</td><td>2</td><td>SENDPASS</td></tr>
+<tr><td>suspender</td><td>3</td><td>SUSPENDER</td></tr>
+<tr><td>liberar</td><td>3</td><td>LIBERAR</td></tr>
+<tr><td>forbid</td><td>4</td><td>FORBID</td></tr>
+<tr><td>unforbid</td><td>4</td><td>UNFORBID</td></tr>
+<tr><td>block</td><td>2</td><td>BLOCK</td></tr>
+<tr><td>token</td><td>1</td><td>TOKEN</td></tr>
+<tr><td>marca</td><td>3</td><td>MARCA</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
+<p>Ejemplo:</p>
+<pre>ChanServ {
+	sid;
+	autodrop 15;
+	maxlist 30;
+	bantype 9;
+	automigrar;
+	tokens {
+		formato &quot;############&quot;;
+		vigencia 24; /* en horas */
+		necesarios 1;
+		antig 15; /* en d&iacute;as */
+	};
+	funciones {
+		help;
+		deauth;
+		drop;
+		identify;
+		info;
+		invite;
+		kick;
+		modo;
+		clear;
+		set;
+		akick;
+		access;
+		list;
+		join;
+		sendpass;
+		suspender;
+		liberar;
+		forbid;
+		unforbid;
+		block;
+		register;
+		token;
+		marca;
+	};
+	funcion help {
+		comando AYUDA;
+	};
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="5"><a name="operserv"></a>12.3 OperServ</font></b></p>
+<p>Nombre del archivo <b>operserv.inc</b>.</p>
+<p>Requiere: <b>chanserv</b>, <b>memoserv</b>. </p>
+<pre>OperServ {
+	autoop;
+	maxlist n&ordm;;
+	funciones {
+		...
+	};
+	funcion func {
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
+};</pre>
+<p><b>autoop</b><br>Los operadores de red obtienen @ al entrar en un canal autom&aacute;ticamente no registrado (en un registrado deber&aacute; tener su correspondiente acceso). </p>
+<p><b>maxlist</b><br>N&uacute;mero para evitar flood cuando un usuario solicite alguna lista, puesto que es el n&uacute;mero m&aacute;ximo de entradas que ser&aacute;n mostradas. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>3</td><td>HELP</td></tr>
+<tr><td>raw</td><td>3</td><td>RAW</td></tr>
+<tr><td>restart</td><td>5</td><td>RESTART</td></tr>
+<tr><td>rehash</td><td>5</td><td>REHASH</td></tr>
+<tr><td>close</td><td>5</td><td>CLOSE</td></tr>
+<tr><td>gline</td><td>3</td><td>GLINE</td></tr>
+<tr><td>opers</td><td>4</td><td>OPERS</td></tr>
+<tr><td>sajoin</td><td>2</td><td>SAJOIN</td></tr>
+<tr><td>sapart</td><td>2</td><td>SAPART</td></tr>
+<tr><td>rejoin</td><td>2</td><td>REJOIN</td></tr>
+<tr><td>kill</td><td>2</td><td>KILL</td></tr>
+<tr><td>global</td><td>2</td><td>GLOBAL</td></tr>
+<tr><td>noticias</td><td>4</td><td>NOTICIAS</td></tr>
+<tr><td>vaciar</td><td>5</td><td>VACIAR</td></tr>
+<tr><td>akill</td><td>3</td><td>AKILL</td></tr>
+<tr><td>cache</td><td>5</td><td>CACHE</td></tr>
+<tr><td>exportar</td><td>5</td><td>EXPORTAR</td></tr>
+<tr><td>importar</td><td>5</td><td>IMPORTAR</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
+<p>Ejemplo:</p>
+<pre>OperServ {
+	autoop;
+	maxlist 30;
+	funciones {
+		raw;
+		help;
+		restart;
+		gline;
+		opers;
+		sajoin;
+		sapart;
+		rejoin;
+		kill;
+		global;
+		noticias;
+		rehash;
+		close;
+		vaciar;
+		akill;
+		cache;
+		exportar;
+		importar;
+	};
+	funcion help {
+		comando AYUDA;
+	};
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="5"><a name="memoserv"></a>12.4 MemoServ</font></b></p>
+<p>Nombre del archivo <b>memoserv.inc</b>.</p>
+<p>Requiere: <b>chanserv</b>. </p>
+<pre>MemoServ {
+	defecto n&ordm;;
+	cada n&ordm;;
+	funciones {
+		...
+	};
+	funcion func {
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
+};</pre>
+<p><b>defecto</b><br>N&uacute;mero del l&iacute;mite de mensajes por defecto que acepta un usuario. </p>
+<p><b>cada</b><br>Indica cu&aacute;ntos segundos deben transcurrir antes de poder enviar otro mensaje. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>0 (2)</td><td>HELP</td></tr>
+<tr><td>send</td><td>1</td><td>SEND</td></tr>
+<tr><td>read</td><td>1</td><td>READ</td></tr>
+<tr><td>del</td><td>1</td><td>DEL</td></tr>
+<tr><td>list</td><td>1</td><td>LIST</td></tr>
+<tr><td>set</td><td>1</td><td>SET</td></tr>
+<tr><td>info</td><td>1</td><td>INFO</td></tr>
+<tr><td>cancelar</td><td>1</td><td>CANCELAR</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+(2): El nivel 0 est&aacute; siempre cargado. Se trata del nivel m&aacute;s raso.<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
+<p>Ejemplo:</p>
+<pre>MemoServ {
+	defecto 5;
+	cada 60;
+	funciones {
+		help;
+		send;
+		read;
+		del;
+		list;
+		set;
+		info;
+		cancelar;
+	};
+	funcion help {
+		comando AYUDA;
+	};
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="5"><a name="ipserv"></a>12.5 IpServ</font></b></p>
+<p>&nbsp;Nombre del archivo <b>ipserv.inc</b>.</p>
+<pre>IpServ {
+	sufijo sufijo;
+	cambio n&ordm;;
+	clones n&ordm;;
+	funciones {
+		...
+	};
+	funcion func {
+		nivel nivel;
+		comando comando;
+	};  // Opcional
+	alias "fmt" {
+		sintaxis "sntx";
+	}; // Opcional
+};</pre>
+<p><b>sufijo</b><br>Es el sufijo que se a&ntilde;adir&aacute; a la ip virtual si se precisa. </p>
+<p><b>cambio</b><br>Son las horas en que se cambia el cifrado de ip virtuales. </p>
+<p><b>clones</b><br>N&uacute;mero m&aacute;ximo de conexiones permitidas por usuario. </p>
+<p><b>funciones { }</b><br>Carga funciones. Explicado arriba. Funciones disponibles:</p>
+<p><table border="1">
+<tr><td align="center">Funci&oacute;n</td><td align="center">Nivel por defecto (1)</td><td align="center">Comando por defecto</td></tr>
+<tr><td>help</td><td>2</td><td>HELP</td></tr>
+<tr><td>setipv</td><td>2</td><td>SETIPV</td></tr>
+<tr><td>setipv2</td><td>2</td><td>SETIPV2</td></tr>
+<tr><td>temphost</td><td>2</td><td>TEMPHOST</td></tr>
+<tr><td>clones</td><td>4</td><td>CLONES</td></tr>
+</table>
+(1): Los niveles se detallan por su n&uacute;mero (orden de carga).<br />
+</p>
+<p><b>funcion { }</b><br>Carga una funci&oacute;n y permite modificar sus par&aacute;metros por defecto.</p>
+<p>Ejemplo:</p>
+<pre>IpServ {
+	sufijo virtual;
+	cambio 24; // en horas
+	clones 3;
+	funciones {
+		help;
+		setipv;
+		setipv2;
+		temphost;
+		clones;
+	};
+	funcion help {
+		comando AYUDA;
+	};
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="6"><a name="protos"></a>13. Configuraci&oacute;n de protocolos</font></b></p>
+<p>Colossus soporta la conexi&oacute;n a distintos ircds. Seg&uacute;n los que sean se requerir&aacute; un protocolo u otro con opciones que var&iacute;an entre s&iacute;.<br>
+A continuaci&oacute;n tiene una lista de los protocolos soportados y sus opciones de configuraci&oacute;n.</p>
+<p><b><font size="5"><a name="unreal"></a>13.1 UnrealIRCd</font></b></p>
+<p>Protocolo usado en redes UnrealIRCd 3.2 y superiores.</p>
+<pre>protocolo protocolos/unreal.[dll|so] {
+	no_server_deop; // opcional
+	autojoin {
+		usuarios "#canal1,...,#canalN"; // opcional
+		opers "#canal1,...,#canalN"; // opcional
+	}; // opcional
+	modos {
+		usuarios +modos-modos; // opcional
+		canales +modos-modos; // opcional
+	}; // opcional
+	parametros {
+		clientes modos; // opcional
+		mascaras modos; // opcional
+		resto1 modos; // opcional
+		resto2 modos; // opcional
+	}; // opcional
+	extension protocolos/extension.[dll|so] {
+		...
+		opciones
+	}; // opcional
+};</pre>
+<p><b>no_server_deop</b><br>Se utiliza para evitar que al linkar dos nodos, uno quite todos los modos de .&amp;@%+ que pueda haber en un canal. </p>
+<p><b>autojoin { }</b><br>Autojoin de usuarios y operadores.</p>
+<p><b>modos { }</b><br>Modos obligatorios (+) y no permitidos (-) en los usuarios y canales.</p>
+<p><b>parametros { }</b><br>Define los modos de canal con par&aacute;metros que tiene este protocolo. Es opcional, puesto que lleva unos por defecto (los que suelen encontrarse).<br />
+<ul><li><b>clientes</b>: modos que aceptan clientes como par&aacute;metros. Por defecto "qaohv".</li>
+<li><b>mascaras</b>: modos que aceptan m&aacute;scaras como par&aacute;metros. Por defecto "beI".</li>
+<li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "kfL".</li>
+<li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "lj".</li></ul>
+Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
+<p><b>extension</b><br> Bloque que añade una extensión al protocolo.</p>
+<p>Ejemplo:</p>
+<pre>protocolo protocolos/unreal.dll {
+	no_server_deop;
+	autojoin {
+		usuarios "#redyc";
+		opers "#opers";
+	};
+	modos {
+		usuarios +i;
+		canales +S;
+	};
+	extension protocolos/udb.dll {
+		...
+	};
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="5"><a name="p10"></a>13.2 P10</font></b></p>
+Este protocolo corresponde al P10 nativo. IRCu de <a href="http://www.undernet.org" target="_blank">Undernet</a>.
+<pre>protocolo protocolos/p10.dll {
+	red nombre;
+	nicklen n&ordm;;
+	modos {
+		canales +modos-modos;
+	}; // opcional
+	parametros {
+		clientes modos; // opcional
+		mascaras modos; // opcional
+		resto1 modos; // opcional
+		resto2 modos; // opcional
+	}; // opcional
+	extension protocolos/extension.[dll|so] {
+		...
+		opciones
+	}; // opcional
+};</pre>
+<p><b>red</b><br>Nombre de la red.</p>
+<p><b>nicklen</b><br>Longitud m&aacute;xima permitida en los nicks.</p>
+<p><b>modos { }</b><br>Modos obligatorios (+) y no permitidos (-) en canales.</p>
+<p><b>parametros { }</b><br>Define los modos de canal con par&aacute;metros que tiene este protocolo. Es opcional, puesto que lleva unos por defecto (los que suelen encontrarse).<br />
+<ul><li><b>clientes</b>: modos que aceptan clientes como par&aacute;metros. Por defecto "ov".</li>
+<li><b>mascaras</b>: modos que aceptan m&aacute;scaras como par&aacute;metros. Por defecto "b".</li>
+<li><b>resto1</b>: modos que aceptan par&aacute;metros al ponerse y al quitarse. Por defecto "k".</li>
+<li><b>resto2</b>: modos que aceptan par&aacute;metros al ponerse pero no al quitarse. Por defecto "l".</li></ul>
+Todos tiene caracter opcional. Tan s&oacute;lo debe especificarlos si fueran diferentes a los de su red o si no tiene ni idea de lo que lee.</p>
+<p><b>extension</b><br> Bloque que añade una extensión al protocolo.</p>
+<p>Ejemplo:</p>
+<pre>protocolo protocolos/p10.dll {
+	red Redyc;
+	nicklen 12;
+	modos {
+		canales +S;
+	};
+};</pre>
+<p>&nbsp;</p>
+<p><b><font size="6"><a name="exts"></a>14. Configuraci&oacute;n de extensiones</font></b></p>
+<p>Estas extensiones complementan los protocolos actuales.<br>
+A continuaci&oacute;n tiene una lista de las extensiones soportados y sus opciones de configuraci&oacute;n.</p>
+<p><b><font size="5"><a name="udb"></a>14.1 UDB</font></b></p>
+<p>Extensión usada en redes UnrealIRCd 3.2 y superiores.</p>
+<pre>extension protocolos/extensiones/udb.[dll|so] {
+	autooptimizar; // opcional
+	autobackup; // opcional
+	ChanServ {
+		automigrar; // opcional
+		funciones {
+			migrar;
+			demigrar;
+			proteger;
+			setudb;
+		};
+	}; // opcional
+	NickServ {
+		automigrar; // opcional
+		funciones {
+			migrar;
+			demigrar;
+			acceso;
+		};
+	}; // opcional
+	IpServ {
+		funciones {
+			set;
+			dns;
+			nolines;
+		};
+	}; // opcional
+	OperServ {
+		funciones {
+			modos;
+			snomask;
+			optimizar;
+			backupudb;
+			restaurarudb;
+			setudb;
+		};
+	}; // opcional
+};</pre>
+<p><b>autooptimizar</b><br>Ejecuta una optimización cada 24h de los bloques UDB para ahorrar información.</p>
+<p><b>autobackup</b><br>Realiza una copia de seguridad cada 24h de los bloques UDB.</p>
+<p><b>NickServ, IpServ, ChanServ, OperServ</b><br>Complementan distintamente a estos módulos. Estas configuraciones son las mismas que existen para las configuraciones particulares,
+como los bloques <i>funciones</i>, <i>funcion</i> y algún otro parámetro.</p>
+<p><b>automigrar</b><br>Los módulos <i>NickServ</i> y <i>ChanServ</i> permiten automigrar el registro de nicks y canales a los bloques de la red, respectivamente.</p>
+<br>
+<p><b>NOTA:</b> Si no se especifica un bloque para módulos, se cargan por defecto todas sus funciones complementarias. <br>
+Si se especifica un bloque para algún módulo, deben especificarse también las funciones que van a cargarse.</p>
+<p>&nbsp;</p>
+<p><b><font size="6"><a name="faq"></a>15. FAQ (Cuestiones Más Preguntadas)</font></b></p>
+<p>Tiene una recopilación de las cuestiones más preguntadas en <a href="http://www.redyc.com/?colossus#faq" target="_blank">FAQ</a>.</p>
+<br>
+<p><b><font size="6"><a name="patrones"></a>16. Par&aacute;metros de patr&oacute;n</font></b></p>
+<p>Algunos campos requieren un patr&oacute;n a seguir que contenga comodines que sean intercambiados por valores aleatorios. Estos son:</p>
+<ul>
+  <li>? una cifra</li>
+  <li>&ordm; una may&uacute;scula</li>
+  <li>! una min&uacute;scula</li>
+  <li># una may&uacute;scula o min&uacute;scula </li>
+  <li>* una cifra, una may&uacute;scula o una min&uacute;scula</li>
+</ul>
+<p>As&iacute; pues, si alg&uacute;n campo que as&iacute; lo requiera pone &quot;*******&quot; cada comod&iacute;n ser&aacute; sustitu&iacute;do por un valor aleatorio. Si usa &quot;????&quot; devolver&iacute;a cuatro cifras. Ejemplos:</p>
+<ul>
+  <li>????? &gt; 89391</li>
+  <li>##### &gt; aBEcP</li>
+  <li>?&ordm;?!?# &gt; 2O4eL</li>
+  <li>patata??? &gt; patata832</li>
+  <li>to**mate &gt; to9Umate</li>
+</ul>
+<p>Adem&aacute;s, algunos campos pueden requerir un par&aacute;metro adicional, %s, para que sea rellenado por el propio programa con alguna cadena. Por ejemplo, en el cambio de nick, si en formato utilizas inv-%s-???, si el usuario se llama 'melon', se le cambiar&aacute; el nick por 'inv-melon-987'.</p>
+</body>
+</html>

@@ -1,0 +1,4 @@
+Para cargar los servicios:
+	./colossus start
+Para parar los servicios:
+	./colossus stop

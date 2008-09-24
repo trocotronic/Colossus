@@ -1,0 +1,148 @@
+#/************************************************************************
+#*   $Id: Makefile.in,v 1.24 2008/06/01 12:10:55 Trocotronic Exp $
+#*/
+
+CC=@CC@
+INCLUDEDIR=../include
+IRCDLIBS=@IRCDLIBS@
+CRYPTOLIB=@CRYPTOLIB@
+XCFLAGS=@CFLAGS@
+OPENSSLPATH=@OPENSSLPATH@
+CFLAGS=-I$(INCLUDEDIR) $(XCFLAGS) @LDFLAGS@
+
+SHELL=/bin/sh
+SUBDIRS=src
+INSTALL=@INSTALL@
+RM=@RM@
+CP=@CP@
+TOUCH=@TOUCH@
+all:	build
+
+MAKEARGS =	'CFLAGS=${CFLAGS}' 'CC=${CC}' 'IRCDLIBS=${IRCDLIBS}' \
+		'LDFLAGS=${LDFLAGS}' 'INSTALL=${INSTALL}' \
+		'INCLUDEDIR=${INCLUDEDIR}' 'CRYPTOLIB=${CRYPTOLIB}' \
+		'RM=${RM}' 'CP=${CP}' 'TOUCH=${TOUCH}'
+
+modulo:
+	cd src; ${MAKE} ${MAKEARGS} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
+	$(CP) src/modulos/$(FUENTE).so modulos/$(FUENTE).so
+
+modall:
+	cd src; ${MAKE} ${MAKEARGS} 'EXLIBS=${EXLIBS}' modall
+
+server:
+build:
+	-@if [ ! -f include/setup.h ] ; then \
+		echo "No parece que hayas ejecutado la configuracion..."; \
+		sh Config; \
+	fi
+	$(INSTALL) -m 0700 -d ~/Colossus/utils
+	$(CC) -o confver src/utils/confver.c
+	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
+	./confver
+	rm -rf confver
+	@for i in $(SUBDIRS); do \
+		echo "Compilando $$i";\
+		( cd $$i; ${MAKE} ${MAKEARGS} build; ) \
+	done
+	@echo ' __________________________________________________ '
+	@echo '| Compilación terminada.                           |'
+	@echo '|__________________________________________________|'
+
+clean:
+	$(RM) -f *~ \#* core *.orig include/*.orig
+	@for i in $(SUBDIRS); do \
+		echo "Limpiando $$i";\
+		( cd $$i; ${MAKE} ${MAKEARGS} clean; ) \
+	done
+	-@if [ -f include/setup.h ] ; then \
+	  echo "Para resetear la instalacion, borra include/setup.h" ; \
+	fi
+
+cleandir: clean
+	$(RM) -rf include/setup.h Makefile
+
+install: all
+	$(INSTALL) -m 0700 -d ~/Colossus
+	$(INSTALL) -m 0700 src/colossus ~/Colossus/servicios
+	$(TOUCH) ~/Colossus/colossus.conf
+	chmod 0600 ~/Colossus/colossus.conf
+	$(INSTALL) -m 0700 -d ~/Colossus/modulos
+	$(INSTALL) -m 0700 src/modulos/*.so ~/Colossus/modulos
+	$(INSTALL) -m 0700 -d ~/Colossus/protocolos
+	$(INSTALL) -m 0700 src/protocolos/*.so ~/Colossus/protocolos
+	$(INSTALL) -m 0700 -d ~/Colossus/tmp
+	$(INSTALL) -m 0700 -d ~/Colossus/protocolos/extensiones
+	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/protocolos/extensiones/udb.so
+
+release: install
+	$(RM) -rf ~/Colossus/Colossus
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
+	$(INSTALL) -m 0600 cambios ~/Colossus/Colossus/cambios
+	$(INSTALL) -m 0700 colossus ~/Colossus/Colossus/colossus
+	$(INSTALL) -m 0600 colossusdoc.html ~/Colossus/Colossus/colossusdoc.html
+	$(INSTALL) -m 0600 leeme.linux ~/Colossus/Colossus/leeme.linux
+	$(INSTALL) -m 0600 proximamente ~/Colossus/Colossus/proximamente
+	$(INSTALL) -m 0600 ejemplo.conf ~/Colossus/Colossus/ejemplo.conf
+	$(INSTALL) -m 0700 servicios ~/Colossus/Colossus/servicios
+	$(INSTALL) -m 0700 cambios ~/Colossus/Colossus/cambios
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/modulos
+	$(INSTALL) -m 0700 modulos/chanserv.so ~/Colossus/Colossus/modulos/chanserv.so
+	$(INSTALL) -m 0700 modulos/nickserv.so ~/Colossus/Colossus/modulos/nickserv.so
+	$(INSTALL) -m 0700 modulos/ipserv.so ~/Colossus/Colossus/modulos/ipserv.so
+	$(INSTALL) -m 0700 modulos/memoserv.so ~/Colossus/Colossus/modulos/memoserv.so
+	$(INSTALL) -m 0700 modulos/operserv.so ~/Colossus/Colossus/modulos/operserv.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos
+	$(INSTALL) -m 0700 protocolos/unreal.so ~/Colossus/Colossus/protocolos/unreal.so
+	$(INSTALL) -m 0700 protocolos/p10.so ~/Colossus/Colossus/protocolos/p10.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/protocolos/extensiones
+	$(INSTALL) -m 0700 src/extensiones/udb/udb.so ~/Colossus/Colossus/protocolos/extensiones/udb.so
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/tmp
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/utils
+	$(INSTALL) -m 0700 utils/actualiza_111 ~/Colossus/Colossus/utils/actualiza_111
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/database
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/database/mysql
+	$(INSTALL) -m 0700 database/mysql/errmsg.sys ~/Colossus/Colossus/database/mysql/errmsg.sys
+	$(INSTALL) -m 0700 database/mysql/my.ini ~/Colossus/Colossus/database/mysql/my.ini
+	tar -cvzf colossus111.tar.gz Colossus
+devel: install
+	$(RM) -rf ~/Colossus/Colossus
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus
+	$(INSTALL) -m 0700 Makefile.dev ~/Colossus/Colossus/Makefile
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/include
+	$(INSTALL) -m 0600 include/*.h ~/Colossus/Colossus/include
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/include/modulos
+	$(INSTALL) -m 0600 include/modulos/probserv.h ~/Colossus/Colossus/include/modulos/probserv.h
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/src
+	$(INSTALL) -m 0600 src/Makefile.dev ~/Colossus/Colossus/src/Makefile
+	$(INSTALL) -m 0700 -d ~/Colossus/Colossus/src/modulos
+	$(INSTALL) -m 0600 src/modulos/Makefile.dev ~/Colossus/Colossus/src/modulos/Makefile
+	$(INSTALL) -m 0600 src/modulos/probserv.c ~/Colossus/Colossus/src/modulos/probserv.c
+	tar -cvzf colossus111-devel.tar.gz Colossus
+
+pem:	src/ssl.cnf
+	@echo "Generating certificate request .. "
+	$(OPENSSLPATH) req -new \
+              -config src/ssl.cnf -out server.req.pem \
+              -keyout server.key.pem -nodes
+	@echo "Generating self-signed certificate .. "
+	$(OPENSSLPATH) req -x509 -days 365 -in server.req.pem \
+               -key server.key.pem -out server.cert.pem
+	@echo "Generating fingerprint .."
+	$(OPENSSLPATH) x509 -subject -dates -fingerprint -noout \
+		-in server.cert.pem
+	@echo "Setting o-rwx & g-rwx for files... "
+	chmod o-rwx server.req.pem server.key.pem server.cert.pem
+	chmod g-rwx server.req.pem server.key.pem server.cert.pem
+	@echo "Done!. If you want to encrypt the private key, run"
+	@echo "make encpem"
+
+encpem: server.key.pem
+	@echo "Encrypting server key .."
+	$(OPENSSLPATH) rsa -in server.key.pem -out server.key.c.pem -des3
+	-@if [ -f server.key.c.pem ] ; then \
+		echo "Replacing unencrypted with encrypted .." ; \
+		cp server.key.c.pem server.key.pem ; \
+		rm -f server.key.c.pem ; \
+	fi
+
