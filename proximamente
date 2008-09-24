@@ -1,0 +1,78 @@
+TODO 
+
+$Id: proximamente,v 1.14 2008/04/05 20:37:20 Trocotronic Exp $
+
+
+Versión 1.1:
+
+[X] Hacer modulable el protocolo.
+	[X] Incluir el protocolo de UnrealIRCd
+	[X] Incluir el protocolo p10
+
+[X] Versatilizar la caché
+
+[X] Extender la ayuda de los módulos
+
+
+Versión 1.2:
+
+[X] Integrar varios sistemas de bases de datos
+	[X] MySQL
+	[X] PostGres
+
+
+Versión 1.3: 
+
+[X] Flexibilizar niveles de acción
+	[X] Implementar sistema de niveles de acceso
+	[X] Funcionalizar los comandos según el nivel de acceso	
+	[X] Niveles de acción por modo y por rutinas de identificación
+	
+[X] Marcas 
+
+[X] Modos por mallas
+
+[X] Alias en módulos
+
+
+Versión 1.4:
+
+[X] Funciones complementarias
+
+[X] Extensiones para módulos
+
+[X] Modularizar la BDD
+	[X] Datos de DB por tablas de funciones	
+	[X] Incluir soporte UDB
+
+
+Versión 1.6:
+
+[X] Disponer de un servidor SQL integrado
+
+
+Versión 1.10:
+
+[X] Servidor HTTP integrado
+
+[X] Complemento MSN Messenger.
+	[X] Fusión red IRC con MSN (gatewaying)
+	[X] Uso del nick vía MSN
+	[X] Administración root vía MSN
+
+[X] Soporte UTF8.
+
+
+Pendiente:
+
+[ ] Remover GLines por código
+
+[ ] Soporte varios idiomas
+
+[ ] Administración y configuración por web
+
+[ ] BotServ como alias de ChanServ
+
+[ ] Ajoin, noexpire, regcode, en NickServ
+
+[ ] Power, clearaccess by time, en ChanServ
