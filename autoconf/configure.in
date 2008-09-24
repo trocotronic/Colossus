@@ -31,6 +31,7 @@ AC_CHECK_LIB(socket, socket,IRCDLIBS="$IRCDLIBS-lsocket " SOCKLIB="-lsocket")
 AC_CHECK_LIB(nsl, inet_ntoa,IRCDLIBS="$IRCDLIBS-lnsl " INETLIB="-lnsl")
 AC_CHECK_LIB(resolv, res_mkquery, IRCDLIBS="$IRCDLIBS-lresolv ")
 AC_CHECK_LIB(pthread, pthread_create,IRCDLIBS="$IRCDLIBS-lpthread ")
+AC_CHECK_LIB(expat, XML_ParserCreate,IRCDLIBS="$IRCDLIBS-lexpat ")
 
 AC_SUBST(IRCDLIBS)
 
