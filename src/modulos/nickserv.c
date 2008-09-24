@@ -1204,10 +1204,15 @@ int NSSigSQL()
 }
 int NSSigQuit(Cliente *cl, char *msg)
 {
-	if (IsId(cl) && IsReg(cl->nombre))
+	if (IsReg(cl->nombre))
 	{
-		SQLInserta(NS_SQL, cl->nombre, "quit", msg);
-		SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
+		if (IsId(cl->nombre))
+		{
+			SQLInserta(NS_SQL, cl->nombre, "quit", msg);
+			SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
+		}
+		else
+			BorraKillUser(cl, 1);
 	}
 	return 0;
 }
@@ -1240,7 +1245,7 @@ int NSKillea(char *quien)
 		}
 		BorraKillUser(al, 0);
 	}
-	Free(quien);
+	//Free(quien); //se libera en borrakilluser
 	return 0;
 }
 int NSDropanicks(Proc *proc)
