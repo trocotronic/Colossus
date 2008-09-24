@@ -1441,9 +1441,11 @@ int NSSigSockClose()
 	for (ku = killusers; ku; ku = sig)
 	{
 		sig = ku->sig;
+		Free(ku->timer->args);
 		ApagaCrono(ku->timer);
 		Free(ku);
 	}
+	killusers = NULL;
 	DetieneProceso(NSDropanicks);
 	return 0;
 }
