@@ -551,7 +551,6 @@ int SQLNuevaTabla(char *tabla, char *str, ...)
 void SQLRefrescaTabla(char *tabla)
 {
 	MYSQL_RES *cp;
-	MYSQL_ROW row;
 	MYSQL_FIELD *field;
 	int i, j, c = 0;
 	retry:
@@ -604,7 +603,7 @@ int SQLDump(char *tag)
 		struct tm *tt;
 		time_t t = time(0);
 		tt = localtime(&t);
-		sprintf(buf, SQL_BCK_DIR "/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", tt->tm_year+1900, tt->tm_mon, tt->tm_mday, tt->tm_hour, tt->tm_min, tt->tm_sec);
+		sprintf(buf, SQL_BCK_DIR "/backup-%04lu%02lu%02lu%02lu%02lu%02lu.sql", (u_long)(tt->tm_year+1900), (u_long)tt->tm_mon, (u_long)tt->tm_mday, (u_long)tt->tm_hour, (u_long)tt->tm_min, (u_long)tt->tm_sec);
 	}
 	else
 		sprintf(buf, SQL_BCK_DIR "/backup-%s.sql", tag);
