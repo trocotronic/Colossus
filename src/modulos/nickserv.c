@@ -1206,7 +1206,7 @@ int NSSigQuit(Cliente *cl, char *msg)
 {
 	if (IsReg(cl->nombre))
 	{
-		if (IsId(cl->nombre))
+		if (IsId(cl))
 		{
 			SQLInserta(NS_SQL, cl->nombre, "quit", msg);
 			SQLInserta(NS_SQL, cl->nombre, "last", "%i", time(0));
