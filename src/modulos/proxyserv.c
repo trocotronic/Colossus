@@ -268,6 +268,10 @@ void PSSet(Conf *config, Modulo *mod)
 				proxyserv->opm = 1;
 			else if (!strcmp(config->seccion[i]->item, "forzar_salida"))
 				proxyserv->fsal = 1;
+			else if (!strcmp(config->seccion[i]->item, "ignorar_opers"))
+				proxyserv->igops = 1;
+			else if (!strcmp(config->seccion[i]->item, "ignorar_nicks_id"))
+				proxyserv->igids = 1;
 		}
 	}
 	else
@@ -364,8 +368,11 @@ int PSCmdNick(Cliente *cl, int nuevo)
 			if (!strcasecmp(px->host, host))
 				return 1;
 		}
-		ProtFunc(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
-		PSEscanea(host);
+		if (!(proxyserv->igops && IsOper(cl)) && !(proxyserv->igids && IsId(cl)))
+		{
+			ProtFunc(P_NOTICE)(cl, CLI(proxyserv), "Se va a proceder a hacer un escáner de puertos a tu máquina para verificar que no se trata de un proxy.");
+			PSEscanea(host);
+		}
 	}
 	return 0;
 }
@@ -381,7 +388,7 @@ void PSEscanea(char *host)
 		u_int tmp1, tmp2, tmp3, tmp4;
 		struct hostent *he;
 		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
-		ircsprintf(buf, "%u.%u.%u.%u.opm.blitzed.org", tmp4, tmp3, tmp2, tmp1);
+		ircsprintf(buf, "%u.%u.%u.%u.dnsbl.dronebl.org", tmp4, tmp3, tmp2, tmp1);
 		if ((he = gethostbyname(buf)))
 		{
 			char tmp[128], motivo[256];
@@ -389,20 +396,28 @@ void PSEscanea(char *host)
 			if (proxyserv->detalles)
 			{
 				int res = ntohl((*(struct in_addr *)he->h_addr).s_addr)&0xFF;
-				if (res & 0x1)
-					strlcat(tmp, ",WINGATE", sizeof(tmp));
-				if (res & 0x2)
-					strlcat(tmp, ",SOCKSx", sizeof(tmp));
-				if (res & 0x4)
+				if (res == 2)
+					strlcat(tmp, ",SAMPLE", sizeof(tmp));
+				else if (res == 3)
+					strlcat(tmp, ",IRC DRONE", sizeof(tmp));
+				else if (res == 5)
+					strlcat(tmp, ",BOTTLER", sizeof(tmp));
+				else if (res == 6)
+					strlcat(tmp, ",SPAMBOT", sizeof(tmp));
+				else if (res == 7)
+					strlcat(tmp, ",DDOS DRONE", sizeof(tmp));
+				else if (res == 8)
+					strlcat(tmp, ",SOCKS", sizeof(tmp));
+				else if (res == 9)
 					strlcat(tmp, ",HTTP", sizeof(tmp));
-				if (res & 0x8)
-					strlcat(tmp, ",ROUTER", sizeof(tmp));
-				if (res & 0x10)
-					strlcat(tmp, ",POST", sizeof(tmp));
-				if (res & 0x20)
-					strlcat(tmp, ",GET", sizeof(tmp));
+				else if (res == 10)
+					strlcat(tmp, ",CHAIN", sizeof(tmp));
+				else if (res == 12)
+					strlcat(tmp, ",TROLLS", sizeof(tmp));
+				else if (res == 13)
+					strlcat(tmp, ",BRUTEFORCE", sizeof(tmp));
 			}
-			ircsprintf(motivo, "Posible PROXY %s ilegal", tmp[0] != 0 ? &tmp[1] : "");
+			ircsprintf(motivo, "Posible proxy %s ilegal", tmp[0] != 0 ? &tmp[1] : "");
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
 			return;
 		}
@@ -537,9 +552,9 @@ void CompruebaProxy(Proxy *px, int forzar)
 		{
 			char motivo[BUFSIZE];
 			if (proxyserv->detalles)
-				ircsprintf(motivo, "Posible PROXY %s ilegal (%s)", psbuf[0] != 0 ? &psbuf[1]: "", &ptbuf[1]);
+				ircsprintf(motivo, "Posible proxy %s ilegal (%s)", psbuf[0] != 0 ? &psbuf[1]: "", &ptbuf[1]);
 			else
-				strlcpy(motivo, "Posible PROXY ilegal", sizeof(motivo));
+				strlcpy(motivo, "Posible proxy ilegal", sizeof(motivo));
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", px->host, proxyserv->tiempo, motivo);
 		}
 		else
@@ -579,6 +594,7 @@ SOCKFUNC(PSAbre)
 	if ((ppx = BuscaPPuerto(sck)))
 	{
 		ppx->abierto = 1;
+		ppx->bytes = 0;
 		if (ppx->tipo & XS_T_ABIERTO)
 		{
 			ppx->proxy = XS_T_ABIERTO;
@@ -643,7 +659,7 @@ SOCKFUNC(PSLee)
 	if ((ppx = BuscaPPuerto(sck)))
 	{
 		int i;
-		ppx->bytes += len;
+		ppx->bytes += strlen(data);
 		if (ppx->bytes > 1024)
 		{
 			SockClose(sck);
