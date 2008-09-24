@@ -1,0 +1,335 @@
+#!/bin/sh
+#
+# Script de configuración para Colossus
+# (C) Redyc
+
+RUN_CONFIGURE () {
+ARG=""
+if [  "$CRYPTOIRCD" = "1" ] ; then
+	if test x"$SSLDIR" = "x" ; then
+		ARG="$ARG--enable-ssl "
+	else
+		ARG="$ARG--enable-ssl=$SSLDIR "
+	fi
+fi
+if [ "$ZLIB" = "1" ] ; then
+	if test x"$ZLIBDIR" = "x" ; then
+		ARG="$ARG--enable-zlib "
+	else
+		ARG="$ARG--enable-zlib=$ZLIBDIR "
+	fi
+fi
+if [ "$INET6" = "1" ] ; then
+	ARG="$ARG--enable-inet6 "
+fi
+ARG="$ARG--with-listen=$LISTEN_SIZE "
+ARG="$ARG--with-permissions=$DEFPERM "
+ARG="$ARG--with-fd-setsize=$MAXCONNECTIONS "
+ARG="$ARG--enable-dynamic-linking "
+ARG="$ARG $EXTRAPARA "
+CONF="./configure $ARG"
+echo $CONF
+$CONF
+if [  "$CRYPTOIRCD" = "1" ] ; then
+	if [ ! -f server.req.pem ]; then
+		export OPENSSLPATH
+		make pem
+		cat .SICI
+		read cc
+	else
+		echo "El certificado SSL ya existe, no es necesaria su regeneracion"
+	fi
+fi
+}
+
+c=""
+n=""
+DEFPERM="0600"
+CRYPTOIRCD=""
+SSLDIR=""
+ZLIB=""
+ZLIBDIR=""
+LISTEN_SIZE="5"
+MAXCONNECTIONS="1024"
+INET6=""
+EXTRAPARA=""
+if [ "`eval echo -n 'a'`" = "-n a" ] ; then
+        c="\c"
+else
+        n="-n"
+fi
+
+
+#parse arguments
+NOCACHE=""
+NOINTRO=""
+CLEAN=""
+while [ $# -ge 1 ] ; do
+	if [ $1 = "--help" ] ; then
+		echo "Utilidad para configurar Colossus"
+		echo "-----------------------------"
+		echo "Sintaxis: ./Config [opciones]"
+		echo "-nocache     Ignora los parametros en config.settings"
+		echo "-nointro     Salta la intro"
+		echo "-quick       Salta las preguntas, configuracion automatica"
+		echo "-clean       Limpia ./configure cache"
+		exit 0
+	elif [ $1 = "-nocache" ] ; then
+		NOCACHE="1"
+	elif [ $1 = "-nointro" ] ; then
+		NOINTRO="1"
+	elif [ $1 = "-quick" -o $1 = "-q" ] ; then
+		echo "running quick config"
+		if [ -f "config.settings" ] ; then
+			. ./config.settings
+		fi
+		RUN_CONFIGURE
+		exit 0
+	elif [ $1 = "-clean" -o $1 = "-C" ] ; then
+		CLEAN="1"
+	fi
+	shift 1
+done
+
+if [ -f "config.settings" -a -z "$NOCACHE" ] ; then
+    . ./config.settings
+fi
+
+if [ -n "$CLEAN" ] ; then
+	rm -f config.cache
+fi
+
+clear
+
+    if [ -f ".CAMBIOS.NUEVO" -a -z "$NOINTRO" ] ; then
+        more .CHANGES.NEW
+        echo $n "[Enter para seguir]"
+        read cc
+        clear
+    fi
+
+TEST=""
+while [ -z "$TEST" ] ; do
+    TEST="$DEFPERM"
+    echo ""
+    echo "Que permisos para sus archivos quiere utilizar? (use 0 para desactivarlo)"
+    echo "Se recomienda encarecidamente usar 0600 para prevenir robos no deseados"
+    echo $n "[$TEST] -> $c"
+	read cc
+    if [ -z "$cc" ] ; then
+	DEFPERM=$TEST
+	break
+    fi
+    case "$cc" in
+	[0-9]*)
+	    DEFPERM="$cc"
+	    ;;
+	*)
+	    echo ""
+	    echo "Debe especificar un numero"
+	    TEST=""
+	    ;;
+    esac
+
+done
+
+TEST=""
+while [ -z "$TEST" ] ; do
+    if [ "$CRYPTOIRCD" = "1" ] ; then
+	TEST="Si"
+    else
+	TEST="No"
+    fi
+    echo ""
+    echo "Quiere darle soporte SSL (Secure Sockets Layer) a sus conexiones?"
+    echo $n "[$TEST] -> $c"
+	read cc
+    if [ -z "$cc" ] ; then
+	cc=$TEST
+    fi
+    case "$cc" in
+	[Ss]*)
+	    CRYPTOIRCD="1"
+	    ;;
+	[Nn]*)
+	    CRYPTOIRCD=""
+	    ;;
+	*)
+	    echo ""
+	    echo "Use Si o No"
+	    TEST=""
+	    ;;
+    esac
+done
+
+if [ "$CRYPTOIRCD" = "1" ] ; then
+	TEST=""
+	echo ""
+	echo "Si conoce el directorio de OpenSSL en su sistema, introduzcalo. Si no, dejelo en blanco"
+	echo $n "[$TEST] -> $c"
+    	read cc
+	if [ -z "$cc" ] ; then
+    		SSLDIR=""
+	else 
+    		SSLDIR=`eval echo $cc` # modified
+	fi
+fi
+
+TEST=""
+while [ -z "$TEST" ] ; do
+    if [ "$INET6" = "1" ] ; then
+	TEST="Si"
+    else
+	TEST="No"
+    fi
+    echo ""
+    echo "Quiere activar el soporte IPv6?"
+    echo $n "[$TEST] -> $c"
+	read cc
+    if [ -z "$cc" ] ; then
+	cc=$TEST
+    fi
+    case "$cc" in
+	[Ss]*)
+	    INET6="1"
+	    ;;
+	[Nn]*)
+	    INET6=""
+	    ;;
+	*)
+	    echo ""
+	    echo "Use Si o No"
+	    TEST=""
+	    ;;
+    esac
+done
+
+TEST=""
+while [ -z "$TEST" ] ; do
+    if [ "$ZLIB" = "1" ] ; then
+	TEST="Si"
+    else
+	TEST="No"
+    fi
+    echo ""
+    echo "Quiere activar el soporte ZLib? (Compresion de datos)"
+    echo $n "[$TEST] -> $c"
+	read cc
+    if [ -z "$cc" ] ; then
+	cc=$TEST
+    fi
+    case "$cc" in
+	[Ss]*)
+	    ZLIB="1"
+	    ;;
+	[Nn]*)
+	    ZLIB=""
+	    ;;
+	*)
+	    echo ""
+	    echo "Use Si o No"
+	    TEST=""
+	    ;;
+    esac
+done
+
+if [ "$ZLIB" = "1" ] ; then
+	TEST=""
+	echo ""
+	echo "Si conoce el directorio de ZLib en su sistema, introduzcalo. Si no, dejelo en blanco"
+	echo "leave this blank"
+	echo $n "[$TEST] -> $c"
+    	read cc
+	if [ -z "$cc" ] ; then
+    		ZLIBDIR=""
+	else 
+    		ZLIBDIR=`eval echo $cc` # modified
+	fi
+fi
+
+TEST=""
+while [ -z "$TEST" ] ; do
+    TEST="$LISTEN_SIZE"
+    echo ""
+    echo "Que tamaño de listen() quiere usar? Algunos servidores antiguos pueden tener problemas si es mas de 5."
+    echo $n "[$TEST] -> $c"
+	read cc
+    if [ -z "$cc" ] ; then
+	LISTEN_SIZE=$TEST
+	break
+    fi
+    case "$cc" in
+	[1-9]*)
+	    LISTEN_SIZE="$cc"
+	    ;;
+	*)
+	    echo ""
+	    echo "Debe especificar un numero"
+	    TEST=""
+	    ;;
+    esac
+done
+
+
+TEST=""
+while [ -z "$TEST" ] ; do
+    TEST="$MAXCONNECTIONS"
+    echo ""
+    echo "Cuantas conexiones quiere usar?"
+    echo $n "[$TEST] -> $c"
+	read cc
+    if [ -z "$cc" ] ; then
+	MAXCONNECTIONS=$TEST
+	break
+    fi
+    case "$cc" in
+	[1-9][0-9][0-9]*)
+	    MAXCONNECTIONS="$cc"
+	    ;;
+	*)
+	    echo ""
+	    echo "Debe especificar un numero mayor o igual que 100"
+	    TEST=""
+	    ;;
+    esac
+done
+
+echo ""
+echo "Quiere especificar mas parametros para configurar?"
+echo "Escribalos"
+echo $n "[]-> $c"
+read EXTRAPARA
+
+rm -f config.settings
+cat > config.settings << __EOF__
+#
+INET6="$INET6"
+LISTEN_SIZE="$LISTEN_SIZE"
+MAXCONNECTIONS="$MAXCONNECTIONS"
+DEFPERM="$DEFPERM"
+CRYPTOIRCD="$CRYPTOIRCD"
+SSLDIR="$SSLDIR"
+ZLIB="$ZLIB"
+ZLIBDIR="$ZLIBDIR"
+EXTRAPARA="$EXTRAPARA"
+__EOF__
+RUN_CONFIGURE
+cat << __EOF__
+
+ _______________________________________________________________________
+|                                                                       |
+|                    Configuracion de Colossus                          |
+|_______________________________________________________________________|
+|_______________________________________________________________________|
+|                                                                       |
+| La configuracion se ha realizado con exito. Escriba 'make' y espere   |
+| mientras compila. Cuando termine, recibira mas instrucciones.         |
+|                                                                       |
+|_______________________________________________________________________|
+|_______________________________________________________________________|
+|                        - Colossus -                                   |
+|                                                                       |
+| * Trocotronic - 2004-2008  trocotronic@redyc.com                   |
+|_______________________________________________________________________|
+__EOF__
+

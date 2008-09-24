@@ -1,0 +1,25 @@
+Si está leyendo este archivo, es que ha adquirido un módulo para Colossus.
+Antes de seguir, quiero agradecerle la confianza depositada.
+
+Para cargar este módulo sólo tendrá que editar su archivo de configuración y añadir las siguientes líneas en su colossus.conf.
+
+modulo modulos/modulo.dll { // para linux, modulos/modulo.so
+	nick nickdelbot;
+	ident identdelbot;
+	host hostdelbot;
+	realname "Realname del bot";
+	modos modosdelbot;
+	config modulo.inc;  //opcional
+	residente "#canal1,#canal2...";  // opcional
+	serial "serialsubministrado";
+};
+
+Dispone de un ejemplo detallado para cada módulo en el archivo llamado ejemplo.modulo.inc. Edítelo a su gusto y conveniencia.
+
+Recuerde que para usar este servicio necesita tener un serial propio. Este serial lo ha obtenido al finalizar la compra de este módulo. Si no lo recuerda, puede dirigirse a www.redyc.com y copiarlo desde su panel de servicios.
+Este serial es único e intransferible. No funcionará en ninguna otra máquina. ¡¡No subministre este serial a ninguna otra persona!!
+Si por cualquier cosa le rechazara este serial, deberá dirigirse a www.redyc.com y liberar este serial a través de su panel de servicios. Posteriormente deberá rearrancar el programa Colossus.
+
+Muchas gracias por su confianza.
+
+www.redyc.com
