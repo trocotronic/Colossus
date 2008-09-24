@@ -241,6 +241,8 @@ int main(int argc, char *argv[])
 	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
 		return 1;
 	DistribuyeConfiguracion(&config);
+	if (!sql && CargaSQL())
+		CierraColossus(-1);
 	/* rutina del unreal */
 	while (--argc > 0 && (*++argv)[0] == '-')
 	{
@@ -365,8 +367,7 @@ int main(int argc, char *argv[])
 #else
 	margv = argv;
 #endif
-	if (!sql && CargaSQL())
-		CierraColossus(-1);
+
 	if (!SQLNuevaTabla(SQL_VERSIONES, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"version int default NULL, "
