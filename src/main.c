@@ -236,6 +236,8 @@ int main(int argc, char *argv[])
 	if (setrlimit(RLIMIT_CORE, &corelim))
 		printf("unlimit core size failed; errno = %d\n", errno);
 #endif
+	CargaSignatura();
+	CpuId();
 	/* rutina del unreal */
 	while (--argc > 0 && (*++argv)[0] == '-')
 	{
@@ -405,8 +407,6 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
-	CargaSignatura();
-	CpuId();
 	SockOpen("colossus.redyc.com", 80, MotdAbre, MotdLee, NULL, NULL);
 	SiguienteTAsync(1);
 #ifdef _WIN32
