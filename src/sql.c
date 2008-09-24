@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #endif
 #include "ircd.h"
+#include <time.h>
 
 SQL sql = NULL;
 MYSQL *mysql = NULL;
