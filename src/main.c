@@ -236,14 +236,8 @@ int main(int argc, char *argv[])
 	if (setrlimit(RLIMIT_CORE, &corelim))
 		printf("unlimit core size failed; errno = %d\n", errno);
 #endif
-	CargaSignatura();
-	CpuId();
-	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
-		return 1;
-	DistribuyeConfiguracion(&config);
-	if (!sql && CargaSQL())
-		CierraColossus(-1);
 	/* rutina del unreal */
+	CpuId();
 	while (--argc > 0 && (*++argv)[0] == '-')
 	{
 		char *p = argv[0] + 1;
@@ -275,7 +269,6 @@ int main(int argc, char *argv[])
 				break;
 			case 'c':
 				(void)printf("cpuid %s\n", sgn.cpuid);
-				(void)printf("sgn %s\n", sgn.sgn);
 				exit(0);
 			case 'v':
 				(void)printf("%s (rv%i)\n", COLOSSUS_VERNUM, rev);
@@ -319,6 +312,9 @@ int main(int argc, char *argv[])
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
 	InsertaSenyal(SIGN_POST_NICK, SigPostNick);
 	InsertaSenyal(SIGN_CDESTROY, SigCDestroy);
+	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
+		return 1;
+	DistribuyeConfiguracion(&config);
 	DistribuyeMe(&me);
 #ifdef USA_SSL
 	SSLInit();
@@ -367,7 +363,8 @@ int main(int argc, char *argv[])
 #else
 	margv = argv;
 #endif
-
+	if (!sql && CargaSQL())
+		CierraColossus(-1);
 	if (!SQLNuevaTabla(SQL_VERSIONES, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"version int default NULL, "
@@ -408,6 +405,7 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
+	CargaSignatura();
 	SockOpen("colossus.redyc.com", 80, MotdAbre, MotdLee, NULL, NULL);
 	SiguienteTAsync(1);
 #ifdef _WIN32
