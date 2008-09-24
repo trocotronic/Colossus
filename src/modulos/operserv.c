@@ -997,7 +997,6 @@ BOTFUNC(OSClose)
 BOTFUNC(OSVaciar)
 {
 	static char *confirm = NULL;
-	int i;
 	if (params < 2)
 	{
 		confirm = AleatorioEx("********");
