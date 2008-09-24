@@ -238,6 +238,9 @@ int main(int argc, char *argv[])
 #endif
 	CargaSignatura();
 	CpuId();
+	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
+		return 1;
+	DistribuyeConfiguracion(&config);
 	/* rutina del unreal */
 	while (--argc > 0 && (*++argv)[0] == '-')
 	{
@@ -314,9 +317,6 @@ int main(int argc, char *argv[])
 	InsertaSenyal(SIGN_EOS, EntraResidentes);
 	InsertaSenyal(SIGN_POST_NICK, SigPostNick);
 	InsertaSenyal(SIGN_CDESTROY, SigCDestroy);
-	if (ParseaConfiguracion(CPATH, &config, 1) < 0)
-		return 1;
-	DistribuyeConfiguracion(&config);
 	DistribuyeMe(&me);
 #ifdef USA_SSL
 	SSLInit();
