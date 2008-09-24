@@ -572,3 +572,5 @@
 230908628 - Arreglado un cuelgue que afectaba a canales con caracteres raros.
 230908629 - Escapadas muchas consultas a MySQL.
 230908630 - Optimizado MemoServ.
+240908631 - Corregido un cuelgue con el kill de NickServ.
+240908632 - *** Vigésimasexta release pública: 1.12 ***
