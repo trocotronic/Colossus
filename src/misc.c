@@ -338,11 +338,9 @@ char *LeeDirectorio(Directorio dir)
 	return archivo;
 #else
 	struct dirent *dir_entry;
-	struct stat stat_info;
 	while ((dir_entry = readdir(dir)) != NULL)
 	{
-		lstat(dir_entry->d_name, &stat_info);
-		if (S_ISDIR(stat_info.st_mode))
+		if (dir_entry->d_type == DT_DIR)
 			continue;
 		return dir_entry->d_name;
 	}

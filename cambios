@@ -575,3 +575,4 @@
 240908631 - Corregido un cuelgue con el kill de NickServ.
 250908632 - Arreglado un cuelgue con los glines de OperServ.
 250908633 - Arreglo de permisos en el dump de SQL.
+260908634 - Arreglo un fallo al listar los archivos de un directorio en linux.
