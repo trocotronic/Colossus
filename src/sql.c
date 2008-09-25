@@ -597,7 +597,7 @@ int SQLDump(char *tag)
 	int i, j;
 	SQLRes res;
 	SQLRow row;
-	mkdir(SQL_BCK_DIR, 660);
+	mkdir(SQL_BCK_DIR, 700);
 	if (!tag)
 	{
 		struct tm *tt;
