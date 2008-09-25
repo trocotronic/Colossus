@@ -389,35 +389,39 @@ void PSEscanea(char *host)
 		struct hostent *he;
 		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
 		ircsprintf(buf, "%u.%u.%u.%u.dnsbl.dronebl.org", tmp4, tmp3, tmp2, tmp1);
-		if ((he = gethostbyname(buf)))
+		if ((he = gethostbyname(buf)) || h_errno == NO_DATA)
 		{
-			char tmp[128], motivo[256];
-			tmp[0] = '\0';
-			if (proxyserv->detalles)
+			char motivo[256];
+			if (he && proxyserv->detalles)
 			{
+				char *tmp;
 				int res = ntohl((*(struct in_addr *)he->h_addr).s_addr)&0xFF;
 				if (res == 2)
-					strlcat(tmp, ",SAMPLE", sizeof(tmp));
+					tmp = "SAMPLE";
 				else if (res == 3)
-					strlcat(tmp, ",IRC DRONE", sizeof(tmp));
+					tmp = "IRC DRONE";
 				else if (res == 5)
-					strlcat(tmp, ",BOTTLER", sizeof(tmp));
+					tmp = "BOTTLER";
 				else if (res == 6)
-					strlcat(tmp, ",SPAMBOT", sizeof(tmp));
+					tmp = "SPAMBOT";
 				else if (res == 7)
-					strlcat(tmp, ",DDOS DRONE", sizeof(tmp));
+					tmp = "DDOS DRONE";
 				else if (res == 8)
-					strlcat(tmp, ",SOCKS", sizeof(tmp));
+					tmp = "SOCKSx";
 				else if (res == 9)
-					strlcat(tmp, ",HTTP", sizeof(tmp));
+					tmp = "HTTP";
 				else if (res == 10)
-					strlcat(tmp, ",CHAIN", sizeof(tmp));
+					tmp = "CHAIN";
 				else if (res == 12)
-					strlcat(tmp, ",TROLLS", sizeof(tmp));
+					tmp = "TROLLS";
 				else if (res == 13)
-					strlcat(tmp, ",BRUTEFORCE", sizeof(tmp));
+					tmp = "BRUTEFORCE";
+				else
+					tmp = "UNKNOWN";
+				ircsprintf(motivo, "Posible proxy %s ilegal", tmp);
 			}
-			ircsprintf(motivo, "Posible proxy %s ilegal", tmp[0] != 0 ? &tmp[1] : "");
+			else
+				strcpy(motivo, "Posible proxy ilegal");
 			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
 			return;
 		}
