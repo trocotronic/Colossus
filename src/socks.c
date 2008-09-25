@@ -24,7 +24,7 @@ void EnviaCola(Sock *);
 char *lee_cola(Sock *);
 int CompletaConexion(Sock *);
 void LiberaSock(Sock *);
-#if defined(_WIN32) && defined(NOCORE)
+#if defined(NOCORE)
 #define DEBUG
 #endif
 
