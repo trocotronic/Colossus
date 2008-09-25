@@ -1,5 +1,5 @@
 /*
- * $Id: unreal.c,v 1.59 2008/05/03 12:01:55 Trocotronic Exp $ 
+ * $Id: unreal.c,v 1.59 2008/05/03 12:01:55 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -71,7 +71,7 @@ ProtInfo PROT_INFO(Unreal) = {
 	"Protocolo UnrealIRCd" ,
 	0.5 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com" 
+	"trocotronic@redyc.com"
 };
 
 #define MSG_SWHOIS "SWHOIS"
@@ -277,7 +277,7 @@ int p_mode(Cliente *cl, Canal *cn, char *modos, ...)
 {
 	char buf[BUFSIZE], *copy;
 	va_list vl;
-	if (!cl || !cn) 
+	if (!cl || !cn)
 		return 1;
 	va_start(vl, modos);
 	ircvsprintf(buf, modos, vl);
@@ -462,7 +462,7 @@ int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *mot
 	Tkl *tkl = NULL;
 	char *emisor = (bl ? bl->mask : me.nombre);
 	ircsprintf(buf, "%s@%s", ident, host);
-	if ((tkl = BuscaTKL(buf, tklines[TKL_GLINE])) && (!tkl->fin || !strcmp(motivo, tkl->motivo)))
+	if ((tkl = BuscaTKL(buf, tklines[TKL_GLINE])) && (!tkl->fin || (motivo && !strcmp(motivo, tkl->motivo))))
 		return 1;
 	if (modo == ADD)
 	{
@@ -537,7 +537,7 @@ int p_msg_vl(Cliente *cl, Cliente *bl, u_int tipo, char *formato, va_list *vl)
 		strlcpy(buf, formato, sizeof(buf));
 	else
 		ircvsprintf(buf, formato, *vl);
-	if (tipo == 1) 
+	if (tipo == 1)
 		EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_PRIVATE, cl->nombre, buf);
 	else
 		EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_NOTICE, cl->nombre, buf);
@@ -652,7 +652,7 @@ int test(Conf *config, int *errores)
 				error_parcial++;
 			}
 		}
-	}	
+	}
 	*errores += error_parcial;
 	return error_parcial;
 }
@@ -1369,7 +1369,7 @@ IRCFUNC(m_sjoin)
 	{
 		ProcesaModo(cl, cn, parv + 3, parc - 4);
 		LlamaSenyal(SIGN_MODE, 4, cl, cn, parv + 3, parc - 4);
-	}	
+	}
 	return 0;
 }
 IRCFUNC(m_kick)
@@ -1576,7 +1576,7 @@ IRCFUNC(m_eos)
 		LlamaSenyal(SIGN_EOS, 0);
 #ifdef _WIN32
 		ChkBtCon(1, 0);
-#endif		
+#endif
 	}
 	return 0;
 }
@@ -1614,7 +1614,7 @@ IRCFUNC(m_module)
 		}
 		if (ex->info->autor)
 		{
-			ircsprintf(minbuf, " Autor: %s.", ex->info->autor); 
+			ircsprintf(minbuf, " Autor: %s.", ex->info->autor);
 			strlcat(send, minbuf, sizeof(send));
 		}
 		if (ex->info->email)
@@ -1978,8 +1978,8 @@ char base64_to_int6_map[] = {
 
 static char *int_to_base64(long val)
 {
-	/* 32/6 == max 6 bytes for representation, 
-	 * +1 for the null, +1 for byte boundaries 
+	/* 32/6 == max 6 bytes for representation,
+	 * +1 for the null, +1 for byte boundaries
 	 */
 	static char base64buf[8];
 	long i = 7;
@@ -2011,7 +2011,7 @@ static long base64_to_int(char *b64)
 
 	if (!b64)
 		return 0;
-		
+
 	while (*b64)
 	{
 		v <<= 6;
