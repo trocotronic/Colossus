@@ -148,6 +148,7 @@ VOIDSIG AbreSockIrcd()
 		IrcdEscucha = NULL;
 	}
 	tping = 0;
+	ApagaCrono(timerircd);
 	timerircd = NULL;
 }
 void EscuchaIrcd()
@@ -168,8 +169,6 @@ SOCKFUNC(IniciaIrcd)
 #ifdef _WIN32
 	ChkBtCon(1, 1);
 #endif
-	ApagaCrono(timerircd);
-	timerircd = NULL;
 	intentos = 0;
 	canales = NULL;
 	if (ProtFunc(P_PING) && !timerping)
