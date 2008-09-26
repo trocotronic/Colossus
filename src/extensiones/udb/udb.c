@@ -1,5 +1,5 @@
 /*
- * $Id: udb.c,v 1.27 2008/02/16 23:19:43 Trocotronic Exp $ 
+ * $Id: udb.c,v 1.27 2008/02/16 23:19:43 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -176,10 +176,16 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 		DescargaOperServ(ext);
 	if (ipserv)
 		DescargaIpServ(ext);
-	if (opts & UDB_AUTOOPT)
+	if (opts & UDB_AUTOOPT && timeropt)
+	{
 		ApagaCrono(timeropt);
-	if (opts & UDB_AUTOBCK)
+		timeropt = NULL;
+	}
+	if (opts & UDB_AUTOBCK && timerbck)
+	{
 		ApagaCrono(timerbck);
+		timerbck = NULL;
+	}
 	BorraComando(MSG_DB, m_db);
 	BorraComando(MSG_DBQ, m_dbq);
 	BorraComando(MSG_EOS, m_eos_U);
@@ -351,9 +357,9 @@ IRCFUNC(m_db)
 			{
 				EnviaAServidor(":%s DB %s ERR INS %i %c %lu", me.nombre, cl->nombre, E_UDB_LEN, *r, bloq->lof);
 				/* a partir de este punto el servidor que recibe esta instrucción debe truncar su bloque con el valor recibido
-				   y propagar el truncado por la red, obviamente en el otro sentido. 
+				   y propagar el truncado por la red, obviamente en el otro sentido.
 				   Si el nodo que lo ha enviado es un LEAF propagará un DRP pero que no llegará a ningún sitio porque no tiene servidores
-				   en el otro sentido. Si es un HUB, tendrá vía libre para propagar el DRP. 
+				   en el otro sentido. Si es un HUB, tendrá vía libre para propagar el DRP.
 				   A efectos, sería lo mismo que el nodo receptor mandara un DRP, pero así se ahorra una línea ;) */
 				return 1;
 			}
@@ -440,7 +446,7 @@ IRCFUNC(m_db)
 					u_long bytes;
 					char *cb;
 					bloq = CogeDeId(*parv[5]);
-					cb = strchr(parv[5], ' ') + 1; 
+					cb = strchr(parv[5], ' ') + 1;
 					bytes = atoul(cb);
 					TruncaBloque(cl, bloq, bytes);
 					break;
@@ -556,7 +562,7 @@ IRCFUNC(m_dbq)
 			Free(pos);
 			return 1;
 		}
-		
+
 		while ((ds = strchr(cur, ':')))
 		{
 			if (*(ds + 1) == ':')
@@ -850,10 +856,10 @@ int zDeflate(int source, FILE *dest, int level)
 	if (ret != Z_OK)
 		return ret;
 	lseek(source, 0, SEEK_SET);
-	do 
+	do
 	{
 		ret = read(source, in, CHUNK);
-		if (ret < 0) 
+		if (ret < 0)
 		{
 			deflateEnd(&strm);
 			return Z_ERRNO;
@@ -861,7 +867,7 @@ int zDeflate(int source, FILE *dest, int level)
 		flush = (ret == 0 ? Z_FINISH : Z_NO_FLUSH);
 		strm.avail_in = ret;
 		strm.next_in = in;
-		do 
+		do
 		{
 			strm.avail_out = CHUNK;
 			strm.next_out = out;
@@ -892,10 +898,10 @@ int zInflate(FILE *source, FILE *dest)
 	ret = inflateInit(&strm);
 	if (ret != Z_OK)
 		return ret;
-	do 
+	do
 	{
 		strm.avail_in = fread(in, 1, CHUNK, source);
-		if (ferror(source)) 
+		if (ferror(source))
 		{
 			inflateEnd(&strm);
 			return Z_ERRNO;
@@ -903,12 +909,12 @@ int zInflate(FILE *source, FILE *dest)
 		if (strm.avail_in == 0)
 			break;
 		strm.next_in = in;
-		do 
+		do
 		{
 			strm.avail_out = CHUNK;
 			strm.next_out = out;
 			ret = inflate(&strm, Z_NO_FLUSH);
-			switch (ret) 
+			switch (ret)
 			{
 				case Z_NEED_DICT:
 					ret = Z_DATA_ERROR;
@@ -1025,8 +1031,8 @@ char base64_to_int6_map[] = {
 
 static char *int_to_base64(long val)
 {
-	/* 32/6 == max 6 bytes for representation, 
-	 * +1 for the null, +1 for byte boundaries 
+	/* 32/6 == max 6 bytes for representation,
+	 * +1 for the null, +1 for byte boundaries
 	 */
 	static char base64buf[8];
 	long i = 7;
@@ -1058,7 +1064,7 @@ static long base64_to_int(char *b64)
 
 	if (!b64)
 		return 0;
-		
+
 	while (*b64)
 	{
 		v <<= 6;

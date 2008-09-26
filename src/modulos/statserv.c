@@ -383,7 +383,13 @@ int MOD_DESCARGA(StatServ)()
 {
 	StsServ *sts;
 	for (sts = stats.stsserv; sts; sts = sts->sig)
-		ApagaCrono(sts->crono);
+	{
+		if (sts->crono)
+		{
+			ApagaCrono(sts->crono);
+			sts->crono = NULL;
+		}
+	}
 	if (conf_httpd)
 		BorraHDir(hdtest);
 	BorraSenyal(SIGN_SQL, SSSigSQL);

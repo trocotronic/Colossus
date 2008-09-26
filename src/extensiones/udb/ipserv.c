@@ -1,5 +1,5 @@
 /*
- * $Id: ipserv.c,v 1.10 2007/05/27 19:14:36 Trocotronic Exp $ 
+ * $Id: ipserv.c,v 1.10 2007/05/27 19:14:36 Trocotronic Exp $
  */
 
 #ifndef _WIN32
@@ -99,7 +99,11 @@ void DescargaIpServ(Extension *ext)
 	BorraSenyalExt(3, ISClones_U, ext);
 	BorraSenyal(SIGN_SYNCH, ISSigSynch_U);
 	BorraSenyal(SIGN_SOCKCLOSE, ISSigSockClose_U);
-	ApagaCrono(timercif);
+	if (timercif)
+	{
+		ApagaCrono(timercif);
+		timercif = NULL;
+	}
 }
 BOTFUNCHELP(ISHSet)
 {
@@ -238,7 +242,7 @@ EXTFUNC(ISSetipv_U)
 			buf[0] = '\0';
 			ircsprintf(buf, "%s.%s", param[2], ipserv->sufijo);
 			ipv = buf;
-		} 
+		}
 		else
 			ipv = param[2];
 		PropagaRegistro("N::%s::V %s", param[1], ipv);
@@ -284,7 +288,10 @@ int ISSigSynch_U()
 }
 int ISSigSockClose_U()
 {
-	ApagaCrono(timercif);
-	timercif = NULL;
+	if (timercif)
+	{
+		ApagaCrono(timercif);
+		timercif = NULL;
+	}
 	return 0;
 }

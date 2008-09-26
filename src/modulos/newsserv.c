@@ -152,7 +152,11 @@ int MOD_DESCARGA(NewsServ)()
 		}
 	}
 	BotUnset(newsserv);
-	ApagaCrono(timerrss);
+	if (timerrss)
+	{
+		ApagaCrono(timerrss);
+		timerrss = NULL;
+	}
 	BorraSenyal(SIGN_SQL, WSSigSQL);
 	BorraSenyal(CS_SIGN_DROP, WSSigDrop);
 	BorraSenyal(NS_SIGN_DROP, WSSigDrop);

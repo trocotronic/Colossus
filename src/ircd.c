@@ -132,6 +132,8 @@ int MiraPings()
 }
 VOIDSIG AbreSockIrcd()
 {
+	if (SockIrcd)
+		return;
 #ifdef USA_SSL
 	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, conf_server->usa_ssl ? OPT_SSL : 0)))
 #else
@@ -148,7 +150,8 @@ VOIDSIG AbreSockIrcd()
 		IrcdEscucha = NULL;
 	}
 	tping = 0;
-	ApagaCrono(timerircd);
+	if (timerircd)
+		ApagaCrono(timerircd);
 	timerircd = NULL;
 }
 void EscuchaIrcd()
@@ -211,8 +214,11 @@ SOCKFUNC(CierraIrcd)
 	LlamaSenyal(SIGN_SOCKCLOSE, 0);
 	for (mod = modulos; mod; mod = mod->sig)
 		mod->cl = NULL;
-	if (ProtFunc(P_PING))
+	if (ProtFunc(P_PING) && timerping)
+	{
 		ApagaCrono(timerping);
+		timerping = NULL;
+	}
 	if (reset)
 	{
 		(void)execv(margv[0], margv);

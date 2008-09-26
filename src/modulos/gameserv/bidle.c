@@ -233,8 +233,11 @@ int BidleDescarga()
 	DesconectaBot(bidle->cl, "El juego de idle");
 	bidle->cl = NULL;
 	bidle->cn = NULL;
-	ApagaCrono(timerbidlecheck);
-	timerbidlecheck = NULL;
+	if (timerbidlecheck)
+	{
+		ApagaCrono(timerbidlecheck);
+		timerbidlecheck = NULL;
+	}
 	BorraSenyal(SIGN_SYNCH, BidleSynch);
 	BorraSenyal(SIGN_SQL, BidleSQL);
 	BorraSenyal(SIGN_PMSG, BidlePMsg);
@@ -1416,8 +1419,11 @@ int BidleComprueba()
 int BidleSockClose()
 {
 	int i;
-	ApagaCrono(timerbidlecheck);
-	timerbidlecheck = NULL;
+	if (timerbidlecheck)
+	{
+		ApagaCrono(timerbidlecheck);
+		timerbidlecheck = NULL;
+	}
 	SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
 	ultime = 0;
 	if (bidle->quest.tipo)

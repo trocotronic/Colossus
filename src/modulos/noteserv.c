@@ -467,7 +467,11 @@ int MOD_DESCARGA(NoteServ)()
 	BorraSenyal(SIGN_SQL, ESSigSQL);
 	BorraSenyal(SIGN_SOCKCLOSE, ESSigSockClose);
 	BorraSenyal(SIGN_SYNCH, ESSigSynch);
-	ApagaCrono(timercomp);
+	if (timercomp)
+	{
+		ApagaCrono(timercomp);
+		timercomp = NULL;
+	}
 	BotUnset(noteserv);
 	return 0;
 }
@@ -728,8 +732,11 @@ int CompruebaNotas()
 }
 int ESSigSockClose()
 {
-	ApagaCrono(timercomp);
-	timercomp = NULL;
+	if (timercomp)
+	{
+		ApagaCrono(timercomp);
+		timercomp = NULL;
+	}
 	return 0;
 }
 int ESSigSynch()

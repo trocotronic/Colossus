@@ -122,8 +122,16 @@ int MOD_DESCARGA(LogServ)()
 	BorraSenyal(SIGN_EOS, LSSigEOS);
 	BorraSenyal(CS_SIGN_DROP, LSSigCDrop);
 	BorraSenyal(SIGN_SOCKCLOSE, LSSigSockClose);
-	ApagaCrono(timercaduca);
-	ApagaCrono(timeranuncia);
+	if (timercaduca)
+	{
+		ApagaCrono(timercaduca);
+		timercaduca = NULL;
+	}
+	if (timeranuncia)
+	{
+		ApagaCrono(timeranuncia);
+		timeranuncia = NULL;
+	}
 	BotUnset(logserv);
 	return 0;
 }
@@ -553,7 +561,10 @@ int LSSigEOS()
 }
 int LSSigSockClose()
 {
-	ApagaCrono(timeranuncia);
-	timeranuncia = NULL;
+	if (timeranuncia)
+	{
+		ApagaCrono(timeranuncia);
+		timeranuncia = NULL;
+	}
 	return 0;
 }
