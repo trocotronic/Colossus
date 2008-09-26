@@ -49,7 +49,7 @@ int MSCmdJoin(Cliente *, Canal *);
 
 int MSSigIdOk	(Cliente *);
 int MSSigSQL	();
-static void MSNotifica	(Cliente *);
+void MSNotifica	(Cliente *);
 int MSSigDrop	(char *);
 int MSSigRegistra	(char *);
 void MSSet(Conf *, Modulo *);
