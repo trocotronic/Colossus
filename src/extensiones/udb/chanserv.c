@@ -22,7 +22,7 @@ EXTFUNC(CSSuspender_U);
 EXTFUNC(CSLiberar_U);
 EXTFUNC(CSForbid_U);
 EXTFUNC(CSUnforbid_U);
-EXTFUNC(CSRegister_U);
+int CSRegister_U(char *);
 BOTFUNC(CSMigrar);
 BOTFUNCHELP(CSHMigrar);
 BOTFUNC(CSDemigrar);
@@ -72,7 +72,7 @@ void CargaChanServ(Extension *ext)
 	InsertaSenyalExt(16, CSLiberar_U, ext);
 	InsertaSenyalExt(17, CSForbid_U, ext);
 	InsertaSenyalExt(18, CSUnforbid_U, ext);
-	InsertaSenyalExt(20, CSRegister_U, ext);
+	InsertaSenyal(CS_SIGN_REG, CSRegister_U);
 }
 void DescargaChanServ(Extension *ext)
 {
@@ -84,7 +84,7 @@ void DescargaChanServ(Extension *ext)
 	BorraSenyalExt(16, CSLiberar_U, ext);
 	BorraSenyalExt(17, CSForbid_U, ext);
 	BorraSenyalExt(18, CSUnforbid_U, ext);
-	BorraSenyalExt(20, CSRegister_U, ext);
+	BorraSenyal(CS_SIGN_REG, CSRegister_U);
 }
 int IsChanUDB(char *canal)
 {
@@ -237,13 +237,13 @@ EXTFUNC(CSUnforbid_U)
 		PropagaRegistro("C::%s::B", param[1]);
 	return 0;
 }
-EXTFUNC(CSRegister_U)
+int CSRegister_U(char *chan)
 {
-	if (mod == chanserv->hmod && (chanserv->opts & CS_AUTOMIGRAR))
+	if (chanserv->opts & CS_AUTOMIGRAR)
 	{
-		int opts = atoi(SQLCogeRegistro(CS_SQL, param[1], "opts"));
-		SQLInserta(CS_SQL, param[1], "opts", "%i", opts | CS_OPT_UDB);
-		CSPropagaCanal(param[1]);
+		int opts = atoi(SQLCogeRegistro(CS_SQL, chan, "opts"));
+		SQLInserta(CS_SQL, chan, "opts", "%i", opts | CS_OPT_UDB);
+		CSPropagaCanal(chan);
 	}
 	return 0;
 }
