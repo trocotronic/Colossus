@@ -636,7 +636,11 @@ int SQLDump(char *tag)
 						if (!strcmp(tokbuf, row[j])) /* es numero */
 							fputs(tokbuf, fp);
 						else
-						fprintf(fp, "'%s'", row[j]);
+						{
+							char *q = SQLEscapa(row[j]);
+							fprintf(fp, "'%s'", q);
+							Free(q);
+						}
 					}
 					if (j < sql->tabla[i].campos-1)
 						fputs(",", fp);

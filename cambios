@@ -581,3 +581,4 @@
 270908637 - Arreglado un fallo que produce el unrealircd al enviar un mensaje corrupto.
 280908638 - Arreglado un fallo al registrar canales en UDB.
 280908639 - Añadido un campo _errstr en la estructura de SQL.
+280908640 - Arreglado un fallo al dumpear una bd.
