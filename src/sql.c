@@ -424,7 +424,6 @@ void SQLInserta(char *tabla, char *registro, char *campo, char *valor, ...)
 	ircfree(reg_c);
 	ircfree(cam_c);
 	ircfree(val_c);
-	SetSQLErrno();
 }
 
 /*!
