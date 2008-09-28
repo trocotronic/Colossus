@@ -19,6 +19,7 @@ typedef struct _sql {
 	}tabla[MAX_TAB];
 	int _errno;
 	int tablas;
+	const char *_errstr;
 }*SQL;
 
 extern MODVAR SQL sql;

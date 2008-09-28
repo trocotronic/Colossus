@@ -579,3 +579,5 @@
 260908635 - Arreglado un extraño fallo de reconexión.
 260908636 - Optimización de cronómetros.
 270908637 - Arreglado un fallo que produce el unrealircd al enviar un mensaje corrupto.
+280908638 - Arreglado un fallo al registrar canales en UDB.
+280908639 - Añadido un campo _errstr en la estructura de SQL.

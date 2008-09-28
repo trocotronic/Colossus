@@ -471,7 +471,10 @@ int SQLNumRows(SQLRes res)
 void SetSQLErrno()
 {
 	if (sql)
+	{
 		sql->_errno = mysql_errno(mysql);
+		sql->_errstr = mysql_error(mysql);
+	}
 }
 /*!
  * @desc: Sitúa el puntero interno de un recurso SQLRes a la fila indicada.
