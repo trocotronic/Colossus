@@ -876,6 +876,7 @@ int TestDb(Conf *config, int *errores)
 			error_parcial++;
 		}
 	}
+	/*
 	if (!(eval = BuscaEntrada(config, "prefijo")))
 	{
 		Error("[%s:%s] No se encuentra la directriz prefijo.", config->archivo, config->item);
@@ -889,6 +890,7 @@ int TestDb(Conf *config, int *errores)
 			error_parcial++;
 		}
 	}
+	*/
 	if ((eval = BuscaEntrada(config, "puerto")))
 	{
 		if (!eval->data)

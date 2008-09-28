@@ -152,7 +152,7 @@ extern MODVAR struct Conf_ssl *conf_ssl;
 #endif
 extern MODVAR struct Conf_httpd *conf_httpd;
 extern MODVAR struct Conf_msn *conf_msn;
-#define PREFIJO (conf_db ? conf_db->prefijo : "")
+#define PREFIJO (conf_db && conf_db->prefijo ? conf_db->prefijo : "")
 #define OPC 1
 #define OBL 2
 #ifdef USA_SSL
