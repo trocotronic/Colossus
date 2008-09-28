@@ -1009,10 +1009,12 @@ IRCFUNC(m_msg)
 		return 1;
 	}
 	if (!(bl = BuscaCliente(parv[1])))
-		return 1; /* algo passa! */
+		return 1; /* algo pasa! */
 	strlcpy(par, parv[2], sizeof(par));
 	for (i = 0, param[i] = strtok(par, " "); param[i]; param[++i] = strtok(NULL, " "));
 	params = i;
+	if (!param[0]) /* algo pasa! */
+		return 1;
 	if (!strcasecmp(param[0], "\1PING"))
 	{
 		EnviaAServidor(":%s %s %s :%s", parv[1], TOK_NOTICE, parv[0], parv[2]);

@@ -574,5 +574,8 @@
 230908630 - Optimizado MemoServ.
 240908631 - Corregido un cuelgue con el kill de NickServ.
 250908632 - Arreglado un cuelgue con los glines de OperServ.
-250908633 - Arreglo de permisos en el dump de SQL.
-260908634 - Arreglo un fallo al listar los archivos de un directorio en linux.
+250908633 - Arreglado permisos en el dump de SQL.
+260908634 - Arreglado un fallo al listar los archivos de un directorio en linux.
+260908635 - Arreglado un extraño fallo de reconexión.
+260908636 - Optimización de cronómetros.
+270908637 - Arreglado un fallo que produce el unrealircd al enviar un mensaje corrupto.
