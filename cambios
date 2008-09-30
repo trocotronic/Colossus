@@ -582,4 +582,4 @@
 280908638 - Arreglado un fallo al registrar canales en UDB.
 280908639 - Añadido un campo _errstr en la estructura de SQL.
 280908640 - Arreglado un fallo al dumpear una bd.
-280908641 - La directriz prefijo es opcional.
+280908641 - La directriz db::prefijo es opcional.

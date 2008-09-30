@@ -92,7 +92,7 @@ int CargaSQL()
 	}
 	if (mysql_select_db(mysql, bdd))
 	{
-		SQLQuery("CREATE DATABASE IF NOT EXISTS colossus");
+		SQLQuery("CREATE DATABASE IF NOT EXISTS colossus CHARACTER SET utf8");
 		if (sql->_errno)
 		{
 			Alerta(FERR, "Ha sido imposible crear la base de datos\n%s (%i)", mysql_error(mysql), mysql_errno(mysql));
