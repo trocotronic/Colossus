@@ -1086,7 +1086,7 @@ BOTFUNC(NSMarcas)
 BOTFUNC(NSOptsNick)
 {
 	int ret;
-	if (params < 3)
+	if (params < 4)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick opción valor");
 		return 1;

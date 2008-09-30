@@ -583,3 +583,4 @@
 280908639 - Añadido un campo _errstr en la estructura de SQL.
 280908640 - Arreglado un fallo al dumpear una bd.
 280908641 - La directriz db::prefijo es opcional.
+300908642 - Arreglado un fallo con el SETNICK de NickServ.
