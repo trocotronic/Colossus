@@ -280,8 +280,7 @@ SOCKFUNC(MSNNSRead)
 	}
 	if (!strncmp(data, "VER", 3))
 	{
-		//if (!strcmp(MSN_VER, data))
-		if (1)
+		if (strstr(data, "MSNP8"))
 			SockWrite(sck, "CVR 2 0x0409 win 4.10 i386 MSNMSGR 7.0.0816 MSMSGS %s", conf_msn->cuenta);
 		else
 		{
