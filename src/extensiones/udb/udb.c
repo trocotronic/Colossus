@@ -237,7 +237,7 @@ IRCFUNC(m_db)
 	static int bloqs = 0;
 	if (parc < 5)
 	{
-		EnviaAServidor(":%s DB %s ERR 0 %i", me.nombre, cl->nombre, E_UDB_PARAMS);
+		EnviaAServidor(":%s DB %s ERR 0 %i 0", me.nombre, cl->nombre, E_UDB_PARAMS);
 		return 1;
 	}
 	if (!strcasecmp(parv[2], "INF"))
@@ -336,7 +336,7 @@ IRCFUNC(m_db)
 			UDBloq *bloq;
 			if (parc < 6)
 			{
-				EnviaAServidor(":%s DB %s ERR INS %i", me.nombre, cl->nombre, E_UDB_PARAMS);
+				EnviaAServidor(":%s DB %s ERR INS %i %c", me.nombre, cl->nombre, E_UDB_PARAMS, *r);
 				return 1;
 			}
 			if (!(bloq = CogeDeId(*r)))
@@ -367,7 +367,7 @@ IRCFUNC(m_db)
 			ircsprintf(buf, "%s %s", r, parv[5]);
 			if (ParseaLinea(bloq, buf, 1))
 			{
-				EnviaAServidor(":%s DB %s ERR INS %i", me.nombre, cl->nombre, E_UDB_REP);
+				EnviaAServidor(":%s DB %s ERR INS %i %c", me.nombre, cl->nombre, E_UDB_REP, *parv[4]);
 				return 1;
 			}
 		}
@@ -402,7 +402,7 @@ IRCFUNC(m_db)
 			r += 3;
 			if (ParseaLinea(bloq, r, 1))
 			{
-				EnviaAServidor(":%s DB %s ERR DEL %i", me.nombre, cl->nombre, E_UDB_REP);
+				EnviaAServidor(":%s DB %s ERR DEL %i %c", me.nombre, cl->nombre, E_UDB_REP, *parv[4]);
 				return 1;
 			}
 		}
