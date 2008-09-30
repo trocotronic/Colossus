@@ -272,6 +272,12 @@ SOCKFUNC(MSNNSOpen)
 }
 SOCKFUNC(MSNNSRead)
 {
+	if (!strncmp(data, "<NOTI", 5))
+	{
+		if (!(data = strstr(data,"</NOTIFICATION>")))
+			return 1;
+		data += 15;
+	}
 	if (!strncmp(data, "VER", 3))
 	{
 		//if (!strcmp(MSN_VER, data))
