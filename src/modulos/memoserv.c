@@ -284,7 +284,7 @@ BOTFUNC(MSRead)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -421,7 +421,7 @@ BOTFUNC(MSMemo)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -488,7 +488,7 @@ BOTFUNC(MSDel)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -556,7 +556,7 @@ BOTFUNC(MSList)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -599,7 +599,7 @@ BOTFUNC(MSOpts)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_MEM))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_MEM))
 		{
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
@@ -842,7 +842,7 @@ int MSCmdJoin(Cliente *cl, Canal *cn)
 	opts = atoi(regopts);
 	if (opts & MS_OPT_CNO)
 	{
-		if (CSTieneNivel(cl->nombre, cn->nombre, CS_LEV_MEM))
+		if (CSTieneNivel(cl, cn->nombre, CS_LEV_MEM))
 			ProtFunc(P_NOTICE)(cl, CLI(memoserv), "Hay mensajes en el canal");
 	}
 	return 0;

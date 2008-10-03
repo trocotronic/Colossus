@@ -909,7 +909,7 @@ BOTFUNC(CSInfo)
 		Responde(cl, CLI(chanserv), "URL: \00312%s", row[5]);
 	if (!BadPtr(row[6]))
 		Responde(cl, CLI(chanserv), "Email: \00312%s", row[6]);
-	if (CSTieneNivel(cl->nombre, param[1], CS_LEV_SET))
+	if (CSTieneNivel(cl, param[1], CS_LEV_SET))
 		modos = row[7];
 	else
 		modos = strtok(row[7], " ");
@@ -947,7 +947,7 @@ BOTFUNC(CSInvite)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_INV))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_INV))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB);
 		return 1;
@@ -992,7 +992,7 @@ BOTFUNC(CSKick)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no existe.");
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_RMO))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_RMO))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1032,7 +1032,7 @@ BOTFUNC(CSModos)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no existe.");
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_RMO))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_RMO))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1099,7 +1099,7 @@ BOTFUNC(CSClear)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_RES))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_RES))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1247,7 +1247,7 @@ BOTFUNC(CSOpts)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_SET))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_SET))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1486,7 +1486,7 @@ BOTFUNC(CSAkick)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El canal está vacío.");
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_ACK))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_ACK))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -1568,7 +1568,7 @@ BOTFUNC(CSAccess)
 		SQLRes res;
 		SQLRow row;
 		char *c_c;
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_LIS))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_LIS))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
@@ -1610,7 +1610,7 @@ BOTFUNC(CSAccess)
 		SQLRow row;
 		char f = ADD, *modos = NULL, autof[256], *c_c, *n_c;
 		u_long prev = 0L;
-		if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_EDT))
+		if (!CSTieneNivel(cl, param[1], CS_LEV_EDT))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
@@ -1780,7 +1780,7 @@ BOTFUNC(CSJb)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_JOB))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_JOB))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -2260,7 +2260,7 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 		return 1;
 	if (IsChanReg(cn->nombre))
 	{
-		if (CSTieneNivel(al->nombre, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
+		if (CSTieneNivel(al, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
 			ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
 	}
 	return 0;
@@ -2303,7 +2303,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 			if (!IsOper(cl))
 				return 0;
 		}
-		if ((opts & CS_OPT_SEC) && !IsPreo(cl) && (!CSTieneNivel(cl->nombre, cn->nombre, 0L) || !IsId(cl)))
+		if ((opts & CS_OPT_SEC) && !IsPreo(cl) && (!CSTieneNivel(cl, cn->nombre, 0L) || !IsId(cl)))
 		{
 			if (ProtFunc(P_PART_USUARIO_REMOTO))
 				ProtFunc(P_PART_USUARIO_REMOTO)(cl, cn, NULL);
@@ -2334,7 +2334,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 			strlcat(tokbuf, cl->nombre, sizeof(tokbuf));
 			strlcat(tokbuf, " ", sizeof(tokbuf));
 		}
-		if (CSTieneNivel(cl->nombre, cn->nombre, 0L))
+		if (CSTieneNivel(cl, cn->nombre, 0L))
 			SQLInserta(CS_SQL, cn->nombre, "ultimo", "%lu", time(0));
 		if (cn->miembros == 1)
 		{
@@ -2588,7 +2588,7 @@ SQLRow CSEsAkick(char *canal, char *mascara)
 SQLRes CSEsAccess(char *canal, char *nick)
 {
 	char *c_c, *n_c;
-	static SQLRes res;
+	SQLRes res;
 	c_c = SQLEscapa(strtolower(canal));
 	n_c = SQLEscapa(strtolower(nick));
 	res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
@@ -2604,29 +2604,27 @@ int CSDropanick(char *nick)
 	Free(n_c);
 	return 0;
 }
-u_long CSTieneNivel(char *nick, char *canal, u_long flag)
+u_long CSTieneNivel(Cliente *cl, char *canal, u_long flag)
 {
-	Cliente *al;
 	SQLRes res;
 	SQLRow row;
-	al = BuscaCliente(nick);
-	if ((!IsOper(al) && IsChanSuspend(canal)) || !IsId(al))
+	if ((!IsOper(cl) && IsChanSuspend(canal)) || !IsId(cl))
 		return 0L;
-	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))
+	if (CSEsFundador(cl, canal) || CSEsFundador_cache(cl, canal))
 		return CS_LEV_ALL;
-	if ((res = CSEsAccess(canal, nick)))
+	if ((res = CSEsAccess(canal, cl->nombre)))
 	{
 		u_long nivel = 0L;
 		row = SQLFetchRow(res);
 		nivel = atoul(row[2]);
-		if (IsPreo(al))
+		if (IsPreo(cl))
 			nivel |= (CS_LEV_ALL & ~CS_LEV_MOD);
 		if (flag)
 			return (nivel & flag);
 		else
 			return nivel;
 	}
-	if (IsPreo(al))
+	if (IsPreo(cl))
 		return (CS_LEV_ALL & ~CS_LEV_MOD);
 	return 0L;
 }
@@ -2640,10 +2638,17 @@ int CSTieneAuto(char *nick, char *canal, char autof)
 		return 0;
 	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))
 		return 1;
-	if ((res = CSEsAccess(canal, nick)) && (row = SQLFetchRow(res)))
+	if ((res = CSEsAccess(canal, nick)))
 	{
-		if (row[3] && strchr(row[3], autof))
-			return 1;
+		if ((row = SQLFetchRow(res)))
+		{
+			if (row[3] && strchr(row[3], autof))
+			{
+				SQLFreeRes(res);
+				return 1;
+			}
+		}
+		SQLFreeRes(res);
 	}
 	return 0;
 }

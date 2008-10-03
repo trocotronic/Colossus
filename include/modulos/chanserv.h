@@ -63,7 +63,7 @@ struct _cs
 #define CS_ERR_SUSP "\00304ERROR: No puedes aplicar este comando sobre un canal suspendido."
 #define CS_ERR_FORB ERR_FORB
 
-DLLFUNC extern u_long CSTieneNivel(char *, char *, u_long);
+DLLFUNC extern u_long CSTieneNivel(Cliente *, char *, u_long);
 DLLFUNC extern int ChanReg(char *);
 DLLFUNC extern char *IsChanSuspend(char *);
 DLLFUNC extern char *IsChanForbid(char *);

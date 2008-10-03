@@ -277,7 +277,7 @@ BOTFUNC(CSProteger)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_EDT))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_EDT))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
@@ -455,7 +455,7 @@ BOTFUNC(CSSetUDB)
 		Responde(cl, CLI(chanserv), CS_ERR_SUSP);
 		return 1;
 	}
-	if (!CSTieneNivel(cl->nombre, param[1], CS_LEV_SET))
+	if (!CSTieneNivel(cl, param[1], CS_LEV_SET))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
