@@ -739,7 +739,7 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 		return NULL;
 	}
 #endif
-	if ((hmod = irc_dlopen(tmppath, RTLD_LAZY)))
+	if ((hmod = irc_dlopen(tmppath, RTLD_NOW)))
 		return hmod;
 	Alerta(FADV, "Ha sido imposible cargar %s (dlopen): %s", dll, irc_dlerror());
 	return NULL;
