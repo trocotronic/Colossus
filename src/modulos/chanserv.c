@@ -306,7 +306,7 @@ DLLFUNC int CSEsFundador(Cliente *al, char *canal)
 char *CSEsFundador_cache(Cliente *al, char *canal)
 {
 	char *cache;
-	if (!al)
+	if (!al || !chanserv) //en linux si viene de memoserv, no existe (wtf?)
 		return NULL;
 	if ((cache = CogeCache(CACHE_FUNDADORES, al->nombre, chanserv->hmod->id)))
 	{
@@ -816,7 +816,8 @@ BOTFUNC(CSIdentify)
 	if ((cache = CogeCache(CACHE_FUNDADORES, cl->nombre, chanserv->hmod->id)))
 	{
 		char *tok;
-		for (tok = strtok(cache, " "); tok; tok = strtok(NULL, " "))
+		strlcpy(tokbuf, cache, sizeof(tokbuf));
+		for (tok = strtok(tokbuf, " "); tok; tok = strtok(NULL, " "))
 		{
 			if (!strcasecmp(tok, param[1]))
 			{
