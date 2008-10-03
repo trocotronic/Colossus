@@ -5,24 +5,24 @@ INCLUDES = ../include/ircd.h ../include/ircsprintf.h ../include/md5.h \
 	../include/struct.h
 R_MODULES=chanserv.so nickserv.so memoserv.so operserv.so ipserv.so
 ALL_MODULES=$(R_MODULES) proxyserv.so smsserv.so tvserv.so newsserv.so logserv.so noteserv.so gameserv.so statserv.so
-COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o	
+COMMANDS=chanserv.o nickserv.o operserv.o ipserv.o memoserv.o
 MODULES=$(R_MODULES)
 MODULEFLAGS=@MODULEFLAGS@
 all: build
 build: $(MODULES)
 modall: $(ALL_MODULES)
 modulo: $(FUENTE).c
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(FUENTE).so $(FUENTE).c 
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(FUENTE).so $(FUENTE).c
 chanserv.so: chanserv.c $(INCLUDES) chanserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o chanserv.so chanserv.c
 chanserv.o: chanserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c chanserv.c
 nickserv.so: nickserv.c $(INCLUDES) nickserv.o
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO chanserv.o -o nickserv.so nickserv.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o nickserv.so nickserv.c
 nickserv.o: nickserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c nickserv.c
 operserv.so: operserv.c $(INCLUDES) operserv.o
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO memoserv.o chanserv.o -o operserv.so operserv.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o operserv.so operserv.c
 operserv.o: operserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c operserv.c
 ipserv.so: ipserv.c $(INCLUDES) ipserv.o
@@ -30,7 +30,7 @@ ipserv.so: ipserv.c $(INCLUDES) ipserv.o
 ipserv.o: ipserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c ipserv.c
 memoserv.so: memoserv.c $(INCLUDES) memoserv.o
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO chanserv.o -o memoserv.so memoserv.c
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o memoserv.so memoserv.c
 memoserv.o: memoserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c memoserv.c
 proxyserv.so: proxyserv.c $(INCLUDES)

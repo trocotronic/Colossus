@@ -306,7 +306,7 @@ DLLFUNC int CSEsFundador(Cliente *al, char *canal)
 char *CSEsFundador_cache(Cliente *al, char *canal)
 {
 	char *cache;
-	if (!al || !chanserv) //en linux si viene de memoserv, no existe (wtf?)
+	if (!al)
 		return NULL;
 	if ((cache = CogeCache(CACHE_FUNDADORES, al->nombre, chanserv->hmod->id)))
 	{
