@@ -311,7 +311,8 @@ char *CSEsFundador_cache(Cliente *al, char *canal)
 	if ((cache = CogeCache(CACHE_FUNDADORES, al->nombre, chanserv->hmod->id)))
 	{
 		char *tok;
-		for (tok = strtok(cache, " "); tok; tok = strtok(NULL, " "))
+		strlcpy(tokbuf, cache, sizeof(tokbuf));
+		for (tok = strtok(tokbuf, " "); tok; tok = strtok(NULL, " "))
 		{
 			if (!strcasecmp(tok, canal))
 				return cache;
