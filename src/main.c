@@ -45,6 +45,7 @@ int getpgid(int);
 void SetSignal(int, void (*)(int));
 #endif
 extern int ProcCache();
+extern int IniciaIPLoc();
 
 /*!
  * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
