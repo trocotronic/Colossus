@@ -766,7 +766,6 @@ BOTFUNC(NSInfo)
 	comp = strcasecmp(param[1], cl->nombre);
 	ll = SQLEscapa(strtolower(param[1]));
 	res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, ll);
-	Free(ll);
 	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
 	Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
@@ -831,6 +830,7 @@ BOTFUNC(NSInfo)
 			SQLFreeRes(res);
 		}
 	}
+	Free(ll);
 	return 0;
 }
 BOTFUNC(NSList)

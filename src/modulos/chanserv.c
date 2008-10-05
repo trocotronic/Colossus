@@ -2318,16 +2318,19 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 			return 0;
 		}
 		buf[0] = tokbuf[0] = '\0';
-		if (CSEsFundador(cl, cn->nombre) || CSEsFundador_cache(cl, cn->nombre))
-			strlcpy(buf, protocolo->modcl, sizeof(buf));
-		else
+		if (IsId(cl))
 		{
-			if (IsId(cl) && (res = CSEsAccess(cn->nombre, cl->nombre)))
+			if (CSEsFundador(cl, cn->nombre) || CSEsFundador_cache(cl, cn->nombre))
+				strlcpy(buf, protocolo->modcl, sizeof(buf));
+			else
 			{
-				row = SQLFetchRow(res);
-				if (!BadPtr(row[3]))
-					strlcpy(buf, row[3], sizeof(buf));
-				SQLFreeRes(res);
+				if ((res = CSEsAccess(cn->nombre, cl->nombre)))
+				{
+					row = SQLFetchRow(res);
+					if (!BadPtr(row[3]))
+						strlcpy(buf, row[3], sizeof(buf));
+					SQLFreeRes(res);
+				}
 			}
 		}
 		max = strlen(buf);

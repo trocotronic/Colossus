@@ -586,3 +586,4 @@
 300908642 - Arreglado un fallo con el SETNICK de NickServ.
 011008643 - Arreglado un fallo en el MSN que impedía conectar.
 031008644 - Arreglado un fallo de compilación en linux.
+031008645 - Arreglado un fallo con el fundador sin identificar.

@@ -389,7 +389,7 @@ void PSEscanea(char *host)
 		struct hostent *he;
 		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
 		ircsprintf(buf, "%u.%u.%u.%u.dnsbl.dronebl.org", tmp4, tmp3, tmp2, tmp1);
-		if ((he = gethostbyname(buf)) || h_errno == NO_DATA)
+		if ((he = gethostbyname(buf)))
 		{
 			char motivo[256];
 			if (he && proxyserv->detalles)
