@@ -207,6 +207,13 @@ BOTFUNCHELP(OSHServerDebug)
 }
 BOTFUNCHELP(OSHLines)
 {
+	Responde(cl, CLI(operserv), "Propaga *lines por la red mediante el bloque K.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis:");
+	Responde(cl, CLI(operserv), "\00312GLINE ip|host motivo");
+	Responde(cl, CLI(operserv), "Añade una gline permanente por UDB.");
+	Responde(cl, CLI(operserv), "\00312GLINE ip|host");
+	Responde(cl, CLI(operserv), "Elimina esa gline");
 	return 0;
 }
 BOTFUNC(OSModos)
