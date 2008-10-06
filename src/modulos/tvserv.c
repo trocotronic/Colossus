@@ -6,6 +6,7 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "modulos/tvserv.h"
+#include <time.h>
 
 TvServ *tvserv = NULL;
 

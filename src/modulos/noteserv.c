@@ -7,6 +7,7 @@
 #include "modulos.h"
 #include "protocolos.h"
 #include "modulos/noteserv.h"
+#include <time.h>
 
 NoteServ *noteserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, noteserv->hmod, NULL)
