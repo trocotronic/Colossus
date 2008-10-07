@@ -602,6 +602,11 @@ BOTFUNC(NSRegister)
 		return 1;
 	}
 	SQLFreeRes(res);
+	if (pass && strchr(pass, '!'))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "La contraseña no puede contener el signo !");
+		return 1;
+	}
 	if (nickserv->opts & NS_REGCODE)
 	{
 		char *r = CogeCache(CACHE_REGCODE, cl->nombre, nickserv->hmod->id);
