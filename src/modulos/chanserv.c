@@ -1976,7 +1976,7 @@ BOTFUNC(CSRegister)
 		SQLRes res;
 		SQLRow row;
 		int i;
-		char *desc;
+		char *desc, *c;
 		if (IsChanReg(param[1]))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal ya está registrado.");
@@ -1986,6 +1986,14 @@ BOTFUNC(CSRegister)
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_SNTX, "El nombre de canal debe empezar por #.");
 			return 1;
+		}
+		for (c = param[1]; *c; c++)
+		{
+			if (*c < 32 || *c > 127)
+			{
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "El nombre de canal contiene caracteres no estándar.");
+				return 1;
+			}
 		}
 		if (!IsOper(cl))
 		{
