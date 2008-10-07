@@ -198,6 +198,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		enlace ip;
 	};
 	ssl;
+	autocon;
 };</pre>
   <p>Los valores se deducen f&aacute;cilmente. </p>
   <p><b>addr</b><br>Indica a qu&eacute; ip o host debe conectar.</p>
@@ -210,6 +211,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
   <p><b>escucha::puerto</b><br>Es <i>opcional</i> y define un puerto para escuchar y recibir conexiones remotas. Debe usarse en caso de que no se pueda poner en escucha el <b>puerto</b>. </p>
   <p><b>escucha::enlace</b><br>Es <i>opcional</i> y define una ip de enlace para poner en escucha y recibir conexiones remotas. Debe usarse en caso de disponer varios dispositivos.</p>
   <p><b>ssl</b><br>Es <i>opcional</i>. Indica que la conexión con el servidor IRCd debe hacerse por SSL.</p>
+  <p><b>autocon</b><br>Es <i>opcional</i>. Conecta directamente al servidor sin necesidad de apretar el botón de Conectar. Sólo para WINDOWS.</p>
   <p>Ejemplo:</p>
   <pre>server {
 	addr 127.0.0.1;

@@ -73,9 +73,13 @@ int SiguienteTAsync(int fuerza)
 		i = 0;
 #ifdef _WIN32
 		ChkBtCon(SockIrcd ? 1 : 0, 0);
-#else
+		if (conf_server->autocon)
+		{
+#endif
 		if (!SockIrcd)
 			AbreSockIrcd();
+#ifdef _WIN32
+		}
 #endif
 		if (refrescando)
 		{

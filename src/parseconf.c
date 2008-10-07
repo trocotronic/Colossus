@@ -791,6 +791,10 @@ void ConfServer(Conf *config)
 			ircstrdup(conf_server->info, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "numeric"))
 			conf_server->numeric = atoi(config->seccion[i]->data);
+#ifdef _WIN32
+		else if (!strcmp(config->seccion[i]->item, "autocon"))
+			conf_server->autocon = 1;
+#endif
 #ifdef USA_ZLIB
 		else if (!strcmp(config->seccion[i]->item, "compresion"))
 			conf_server->compresion = atoi(config->seccion[i]->data);

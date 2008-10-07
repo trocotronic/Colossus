@@ -53,6 +53,9 @@ struct Conf_server
 #endif
 	int escucha;
 	char *bind_ip;
+#ifdef _WIN32
+	unsigned autocon:1;
+#endif
 };
 struct Conf_db
 {

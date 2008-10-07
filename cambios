@@ -589,3 +589,4 @@
 031008645 - Arreglado un fallo con el fundador sin identificar.
 071008646 - Añadido regcode en NickServ.
 071008647 - Se prohibe el registro de canales con caracteres no estándar.
+071008648 - Añadida directriz server::autocon para conectar automáticamente.
