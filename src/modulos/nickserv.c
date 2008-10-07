@@ -616,7 +616,7 @@ BOTFUNC(NSRegister)
 			}
 			d = AleatorioEx("######");
 			buf[0] = 0;
-			ircsprintf(tokbuf, "%i", c);
+			ircsprintf(tokbuf, "%i", colores[c]);
 			while (*r && *d)
 			{
 				strcat(buf, "\003");
@@ -627,7 +627,7 @@ BOTFUNC(NSRegister)
 				}
 				else
 				{
-					ircsprintf(tmp, "%i", Aleatorio(4, 15));
+					ircsprintf(tmp, "%i", colores[Aleatorio(4, 15)]);
 					strcat(buf, tmp);
 					chrcat(buf, *d++);
 				}
@@ -643,7 +643,7 @@ BOTFUNC(NSRegister)
 				while (*d)
 				{
 					strcat(buf, "\003");
-					ircsprintf(tmp, "%i", Aleatorio(4, 15));
+					ircsprintf(tmp, "%i", colores[Aleatorio(4, 15)]);
 					strcat(buf, tmp);
 					chrcat(buf, *d++);
 				}
@@ -656,7 +656,7 @@ BOTFUNC(NSRegister)
 				l = "rojo";
 			else if (c == 3)
 				l = "amarillo";
-			Responde(cl, CLI(nickserv), "Para continuar debes introducir las letras que sean de color \002\003%i%s\xF del siguiente código: \002%s", 16-c, l, buf);
+			Responde(cl, CLI(nickserv), "Para continuar debes introducir las letras que sean de color \002\003%i%s\xF del siguiente código: \002%s", colores[Aleatorio(4, 15)], l, buf);
 			Responde(cl, CLI(nickserv), "Ejecuta /msg %s %s %s %s codigo", CLI(nickserv)->nombre, fc->com, param[1], (pass ? param[2] : ""));
 			return 1;
 		}
