@@ -192,6 +192,8 @@ void NSSet(Conf *config, Modulo *mod)
 				nickserv->opts |= NS_SID;
 			else if (!strcmp(config->seccion[i]->item, "secure"))
 				nickserv->opts |= NS_SMAIL;
+			else if (!strcmp(config->seccion[i]->item, "regcode"))
+				nickserv->opts |= NS_REGCODE;
 			else if (!strcmp(config->seccion[i]->item, "prot"))
 			{
 				nickserv->opts &= ~(NS_PROT_KILL | NS_PROT_CHG);
@@ -536,7 +538,7 @@ BOTFUNC(NSHelp)
 BOTFUNC(NSRegister)
 {
 	u_int i, opts;
-	char *dominio, *mail, *pass, *usermask, *m_c, *ll, *hh;
+	char *dominio, *mail, *pass, *usermask, *m_c, *ll, *hh, *regcode;
 	SQLRes res = NULL;
 	usermask = strchr(cl->mask, '!') + 1;
 	if (strlen(cl->nombre) > (u_int)(protocolo->nicklen - 7)) /* 6 minimo de contraseña +1 de los ':' */
@@ -570,11 +572,13 @@ BOTFUNC(NSRegister)
 	{
 		mail = param[1];
 		pass = NULL;
+		regcode = param[2];
 	}
 	else
 	{
 		mail = param[2];
 		pass = param[1];
+		regcode = param[3];
 	}
 	/* comprobamos su email */
 	if (!(dominio = strchr(mail, '@')) || !Mx(dominio+1))
@@ -598,7 +602,76 @@ BOTFUNC(NSRegister)
 		return 1;
 	}
 	SQLFreeRes(res);
+	if (nickserv->opts & NS_REGCODE)
+	{
+		char *r = CogeCache(CACHE_REGCODE, cl->nombre, nickserv->hmod->id);
+		if (!regcode)
+		{
+			int c = Aleatorio(0,3), colores[] = { 12, 3, 4, 8, 0, 1, 2, 5, 6, 7, 9, 10, 11, 13, 14, 15 };
+			char *d, tmp[8], *l;
+			if (!r)
+			{
+				InsertaCache(CACHE_REGCODE, cl->nombre, 86400, nickserv->hmod->id, AleatorioEx("######"));
+				r = CogeCache(CACHE_REGCODE, cl->nombre, nickserv->hmod->id);
+			}
+			d = AleatorioEx("######");
+			buf[0] = 0;
+			ircsprintf(tokbuf, "%i", c);
+			while (*r && *d)
+			{
+				strcat(buf, "\003");
+				if (Aleatorio(0,1))
+				{
+					strcat(buf, tokbuf);
+					chrcat(buf, *r++);
+				}
+				else
+				{
+					ircsprintf(tmp, "%i", Aleatorio(4, 15));
+					strcat(buf, tmp);
+					chrcat(buf, *d++);
+				}
+			}
+			if (*r)
+			{
+				strcat(buf, "\003");
+				strcat(buf, tokbuf);
+				strcat(buf, r);
+			}
+			else
+			{
+				while (*d)
+				{
+					strcat(buf, "\003");
+					ircsprintf(tmp, "%i", Aleatorio(4, 15));
+					strcat(buf, tmp);
+					chrcat(buf, *d++);
+				}
+			}
+			if (c == 0)
+				l = "azul";
+			else if (c == 1)
+				l = "verde";
+			else if (c == 2)
+				l = "rojo";
+			else if (c == 3)
+				l = "amarillo";
+			Responde(cl, CLI(nickserv), "Para continuar debes introducir las letras que sean de color \002\003%i%s\xF del siguiente código: \002%s", 16-c, l, buf);
+			Responde(cl, CLI(nickserv), "Ejecuta /msg %s %s %s %s codigo", CLI(nickserv)->nombre, fc->com, param[1], (pass ? param[2] : ""));
+			return 1;
+		}
+		else
+		{
+			if (!r || strcmp(r, regcode))
+			{
+				Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Código incorrecto.");
+				return 1;
+			}
+		}
+	}
 	opts = NS_OPT_MASK;
+	if (nickserv->opts & NS_HIDEFMAIL)
+		opts |= NS_OPT_MAIL;
 	m_c = SQLEscapa(cl->info);
 	ll = SQLEscapa(cl->nombre);
 	hh = SQLEscapa(cl->ident);

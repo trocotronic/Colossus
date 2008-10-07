@@ -7,6 +7,8 @@
 #define NS_PROT_KILL 0x4
 #define NS_PROT_CHG 0x8
 #define NS_AUTOMIGRAR 0x10
+#define NS_REGCODE 0x20
+#define NS_HIDEFMAIL 0x40
 
 #define NS_MAX_NICK 32
 #define NS_MAX_FBMAIL 64
@@ -56,3 +58,5 @@ extern NickServ *nickserv;
 
 #define CACHE_INTENTOS_ID "intentos_id"
 #define CACHE_ULTIMO_REG "ultimo_reg"
+#define CACHE_REGCODE "regcode"
+
