@@ -443,6 +443,7 @@ void ChkBtCon(int val, int block)
 	SetDlgItemText(hwMain, BT_CON, val ? "Desconectar" : "Conectar");
 	CheckDlgButton(hwMain, BT_CON, val && !block ? BST_CHECKED : BST_UNCHECKED);
 	EnableWindow(GetDlgItem(hwMain, BT_CON), block ? FALSE : TRUE);
+	EnableWindow(GetDlgItem(hwMain, BT_MSN), !conf_msn ? FALSE : TRUE);
 }
 int Info(char *formato, ...)
 {

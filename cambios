@@ -590,3 +590,4 @@
 071008646 - Añadido regcode en NickServ.
 071008647 - Se prohibe el registro de canales con caracteres no estándar.
 071008648 - Añadida directriz server::autocon para conectar automáticamente.
+071008649 - El botón MSN sólo se activa si hay bloque.
