@@ -1170,7 +1170,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 }
 int BidleJoin(Cliente *cl, Canal *cn)
 {
-	if (cn == bidle->cn && IsId(cl))
+	if (cn == bidle->cn && IsId(cl) && EsLinkCanal(cl->canal, cn))
 	{
 		char *nombre;
 		if ((nombre = SQLCogeRegistro(GS_BIDLE, cl->nombre, "nombre")))
