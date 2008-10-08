@@ -106,7 +106,7 @@ int IPLocResolv(char *ip, int (*func)(int, char *, IPLoc *))
 	}
 	return 1;
 }
-void XMLCALL IPLocXMLFin(IPLocRec *irec, const char *nombre)
+void XMLCALL IPLocXMLFin(IPLocRec *irec, const XML_Char *nombre)
 {
 	if (!irec->iloc)
 		irec->iloc = BMalloc(IPLoc);
@@ -119,7 +119,7 @@ void XMLCALL IPLocXMLFin(IPLocRec *irec, const char *nombre)
 	else if (!strcmp(nombre, "isp"))
 		irec->iloc->isp = strdup(irec->tmp);
 }
-void XMLCALL IPLocXMLData(IPLocRec *irec, const char *s, int len)
+void XMLCALL IPLocXMLData(IPLocRec *irec, const XML_Char *s, int len)
 {
 	ircfree(irec->tmp);
 	irec->tmp = (char *)Malloc(sizeof(char *) * (len+1));

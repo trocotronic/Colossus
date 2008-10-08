@@ -613,7 +613,7 @@ BOTFUNC(NSRegister)
 		if (!regcode)
 		{
 			int c = Aleatorio(0,3), colores[] = { 12, 3, 4, 8, 0, 1, 2, 5, 6, 7, 9, 10, 11, 13, 14, 15 };
-			char *d, tmp[8], *l;
+			char *d, tmp[8], *l = NULL;
 			if (!r)
 			{
 				InsertaCache(CACHE_REGCODE, cl->nombre, 86400, nickserv->hmod->id, AleatorioEx("######"));
