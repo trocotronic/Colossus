@@ -17,6 +17,7 @@
 #include "modulos/logserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/nickserv.h"
+#include <time.h>
 
 LogServ *logserv = NULL;
 LogChan *logueos = NULL;

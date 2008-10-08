@@ -6,6 +6,7 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "modulos/smsserv.h"
+#include <time.h>
 
 SmsServ *smsserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, smsserv->hmod, NULL)
