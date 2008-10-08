@@ -31,14 +31,13 @@ modall:
 	cd src; ${MAKE} ${MAKEARGS} 'EXLIBS=${EXLIBS}' modall
 
 server:
-build:
+build: act111
 	-@if [ ! -f include/setup.h ] ; then \
 		echo "No parece que hayas ejecutado la configuracion..."; \
 		sh Config; \
 	fi
 	$(INSTALL) -m 0700 -d ~/Colossus/utils
 	$(CC) -o confver src/utils/confver.c
-	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
 	./confver
 	rm -rf confver
 	@for i in $(SUBDIRS); do \
@@ -48,6 +47,9 @@ build:
 	@echo ' __________________________________________________ '
 	@echo '| Compilación terminada.                           |'
 	@echo '|__________________________________________________|'
+
+act111: src/utils/actualiza_111.c
+	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
 
 clean:
 	$(RM) -f *~ \#* core *.orig include/*.orig
