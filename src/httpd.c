@@ -1,7 +1,7 @@
 /*
- * $Id: httpd.c,v 1.29 2008/02/13 16:16:08 Trocotronic Exp $ 
+ * $Id: httpd.c,v 1.29 2008/02/13 16:16:08 Trocotronic Exp $
  */
- 
+
 #ifdef _WIN32
 #include <io.h>
 #else
@@ -64,7 +64,7 @@ Opts herrores[] = {
 };
 char *meses[] = {
 	"Jan" , "Feb" , "Mar" , "Apr" , "May" , "Jun" ,
-	"Jul" , "Aug" , "Sep" , "Oct" , "Nov" , "Dec" , 
+	"Jul" , "Aug" , "Sep" , "Oct" , "Nov" , "Dec" ,
 	NULL
 };
 int BuscaMes(char *mes)
@@ -190,8 +190,8 @@ void EnviaRespuesta(HHead *hh, u_int num, time_t lmod, char *errmsg, u_long byte
 		LiberaHHead(hh);
 		return;
 	}
-	if (!bytes && data)
-		bytes = strlen(data);
+//	if (!bytes && data)
+//		bytes = strlen(data);
 	if (!errmsg && !(errmsg = BuscaOptItem(num, herrores)))
 		errmsg = "Desconocido";
 	ahora = time(0);
@@ -253,7 +253,7 @@ void EnviaError(HHead *hh, u_int num, char *texto)
 	if (!(errmsg = BuscaOptItem(num, herrores)))
 		errmsg = "Desconocido";
 	ircsprintf(tbuf, msg, num, errmsg, errmsg, texto, COLOSSUS_VERSION, conf_httpd->url, conf_httpd->puerto);
-	EnviaRespuesta(hh, num, -1, errmsg, 0, tbuf);
+	EnviaRespuesta(hh, num, -1, errmsg, strlen(tbuf), tbuf);
 }
 HDir *CreaHDir(char *ruta, HDIRFUNC(*func))
 {
@@ -352,7 +352,8 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 					{
 						EjecutaComandoSinc(conf_httpd->php, buf, &len, &p);
 						EnviaRespuesta(hh, 200, time(0), NULL, len, p);
-						Free(p);
+						if (len && p)
+							Free(p);
 					}
 				}
 				else
@@ -401,7 +402,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 					UnmapViewOfFile(p);
 					CloseHandle(mp);
 					CloseHandle(fd);
-#else	
+#else
 					if (fstat(fd, &sb) == -1)
 					{
 						close(fd);
@@ -424,7 +425,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 					EnviaRespuesta(hh, 200, sb.st_mtime, NULL, len, p);
 					munmap(p, len);
 					close(fd);
-#endif	
+#endif
 				}
 			}
 			break;
@@ -535,7 +536,7 @@ SOCKFUNC(LeeHTTPD)
 	{
 		if ((hh->param_post && strstr(hh->param_post, "__ASYNCH__=1")) || (hh->param_get && strstr(hh->param_get, "__ASYNCH__=1")))
 			hh->asynch = 1;
-		ProcesaHHead(hh, sck); 
+		ProcesaHHead(hh, sck);
 	}
 	return 0;
 }

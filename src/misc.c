@@ -77,7 +77,7 @@ int EjecutaCmd(ECmd *ecmd)
 	HANDLE hChildStdoutRd, hProc;
 	SECURITY_ATTRIBUTES saAttr;
    	DWORD dwRead;
-   	char *res, tmp[BUFSIZE], name[BUFSIZE];
+   	char *res = NULL, tmp[BUFSIZE], name[BUFSIZE];
    	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
 	saAttr.bInheritHandle = TRUE;
 	saAttr.lpSecurityDescriptor = NULL;
@@ -89,9 +89,11 @@ int EjecutaCmd(ECmd *ecmd)
 	if ((hProc = CreateChildProcess(tmp, NULL, hChildStdoutRd)))
 	{
 		SetFilePointer(hChildStdoutRd, 0, NULL, FILE_BEGIN);
-		dwRead = GetFileSize(hChildStdoutRd, NULL);
-		res = (char *)Malloc(sizeof(char) * dwRead);
-		ReadFile(hChildStdoutRd, res, sizeof(char) * dwRead, &dwRead, NULL);
+		if ((dwRead = GetFileSize(hChildStdoutRd, NULL)))
+		{
+			res = (char *)Malloc(sizeof(char) * dwRead);
+			ReadFile(hChildStdoutRd, res, sizeof(char) * dwRead, &dwRead, NULL);
+		}
 	}
 	CloseHandle(hChildStdoutRd);
 	do {
@@ -103,7 +105,7 @@ int EjecutaCmd(ECmd *ecmd)
      {
      	if (ecmd->len)
      		*ecmd->len = dwRead;
-     	if (ecmd->res)
+     	if (ecmd->res && res)
      		*ecmd->res = res;
      }
      Free(ecmd);
