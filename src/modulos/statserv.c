@@ -590,23 +590,22 @@ int SSCmdPostNick(Cliente *cl, int nuevo)
 	if (!nuevo)
 	{
 		char *c;
-		if ((c = strrchr(cl->host, '.')))
+		StsServ *stsserv;
+		if (!EsIp(cl->host) && (c = strrchr(cl->host, '.')))
 		{
-			ListCl *lcl;
 			StsChar *sts;
-			StsServ *stsserv;
 			c++;
 			sts = InsertaSts(c, BuscaTld(c), &(stats.ststld));
 			sts->users++;
-			lcl = InsertaCl(cl, sts, &cltld);
-			if (IsOper(cl) && !BuscaCl(cl, stats.stsopers))
-			{
-				InsertaCl(cl, NULL, &(stats.stsopers));
-				SSRefresca(OPERS);
-			}
-			if ((stsserv = BuscaServ(cl->server)) && (++stsserv->users > stsserv->max_users))
-				stsserv->max_users = stsserv->users;
+			InsertaCl(cl, sts, &cltld);
 		}
+		if (IsOper(cl) && !BuscaCl(cl, stats.stsopers))
+		{
+			InsertaCl(cl, NULL, &(stats.stsopers));
+			SSRefresca(OPERS);
+		}
+		if ((stsserv = BuscaServ(cl->server)) && (++stsserv->users > stsserv->max_users))
+			stsserv->max_users = stsserv->users;
 		SSRefresca(USERS);
 		ProtFunc(P_MSG_VL)(cl, CLI(statserv), 1, "\1VERSION\1", NULL);
 	}
@@ -654,9 +653,9 @@ int SSCmdUmode(Cliente *cl, char *umodes)
 				InsertaCl(cl, NULL, &(stats.stsopers));
 				SSRefresca(OPERS);
 			}
+			else if (BorraCl(cl, &(stats.stsopers)))
+				stats.opers--;
 		}
-		else if (BorraCl(cl, &(stats.stsopers)))
-			stats.opers--;
 	}
 	return 0;
 }
@@ -830,8 +829,34 @@ BOTFUNC(SSReplyVer)
 	}
 	return 0;
 }
+BOTFUNCHELP(SSHStats)
+{
+	Responde(cl, CLI(statserv), "Muestra las estadísticas que se procesan.");
+	Responde(cl, CLI(statserv), "Se puede especificar de forma opcional qué tipo de estadísticas mostrar.");
+	Responde(cl, CLI(statserv), "- \00312SERVERS\003: Estadísticas individuales de los servidores de la red. Incluye información como el lag que sufren o la versión que utilizan.");
+	Responde(cl, CLI(statserv), "- \00312OPERS\003: Estadísticas de los operadores de red.");
+	Responde(cl, CLI(statserv), "- \00312VERSIONES\003: Estadísticas sobre las versiones que utilizan los clientes.");
+	Responde(cl, CLI(statserv), "- \00312TLDS\003: Estadísticas sobre la procedencia de los usuarios.");
+	Responde(cl, CLI(statserv), " ");
+	Responde(cl, CLI(statserv), "Sintaxis: \00312STATS [tipo]");
+	return 0;
+}
 BOTFUNC(SSHelp)
 {
+	if (params < 2)
+	{
+		Responde(cl, CLI(statserv), "\00312%s\003 realiza unas exhaustivas estadísticas de la red.", statserv->hmod->nick);
+		Responde(cl, CLI(statserv), "Dichas estadísticas comprenden datos como el número de usuarios, canales, servidores, operadores, picos máximos diarios, semanales y mensuales.");
+		Responde(cl, CLI(statserv), "También incluyen información sobre la procedencia de los usuarios así como la versión de cliente que utilizan.");
+		Responde(cl, CLI(statserv), " ");
+		Responde(cl, CLI(statserv), "Comandos disponibles:");
+		ListaDescrips(statserv->hmod, cl);
+		Responde(cl, CLI(statserv), " ");
+		Responde(cl, CLI(statserv), "Para más información, \00312/msg %s %s comando", statserv->hmod->nick, strtoupper(param[0]));
+	}
+	else if (!MuestraAyudaComando(cl, param[1], statserv->hmod, param, params))
+		Responde(cl, CLI(statserv), SS_ERR_EMPT, "Opción desconocida.");
+	EOI(statserv, 0);
 	return 0;
 }
 BOTFUNC(SSStats)
@@ -971,11 +996,11 @@ BOTFUNC(SSStats)
 			Responde(cl, CLI(statserv), "Servidor: \00312%s", sts->cl->nombre);
 			Responde(cl, CLI(statserv), "Información: \00312%s", sts->cl->info);
 			Responde(cl, CLI(statserv), "Usuarios: \00312%u\003 - Máximo: \00312%u", sts->users, sts->max_users);
-			Responde(cl, CLI(statserv), "Lag: %\00312%.3f segs", (double)sts->lag/1000);
+			Responde(cl, CLI(statserv), "Lag: \00312%.3f segs", (double)sts->lag/1000);
 			Responde(cl, CLI(statserv), "Versión del servidor: \00312%s", sts->version);
 			t = GMTime() - sts->uptime;
 			d = MideDuracion(t);
-			Responde(cl, CLI(statserv), d);
+			Responde(cl, CLI(statserv), "Uptime: \00312%s", d);
 			Responde(cl, CLI(statserv), " ");
 		}
 	}
@@ -1004,10 +1029,6 @@ BOTFUNC(SSStats)
 	}
 	else
 		Responde(cl, CLI(statserv), SS_ERR_EMPT, "Opción incorrecta");
-	return 0;
-}
-BOTFUNCHELP(SSHStats)
-{
 	return 0;
 }
 int SSSigEOS()

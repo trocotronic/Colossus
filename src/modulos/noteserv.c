@@ -12,6 +12,7 @@
 NoteServ *noteserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, noteserv->hmod, NULL)
 
+BOTFUNC(ESHelp);
 BOTFUNC(ESEntrada);
 BOTFUNCHELP(ESHEntrada);
 BOTFUNC(ESSalida);
@@ -29,6 +30,7 @@ int CompruebaNotas();
 Timer *timercomp = NULL;
 
 static bCom noteserv_coms[] = {
+	{ "help" , ESHelp , N0 , "Muestra esta ayuda." , NULL } ,
 	{ "entrada" , ESEntrada , N1 , "Inserta una entrada en tu agenda." , ESHEntrada } ,
 	{ "salida" , ESSalida , N1 , "Elimina una entrada de tu agenda." , ESHSalida } ,
 	{ "ver" , ESVer , N1 , "Examina tus notas para un día determinado." , ESHVer } ,
@@ -530,14 +532,46 @@ time_t CreaTime(int dia, int mes, int ano, int hora, int min)
 }
 BOTFUNCHELP(ESHEntrada)
 {
+	Responde(cl, CLI(noteserv), "Añade una tarea a tu agenda.");
+	Responde(cl, CLI(noteserv), "Puedes especificar de manera opcional con cuántos minutos de antelación quieres ser avisado.");
+	Responde(cl, CLI(noteserv), "Si no especificas este aviso previo, serás avisado en el mismo momento que se cumpla la tarea.");
+	Responde(cl, CLI(noteserv), "Puedes especificar la fecha, la hora o ambas cosas.");
+	Responde(cl, CLI(noteserv), " ");
+	Responde(cl, CLI(noteserv), "Sintaxis: \00312ALTA [dd/mm/yy [hh:mm]] [nº] nota");
+	Responde(cl, CLI(noteserv), "Donde nº son los minutos previos de aviso.");
 	return 0;
 }
 BOTFUNCHELP(ESHSalida)
 {
+	Responde(cl, CLI(noteserv), "Elimina una entrada.");
+	Responde(cl, CLI(noteserv), "Para eliminarla sólo tienes que especificar la fecha en la que se realiza la tarea.");
+	Responde(cl, CLI(noteserv), " ");
+	Responde(cl, CLI(noteserv), "Sintaxis: \00312BAJA dd/mm/yy [hh:mm]");
 	return 0;
 }
 BOTFUNCHELP(ESHVer)
 {
+	Responde(cl, CLI(noteserv), "Muestra tu agenda para un día en concreto.");
+	Responde(cl, CLI(noteserv), "Además de las tareas que tengas ese día, podrás ver el zodiaco y el santoral.");
+	Responde(cl, CLI(noteserv), " ");
+	Responde(cl, CLI(noteserv), "Sintaxis: \00312VER día/mes/año|HOY|MAÑANA");
+	return 0;
+}
+BOTFUNC(ESHelp)
+{
+	if (params < 2)
+	{
+		Responde(cl, CLI(noteserv), "\00312%s\003 se encarga de mantener tu agenda al día.", noteserv->hmod->nick);
+		Responde(cl, CLI(noteserv), "Con este servicio podrás gestionar todas tus tareas pendientes para una fecha concreta y avisarte un tiempo antes.");
+		Responde(cl, CLI(noteserv), "Además también podrás ver otras cosas como el signo del zodiaco o el santoral.");
+		Responde(cl, CLI(noteserv), " ");
+		Responde(cl, CLI(noteserv), "Comandos disponibles:");
+		ListaDescrips(noteserv->hmod, cl);
+		Responde(cl, CLI(noteserv), " ");
+		Responde(cl, CLI(noteserv), "Para más información, \00312/msg %s %s comando", noteserv->hmod->nick, strtoupper(param[0]));
+	}
+	else if (!MuestraAyudaComando(cl, param[1], noteserv->hmod, param, params))
+		Responde(cl, CLI(noteserv), ES_ERR_EMPT, "Opción desconocida.");
 	return 0;
 }
 BOTFUNC(ESEntrada)
@@ -574,7 +608,7 @@ BOTFUNC(ESEntrada)
 	avisa = atoi(param[pm]);
 	m_c = SQLEscapa(Unifica(param, params, avisa? pm+1 : pm, -1));
 	ll = SQLEscapa(cl->nombre);
-	SQLQuery("INSERT INTO %s%s (item,fecha,avisar,nota) VALUES ('%s',%lu,%lu,'%s')", PREFIJO, ES_SQL, ll, tt, tt-avisa, m_c);
+	SQLQuery("INSERT INTO %s%s (item,fecha,avisar,nota) VALUES ('%s',%lu,%lu,'%s')", PREFIJO, ES_SQL, ll, tt, tt-avisa*60, m_c);
 	Free(ll);
 	Free(m_c);
 	Responde(cl, CLI(noteserv), "Se ha añadido esta entrada correctamente.");

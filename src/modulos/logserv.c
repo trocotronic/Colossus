@@ -358,7 +358,7 @@ BOTFUNC(LSHelp)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(logserv), "\00312%s\003 se encarga  de loguear las conversaciones de los canales.", logserv->hmod->nick);
+		Responde(cl, CLI(logserv), "\00312%s\003 se encarga de loguear las conversaciones de los canales.", logserv->hmod->nick);
 		Responde(cl, CLI(logserv), "Estos logs se envían periódicamente por mail.");
 		Responde(cl, CLI(logserv), "Es una gran ventaja puesto que ya no es necesario disponer de bots ajenos a la red que estén las 24 horas del día online.");
 		Responde(cl, CLI(logserv), " ");
@@ -446,7 +446,16 @@ BOTFUNC(LSOpts)
 		Responde(cl, CLI(logserv), LS_ERR_EMPT, "Este canal no se está logueando");
 		return 1;
 	}
-	SQLInserta(LS_SQL, param[1], "email", param[1]);
+	if (!strcasecmp(param[2], "EMAIL"))
+	{
+		if (params < 4)
+		{
+			Responde(cl, CLI(logserv), LS_ERR_PARA, fc->com, "#canal EMAIL direccion@correo");
+			return 1;
+		}
+		SQLInserta(LS_SQL, param[1], "email", param[3]);
+		Responde(cl, CLI(logserv), "Los logs del canal \00312%s\003 se enviarán a partir de ahora a la dirección \00312%s", param[1], param[3]);
+	}
 	EOI(logserv, 4);
 	return 0;
 }
