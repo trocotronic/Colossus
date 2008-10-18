@@ -513,7 +513,7 @@ BOTFUNC(OSPropaga)
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "línea");
 		return 1;
 	}
-	PropagaRegistro("K::G::%s::R %s", param[2], Unifica(param, params, 1, -1));
+	PropagaRegistro(Unifica(param, params, 1, -1));
 	Responde(cl, CLI(operserv), "Línea insertada con éxito.");
 	return 0;
 }
