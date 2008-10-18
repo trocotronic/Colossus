@@ -30,6 +30,8 @@ BOTFUNC(OSSetUDB);
 BOTFUNCHELP(OSHSetUDB);
 BOTFUNC(OSLines);
 BOTFUNCHELP(OSHLines);
+BOTFUNC(OSPropaga);
+BOTFUNCHELP(OSHPropaga);
 EXTFUNC(OSOpers);
 
 #define NS_OPT_UDB 0x80
@@ -43,6 +45,7 @@ bCom operserv_coms[] = {
 	{ "restaurarudb" , OSRestaurarUDB , N4 , "Restaura una copia de seguridad realizada con el comando \00312backupudb\003." , OSHRestaurarUDB } ,
 	{ "setudb" , OSSetUDB , N4 , "Fija distintos parámetros UDB de red." , OSHSetUDB } ,
 	{ "lines" , OSLines , N4 , "Propaga por la red *lines (spamfilters, glines, zlines, shuns y qlines)" , OSHLines } ,
+	{ "propaga" , OSPropaga , N4 , "Inserta una línea UDB en la red" , OSHPropaga } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -214,6 +217,13 @@ BOTFUNCHELP(OSHLines)
 	Responde(cl, CLI(operserv), "Añade una gline permanente por UDB.");
 	Responde(cl, CLI(operserv), "\00312GLINE ip|host");
 	Responde(cl, CLI(operserv), "Elimina esa gline");
+	return 0;
+}
+BOTFUNCHELP(OSHPropaga)
+{
+	Responde(cl, CLI(operserv), "Inserta una línea UDB cualquiera por la red.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312PROPAGA bloque::campo::campo contenido");
 	return 0;
 }
 BOTFUNC(OSModos)
@@ -494,6 +504,17 @@ BOTFUNC(OSLines)
 		else
 			PropagaRegistro("K::G::%s", param[2]);
 	}
+	return 0;
+}
+BOTFUNC(OSPropaga)
+{
+	if (params < 2)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "línea");
+		return 1;
+	}
+	PropagaRegistro("K::G::%s::R %s", param[2], Unifica(param, params, 1, -1));
+	Responde(cl, CLI(operserv), "Línea insertada con éxito.");
 	return 0;
 }
 EXTFUNC(OSOpers)
