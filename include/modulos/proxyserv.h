@@ -5,14 +5,16 @@
 #define MAX_PATRON 16
 
 typedef struct _xs ProxyServ;
+typedef struct _puerto XSPuerto;
+struct _puerto
+{
+	struct _puerto *sig;
+	int puerto; /* puertos a escanear */
+	int tipo;
+};
 struct _xs
 {
-	struct _puerto
-	{
-		struct _puerto *sig;
-		int puerto; /* puertos a escanear */
-		int tipo;
-	}*puerto;
+	XSPuerto *puerto;
 	int tiempo;
 	int maxlist;
 	char *scan_ip;
@@ -43,24 +45,14 @@ extern ProxyServ *proxyserv;
 #define XS_ERR_EMPT "\00304ERROR: %s"
 
 typedef struct _proxy Proxy;
-typedef struct _pprox PPuerto;
 struct _proxy
 {
 	struct _proxy *sig;
 	char *host;
-	PPuerto *puerto;
-	int escaneados;
-	int puertos;
-};
-struct _pprox
-{
-	struct _pprox *sig;
 	Sock *sck;
-	int puerto;
-	int tipo;
-	int proxy;
-	u_int bytes;
-	int abierto;
+	XSPuerto *puerto;
+	int bytes;
+	unsigned prox:1;
 };
 
 #define XS_SQL "ehosts"
