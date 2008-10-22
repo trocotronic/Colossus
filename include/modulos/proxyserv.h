@@ -23,7 +23,6 @@ struct _xs
 	char *patron[MAX_PATRON];
 	unsigned detalles:1;
 	unsigned opm:1;
-	unsigned fsal:1;
 	unsigned igids:1;
 	unsigned igops:1;
 	Modulo *hmod;

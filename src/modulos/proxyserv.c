@@ -271,8 +271,6 @@ void PSSet(Conf *config, Modulo *mod)
 				proxyserv->detalles = 1;
 			else if (!strcmp(config->seccion[i]->item, "lista_online"))
 				proxyserv->opm = 1;
-			else if (!strcmp(config->seccion[i]->item, "forzar_salida"))
-				proxyserv->fsal = 1;
 			else if (!strcmp(config->seccion[i]->item, "ignorar_opers"))
 				proxyserv->igops = 1;
 			else if (!strcmp(config->seccion[i]->item, "ignorar_nicks_id"))
@@ -631,7 +629,7 @@ SOCKFUNC(PSFin)
 			if (proxyserv->detalles)
 			{
 				char *o = BuscaOptItem(px->puerto->tipo, TiposProxy);
-				ircsprintf(motivo, "Posible proxy %s ilegal (%s)", o ? o : "", px->puerto->puerto);
+				ircsprintf(motivo, "Posible proxy %s ilegal (%i)", o ? o : "", px->puerto->puerto);
 			}
 			else
 				strlcpy(motivo, "Posible proxy ilegal", sizeof(motivo));
