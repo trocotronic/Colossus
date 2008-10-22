@@ -600,6 +600,18 @@ SOCKFUNC(PSFin)
 				PSProxOK(px);
 			else
 			{
+				if (!sck->recibido)
+				{
+					int po = px->puerto->puerto;
+					while (px->puerto->puerto == po)
+					{
+						if (!(px->puerto = px->puerto->sig))
+						{
+							PSProxOK(px);
+							break;
+						}
+					}
+				}
 				while (!(px->sck = SockOpenEx(sck->host, px->puerto->puerto, PSAbre, PSLee, NULL, PSFin, 30, 30, OPT_NORECVQ)))
 				{
 					if (!(px->puerto = px->puerto->sig))
