@@ -183,22 +183,30 @@ Sock *SockOpenEx(char *host, int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc
 	sck = BMalloc(Sock);
 	SockDesc(sck);
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	{
+		Free(sck);
 		return NULL;
+	}
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_port = htons((u_short)puerto);
 	if ((res = Resuelve(host)))
 		sck->server.sin_addr = *res;
-	sck->host = strdup(host);
 	SockConn(sck);
 	if (SockNoBlock(sck->pres) == -1)
+	{
+		Free(sck);
 		return NULL;
+	}
 #ifdef _WIN32
-	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) == -1 &&
-		WSAGetLastError() != WSAEINPROGRESS && WSAGetLastError() != WSAEWOULDBLOCK)
+	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) == -1 &&	WSAGetLastError() != WSAEINPROGRESS && WSAGetLastError() != WSAEWOULDBLOCK)
 #else
 	if (connect(sck->pres, (struct sockaddr *)&sck->server, sizeof(struct sockaddr)) < 0 && errno != EINPROGRESS)
 #endif
-			return NULL;
+	{
+		Free(sck);
+		return NULL;
+	}
+	sck->host = strdup(host);
 	if (!(opts & OPT_NORECVQ))
 		sck->recvQ = BMalloc(DBuf);
 	sck->sendQ = BMalloc(DBuf);
@@ -275,7 +283,10 @@ Sock *SockListenEx(int puerto, SOCKFUNC(*openfunc), SOCKFUNC(*readfunc), SOCKFUN
 	(void)ircsprintf(ipname, "%d.%d.%d.%d", ad[0], ad[1], ad[2], ad[3]);
 	sck = BMalloc(Sock);
 	if ((sck->pres = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	{
+		Free(sck);
 		return NULL;
+	}
 	sck->server.sin_family = AF_INET;
 	sck->server.sin_addr.s_addr = inet_addr(ipname);
 	sck->server.sin_port = htons((u_short)puerto);

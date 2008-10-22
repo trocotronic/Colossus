@@ -593,3 +593,4 @@
 071008649 - El botón MSN sólo se activa si hay bloque.
 091008650 - Arreglado un fallo con httpd.
 181008651 - Se añade el comando OPERSERV PROPAGA para propagar líneas UDB por la red.
+221008652 - Optimizado la liberación de memoria en la creación de sockets.
