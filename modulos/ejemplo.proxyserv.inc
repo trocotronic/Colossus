@@ -88,12 +88,6 @@ ProxyServ {
 	lista_online;
 
 	/*
-	 * Con este parámetro activo, se forzará la desconexión del proxy nada más detectarlo. Acelera el proceso pero aporta menos información.
-	 * Es útil si está el parámetro quits_detallados desactivado.
-	 */
-	forzar_salida;
-
-	/*
 	 * Ignora a todos aquellos nicks que son IRCops.
 	 */
 	ignorar_opers;

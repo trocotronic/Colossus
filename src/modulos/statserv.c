@@ -1165,7 +1165,7 @@ void ParseaTemplate(char *f)
 		close(fdin);
 		return;
 	}
-	if ((fdout = open(buf, O_WRONLY | O_CREAT, 0600)) == -1)
+	if ((fdout = open(buf, O_WRONLY | O_CREAT | O_TRUNC, 0600)) == -1)
 	{
 		munmap(p, len);
 		close(fdin);
