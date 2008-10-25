@@ -831,84 +831,96 @@ BOTFUNC(NSInfo)
 	time_t reg;
 	int opts;
 	char *ll;
+	Cliente *al;
 	if (params < 2)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
 		return 1;
 	}
-	if (!IsReg(param[1]))
+	al = BuscaCliente(param[1]);
+	if (IsReg(param[1]))
+	{
+		comp = strcasecmp(param[1], cl->nombre);
+		ll = SQLEscapa(strtolower(param[1]));
+		res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, ll);
+		row = SQLFetchRow(res);
+		opts = atoi(row[0]);
+		Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
+		Responde(cl, CLI(nickserv), "Realname: \00312%s", row[1]);
+		reg = (time_t)atol(row[2]);
+		Responde(cl, CLI(nickserv), "Registrado el \00312%s", Fecha(&reg));
+		if (!BadPtr(row[3]))
+			Responde(cl, CLI(nickserv), "Está suspendido: \00312%s", row[3]);
+		if (!(opts & NS_OPT_MASK) || (!comp && IsId(cl)) || IsOper(cl))
+			Responde(cl, CLI(nickserv), "Último mask: \00312%s", row[4]);
+		if (!(opts & NS_OPT_TIME) || (!comp && IsId(cl)) || IsOper(cl))
+		{
+			if (al && IsId(al))
+			{
+				Responde(cl, CLI(nickserv), "Este usuario está conectado. Utiliza /WHOIS %s para más información.", param[1]);
+				if (al->loc && (!(opts & NS_OPT_LOC) || (!comp && IsId(cl)) || IsOper(cl)))
+					Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
+			}
+			else
+			{
+				reg = (time_t)atol(row[6]);
+				Responde(cl, CLI(nickserv), "Visto por última vez el \00312%s", Fecha(&reg));
+			}
+		}
+		if (!BadPtr(row[5]) && (!(opts & NS_OPT_QUIT) || (!comp && IsId(cl)) || IsOper(cl)))
+			Responde(cl, CLI(nickserv), "Último quit: \00312%s", row[5]);
+		if (!(opts & NS_OPT_MAIL) || (!comp && IsId(cl)) || IsOper(cl))
+			Responde(cl, CLI(nickserv), "Email: \00312%s", row[7]);
+		if (!BadPtr(row[8]) && (!(opts & NS_OPT_WEB) || (!comp && IsId(cl)) || IsOper(cl)))
+			Responde(cl, CLI(nickserv), "Url: \00312%s", row[8]);
+		if (atoi(row[9]))
+			Responde(cl, CLI(nickserv), "Protección kill a \00312%i\003 segundos.", atoi(row[9]));
+		if (opts & NS_OPT_NODROP)
+			Responde(cl, CLI(nickserv), "Este nick no caduca.");
+		EOI(nickserv, 6);
+		SQLFreeRes(res);
+		if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
+		{
+			Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
+			if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, ll)))
+			{
+				while ((row = SQLFetchRow(res)))
+				{
+					if (!BadPtr(row[2]) && !BadPtr(row[3]) && *row[2] != '0')
+						Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s\003 [\00312%s\003] (\00312%s\003)", row[0], ModosAFlags(atoul(row[2]), cFlags, NULL), row[3], row[2]);
+					else if (!BadPtr(row[3]))
+						Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: [\00312%s\003]", row[0], row[3]);
+					else if (!BadPtr(row[2]) && *row[2] != '0')
+						Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s\003 (\00312%s\003)", row[0], ModosAFlags(atoul(row[2]), cFlags, NULL), row[2]);
+				}
+				SQLFreeRes(res);
+			}
+			if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, ll)))
+			{
+				while ((row = SQLFetchRow(res)))
+				{
+					ircsprintf(tokbuf, " \003[\00312%s\003]", protocolo->modcl);
+					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s%s\003 (\00312FUNDADOR\003)", row[0],
+						ModosAFlags(CS_LEV_ALL, cFlags, NULL), tokbuf);
+				}
+				SQLFreeRes(res);
+			}
+		}
+		Free(ll);
+	}
+	else if (al && IsOper(cl))
+	{
+		Responde(cl, CLI(nickserv), "Información de \00312%s", al->nombre);
+		Responde(cl, CLI(nickserv), "Nick \001NO REGISTRADO");
+		Responde(cl, CLI(nickserv), "Realname: \00312%s", al->info);
+		if (al->loc)
+			Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
+	}
+	else
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	comp = strcasecmp(param[1], cl->nombre);
-	ll = SQLEscapa(strtolower(param[1]));
-	res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, ll);
-	row = SQLFetchRow(res);
-	opts = atoi(row[0]);
-	Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
-	Responde(cl, CLI(nickserv), "Realname: \00312%s", row[1]);
-	reg = (time_t)atol(row[2]);
-	Responde(cl, CLI(nickserv), "Registrado el \00312%s", Fecha(&reg));
-	if (!BadPtr(row[3]))
-		Responde(cl, CLI(nickserv), "Está suspendido: \00312%s", row[3]);
-	if (!(opts & NS_OPT_MASK) || (!comp && IsId(cl)) || IsOper(cl))
-		Responde(cl, CLI(nickserv), "Último mask: \00312%s", row[4]);
-	if (!(opts & NS_OPT_TIME) || (!comp && IsId(cl)) || IsOper(cl))
-	{
-		Cliente *al;
-		if ((al = BuscaCliente(param[1])) && IsId(al))
-		{
-			Responde(cl, CLI(nickserv), "Este usuario está conectado. Utiliza /WHOIS %s para más información.", param[1]);
-			if (al->loc && (!(opts & NS_OPT_LOC) || (!comp && IsId(cl)) || IsOper(cl)))
-				Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
-		}
-		else
-		{
-			reg = (time_t)atol(row[6]);
-			Responde(cl, CLI(nickserv), "Visto por última vez el \00312%s", Fecha(&reg));
-		}
-	}
-	if (!BadPtr(row[5]) && (!(opts & NS_OPT_QUIT) || (!comp && IsId(cl)) || IsOper(cl)))
-		Responde(cl, CLI(nickserv), "Último quit: \00312%s", row[5]);
-	if (!(opts & NS_OPT_MAIL) || (!comp && IsId(cl)) || IsOper(cl))
-		Responde(cl, CLI(nickserv), "Email: \00312%s", row[7]);
-	if (!BadPtr(row[8]) && (!(opts & NS_OPT_WEB) || (!comp && IsId(cl)) || IsOper(cl)))
-		Responde(cl, CLI(nickserv), "Url: \00312%s", row[8]);
-	if (atoi(row[9]))
-		Responde(cl, CLI(nickserv), "Protección kill a \00312%i\003 segundos.", atoi(row[9]));
-	if (opts & NS_OPT_NODROP)
-		Responde(cl, CLI(nickserv), "Este nick no caduca.");
-	EOI(nickserv, 6);
-	SQLFreeRes(res);
-	if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
-	{
-		Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
-		if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, ll)))
-		{
-			while ((row = SQLFetchRow(res)))
-			{
-				if (!BadPtr(row[2]) && !BadPtr(row[3]) && *row[2] != '0')
-					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s\003 [\00312%s\003] (\00312%s\003)", row[0], ModosAFlags(atoul(row[2]), cFlags, NULL), row[3], row[2]);
-				else if (!BadPtr(row[3]))
-					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: [\00312%s\003]", row[0], row[3]);
-				else if (!BadPtr(row[2]) && *row[2] != '0')
-					Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312%s\003 (\00312%s\003)", row[0], ModosAFlags(atoul(row[2]), cFlags, NULL), row[2]);
-			}
-			SQLFreeRes(res);
-		}
-		if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, ll)))
-		{
-			while ((row = SQLFetchRow(res)))
-			{
-				ircsprintf(tokbuf, " \003[\00312%s\003]", protocolo->modcl);
-				Responde(cl, CLI(nickserv), "Canal: \00312%s\003 flags: \00312+%s%s\003 (\00312FUNDADOR\003)", row[0],
-					ModosAFlags(CS_LEV_ALL, cFlags, NULL), tokbuf);
-			}
-			SQLFreeRes(res);
-		}
-	}
-	Free(ll);
 	return 0;
 }
 BOTFUNC(NSList)
