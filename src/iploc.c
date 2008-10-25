@@ -117,6 +117,7 @@ int IPLocResolv(char *ip, int (*func)(int, char *, IPLoc *))
 {
 	char *data;
 	IPLocRec *irec = BMalloc(IPLocRec);
+	irec->ip = ip;
 	if ((data = CogeCache(CACHE_IPLOC, ip, 0)))
 	{
 		IPLocParseaRespuesta(data, irec);
@@ -127,7 +128,6 @@ int IPLocResolv(char *ip, int (*func)(int, char *, IPLoc *))
 	else
 	{
 		irec->func = func;
-		irec->ip = ip;
 		if ((irec->sck = SockOpen("www.redyc.com", 80, IPLocSockOpen, IPLocSockRead, NULL, IPLocSockClose)))
 		{
 			AddItem(irec, irecs);
