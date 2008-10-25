@@ -56,7 +56,6 @@ int IPLocParseaRespuesta(char *data, IPLocRec *irec)
 	XML_SetEndElementHandler(xml, IPLocXMLFin);
 	XML_SetCharacterDataHandler(xml, IPLocXMLData);
 	XML_SetUserData(xml, irec);
-	InsertaCache(CACHE_IPLOC, irec->ip, 86400, 0, data);
 	if (!XML_Parse(xml, data, strlen(data), 1))
 	{
 		//if (irec->func)
@@ -185,7 +184,10 @@ SOCKFUNC(IPLocSockRead)
 {
 	IPLocRec *irec;
 	if ((irec = BuscaIPLocRec(sck)))
+	{
 		IPLocParseaRespuesta(data, irec);
+		InsertaCache(CACHE_IPLOC, irec->ip, 86400, 0, data);
+	}
 	return 0;
 }
 SOCKFUNC(IPLocSockClose)
