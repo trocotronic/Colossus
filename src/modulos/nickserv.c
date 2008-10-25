@@ -911,7 +911,7 @@ BOTFUNC(NSInfo)
 	else if (al && IsOper(cl))
 	{
 		Responde(cl, CLI(nickserv), "Información de \00312%s", al->nombre);
-		Responde(cl, CLI(nickserv), "Nick \001NO REGISTRADO");
+		Responde(cl, CLI(nickserv), "Nick \2NO REGISTRADO");
 		Responde(cl, CLI(nickserv), "Realname: \00312%s", al->info);
 		if (al->loc)
 			Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
