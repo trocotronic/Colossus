@@ -1,5 +1,5 @@
 /*
- * $Id: p10.c,v 1.43 2008/02/16 23:19:43 Trocotronic Exp $ 
+ * $Id: p10.c,v 1.43 2008/02/16 23:19:43 Trocotronic Exp $
  */
 
 #ifdef _WIN32
@@ -19,9 +19,9 @@ double tburst;
 static char base64[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789[]";
 static int i64[] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 
-	53, 54, 55, 56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52,
+	53, 54, 55, 56, 57, 58, 59, 60, 61, 0, 0, 0, 0, 0, 0, 0,
 	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 62, 0, 63, 0, 0, 0,
 	26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41,
@@ -56,7 +56,7 @@ ProtInfo PROT_INFO(P10) = {
 	"Protocolo P10" ,
 	0.2 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com" 
+	"trocotronic@redyc.com"
 };
 #define MSG_PRIVATE "PRIVMSG"
 #define TOK_PRIVATE "P"
@@ -112,7 +112,7 @@ ProtInfo PROT_INFO(P10) = {
 #define TOK_WALLOPS "WA"
 #define MSG_BURST "BURST"
 #define TOK_BURST "B"
-#define MSG_EOB_ACK "EOB_ACK" 
+#define MSG_EOB_ACK "EOB_ACK"
 #define TOK_EOB_ACK "EA"
 #define MSG_CREATE "CREATE"
 #define TOK_CREATE "C"
@@ -338,19 +338,19 @@ int p_quit(Cliente *bl, char *motivo, ...)
 int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 {
 	LinkCanal *lk;
+	char buf[BUFSIZE];
 	if (!cl || !bl)
 		return 1;
 	if (motivo)
 	{
-		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
 		ircvsprintf(buf, motivo, vl);
 		va_end(vl);
-		EnviaAServidor("%s %s %s :%s %s", bl->trio, TOK_KILL, cl->trio, me.nombre, buf);
 	}
 	else
-		EnviaAServidor("%s %s %s :%s Usuario desconectado.", bl->trio, TOK_KILL, cl->trio, me.nombre);
+		strcpy(buf, "Usuario desconectado.");
+	EnviaAServidor("%s %s %s :%s %s", bl->trio, TOK_KILL, cl->trio, me.nombre, buf);
 	LlamaSenyal(SIGN_QUIT, 2, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->cn, cl);
@@ -473,7 +473,7 @@ int p_msg_vl(Cliente *cl, Cliente *bl, u_int tipo, char *formato, va_list *vl)
 		strlcpy(buf, formato, sizeof(buf));
 	else
 		ircvsprintf(buf, formato, *vl);
-	if (tipo == 1) 
+	if (tipo == 1)
 		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_PRIVATE, cl->trio, buf);
 	else
 		EnviaAServidor("%s %s %s :%s", bl->trio, TOK_NOTICE, cl->trio, buf);
@@ -736,7 +736,7 @@ SOCKFUNC(PROT_PARSEA(P10))
 				p++;
 		}
 		else
-		{	
+		{
 			para[0] = p + 1;
 			if (!(p = strchr(p, ' ')))
 				return -1;
@@ -856,9 +856,9 @@ char *militime_float(char* start)
 	struct timeval tv;
 	gettimeofday(&tv, NULL);
 #endif
-	if (start) 
+	if (start)
 	{
-		if ((p = strchr(start, '.'))) 
+		if ((p = strchr(start, '.')))
 		{
 			p++;
 #ifdef _WIN32
@@ -866,10 +866,10 @@ char *militime_float(char* start)
 #else
 			sprintf(timebuf, "%ld", (tv.tv_sec - atoi(start)) * 1000 + (tv.tv_usec - atoi(p)) / 1000);
 #endif
-		} 
-		else 
+		}
+		else
       			strlcpy(timebuf, "0", sizeof(timebuf));
-	} 
+	}
 	else
 #ifdef _WIN32
 		sprintf(timebuf, "%ld.%ld", tv.time, tv.millitm);
@@ -886,9 +886,9 @@ IRCFUNC(m_eos)
 		EnviaAServidor("%s %s :Sincronización realizada en %.3f segs", me.trio, TOK_WALLOPS, (double)((clock() - tburst)/CLOCKS_PER_SEC));
 		intentos = 0;
 		LlamaSenyal(SIGN_EOS, 0);
-#ifdef _WIN32		
+#ifdef _WIN32
 		ChkBtCon(1, 0);
-#endif		
+#endif
 	}
 	return 0;
 }

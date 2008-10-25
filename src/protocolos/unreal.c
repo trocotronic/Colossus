@@ -374,19 +374,19 @@ int p_quit(Cliente *bl, char *motivo, ...)
 int p_kill(Cliente *cl, Cliente *bl, char *motivo, ...)
 {
 	LinkCanal *lk;
-	if (!cl)
+	char buf[BUFSIZE];
+	if (!cl || !bl)
 		return 1;
 	if (motivo)
 	{
-		char buf[BUFSIZE];
 		va_list vl;
 		va_start(vl, motivo);
 		ircvsprintf(buf, motivo, vl);
 		va_end(vl);
-		EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_KILL, cl->nombre, buf);
 	}
 	else
-		EnviaAServidor(":%s %s %s :Usuario desconectado.", bl->nombre, TOK_KILL, cl->nombre);
+		strcpy(buf, "Usuario desconectado.");
+	EnviaAServidor(":%s %s %s :%s", bl->nombre, TOK_KILL, cl->nombre, buf);
 	LlamaSenyal(SIGN_QUIT, 2, cl, buf);
 	for (lk = cl->canal; lk; lk = lk->sig)
 		BorraClienteDeCanal(lk->cn, cl);
