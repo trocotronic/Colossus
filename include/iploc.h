@@ -33,3 +33,5 @@ struct _iplocrecl
 
 extern int IPLocResolv(char *, int (*)(int, char *, IPLoc *));
 extern void IPLocFree(IPLoc *);
+
+#define CACHE_IPLOC "iploc"

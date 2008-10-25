@@ -8,6 +8,8 @@ int IPLocSignPostNick(Cliente *, int);
 SOCKFUNC(IPLocSockOpen);
 SOCKFUNC(IPLocSockRead);
 SOCKFUNC(IPLocSockClose);
+void XMLCALL IPLocXMLFin(IPLocRec *, const XML_Char *);
+void XMLCALL IPLocXMLData(IPLocRec *, const XML_Char *, int);
 
 IPLocRec *irecs = NULL;
 IPLocRecl *irecls = NULL;
@@ -24,7 +26,6 @@ IPLocRec *BuscaIPLocRec(Sock *sck)
 }
 int IniciaIPLoc()
 {
-	return 0;
 	InsertaSenyal(SIGN_QUIT, IPLocSignQuit);
 	InsertaSenyal(SIGN_POST_NICK, IPLocSignPostNick);
 	return 0;
@@ -46,6 +47,24 @@ int IPLocSignQuit(Cliente *cl, char *quit)
 			return 1;
 		}
 	}
+	return 0;
+}
+int IPLocParseaRespuesta(char *data, IPLocRec *irec)
+{
+	XML_Parser xml = XML_ParserCreate(NULL);
+	//XML_SetStartElementHandler(xml, IPLocXMLInicio);
+	XML_SetEndElementHandler(xml, IPLocXMLFin);
+	XML_SetCharacterDataHandler(xml, IPLocXMLData);
+	XML_SetUserData(xml, irec);
+	InsertaCache(CACHE_IPLOC, irec->ip, 86400, 0, data);
+	if (!XML_Parse(xml, data, strlen(data), 1))
+	{
+		//if (irec->func)
+		//	irec->func(XML_GetErrorCode(xml), irec->ip, NULL);
+		//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
+		//	Debug("%s", buf);
+	}
+	XML_ParserFree(xml);
 	return 0;
 }
 void IPLocFree(IPLoc *loc)
@@ -96,13 +115,24 @@ int IPLocSignPostNick(Cliente *cl, int modo)
 }
 int IPLocResolv(char *ip, int (*func)(int, char *, IPLoc *))
 {
+	char *data;
 	IPLocRec *irec = BMalloc(IPLocRec);
-	irec->func = func;
-	irec->ip = ip;
-	if ((irec->sck = SockOpen("www.redyc.com", 80, IPLocSockOpen, IPLocSockRead, NULL, IPLocSockClose)))
+	if ((data = CogeCache(CACHE_IPLOC, ip, 0)))
 	{
-		AddItem(irec, irecs);
-		return 0;
+		IPLocParseaRespuesta(data, irec);
+		if (func)
+			func(0, ip, irec->iloc);
+		Free(irec);
+	}
+	else
+	{
+		irec->func = func;
+		irec->ip = ip;
+		if ((irec->sck = SockOpen("www.redyc.com", 80, IPLocSockOpen, IPLocSockRead, NULL, IPLocSockClose)))
+		{
+			AddItem(irec, irecs);
+			return 0;
+		}
 	}
 	return 1;
 }
@@ -118,6 +148,18 @@ void XMLCALL IPLocXMLFin(IPLocRec *irec, const XML_Char *nombre)
 		irec->iloc->country = strdup(irec->tmp);
 	else if (!strcmp(nombre, "isp"))
 		irec->iloc->isp = strdup(irec->tmp);
+	else if (!strcmp(nombre, "countryCode"))
+		irec->iloc->countrycode = strdup(irec->tmp);
+	else if (!strcmp(nombre, "areaCode"))
+		irec->iloc->areacode = strdup(irec->tmp);
+	else if (!strcmp(nombre, "postalCode"))
+		irec->iloc->postalcode = strdup(irec->tmp);
+	else if (!strcmp(nombre, "dmaCode"))
+		irec->iloc->dmacode = strdup(irec->tmp);
+	else if (!strcmp(nombre, "latitude"))
+		irec->iloc->latitude = strdup(irec->tmp);
+	else if (!strcmp(nombre, "longitude"))
+		irec->iloc->longitude = strdup(irec->tmp);
 }
 void XMLCALL IPLocXMLData(IPLocRec *irec, const XML_Char *s, int len)
 {
@@ -143,21 +185,7 @@ SOCKFUNC(IPLocSockRead)
 {
 	IPLocRec *irec;
 	if ((irec = BuscaIPLocRec(sck)))
-	{
-		XML_Parser xml = XML_ParserCreate(NULL);
-		//XML_SetStartElementHandler(xml, IPLocXMLInicio);
-		XML_SetEndElementHandler(xml, IPLocXMLFin);
-		XML_SetCharacterDataHandler(xml, IPLocXMLData);
-		XML_SetUserData(xml, irec);
-		if (!XML_Parse(xml, data, strlen(data), 1))
-		{
-			//if (irec->func)
-			//	irec->func(XML_GetErrorCode(xml), irec->ip, NULL);
-			//	Debug("error %s (%s) en %i %i", XML_ErrorString(XML_GetErrorCode(rs->pxml)), tokbuf, XML_GetCurrentLineNumber(rs->pxml), XML_GetCurrentColumnNumber(rs->pxml));
-			//	Debug("%s", buf);
-		}
-		XML_ParserFree(xml);
-	}
+		IPLocParseaRespuesta(data, irec);
 	return 0;
 }
 SOCKFUNC(IPLocSockClose)
