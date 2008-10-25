@@ -117,7 +117,7 @@ CONFVER: src/utils/confver.c
 	-@confver.exe
 	-@erase confver.exe
 
-ACT111: 
+ACT111:
 	$(CC) src/utils/actualiza_111.c
 	-@copy actualiza_111.exe utils/actualiza_111.exe
 	-@erase actualiza_111.exe
@@ -319,9 +319,7 @@ src/modulos/smsserv.dll: src/modulos/smsserv.c ./include/struct.h ./include/ircd
 	-@copy src\modulos\smsserv.pdb modulos\smsserv.pdb >NUL
 
 src/modulos/newsserv.dll: src/modulos/newsserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/modulos/chanserv.h ./include/modulos/nickserv.h ./include/modulos/newsserv.h
-	$(CC) /I "C:\dev\expat\lib" $(MODCFLAGS) src/modulos/newsserv.c \
-	$(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:$(EXPAT_LIB) \
-	/NODEFAULTLIB:libcmt
+	$(CC) /I "C:\dev\expat\lib" $(MODCFLAGS) src/modulos/newsserv.c $(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:$(EXPAT_LIB)
 	-@copy src\modulos\newsserv.dll modulos\newsserv.dll >NUL
 	-@copy src\modulos\newsserv.pdb modulos\newsserv.pdb >NUL
 
