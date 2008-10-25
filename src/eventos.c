@@ -281,7 +281,7 @@ int CargaCache()
 {
 	SQLNuevaTabla(SQL_CACHE, "CREATE TABLE IF NOT EXISTS %s%s ( "
 		"item varchar(255) default NULL, "
-		"valor varchar(255) default NULL, "
+		"valor text default NULL, "
 		"hora int4 default '0', "
 		"owner int4 default '0', "
 		"tipo text default NULL, "

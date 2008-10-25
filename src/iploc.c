@@ -185,8 +185,8 @@ SOCKFUNC(IPLocSockRead)
 	IPLocRec *irec;
 	if ((irec = BuscaIPLocRec(sck)))
 	{
-		IPLocParseaRespuesta(data, irec);
 		InsertaCache(CACHE_IPLOC, irec->ip, 86400, 0, data);
+		IPLocParseaRespuesta(data, irec);
 	}
 	return 0;
 }
