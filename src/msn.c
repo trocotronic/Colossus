@@ -909,6 +909,7 @@ int MSNCQuit(Cliente *cl, char *msg)
 {
 	LinkCanal *lc;
 	MSNCl *mcl;
+	char buf[BUFSIZE];
 	ircsprintf(buf, "%s Desconecta > %s", cl->nombre, msg ? msg : "");
 	for (lc = cl->canal; lc; lc = lc->sig)
 		EnviaMsgCanal(cl, lc->cn, buf);

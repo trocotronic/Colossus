@@ -595,3 +595,4 @@
 181008651 - Se añade el comando OPERSERV PROPAGA para propagar líneas UDB por la red.
 221008652 - Optimizado la liberación de memoria en la creación de sockets.
 251008653 - Arreglado un fallo con el kill.
+251008654 - Arreglado un fallo al desconectar un cliente por MSN.
