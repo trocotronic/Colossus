@@ -631,6 +631,16 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 	if (*com == '#')
 	{
 		Canal *cn;
+		if (!SockIrcd)
+		{
+			SendMSN(sb->mcl->cuenta, "El sistema no está conectado al IRC");
+			return 1;
+		}
+		if (!sb->mcl->cl)
+		{
+			SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abierta al IRC");
+			return 1;
+		}
 		if (!(cn = BuscaCanal(com)) || !EsLinkCanal(sb->mcl->cl->canal, cn))
 		{
 			SendMSN(sb->mcl->cuenta, "No estás dentro de %s", com);
@@ -782,7 +792,7 @@ MSNFUNC(MSNLogout)
 	}
 	if (!sb->mcl->cl)
 	{
-		SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abiert al IRC");
+		SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abierta al IRC");
 		return 1;
 	}
 	ircsprintf(buf, "%s Desconecta", sb->mcl->cl->nombre);
@@ -805,7 +815,7 @@ MSNFUNC(MSNJoin)
 	}
 	if (!sb->mcl->cl)
 	{
-		SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abiert al IRC");
+		SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abierta al IRC");
 		return 1;
 	}
 	if ((cn = BuscaCanal(argv[0])) && cn->privado)
@@ -853,7 +863,7 @@ MSNFUNC(MSNPart)
 	}
 	if (!sb->mcl->cl)
 	{
-		SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abiert al IRC");
+		SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abierta al IRC");
 		return 1;
 	}
 	if (!(cn = BuscaCanal(argv[0])) || !EsLinkCanal(sb->mcl->cl->canal, cn))
