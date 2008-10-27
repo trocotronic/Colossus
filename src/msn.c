@@ -634,12 +634,12 @@ void MSNProcesaMsg(MSNSB *sb, char *msg)
 		if (!SockIrcd)
 		{
 			SendMSN(sb->mcl->cuenta, "El sistema no está conectado al IRC");
-			return 1;
+			return;
 		}
 		if (!sb->mcl->cl)
 		{
 			SendMSN(sb->mcl->cuenta, "No tienes ninguna sesión abierta al IRC");
-			return 1;
+			return;
 		}
 		if (!(cn = BuscaCanal(com)) || !EsLinkCanal(sb->mcl->cl->canal, cn))
 		{

@@ -274,6 +274,10 @@ extern MODVAR Senyal *senyals[MAXSIGS];
  			NOTA: esta señal se ejecuta <u>después</u> de haber ejecutado la función del bot anfitrión, en el caso de que hubiera.
  		- SIGN_SERVER (Cliente *cl, int primer): Se ha conectado un servidor nuevo. Si es el primer link, primero vale 1.
  		- SIGN_SOCKCLOSE (): La conexión con el ircd se ha perdido.
+ 		- SIGN_SQUIT (Cliente *cl): El servidor <i>cl</i> desconecta.
+ 		- SIGN_RAW (Cliente *cl, char *parv[], int parc, int raw): El cliente <i>cl</i> solicita el raw número <i>raw</i>.
+ 		- SIGN_CCREATE (Canal *cn): Se crea el canal <i>cn</i> en memoria. Este evento se produce cuando entra el primer usuario.
+ 		- SIGN_CLOSE (): Se cierra Colossus.
  *	    $func [in] Función a ejecutar. Esta función debe estar definida según sea el tipo de señal que controla.
  		Recibirá los parámetros que se han descrito arriba. Por ejemplo, si es una función para una señal SIGN_UMODE, recibirá 2 parámetros.
  * @ex: 	int Umodos(Cliente *, char *);

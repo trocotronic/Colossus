@@ -597,3 +597,4 @@
 251008653 - Arreglado un fallo con el kill.
 251008654 - Arreglado un fallo al desconectar un cliente por MSN.
 271008655 - Arreglado un cuelgue al intentar hablar en un canal por MSN si no está logueado.
+271008656 - Se mejora el cierra de UDB mediante señales de cierre.

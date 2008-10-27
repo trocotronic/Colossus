@@ -140,6 +140,13 @@ int IniciaUDB()
 	SetDataVer(5);
 	return 1;
 }
+int CierraUDB()
+{
+	u_int i;
+	for (i = 0; i < BDD_TOTAL; i++)
+		DescargaBloque(i);
+	return 0;
+}
 u_long ObtieneHash(UDBloq *bloq)
 {
 	char *par;

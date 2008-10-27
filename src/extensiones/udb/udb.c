@@ -67,6 +67,7 @@ u_long UMODE_SHOWIP;
 extern u_long UMODE_SERVICES;
 extern void ProcesaModo(Cliente *, Canal *, char **, int);
 extern void EntraCliente(Cliente *, char *);
+extern int CierraUDB();
 #ifdef _WIN32
 long base64dec(char *);
 char *base64enc(long);
@@ -148,6 +149,7 @@ int MOD_CARGA(UDB)(Extension *ext, Protocolo *prot)
 	InsertaSenyal(SIGN_SYNCH, SigSynch);
 	InsertaSenyal(SIGN_SOCKOPEN, SigSockOpen);
 	InsertaSenyal(SIGN_SOCKCLOSE, SigSockClose);
+	InsertaSenyal(SIGN_CLOSE, CierraUDB);
 	InsertaModoProtocolo('S', &UMODE_SUSPEND, protocolo->umodos);
 	InsertaModoProtocolo('D', &UMODE_PRIVDEAF, protocolo->umodos);
 	InsertaModoProtocolo('X', &UMODE_SHOWIP, protocolo->umodos);
@@ -198,6 +200,7 @@ int MOD_DESCARGA(UDB)(Extension *ext, Protocolo *prot)
 	BorraSenyal(SIGN_SYNCH, SigSynch);
 	BorraSenyal(SIGN_SOCKOPEN, SigSockOpen);
 	BorraSenyal(SIGN_SOCKCLOSE, SigSockClose);
+	BorraSenyal(SIGN_CLOSE, CierraUDB);
 	protocolo->comandos[P_MODO_USUARIO_REMOTO] = (int(*)())p_svsmode_r;
 	opts = 0;
 	return 0;

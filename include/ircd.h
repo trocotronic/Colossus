@@ -299,6 +299,7 @@ extern char *TipoMascara(char *, int);
 #define SIGN_SQUIT 20
 #define SIGN_RAW 21
 #define SIGN_CCREATE 22
+#define SIGN_CLOSE 23
 
 /*!
  * @desc: Devuelve 1 si el recurso es un cliente; 0, si no.

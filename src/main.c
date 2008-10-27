@@ -201,6 +201,7 @@ int CierraColossus(int excode)
 #ifndef _WIN32
 	fprintf(stderr, "Cerrando Colossus... ");
 #endif
+	LlamaSenyal(SIGN_CLOSE, 0);
 	CierraTodo();
 	LiberaSQL();
 #ifndef _WIN32
