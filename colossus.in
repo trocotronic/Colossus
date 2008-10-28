@@ -95,7 +95,7 @@ frame
 echo \n
 x/s backupbuf
 echo \n
-bt 3 full
+bt 5 full
 quit
 __EOF__
 

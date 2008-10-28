@@ -767,6 +767,11 @@ MSNFUNC(MSNLogin)
 			SendMSN(sb->mcl->cuenta, "No tienes el nick registrado");
 			return 1;
 		}
+		if (!pass)
+		{
+			SendMSN(sb->mcl->cuenta, "Debes especificar tu contraseña: LOGIN tunick tupass");
+			return 1;
+		}
 		if (strcmp(MDString(pass, 0), bdpass))
 		{
 			SendMSN(sb->mcl->cuenta, "Contraseña incorrecta");
