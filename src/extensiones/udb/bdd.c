@@ -772,6 +772,7 @@ void PropagaRegistro(char *item, ...)
 	ircvsprintf(buf, item, vl);
 	va_end(vl);
 	r = buf[0];
+	buf[400] = 0; //se trunca para propagar en unreal, sólo acepta 400 y pico bytes
 	if (!(bloq = CogeDeId(r)))
 		return;
 	pos = bloq->lof;

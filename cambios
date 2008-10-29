@@ -599,3 +599,4 @@
 271008655 - Arreglado un cuelgue al intentar hablar en un canal por MSN si no está logueado.
 271008656 - Se mejora el cierra de UDB mediante señales de cierre.
 281008657 - Arreglado un cuelgue al iniciar sesión por MSN.
+291008658 - Arreglado un fallo para impedir propagar líneas UDB muy largas.

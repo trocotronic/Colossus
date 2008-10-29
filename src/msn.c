@@ -231,16 +231,17 @@ SOCKFUNC(MSNSBRead)
 		return 1;
 	if (!strncmp(data, "MSG", 3))
 	{
-		char *msg, *cuenta;
+		char *msg, *cuenta, tmp[BUFSIZE];
 		if ((msg = strstr(data, "\r\n\r\n")))
 		{
 			*msg = '\0';
 			msg += 4;
+			strlcpy(tmp, msg, sizeof(tmp));
 		}
 		cuenta = strtok(data, "\r\n")+4;
 		strtok(NULL, "\r\n");
 		if (!strncmp(strtok(NULL, "\r\n"), "Content-Type: text/plain", 24))
-			MSNProcesaMsg(sb, msg);
+			MSNProcesaMsg(sb, tmp);
 	}
 	else if (!strncmp(data, "USR", 3))
 		SockWrite(sck, "CAL %i %s", ++trid, sb->mcl->cuenta);
