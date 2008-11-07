@@ -73,16 +73,16 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 	fstat(fd, &sb);
-	c = (char *)malloc(sizeof(char) * (sb.st_size + 1));
+	c = (unsigned char *)malloc(sizeof(unsigned char) * (sb.st_size + 1));
 	read(fd, c, sb.st_size);
 	OpenSSL_add_all_digests();
 	EVP_DigestInit(&ctx, EVP_get_digestbyname("SHA1"));
 	EVP_DigestUpdate(&ctx, c, sb.st_size);
 	dgslen = EVP_MAX_MD_SIZE;
-	dgs = (char *)malloc(sizeof(char) * dgslen);
+	dgs = (unsigned char *)malloc(sizeof(unsigned char) * dgslen);
 	EVP_DigestFinal(&ctx, dgs, &dgslen);
 	sgnlen = RSA_size(pvkey);
-	sgn = (char *)malloc(sizeof(char) * sgnlen);
+	sgn = (unsigned char *)malloc(sizeof(unsigned char) * sgnlen);
 	if (RSA_sign(NID_sha1, dgs, dgslen, sgn, &sgnlen, pvkey))
 	{
 		lseek(fd, 0, SEEK_SET);
