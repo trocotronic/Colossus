@@ -48,9 +48,9 @@ int main(int argc, char *argv[])
 	int fd;
 	RSA *pvkey = NULL;
 	BIO *bio = NULL;
-	char *c, *sgn, *dgs;
+	unsigned char *c, *sgn, *dgs;
 	struct stat sb;
-	unsigned int sgnlen, len, dgslen;
+	unsigned int sgnlen, dgslen;
 	EVP_MD_CTX ctx;
 	if (argc < 2)
 	{
