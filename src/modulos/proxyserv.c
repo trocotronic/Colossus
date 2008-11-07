@@ -55,7 +55,8 @@ ModInfo MOD_INFO(ProxyServ) = {
 	"ProxyServ" ,
 	0.11 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(ProxyServ)(Modulo *mod)
@@ -67,7 +68,7 @@ int MOD_CARGA(ProxyServ)(Modulo *mod)
 		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
 		return 1;
 	}*/
-	mod->activo = 1;
+	//mod->activo = 1;
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))

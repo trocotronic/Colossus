@@ -31,7 +31,7 @@ modall:
 	cd src; ${MAKE} ${MAKEARGS} 'EXLIBS=${EXLIBS}' modall
 
 server:
-build: act111
+build: act111 sign
 	-@if [ ! -f include/setup.h ] ; then \
 		echo "No parece que hayas ejecutado la configuracion..."; \
 		sh Config; \
@@ -50,6 +50,9 @@ build: act111
 
 act111: src/utils/actualiza_111.c
 	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
+
+sign: src/utils/sign.c
+	$(CC) $(CFLAGS) $(CRYPTOLIB) -o sign $(CRYPTOLIB)
 
 clean:
 	$(RM) -f *~ \#* core *.orig include/*.orig

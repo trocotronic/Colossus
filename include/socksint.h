@@ -1,7 +1,7 @@
 /*
- * $Id: socksint.h,v 1.2 2007/02/02 17:43:03 Trocotronic Exp $ 
+ * $Id: socksint.h,v 1.2 2007/02/02 17:43:03 Trocotronic Exp $
  */
-
+/*
 #include "setup.h"
 
 #define MAX_MDS 8
@@ -19,11 +19,9 @@ struct _mds
 typedef struct _signatura Signatura;
 struct _signatura
 {
-	char cpuid[64];
 	MDS *mds;
 	char sgn[2048];
 };
-
 #define MAX_COMP 32
 typedef struct _componente Componente;
 struct _componente
@@ -35,3 +33,4 @@ struct _componente
 };
 extern Componente comps[MAX_COMP];
 extern Signatura sgn;
+*/

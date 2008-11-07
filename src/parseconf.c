@@ -178,6 +178,7 @@ void LiberaMemoriaSet()
 		tmp = strdup(conf_set->red);
 	ircfree(conf_set->red);
 	ircfree(conf_set->debug);
+	ircfree(conf_set->userid);
 	bzero(conf_set->clave_cifrado, sizeof(conf_set->clave_cifrado));
 	bzero(conf_set, sizeof(struct Conf_set));
 	if (tmp)
@@ -1153,6 +1154,8 @@ void ConfSet(Conf *config)
 		}
 		else if (!strcmp(config->seccion[i]->item, "debug"))
 			ircstrdup(conf_set->debug, config->seccion[i]->data);
+		else if (!strcmp(config->seccion[i]->item, "userid"))
+			ircstrdup(conf_set->userid, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "clave_cifrado"))
 			strlcpy(conf_set->clave_cifrado, config->seccion[i]->data, sizeof(conf_set->clave_cifrado));
 		else if (!strcmp(config->seccion[i]->item, "niveles"))
@@ -1231,8 +1234,6 @@ void ConfModulos(Conf *config)
 				ircsprintf(mod->config, "%s/%s", path, config->seccion[i]->data);
 				Free(path);
 			}
-			else if (!strcmp(config->seccion[i]->item, "serial"))
-				ircstrdup(mod->serial, config->seccion[i]->data);
 		}
 		ircfree(mod->mascara);
 		mod->mascara = (char *)Malloc(sizeof(char) * (strlen(mod->nick) + 1 + strlen(mod->ident) + 1 + strlen(mod->host) + 1));

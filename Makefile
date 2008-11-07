@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-#NOCORE=1
+NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -117,10 +117,16 @@ CONFVER: src/utils/confver.c
 	-@confver.exe
 	-@erase confver.exe
 
-ACT111:
+ACT111: src/utils/actualiza_111.c
 	$(CC) src/utils/actualiza_111.c
 	-@copy actualiza_111.exe utils/actualiza_111.exe
 	-@erase actualiza_111.exe
+
+SIGN: src/utils/sign.c
+	$(CC) $(OPENSSL_INC) src/utils/sign.c /c
+	$(LINK) $(OPENSSL_LIB) $(SSLLIBS) /nologo $(DBGLFLAG) /out:sign.exe sign.obj
+#	-@copy sign.exe utils/sign.exe
+#	-@erase sign.exe
 
 CLEAN:
 	-@erase src\*.obj >NUL
@@ -282,61 +288,73 @@ src/modulos/chanserv.dll: src/modulos/chanserv.c ./include/struct.h ./include/ir
 	$(CC) $(MODCFLAGS) src/modulos/chanserv.c $(MODLFLAGS)
 	-@copy src\modulos\chanserv.dll modulos\chanserv.dll >NUL
 	-@copy src\modulos\chanserv.pdb modulos\chanserv.pdb >NUL
+	-@sign modulos\chanserv.dll
 
 src/modulos/nickserv.dll: src/modulos/nickserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/md5.h ./include/modulos/chanserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/nickserv.c $(MODLFLAGS) ws2_32.lib src/modulos/chanserv.lib
 	-@copy src\modulos\nickserv.dll modulos\nickserv.dll >NUL
 	-@copy src\modulos\nickserv.pdb modulos\nickserv.pdb >NUL
+	-@sign modulos\nickserv.dll
 
 src/modulos/operserv.dll: src/modulos/operserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/operserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/operserv.c $(MODLFLAGS) src/modulos/memoserv.lib src/modulos/chanserv.lib
 	-@copy src\modulos\operserv.dll modulos\operserv.dll >NUL
 	-@copy src\modulos\operserv.pdb modulos\operserv.pdb >NUL
+	-@sign modulos\operserv.dll
 
 src/modulos/memoserv.dll: src/modulos/memoserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/chanserv.h ./include/modulos/memoserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/memoserv.c $(MODLFLAGS) src/modulos/chanserv.lib
 	-@copy src\modulos\memoserv.dll modulos\memoserv.dll >NUL
 	-@copy src\modulos\memoserv.pdb modulos\memoserv.pdb >NUL
+	-@sign modulos\memoserv.dll
 
 src/modulos/ipserv.dll: src/modulos/ipserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/ipserv.h ./include/modulos/nickserv.h
 	$(CC) $(MODCFLAGS) src/modulos/ipserv.c $(MODLFLAGS)
 	-@copy src\modulos\ipserv.dll modulos\ipserv.dll >NUL
 	-@copy src\modulos\ipserv.pdb modulos\ipserv.pdb >NUL
+	-@sign modulos\ipserv.dll
 
 src/modulos/proxyserv.dll: src/modulos/proxyserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/proxyserv.h
 	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS)
 	-@copy src\modulos\proxyserv.dll modulos\proxyserv.dll >NUL
 	-@copy src\modulos\proxyserv.pdb modulos\proxyserv.pdb >NUL
+	-@sign modulos\proxyserv.dll
 
 src/modulos/tvserv.dll: src/modulos/tvserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/modulos/tvserv.h
 	$(CC) $(MODCFLAGS) src/modulos/tvserv.c $(MODLFLAGS)
 	-@copy src\modulos\tvserv.dll modulos\tvserv.dll >NUL
 	-@copy src\modulos\tvserv.pdb modulos\tvserv.pdb >NUL
+	-@sign modulos\tvserv.dll
 
 src/modulos/smsserv.dll: src/modulos/smsserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/modulos/smsserv.h
 	$(CC) $(MODCFLAGS) src/modulos/smsserv.c $(MODLFLAGS)
 	-@copy src\modulos\smsserv.dll modulos\smsserv.dll >NUL
 	-@copy src\modulos\smsserv.pdb modulos\smsserv.pdb >NUL
+	-@sign modulos\smsserv.dll
 
 src/modulos/newsserv.dll: src/modulos/newsserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/modulos/chanserv.h ./include/modulos/nickserv.h ./include/modulos/newsserv.h
 	$(CC) /I "C:\dev\expat\lib" $(MODCFLAGS) src/modulos/newsserv.c $(MODLFLAGS) src/modulos/chanserv.lib /LIBPATH:$(EXPAT_LIB)
 	-@copy src\modulos\newsserv.dll modulos\newsserv.dll >NUL
 	-@copy src\modulos\newsserv.pdb modulos\newsserv.pdb >NUL
+	-@sign modulos\newsserv.dll
 
 src/modulos/helpserv.dll: src/modulos/helpserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/httpd.h ./include/modulos/helpserv.h ./include/modulos/chanserv.h
 	$(CC) $(MODCFLAGS) src/modulos/helpserv.c $(MODLFLAGS)
 	-@copy src\modulos\helpserv.dll modulos\helpserv.dll >NUL
 	-@copy src\modulos\helpserv.pdb modulos\helpserv.pdb >NUL
+	-@sign modulos\helpserv.dll
 
 src/modulos/logserv.dll: src/modulos/logserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/md5.h ./include/modulos/logserv.h ./include/modulos/nickserv.h ./include/modulos/chanserv.h
 	$(CC) $(MODCFLAGS) src/modulos/logserv.c $(MODLFLAGS) src/modulos/chanserv.lib
 	-@copy src\modulos\logserv.dll modulos\logserv.dll >NUL
 	-@copy src\modulos\logserv.pdb modulos\logserv.pdb >NUL
+	-@sign modulos\logserv.dll
 
 src/modulos/noteserv.dll: src/modulos/noteserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/noteserv.h
 	$(CC) $(MODCFLAGS) src/modulos/noteserv.c $(MODLFLAGS)
 	-@copy src\modulos\noteserv.dll modulos\noteserv.dll >NUL
 	-@copy src\modulos\noteserv.pdb modulos\noteserv.pdb >NUL
+	-@sign modulos\noteserv.dll
 
 GAMESERV_FILES=src/modulos/gameserv.c src/modulos/gameserv/kyrhos.c src/modulos/gameserv/bidle.c
 JUEGOS=/D BIDLE
@@ -345,21 +363,25 @@ src/modulos/gameserv.dll: ./include/struct.h ./include/ircd.h ./include/modulos.
 	/D ENLACE_DINAMICO /D MODULE_COMPILE $(JUEGOS) $(GAMESERV_FILES) $(MODLFLAGS) /out:src/modulos/gameserv.dll
 	-@copy src\modulos\gameserv.dll modulos\gameserv.dll >NUL
 	-@copy src\modulos\gameserv.pdb modulos\gameserv.pdb >NUL
+	-@sign modulos\gameserv.dll
 
 src/modulos/statserv.dll: src/modulos/statserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/httpd.h ./include/modulos/statserv.h
 	$(CC) $(MODCFLAGS) src/modulos/statserv.c $(MODLFLAGS)
 	-@copy src\modulos\statserv.dll modulos\statserv.dll >NUL
 	-@copy src\modulos\statserv.pdb modulos\statserv.pdb >NUL
+	-@sign modulos\statserv.dll
 
 src/protocolos/unreal.dll: src/protocolos/unreal.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/md5.h $(ZIP_HEAD)
 	$(CC) $(PROTCFLAGS) src/protocolos/unreal.c $(PROTLFLAGS)
 	-@copy src\protocolos\unreal.dll protocolos\unreal.dll >NUL
 	-@copy src\protocolos\unreal.pdb protocolos\unreal.pdb >NUL
+	-@sign protocolos\unreal.dll
 
 src/protocolos/p10.dll: src/protocolos/p10.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h
 	$(CC) $(PROTCFLAGS) src/protocolos/p10.c $(PROTLFLAGS)
 	-@copy src\protocolos\p10.dll protocolos\p10.dll >NUL
 	-@copy src\protocolos\p10.pdb protocolos\p10.pdb >NUL
+	-@sign protocolos\p10.dll
 
 UDB_FILES=src/extensiones/udb/udb.c \
 	src/extensiones/udb/bdd.c \
@@ -373,6 +395,7 @@ src/extensiones/udb/udb.dll: $(UDB_FILES) ./include/struct.h ./include/ircd.h ./
 	/D ENLACE_DINAMICO /D MODULE_COMPILE $(UDB_FILES) $(MODLFLAGS) $(UDB_LIBS) /out:src/extensiones/udb/udb.dll
 	-@copy src\extensiones\udb\udb.dll protocolos\extensiones\udb.dll >NUL
 	-@copy src\extensiones\udb\udb.pdb protocolos\extensiones\udb.pdb >NUL
+	-@sign protocolos\extensiones\udb.dll
 
 HIS_OBJ=SRC/EXTENSIONES/HISPANO/HISPANO.OBJ
 src/extensiones/hispano/hispano.obj: src/extensiones/hispano/hispano.c

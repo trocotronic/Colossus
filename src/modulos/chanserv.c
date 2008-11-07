@@ -60,6 +60,8 @@ BOTFUNC(CSToken);
 BOTFUNCHELP(CSHToken);
 BOTFUNC(CSMarcas);
 BOTFUNCHELP(CSHMarcas);
+BOTFUNC(CSPoderes);
+BOTFUNCHELP(CSHPoderes);
 
 int CSSigSQL	();
 int CSSigEOS	();
@@ -108,6 +110,7 @@ static bCom chanserv_coms[] = {
 	{ "register" , CSRegister , N1 , "Registra un canal." , CSHRegister } ,
 	{ "token" , CSToken , N1 , "Te entrega un token para las operaciones que lo requieran." , CSHToken } ,
 	{ "marca", CSMarcas , N3 , "Lista o inserta una entrada en el historial de un canal." , CSHMarcas } ,
+	{ "poderes" , CSPoderes , N1 , "Muestra los privilegios y poderes que tienes en un canal." , CSHPoderes } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
 };
 
@@ -129,7 +132,8 @@ ModInfo MOD_INFO(ChanServ) = {
 	"ChanServ" ,
 	0.11 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(ChanServ)(Modulo *mod)
@@ -734,6 +738,14 @@ BOTFUNCHELP(CSHMarcas)
 	Responde(cl, CLI(chanserv), "Si no se especifica ninguna marca, se listarán todas las que hubiera.");
 	Responde(cl, CLI(chanserv), " ");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312MARCA [#canal]");
+	return 0;
+}
+BOTFUNCHELP(CSHPoderes)
+{
+	Responde(cl, CLI(chanserv), "Muestra los poderes y privilegios que tienes en un canal.");
+	Responde(cl, CLI(chanserv), "Esto te dice qué puedes hacer en un canal.");
+	Responde(cl, CLI(chanserv), " ");
+	Responde(cl, CLI(chanserv), "Sintaxis: \00312PODERES #canal");
 	return 0;
 }
 BOTFUNC(CSHelp)
@@ -1365,7 +1377,7 @@ BOTFUNC(CSOpts)
 		}
 		SQLInserta(CS_SQL, param[1], "founder", param[3]);
 		ircsprintf(buf, "Fundador cambiado: %s", param[3]);
-		CSMarca(cl, param[1], "Contraseña cambiada.");
+		CSMarca(cl, param[1], buf);
 		Responde(cl, CLI(chanserv), "Fundador cambiado a \00312%s", param[3]);
 	}
 	else if (!strcasecmp(param[2], "OPCIONES"))
@@ -1389,7 +1401,7 @@ BOTFUNC(CSOpts)
 				case '-':
 					f = DEL;
 					chrcat(buenos, '-');
-					break;
+				break;
 				case 'm':
 					if (f == ADD)
 						opts |= CS_OPT_RMOD;
@@ -2172,6 +2184,55 @@ BOTFUNC(CSMarcas)
 	EOI(chanserv, 22);
 	return 0;
 }
+BOTFUNC(CSPoderes)
+{
+	u_long flags;
+	SQLRes res;
+	SQLRow row;
+	if (params < 2)
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		return 1;
+	}
+	if (!(flags = CSTieneNivel(cl, param[1], 0L)))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No tienes acceso para este canal");
+		return 1;
+	}
+	Responde(cl, CLI(chanserv), "Poderes para el canal \00312%s", param[1]);
+	if (flags & CS_LEV_SET)
+		Responde(cl, CLI(chanserv), "- Puedes usar el comando \00312SET");
+	if (flags & CS_LEV_EDT)
+		Responde(cl, CLI(chanserv), "- Puedes editar la lista de accesos");
+	if (flags & CS_LEV_SET)
+		Responde(cl, CLI(chanserv), "- Puedes listar la lista de accesos");
+	if (flags & CS_LEV_RMO)
+		Responde(cl, CLI(chanserv), "- Puedes usar el comando \00312MODOS");
+	if (flags & CS_LEV_RES)
+		Responde(cl, CLI(chanserv), "- Puedes usar el comando \00312CLEAR");
+	if (flags & CS_LEV_ACK)
+		Responde(cl, CLI(chanserv), "- Puedes usar el comando \00312AKICK");
+	if (flags & CS_LEV_INV)
+		Responde(cl, CLI(chanserv), "- Puedes usar el comando \00312INVITE");
+	if (flags & CS_LEV_JOB)
+		Responde(cl, CLI(chanserv), "- Puedes usar el comando \00312JOIN");
+	if (flags & CS_LEV_REV)
+		Responde(cl, CLI(chanserv), "- Kick revenge activo");
+	if (flags & CS_LEV_MEM)
+		Responde(cl, CLI(chanserv), "- Puedes leer y listar memos");
+	if ((res = CSEsAccess(param[1], cl->nombre)))
+	{
+		if ((row = SQLFetchRow(res)) && row[3])
+			Responde(cl, CLI(chanserv), "- Tienes los automodos \00312+%s", row[3]);
+		SQLFreeRes(res);
+	}
+	return 0;
+}
 int CSCmdMode(Cliente *cl, Canal *cn, char *mods[], int max)
 {
 	if (!cl || !cn)
@@ -2614,6 +2675,7 @@ int CSDropanick(char *nick)
 	char *n_c;
 	n_c = SQLEscapa(strtolower(nick));
 	SQLQuery("DELETE FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, n_c);
+	SQLQuery("UPDATE %s%s SET founder='%s' WHERE LOWER(nick)='%s'", PREFIJO, CS_SQL, chanserv->hmod->nick, n_c);
 	Free(n_c);
 	return 0;
 }
@@ -2630,6 +2692,7 @@ u_long CSTieneNivel(Cliente *cl, char *canal, u_long flag)
 		u_long nivel = 0L;
 		row = SQLFetchRow(res);
 		nivel = atoul(row[2]);
+		SQLFreeRes(res);
 		if (IsPreo(cl))
 			nivel |= (CS_LEV_ALL & ~CS_LEV_MOD);
 		if (flag)
@@ -2646,7 +2709,8 @@ int CSTieneAuto(char *nick, char *canal, char autof)
 	Cliente *al;
 	SQLRes res;
 	SQLRow row;
-	al = BuscaCliente(nick);
+	if (!(al = BuscaCliente(nick)))
+		return 0;
 	if ((!IsOper(al) && IsChanSuspend(canal)) || !IsId(al))
 		return 0;
 	if (CSEsFundador(al, canal) || CSEsFundador_cache(al, canal))

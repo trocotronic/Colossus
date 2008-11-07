@@ -61,7 +61,8 @@ ModInfo MOD_INFO(LogServ) = {
 	"LogServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(LogServ)(Modulo *mod)

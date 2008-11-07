@@ -89,6 +89,7 @@ struct Conf_set
 	}reconectar;
 	char *debug;
 	char *red;
+	char *userid;
 	unsigned actualiza:1;
 };
 struct Conf_log

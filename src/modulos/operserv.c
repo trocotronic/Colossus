@@ -94,7 +94,8 @@ ModInfo MOD_INFO(OperServ) = {
 	"OperServ" ,
 	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(OperServ)(Modulo *mod)

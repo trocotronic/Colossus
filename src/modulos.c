@@ -61,9 +61,19 @@ Modulo *CreaModulo(char *modulo)
 			irc_dlclose(hmod);
 			return NULL;
 		}
+		if (!inf->PRC || strcmp(inf->PRC, cpid))
+		{
+			Alerta(FADV, "Ha sido imposible cargar %s (no tiene permisos)", archivo);
+			irc_dlclose(hmod);
+			return NULL;
+		}
 		mod = BMalloc(Modulo);
 		mod->archivo = strdup(modulo);
 		mod->tmparchivo = strdup(tmppath);
+#ifdef _WIN32
+		mod->tmppdb = strdup(tmppath);
+		strcpy(strrchr(mod->tmppdb, '.'), ".pdb");
+#endif
 		mod->hmod = hmod;
 		mod->id = id;
 		mod->carga = mod_carga;
@@ -94,6 +104,9 @@ void DescargaModulo(Modulo *ex)
 		ex->descarga(ex);
 	ircfree(ex->archivo);
 	ircfree(ex->tmparchivo);
+#ifdef _WIN32
+	ircfree(ex->tmppdb);
+#endif
 	BorraItem(ex, modulos);
 	ex->comandos = 0; /* hay que vaciarlo! */
 	irc_dlclose(ex->hmod);

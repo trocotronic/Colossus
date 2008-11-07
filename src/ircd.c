@@ -898,7 +898,7 @@ void ReconectaBot(char *nick)
 {
 	Modulo *ex;
 	char *canal;
-	if (!EsOk(SockIrcd) || BuscaCliente(nick) || !(ex = BuscaModulo(nick, modulos)) || ex->activo)
+	if (!EsOk(SockIrcd) || BuscaCliente(nick) || !(ex = BuscaModulo(nick, modulos)))
 		return;
 	ex->cl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
@@ -1061,19 +1061,16 @@ int EntraResidentes()
 	protocolo->eos = 1;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
-		if (!aux->activo)
+		if (!aux->cl)
 		{
-			if (!aux->cl)
-			{
-				Info("No se puede conectar a %s. Tal vez haya alguien utilizando este nick.", aux->nick);
-				continue;
-			}
-			if (aux->residente)
-			{
-				strlcpy(tokbuf, aux->residente, sizeof(tokbuf));
-				for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
-					EntraBot(aux->cl, canal);
-			}
+			Info("No se puede conectar a %s. Tal vez haya alguien utilizando este nick.", aux->nick);
+			continue;
+		}
+		if (aux->residente)
+		{
+			strlcpy(tokbuf, aux->residente, sizeof(tokbuf));
+			for (canal = strtok(tokbuf, ","); canal; canal = strtok(NULL, ","))
+				EntraBot(aux->cl, canal);
 		}
 	}
 	return 0;
@@ -1085,7 +1082,7 @@ int EntraBots()
 	protocolo->eos = 0;
 	for (aux = modulos; aux; aux = aux->sig)
 	{
-		if (!aux->activo && !BuscaCliente(aux->nick))
+		if (!BuscaCliente(aux->nick))
 			aux->cl = CreaBot(aux->nick, aux->ident, aux->host, aux->modos, aux->realname);
 	}
 	return 0;

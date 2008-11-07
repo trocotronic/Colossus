@@ -1,5 +1,5 @@
 /*
- * $Id: protocolos.c,v 1.14 2007/02/14 16:14:48 Trocotronic Exp $ 
+ * $Id: protocolos.c,v 1.14 2007/02/14 16:14:48 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -23,13 +23,16 @@ void LiberaMemoriaProtocolo(Protocolo *prot)
 		Free(prot->modusers);
 	Free(prot->archivo);
 	Free(prot->tmparchivo);
+#ifdef _WIN32
+	ircfree(prot->tmppdb);
+#endif
 	Free(prot);
 }
 void DescargaProtocolo()
 {
-	if (protocolo) 
-	{ 
-		LiberaMemoriaProtocolo(protocolo); 
+	if (protocolo)
+	{
+		LiberaMemoriaProtocolo(protocolo);
 		protocolo = NULL;
 	}
 }
@@ -84,6 +87,10 @@ int CargaProtocolo(Conf *config)
 		protocolo = BMalloc(Protocolo);
 		protocolo->archivo = strdup(config->data);
 		protocolo->tmparchivo = strdup(tmppath);
+#ifdef _WIN32
+		protocolo->tmppdb = strdup(tmppath);
+		strcpy(strrchr(protocolo->tmppdb, '.'), ".pdb");
+#endif
 		protocolo->hprot = prot;
 		protocolo->carga = mod_carga;
 		protocolo->descarga = mod_descarga;
@@ -112,6 +119,9 @@ int DescargaExtension(Extension *ext, Protocolo *mod)
 	BorraItem(ext, mod->extensiones);
 	Free(ext->archivo);
 	Free(ext->tmparchivo);
+#ifdef _WIN32
+	ircfree(ext->tmppdb);
+#endif
 	irc_dlclose(ext->hmod);
 	Free(ext);
 	return 0;
@@ -149,6 +159,10 @@ Extension *CreaExtension(Conf *config, Protocolo *mod)
 		ext = BMalloc(Extension);
 		ext->archivo = strdup(config->data);
 		ext->tmparchivo = strdup(tmppath);
+#ifdef _WIN32
+		ext->tmppdb = strdup(tmppath);
+		strcpy(strrchr(ext->tmppdb, '.'), ".pdb");
+#endif
 		ext->hmod = hmod;
 		ext->carga = mod_carga;
 		ext->descarga = mod_descarga;
@@ -189,7 +203,7 @@ int CargaExtensiones(Protocolo *mod)
 			return extp;
 	}
 	return NULL;
-}			
+}
 void InsertaExtFuncion(Extension *ext, Modulo *mod, int pos, Mod_Func func)
 {
 	ExtFunc *extp;

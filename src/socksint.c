@@ -16,22 +16,42 @@ int ActualizaComponentes();
 void DetieneMDS();
 
 int (*tasyncs[])() = {
-	ActivaModulos ,
-	ActualizaComponentes ,
+//	ActivaModulos ,
+//	ActualizaComponentes ,
 	NULL
 };
 
-Signatura sgn;
-Componente comps[MAX_COMP];
-int componentes = 0;
+//Signatura sgn;
+//Componente comps[MAX_COMP];
+//int componentes = 0;
 
 SOCKFUNC(MotdAbre)
 {
-	SockWrite(sck, "GET /inicio.php HTTP/1.1");
-	SockWrite(sck, "Accept: */*");
-	SockWrite(sck, "Host: colossus.redyc.com");
-	SockWrite(sck, "Connection: close");
-	SockWrite(sck, "");
+	char *pk;
+	if (conf_set->userid && (pk = SQLCogeRegistro(SQL_CONFIG, "PBKey", "valor")))
+	{
+		char tmp[4096], b64[2048];
+		u_long cr;
+		bzero(b64, sizeof(b64));
+		ircsprintf(tmp, "%s-83726982-%s", cpid, conf_set->userid);
+		cr = Crc32(tmp, strlen(tmp));
+		b64_encode(pk, strlen(pk), b64, sizeof(b64));
+		ircsprintf(tmp, "userid=%s&cr=%X&cpid=%s&pkey=%s", conf_set->userid, cr + 0xAB87E438, cpid, b64);
+		SockWrite(sck, "POST /inicio.php HTTP/1.0");
+		SockWrite(sck, "Content-Type: application/x-www-form-urlencoded");
+		SockWrite(sck, "Content-Length: %u", strlen(tmp));
+		SockWrite(sck, "Host: colossus.redyc.com");
+		SockWrite(sck, "");
+		SockWrite(sck, tmp);
+	}
+	else
+	{
+		SockWrite(sck, "GET /inicio.php HTTP/1.1");
+		SockWrite(sck, "Accept: */*");
+		SockWrite(sck, "Host: colossus.redyc.com");
+		SockWrite(sck, "Connection: close");
+		SockWrite(sck, "");
+	}
 	return 0;
 }
 SOCKFUNC(MotdLee)
@@ -95,6 +115,7 @@ int SiguienteTAsync(int fuerza)
 		tasyncs[i++]();
 	return 0;
 }
+/*
 MDS *BuscaMDS(Sock *sck)
 {
 	MDS *mds;
@@ -105,6 +126,7 @@ MDS *BuscaMDS(Sock *sck)
 	}
 	return NULL;
 }
+
 SOCKFUNC(ActivoAbre)
 {
 	MDS *mds;
@@ -112,7 +134,7 @@ SOCKFUNC(ActivoAbre)
 	int i;
 	if ((mds = BuscaMDS(sck)))
 	{
-		ircsprintf(tmp, "ver=2&cpuid=%s", sgn.cpuid);
+		ircsprintf(tmp, "ver=2&cpuid=%s", cpid);
 		if (!BadPtr(sgn.sgn))
 		{
 			strlcat(tmp, "&sgn=", sizeof(tmp));
@@ -355,7 +377,6 @@ SOCKFUNC(ACOpen)
 #else
 	SockWrite(sck, "GET /componentes.php?info=linux HTTP/1.1");
 #endif
-	SockWrite(sck, "Accept: */*");
 	SockWrite(sck, "Host: colossus.redyc.com");
 	SockWrite(sck, "Connection: close");
 	SockWrite(sck, "");
@@ -421,3 +442,4 @@ int ActualizaComponentes()
 		SiguienteTAsync(0);
 	return 0;
 }
+*/

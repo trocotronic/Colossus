@@ -1,5 +1,5 @@
 /*
- * $Id: helpserv.c,v 1.14 2007/08/30 13:42:22 Trocotronic Exp $ 
+ * $Id: helpserv.c,v 1.14 2007/08/30 13:42:22 Trocotronic Exp $
  */
 
 #include "struct.h"
@@ -33,7 +33,8 @@ ModInfo MOD_INFO(HelpServ) = {
 	"HelpServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(HelpServ)(Modulo *mod)

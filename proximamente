@@ -67,6 +67,11 @@ Versión 1.12:
 
 [X] Regcode en NickServ
 
+[X] Comando PODERES en ChanServ
+
+[X] Comando VHOST en IpServ
+
+
 
 Pendiente:
 
@@ -80,6 +85,6 @@ Pendiente:
 
 [ ] Ajoin, noexpire en NickServ
 
-[ ] Power, clearaccess by time, en ChanServ
+[ ] Clearaccess by time, en ChanServ
 
 [ ] Guardar glines permanentes

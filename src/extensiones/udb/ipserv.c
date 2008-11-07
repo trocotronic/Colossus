@@ -29,6 +29,7 @@ BOTFUNC(ISNolines);
 BOTFUNCHELP(ISHNolines);
 EXTFUNC(ISSetipv_U);
 EXTFUNC(ISClones_U);
+EXTFUNC(ISVHost_U);
 
 int ISSigEOS_U	();
 int ISSigVDrop	(char *);
@@ -81,6 +82,7 @@ void CargaIpServ(Extension *ext)
 	InsertaSenyal(IS_SIGN_DROP, ISSigVDrop);
 	InsertaSenyalExt(1, ISSetipv_U, ext);
 	InsertaSenyalExt(3, ISClones_U, ext);
+	InsertaSenyalExt(4, ISVHost_U, ext);
 	InsertaSenyal(SIGN_SYNCH, ISSigSynch_U);
 	InsertaSenyal(SIGN_SOCKCLOSE, ISSigSockClose_U);
 	/*InsertaSenyalExt(16, CSLiberar, ext);
@@ -97,6 +99,7 @@ void DescargaIpServ(Extension *ext)
 	BorraSenyal(IS_SIGN_DROP, ISSigVDrop);
 	BorraSenyalExt(1, ISSetipv_U, ext);
 	BorraSenyalExt(3, ISClones_U, ext);
+	BorraSenyalExt(4, ISVHost_U, ext);
 	BorraSenyal(SIGN_SYNCH, ISSigSynch_U);
 	BorraSenyal(SIGN_SOCKCLOSE, ISSigSockClose_U);
 	if (timercif)
@@ -259,6 +262,20 @@ EXTFUNC(ISClones_U)
 		PropagaRegistro("I::%s::S %c%s", param[1], CHAR_NUM, param[2]);
 	else
 		PropagaRegistro("I::%s::S", param[1]);
+	return 0;
+}
+EXTFUNC(ISVHost_U)
+{
+	if (mod != ipserv->hmod || !IsNickUDB(cl->nombre))
+		return 1;
+	if (params >= 2)
+	{
+		char *c;
+		if ((c = SQLCogeRegistro(IS_SQL, cl->nombre, "ip")))
+			PropagaRegistro("N::%s::V %s", cl->nombre, c);
+	}
+	else
+		PropagaRegistro("N::%s::V", cl->nombre);
 	return 0;
 }
 int ISSigEOS_U()

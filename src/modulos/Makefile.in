@@ -15,40 +15,52 @@ modulo: $(FUENTE).c
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(FUENTE).so $(FUENTE).c
 chanserv.so: chanserv.c $(INCLUDES) chanserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o chanserv.so chanserv.c
+	../../sign chanserv.so
 chanserv.o: chanserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c chanserv.c
 nickserv.so: nickserv.c $(INCLUDES) nickserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o nickserv.so nickserv.c
+	../../sign nickserv.so
 nickserv.o: nickserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c nickserv.c
 operserv.so: operserv.c $(INCLUDES) operserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o operserv.so operserv.c
+	../../sign operserv.so
 operserv.o: operserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c operserv.c
 ipserv.so: ipserv.c $(INCLUDES) ipserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o ipserv.so ipserv.c
+	../../sign ipserv.so
 ipserv.o: ipserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c ipserv.c
 memoserv.so: memoserv.c $(INCLUDES) memoserv.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o memoserv.so memoserv.c
+	../../sign memoserv.so
 memoserv.o: memoserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c memoserv.c
 proxyserv.so: proxyserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o proxyserv.so proxyserv.c
+	../../sign proxyserv.so
 tvserv.so: tvserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o tvserv.so tvserv.c
 smsserv.so: smsserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o smsserv.so smsserv.c
+	../../sign smsserv.so
 newsserv.so: newsserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o newsserv.so newsserv.c
+	../../sign newsserv.so
 logserv.so: logserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o logserv.so logserv.c
+	../../sign logserv.so
 noteserv.so: noteserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o noteserv.so noteserv.c
+	../../sign noteserv.so
 statserv.so: statserv.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o statserv.so statserv.c
+	../../sign statserv.so
 gameserv.so: gameserv.c $(INCLUDES) kyrhos.o bidle.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o gameserv.so gameserv.c kyrhos.o bidle.o
+	../../sign gameserv.so
 kyrhos.o: gameserv/kyrhos.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c gameserv/kyrhos.c
 bidle.o: gameserv/bidle.c $(INCLUDES)

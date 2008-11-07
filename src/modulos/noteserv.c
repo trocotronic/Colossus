@@ -422,7 +422,8 @@ ModInfo MOD_INFO(NoteServ) = {
 	"NoteServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 int MOD_CARGA(NoteServ)(Modulo *mod)
 {

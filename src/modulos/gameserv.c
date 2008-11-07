@@ -1,5 +1,5 @@
 /*
- * $Id: gameserv.c,v 1.10 2007/08/26 11:36:13 Trocotronic Exp $ 
+ * $Id: gameserv.c,v 1.10 2007/08/26 11:36:13 Trocotronic Exp $
  */
 
 #include <time.h>
@@ -33,7 +33,8 @@ ModInfo MOD_INFO(LogServ) = {
 	"GameServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 int MOD_CARGA(GameServ)(Modulo *mod)
 {

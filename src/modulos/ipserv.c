@@ -13,6 +13,7 @@
 #include "modulos/nickserv.h"
 
 IpServ *ipserv = NULL;
+char *forbips[256];
 #define ExFunc(x) TieneNivel(cl, x, ipserv->hmod, NULL)
 
 BOTFUNC(ISHelp);
@@ -23,6 +24,8 @@ BOTFUNC(ISTemphost);
 BOTFUNCHELP(ISHTemphost);
 BOTFUNC(ISClones);
 BOTFUNCHELP(ISHClones);
+BOTFUNC(ISVHost);
+BOTFUNCHELP(ISHVHost);
 
 DLLFUNC int ISSigIdOk 		(Cliente *);
 char *ISMakeVirtualhost 	(Cliente *, int);
@@ -33,10 +36,11 @@ int ISSigEOS	();
 int ISSigSQL	();
 int ISSigSockClose	();
 int ISProcIps	(Proc *);
-
+char *ISIpValida	(char *);
 
 static bCom ipserv_coms[] = {
 	{ "help" , ISHelp , N2 , "Muestra esta ayuda." , NULL } ,
+	{ "vhost" , ISVHost , N2 , "Te cambia tu ip virtual." , ISHSetipv } ,
 	{ "setipv" , ISSetipv , N2 , "Agrega o elimina una ip virtual." , ISHSetipv } ,
 	{ "setipv2" , ISSetipv , N2 , "Agrega o elimina una ip virtual de tipo 2." , ISHSetipv2 } ,
 	{ "temphost" , ISTemphost , N2 , "Cambia el host de un usuario." , ISHTemphost } ,
@@ -51,7 +55,8 @@ ModInfo MOD_INFO(IpServ) = {
 	"IpServ" ,
 	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(IpServ)(Modulo *mod)
@@ -96,6 +101,7 @@ int MOD_CARGA(IpServ)(Modulo *mod)
 }
 int MOD_DESCARGA(IpServ)()
 {
+	int i;
 	BorraSenyal(SIGN_UMODE, ISSigUmode);
 	BorraSenyal(NS_SIGN_IDOK, ISSigIdOk);
 	BorraSenyal(SIGN_POST_NICK, ISSigNick);
@@ -105,6 +111,8 @@ int MOD_DESCARGA(IpServ)()
 	BorraSenyal(SIGN_SOCKCLOSE, ISSigSockClose);
 	DetieneProceso(ISProcIps);
 	BotUnset(ipserv);
+	for (i = 0; forbips[i]; i++)
+		ircfree(forbips[i]);
 	return 0;
 }
 int ISTest(Conf *config, int *errores)
@@ -126,6 +134,7 @@ void ISSet(Conf *config, Modulo *mod)
 	ipserv->clones = 3;
 	ircstrdup(ipserv->sufijo, "virtual");
 	ipserv->cambio = 86400;
+	ipserv->pvhost = 0;
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -140,6 +149,14 @@ void ISSet(Conf *config, Modulo *mod)
 				ircstrdup(ipserv->sufijo, config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "cambio"))
 				ipserv->cambio = atoi(config->seccion[i]->data) * 3600;
+			else if (!strcmp(config->seccion[i]->item, "pref_vhost"))
+				ipserv->pvhost = 1;
+			else if (!strcmp(config->seccion[i]->item, "prohibir"))
+			{
+				for (p = 0; p < config->seccion[i]->secciones; p++)
+					ircstrdup(forbips[p], config->seccion[i]->seccion[p]->data);
+				forbips[p] = NULL;
+			}
 			else if (!strcmp(config->seccion[i]->item, "alias"))
 			{
 				for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -203,7 +220,14 @@ BOTFUNCHELP(ISHClones)
 	Responde(cl, CLI(ipserv), "Sintaxis: \00312CLONES {ip|host} [número]");
 	return 0;
 }
-
+BOTFUNCHELP(ISHVHost)
+{
+	Responde(cl, CLI(ipserv), "Personaliza tu host virtual.");
+	Responde(cl, CLI(ipserv), "Si no especificas ningún parámetro, tu host vitual se eliminará.");
+	Responde(cl, CLI(ipserv), " ");
+	Responde(cl, CLI(ipserv), "Sintaxis: \00312VHOST [vhost]");
+	return 0;
+}
 BOTFUNC(ISHelp)
 {
 	if (params < 2)
@@ -234,11 +258,16 @@ BOTFUNC(ISSetipv)
 		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
+	if (strlen(param[2]) > 30)
+	{
+		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "La ip virtual no puede tener más de 30 caracteres.");
+		return 1;
+	}
 	if (params >= 3)
 	{
-		if (!strcasecmp(param[0], "SETIPV2"))
+		Cliente *al;
+		if (ipserv->sufijo && !strcasecmp(param[0], "SETIPV2"))
 		{
-			buf[0] = '\0';
 			ircsprintf(buf, "%s.%s", param[2], ipserv->sufijo);
 			ipv = buf;
 		}
@@ -250,6 +279,8 @@ BOTFUNC(ISSetipv)
 		Responde(cl, CLI(ipserv), "Se ha añadido la ip virtual a \00312%s\003.", ipv);
 		if (params == 4)
 			Responde(cl, CLI(ipserv), "Esta ip caducará dentro de \00312%i\003 días.", atoi(param[3]));
+		if (ProtFunc(P_CAMBIO_HOST_REMOTO) && (al = BuscaCliente(param[1])))
+			ProtFunc(P_CAMBIO_HOST_REMOTO)(al, ipv);
 	}
 	else
 	{
@@ -305,6 +336,41 @@ BOTFUNC(ISClones)
 		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
 	}
 	EOI(ipserv, 3);
+	return 0;
+}
+BOTFUNC(ISVHost)
+{
+	char *ipv;
+	if (params < 2)
+	{
+		SQLInserta(IS_SQL, cl->nombre, "ip", NULL);
+		Responde(cl, CLI(ipserv), "Vhost eliminado");
+	}
+	else
+	{
+		if ((ipv = ISIpValida(param[1])))
+		{
+			ircsprintf(buf, "Vhost no permitido: %s", ipv);
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, buf);
+			return 1;
+		}
+		if (CogeCache(IS_CACHE_VHOST, cl->nombre, ipserv->hmod->id))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "No puedes efectuar un cambio de vhost hasta que no transcurran 24h desde el últiom cambio.");
+			return 1;
+		}
+		if (ipserv->pvhost && ipserv->sufijo)
+		{
+			ircsprintf(buf, "%s.%s", param[1], ipserv->sufijo);
+			ipv = buf;
+		}
+		else
+			ipv = param[2];
+		SQLInserta(IS_SQL, cl->nombre, "ip", ipv);
+		InsertaCache(IS_CACHE_VHOST, cl->nombre, 86400, ipserv->hmod->id, ipv);
+		Responde(cl, CLI(ipserv), "Vhost cambiado a \00312%s", ipv);
+	}
+	EOI(ipserv, 4);
 	return 0;
 }
 int ISSigNick(Cliente *cl, int nuevo)
@@ -450,4 +516,26 @@ int ISProcIps(Proc *proc)
 		SQLFreeRes(res);
 	}
 	return 0;
+}
+char *ISIpValida(char *ip)
+{
+	char *c, *allow = "_-.áéíóúÁÉÍÓÚàèìòùÀÈÌÒÙäëïöüÄËÏÖÜâêîôûÂÊÎÔÛñÑçÇ";
+	int i;
+	if (strlen(ip) > 30)
+		return "vhost demasiado largo";
+	for (c = ip; *c; c++)
+	{
+		if (!IsAlnum(*c) && !strchr(allow, *c))
+			return "caractereres no permitidos";
+	}
+	if (!strchr(ip, '.') && strlen(ip) < 4)
+		return "si no contiene ningún . debe tener más de 4 caracteres";
+	if ((c = strrchr(ip, '.')) && (strlen(c) < 5 || strchr(c, '-') || strchr(c, '_')))
+		return "debe tener más de 4 caracteres después del último . y no contener - ni _";
+	for (i = 0; forbips[i]; i++)
+	{
+		if (!match(forbips[i], ip))
+			return forbips[i];
+	}
+	return NULL;
 }

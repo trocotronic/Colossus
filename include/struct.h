@@ -75,8 +75,8 @@ extern void strcopia(char **, const char *);
 typedef struct _sock Sock;
 #define SOCKFUNC(x) int (x)(Sock *sck, char *data, u_int len)
 #define MAXSOCKS MAXCONNECTIONS
-#define BUFSIZE 1024
-#define SOCKBUF 4096
+#define SOCKBUF 8192
+#define BUFSIZE SOCKBUF/2
 #define DBUF 2032
 
 #ifndef MIN
@@ -529,3 +529,4 @@ extern char *LeeDirectorio(Directorio);
 extern void CierraDirectorio(Directorio);
 extern char *URLEncode(char *);
 extern char *URLDecode(char *);
+extern char cpid[64];

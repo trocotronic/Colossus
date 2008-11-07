@@ -1,7 +1,7 @@
 /*
- * $Id: protocolos.h,v 1.15 2008/02/16 23:19:43 Trocotronic Exp $ 
+ * $Id: protocolos.h,v 1.15 2008/02/16 23:19:43 Trocotronic Exp $
  */
- 
+
 #include "modulos.h"
 typedef struct _extension Extension;
 typedef struct _proto Protocolo;
@@ -29,14 +29,20 @@ struct _extension
 	int (*descarga)(Extension *, Protocolo *);
 	char *archivo;
 	char *tmparchivo;
+#ifdef _WIN32
+	char *tmppdb;
+#endif
 	Conf *config;
 	SenyalExt *senyals[MAXSIGS];
 };
-struct _proto 
+struct _proto
 {
 	Recurso hprot;
 	char *archivo;
 	char *tmparchivo;
+#ifdef _WIN32
+	char *tmppdb;
+#endif
 	ModInfo *info;
 	int (*carga)();
 	int (*descarga)();
@@ -57,7 +63,7 @@ struct _proto
 	char *modusers;
 	unsigned eos:1;
 };
-	
+
 extern MODVAR Protocolo *protocolo;
 extern int CargaProtocolo(Conf *);
 extern void DescargaProtocolo();

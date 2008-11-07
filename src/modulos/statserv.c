@@ -334,14 +334,15 @@ ModInfo MOD_INFO(StatServ) = {
 	"StatServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(StatServ)(Modulo *mod)
 {
 	Conf modulo;
 	int errores = 0;
-	mod->activo = 1;
+	//mod->activo = 1;
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))

@@ -600,3 +600,8 @@
 271008656 - Se mejora el cierra de UDB mediante señales de cierre.
 281008657 - Arreglado un cuelgue al iniciar sesión por MSN.
 291008658 - Arreglado un fallo para impedir propagar líneas UDB muy largas.
+021108659 - Cuando se dropa un nick, sus canales registrados se ponen a nombre de ChanServ.
+021108660 - Se rediseña el sistema de módulos. Todos los módulos deben ir firmados.
+021108661 - Se añade un sistema de encriptación asimétrico para módulos. Así se evita la comprobación online.
+021108662 - Se elimina la directriz modulo::serial puesto que ya no es necesaria.
+041108663 - Arreglado un fallo con las marcas al cambiar de fundador.

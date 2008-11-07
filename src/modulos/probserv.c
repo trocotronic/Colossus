@@ -27,7 +27,8 @@ ModInfo MOD_INFO(ProbServ) = {
 	"ProbServ" ,
 	0.1 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(ProbServ)(Modulo *mod)

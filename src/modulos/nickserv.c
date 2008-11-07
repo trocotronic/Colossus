@@ -102,7 +102,8 @@ ModInfo MOD_INFO(NickServ) = {
 	"NickServ" ,
 	0.10 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(NickServ)(Modulo *mod)

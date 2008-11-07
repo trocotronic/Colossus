@@ -17,8 +17,8 @@ modulo:
 	cd modulos; ${MAKE} 'FUENTE=$(FUENTE)' 'EXLIBS=${EXLIBS}' modulo
 modall:
 	cd modulos; ${MAKE} 'EXLIBS=${EXLIBS}' modall
-build: ircd mods prots exts
-ircd: $(OBJS)
+build: servicios mods prots exts
+servicios: $(OBJS)
 	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB) `mysql_config --libmysqld-libs`
 	ar -r colossus.a $(OBJS)
 mods:

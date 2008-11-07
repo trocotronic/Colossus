@@ -1,5 +1,5 @@
 /*
- * $Id: modulos.h,v 1.20 2008/02/15 18:31:10 Trocotronic Exp $ 
+ * $Id: modulos.h,v 1.20 2008/02/15 18:31:10 Trocotronic Exp $
  */
 
 #ifndef _modulos_
@@ -28,7 +28,7 @@ typedef struct _mod Modulo;
  * @cat: Modulos
  * @ver: ProcesaComsMod
  !*/
- 
+
 struct _bcom
 {
 	char *com;
@@ -52,6 +52,7 @@ typedef struct _info
 	double version;
 	char *autor;
 	char *email;
+	char *PRC;
 }ModInfo, ProtInfo;
 
 typedef struct _alias Alias;
@@ -98,14 +99,15 @@ struct _mod
 	char *config;
 	Cliente *cl;
 	Alias *aliases;
-	unsigned activo:1;
 	ModInfo *info;
-	char *serial;
 	Funcion *comando[MAX_COMS];
 	int comandos;
 	int (*carga)(Modulo *);
 	int (*descarga)(Modulo *);
 	void *conf; /* es un puntero a su estructura, según lo defina. habrá que hacer cast *CADA VEZ* */
+#ifdef _WIN32
+	char *tmppdb;
+#endif
 };
 
 extern MODVAR Modulo *modulos;
@@ -156,7 +158,7 @@ extern const char *ErrorDl(void);
  !*/
 #define FuncResp(x,y,z) do { if (TieneNivel(cl,y,x->hmod,NULL)) { Responde(cl, CLI(x), "\00312" y "\003 " z); }}while(0)
 
-extern void ListaDescrips(Modulo *, Cliente *); 
+extern void ListaDescrips(Modulo *, Cliente *);
 extern int MuestraAyudaComando(Cliente *, char *, Modulo *, char **m, int);
 
 #ifdef ENLACE_DINAMICO

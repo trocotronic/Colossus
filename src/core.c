@@ -5,6 +5,7 @@
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
+#include "protocolos.h"
 #include "socksint.h"
 #ifdef _WIN32
 #include <process.h>
@@ -13,6 +14,8 @@
 #include <net/if.h>
 #include <errno.h>
 #endif
+
+char cpid[64];
 
 char *ExMalloc(size_t size, int bz, char *file, long line)
 {
@@ -33,22 +36,22 @@ char *ExMalloc(size_t size, int bz, char *file, long line)
 
 #ifdef _WIN32
 typedef enum _STORAGE_QUERY_TYPE {
-    	PropertyStandardQuery = 0, 
-    	PropertyExistsQuery, 
-   	PropertyMaskQuery, 
-    	PropertyQueryMaxDefined 
+    	PropertyStandardQuery = 0,
+    	PropertyExistsQuery,
+   	PropertyMaskQuery,
+    	PropertyQueryMaxDefined
 } STORAGE_QUERY_TYPE;
 typedef enum _STORAGE_PROPERTY_ID {
     	StorageDeviceProperty = 0,
     	StorageAdapterProperty
 } STORAGE_PROPERTY_ID;
-typedef struct _STORAGE_PROPERTY_QUERY 
+typedef struct _STORAGE_PROPERTY_QUERY
 {
     	STORAGE_PROPERTY_ID PropertyId;
     	STORAGE_QUERY_TYPE QueryType;
     	UCHAR AdditionalParameters[1];
 } STORAGE_PROPERTY_QUERY;
-typedef struct _STORAGE_DEVICE_DESCRIPTOR 
+typedef struct _STORAGE_DEVICE_DESCRIPTOR
 {
    	ULONG Version;
    	ULONG Size;
@@ -84,63 +87,63 @@ char *flipAndCodeBytes (char *str)
 				sum *= 16;
 				switch (str[i + j * 2 + k])
 				{
-					case '0': 
-						sum += 0; 
+					case '0':
+						sum += 0;
 						break;
-					case '1': 
-						sum += 1; 
+					case '1':
+						sum += 1;
 						break;
-					case '2': 
-						sum += 2; 
+					case '2':
+						sum += 2;
 						break;
-					case '3': 
-						sum += 3; 
+					case '3':
+						sum += 3;
 						break;
-					case '4': 
-						sum += 4; 
+					case '4':
+						sum += 4;
 						break;
-					case '5': 
-						sum += 5; 
+					case '5':
+						sum += 5;
 						break;
-					case '6': 
-						sum += 6; 
+					case '6':
+						sum += 6;
 						break;
-					case '7': 
-						sum += 7; 
+					case '7':
+						sum += 7;
 						break;
-					case '8': 
-						sum += 8; 
+					case '8':
+						sum += 8;
 						break;
-					case '9': 
-						sum += 9; 
+					case '9':
+						sum += 9;
 						break;
-					case 'A': 
-					case 'a': 
-						sum += 10; 
+					case 'A':
+					case 'a':
+						sum += 10;
 						break;
 					case 'B':
-					case 'b': 
-						sum += 11; 
+					case 'b':
+						sum += 11;
 						break;
 					case 'C':
-					case 'c': 
-						sum += 12; 
+					case 'c':
+						sum += 12;
 						break;
 					case 'D':
-					case 'd': 
-						sum += 13; 
+					case 'd':
+						sum += 13;
 						break;
 					case 'E':
-					case 'e': 
-						sum += 14; 
+					case 'e':
+						sum += 14;
 						break;
 					case 'F':
-					case 'f': 
-						sum += 15; 
+					case 'f':
+						sum += 15;
 						break;
 				}
 			}
-			if (isalnum((char)sum)) 
+			if (isalnum((char)sum))
 			{
 				char sub[2];
 				sub[0] = (char) sum;
@@ -157,7 +160,7 @@ void CpuId()
 #ifdef _WIN32
 	/* todas estas rutinas y estructuras se han sacado de http://www.winsim.com/diskid32/diskid32.cpp */
 	HANDLE hPhysicalDriveIOCTL = 0;
-	bzero(sgn.cpuid, sizeof(sgn.cpuid));
+	bzero(cpid, sizeof(cpid));
 	hPhysicalDriveIOCTL = CreateFile("\\\\.\\PhysicalDrive0", 0, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, 0, NULL);
 	if (hPhysicalDriveIOCTL != INVALID_HANDLE_VALUE)
 	{
@@ -169,13 +172,15 @@ void CpuId()
 		query.QueryType = PropertyStandardQuery;
 		memset(buffer, 0, sizeof(buffer));
 		if (DeviceIoControl(hPhysicalDriveIOCTL, IOCTL_STORAGE_QUERY_PROPERTY, &query, sizeof(query), &buffer, sizeof(buffer), &cbBytesReturned, NULL))
-		{         
+		{
 			STORAGE_DEVICE_DESCRIPTOR *descrip = (STORAGE_DEVICE_DESCRIPTOR *)&buffer;
 			char serialNumber[1000], modelNumber[1000];
 			strlcpy(serialNumber, flipAndCodeBytes(&buffer[descrip->SerialNumberOffset]), sizeof(serialNumber));
 			strlcpy(modelNumber, &buffer[descrip->ProductIdOffset], sizeof(modelNumber));
 			if (isalnum(serialNumber[0]) || isalnum(serialNumber[19]))
-				strlcpy(sgn.cpuid, serialNumber, sizeof(sgn.cpuid));
+				strlcpy(cpid, serialNumber, sizeof(cpid));
+			else
+				strlcpy(cpid, modelNumber, sizeof(cpid));
          	}
 	}
 #else
@@ -183,13 +188,13 @@ void CpuId()
 	struct ifreq ifr;
 	char *hwaddr;
 	strlcpy(ifr.ifr_name, "eth0", sizeof(ifr.ifr_name));
-	bzero(sgn.cpuid, sizeof(sgn.cpuid));
+	bzero(cpid, sizeof(cpid));
 	if ((s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP)) > 0)
 	{
 		if ((r = ioctl( s, SIOCGIFHWADDR, &ifr )) >= 0)
 		{
 			hwaddr = ifr.ifr_hwaddr.sa_data;
-			snprintf(sgn.cpuid, 13, "%02X%02X%02X%02X%02X%02X", 
+			snprintf(cpid, 13, "%02X%02X%02X%02X%02X%02X",
 				hwaddr[5] & 0xFF, hwaddr[3] & 0xFF,
 				hwaddr[1] & 0xFF, hwaddr[4] & 0xFF,
 				hwaddr[6] & 0xFF, hwaddr[2] & 0xFF);
@@ -243,10 +248,41 @@ int LeePid()
 #endif
 void BorraTemporales()
 {
-	Modulo *mod;
-	for (mod = modulos; mod; mod = mod->sig)
+	Modulo *mod = modulos, *prev = NULL;
+	Extension *ext, *sig;
+	for (ext = protocolo->extensiones; ext; ext = sig)
 	{
-		//Alerta(FOK,"eliminando %s",mod->tmparchivo);
-		unlink(mod->tmparchivo);
+		sig = ext->sig;
+		irc_dlclose(ext->hmod);
+		unlink(ext->tmparchivo);
+#ifdef _WIN32
+		unlink(ext->tmppdb);
+#endif
+	}
+	irc_dlclose(protocolo->hprot);
+	unlink(protocolo->tmparchivo);
+#ifdef _WIN32
+	unlink(protocolo->tmppdb);
+#endif
+	while (mod)
+	{
+		if (!mod->sig)
+		{
+			//Alerta(FOK,"eliminando %s",mod->tmparchivo);
+			irc_dlclose(mod->hmod);
+			unlink(mod->tmparchivo);
+#ifdef _WIN32
+			unlink(mod->tmppdb);
+#endif
+			if (prev)
+				prev->sig = NULL;
+			if (mod == modulos)
+				break;
+			mod = modulos;
+			prev = NULL;
+			continue;
+		}
+		prev = mod;
+		mod = mod->sig;
 	}
 }

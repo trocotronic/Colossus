@@ -69,8 +69,8 @@ time_t iniciado;
 
 extern void LeeSocks();
 extern void CierraSocks();
-void CargaSignatura();
-extern void DetieneMDS();
+//void CargaSignatura();
+//extern void DetieneMDS();
 extern int CargaCache();
 
 #ifdef _WIN32
@@ -143,7 +143,7 @@ VOIDSIG Refresca()
 	Info("Refrescando servicios...");
 	refrescando = 1;
 	DetieneProceso(ProcCache);
-	DetieneMDS();
+	//DetieneMDS();
 	DescargaExtensiones(protocolo);
 	DescargaModulos();
 	DescargaProtocolo();
@@ -175,8 +175,15 @@ VOIDSIG Reinicia()
 #endif
 	exit(-1);
 }
+#ifdef _WIN32
+void ColossusFin(int sig)
+#else
 VOIDSIG ColossusFin()
+#endif
 {
+#ifdef _WIN32
+	CleanUpSegv(sig);
+#endif
 	CierraColossus(0);
 }
 #ifdef POSIX_SIGNALS
@@ -320,6 +327,7 @@ int main(int argc, char *argv[])
 	DistribuyeMe(&me);
 #ifdef USA_SSL
 	SSLInit();
+	SSLKeysInit();
 #endif
 #ifndef _WIN32
 	if (sql && sql->clientinfo)
@@ -391,7 +399,11 @@ int main(int argc, char *argv[])
 	}
 	pthread_mutex_init(&mutex, NULL);
 #ifdef _WIN32
-	signal(SIGSEGV, CleanUpSegv);
+	signal(SIGSEGV, ColossusFin);
+	signal(SIGTERM, ColossusFin);
+	signal(SIGINT, ColossusFin);
+	signal(SIGABRT, ColossusFin);
+	signal(SIGILL, ColossusFin);
 #else
   #ifdef POSIX_SIGNALS
   	SetSignal(SIGHUP, Refresca);
@@ -407,7 +419,7 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE, AbreSockIrcd);
   #endif
 #endif
-	CargaSignatura();
+	//CargaSignatura();
 	SockOpen("colossus.redyc.com", 80, MotdAbre, MotdLee, NULL, NULL);
 	SiguienteTAsync(1);
 #ifdef _WIN32

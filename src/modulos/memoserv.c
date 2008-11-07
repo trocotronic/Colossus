@@ -59,7 +59,8 @@ ModInfo MOD_INFO(MemoServ) = {
 	"MemoServ" ,
 	0.8 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 int MOD_CARGA(MemoServ)(Modulo *mod)

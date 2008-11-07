@@ -59,7 +59,8 @@ ModInfo MOD_INFO(TvServ) = {
 	"TvServ" ,
 	0.3 ,
 	"Trocotronic" ,
-	"trocotronic@redyc.com"
+	"trocotronic@redyc.com" ,
+	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
 };
 
 Cadena cadenas[] = {
@@ -345,7 +346,7 @@ int MOD_CARGA(TvServ)(Modulo *mod)
 		Error("[%s] El módulo ha sido compilado para la versión %i y usas la versión %i", mod->archivo, COLOSSUS_VERINT, mainversion);
 		return 1;
 	}*/
-	mod->activo = 1;
+	//mod->activo = 1;
 	if (mod->config)
 	{
 		if (ParseaConfiguracion(mod->config, &modulo, 1))

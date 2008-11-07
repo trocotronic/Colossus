@@ -697,21 +697,43 @@ char *BuscaOptItem(int opt, Opts *lista)
 	}
 	return NULL;
 }
+char *pb = "-----BEGIN PUBLIC KEY-----\n"
+		"MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzpj3toI/45bewlCgT0dy\n"
+		"+dZsY1eyUZrn8PfIBZG7Pom8Leph0T/L+TuQu+XFpeh/t+VgTFfBNGO7Xqw5aiYw\n"
+		"7vwtAOn5V2+acyjFKq435WDvBTMS8Qo2V5c9h0W3LwrkJHRuTiyaTq2CeX6dAE19\n"
+		"buEpZZM2qkzkN3G6F1yZ37iC7WDBAtxXlsjdSGuR+xWlXL+6N6HLwqyI06dI2tvt\n"
+		"klq6zUP+o29L/jGSi5Vt6FCmmoiNKP7WHq+cs5EqEobwInhLFk99ajhoakTXjpq6\n"
+		"13DwCK1Uz3rfAtHXyG1ietvaXdBBrEO3WzRLxxKWKssQRt2Nj34GumzVHh5TRYB9\n"
+		"nQIDAQAB\n"
+		"-----END PUBLIC KEY-----";
 Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 {
 	Recurso hmod;
-	char *c;
+	char *c, *e, *PRC = "QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR", *d;
+	struct stat sb;
+	int fd, len, fw;
 #ifdef _WIN32
-	char tmppdb[MAX_FNAME], pdb[MAX_FNAME];
+	char tmppdb[MAX_FNAME], pdb[MAX_FNAME], tmpp[MAX_FNAME];
+#else
+	char *tp;
 #endif
+	FILE *fp;
+	RSA *pvkey = NULL, *pbkey = NULL;
+	BIO *bio = NULL;
+	char *dgs;
+	int sgnlen, dgslen;
+	EVP_MD_CTX ctx;
 	if (!(c = strrchr(dll, '/')))
 	{
 		Alerta(FADV, "Ha sido imposible cargar %s (falla ruta)", dll);
 		return NULL;
 	}
 	strlcpy(archivo, ++c, MAX_FNAME);
-	ircsprintf(tmppath, "./tmp/%s", archivo);
+	//ircsprintf(tmppath, "./tmp/%s", archivo);
 #ifdef _WIN32
+	GetTempPath(MAX_FNAME, tmpp);
+	ircsprintf(tmppath, "%s\\%s", tmpp, archivo);
+	//GetTempFileName(tmpp, "", rand(), tmppath);
 	strlcpy(pdb, dll, sizeof(pdb));
 	if (!(c = strrchr(pdb, '.')))
 	{
@@ -725,11 +747,170 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 		return NULL;
 	}
 	c++;
-	ircsprintf(tmppdb, "./tmp/%s", c);
+	ircsprintf(tmppdb, "%s\\%s", tmpp, c);
+#else
+	if (!(tp = getenv("TMPDIR")))
+		tp = "/tmp";
+	ircsprintf(tmppath, "%s/%s", tp, archivo);
 #endif
-	if (!copyfile(dll, tmppath))
+	if ((fd = open(dll, O_RDONLY|O_BINARY)))
 	{
-		Alerta(FADV, "Ha sido imposible cargar %s (no puede copiar)", dll);
+		fstat(fd, &sb);
+		e = c = (char *)Malloc(sizeof(char) * sb.st_size);
+		read(fd, c, sb.st_size);
+		close(fd);
+		if (!memcmp(c, "\x5F\x98\x7D\x9A\x0A\x8F\x14\x8A\x7B\xB8\xC0\xAC\x71\x9B\xDA\xF5", 16))
+		{
+			char *pk = SQLCogeRegistro(SQL_CONFIG, "PKey", "valor"), *cbuf;
+			int chsize = 256, dlen;
+			BUF_MEM *pBuffer;
+			if (!pk)
+			{
+				Alerta(FADV, "Ha sido imposible cargar %s (no puede cargar pkey)", dll);
+				Free(e);
+				return NULL;
+			}
+			pk = Desencripta(pk, cpid);
+			if (!(bio = BIO_new_mem_buf(pk, strlen(pk))))
+			{
+				Alerta(FADV, "Ha sido imposible cargar %s (no puede cargar bio)", dll);
+				Free(e);
+				return NULL;
+			}
+			if (!(pvkey = PEM_read_bio_RSAPrivateKey(bio, NULL, NULL, NULL)))
+			{
+				Alerta(FADV, "Ha sido imposible cargar %s (destino distinto)", dll);
+				Free(e);
+				return NULL;
+			}
+			if (!(fp = fopen(tmppath, "wb")))
+			{
+				Alerta(FADV, "Ha sido imposible cargar %s (no se puede crear temporal)", dll);
+				Free(e);
+				return NULL;
+			}
+#ifdef _WIN32
+			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
+#endif
+			c += 16;
+			len = sb.st_size-16;
+			cbuf = (char *)Malloc(chsize + 1);
+			while (len > 0)
+			{
+				if ((dlen = RSA_private_decrypt(MIN(chsize, len), c, cbuf, pvkey, RSA_PKCS1_PADDING)) == -1)
+				{
+					Alerta(FADV, "Ha sido imposible cargar %s (no tiene autorización)", dll);
+					Free(e);
+					return NULL;
+				}
+				fwrite(cbuf, 1, dlen, fp);
+				len -= chsize;
+				c += chsize;
+			}
+			fclose(fp);
+			Free(cbuf);
+			RSA_free(pvkey);
+			BIO_free(bio);
+#ifdef _WIN32
+			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
+#endif
+	/*			{
+HANDLE ImageMapping;
+void *ExecutableBaseAddress, *EditableBaseAddress;
+fd = open(tmppath, O_RDONLY|O_BINARY);
+			fstat(fd, &sb);
+			c = (char *)Malloc(sizeof(char) * (sb.st_size + 1));
+			e = c;
+			read(fd, c, sb.st_size);
+			close(fd);
+	ImageMapping = CreateFileMapping(
+INVALID_HANDLE_VALUE, NULL,
+PAGE_EXECUTE_READWRITE | SEC_COMMIT,
+0, sb.st_size, NULL);
+EditableBaseAddress = MapViewOfFile(ImageMapping,
+FILE_MAP_READ | FILE_MAP_WRITE,
+0, 0, 0);
+ExecutableBaseAddress = MapViewOfFile(ImageMapping,
+SECTION_MAP_EXECUTE | FILE_MAP_READ | FILE_MAP_WRITE,
+0, 0, 0);
+CopyMemory(EditableBaseAddress,
+c,sb.st_size);
+Debug("%X",ExecutableBaseAddress);
+((VOID (*)())ExecutableBaseAddress)();
+return (Recurso)ExecutableBaseAddress;
+}*/
+		}
+		else if (!memcmp(c, "\x79\xF3\xA3\x81\xA9\xDB\x30\xDF\x7E\x1A\x4F\x32\xC7\x5D\x88\x2A", 16))
+		{
+			if (!(fp = fopen(tmppath, "wb")))
+			{
+				Alerta(FADV, "Ha sido imposible cargar %s (no se puede crear temporal)", dll);
+				Free(e);
+				return NULL;
+			}
+			fwrite(c+16, 1, sb.st_size-16, fp);
+			fclose(fp);
+		}
+		else
+		{
+			Alerta(FADV, "Ha sido imposible cargar %s (formato de archivo desconocido)", dll);
+			Free(e);
+			return NULL;
+		}
+		Free(e);
+		//cogemos la firma
+		if (!(bio = BIO_new_mem_buf(pb, strlen(pb))))
+		{
+			Alerta(FADV, "Ha sido imposible cargar %s (falla bio)", dll);
+			return NULL;
+		}
+		if (!(pbkey = PEM_read_bio_RSA_PUBKEY(bio, NULL, NULL, NULL)))
+		{
+			Alerta(FADV, "Ha sido imposible cargar %s (no se puede formatear clave)", dll);
+			return NULL;
+		}
+		fd = open(tmppath, O_RDWR|O_BINARY);
+		fstat(fd, &sb);
+		e = c = (char *)Malloc(sizeof(char) * sb.st_size);
+		read(fd, c, sb.st_size);
+		sgnlen = RSA_size(pbkey);
+		OpenSSL_add_all_digests();
+		EVP_DigestInit(&ctx, EVP_get_digestbyname("SHA1"));
+		EVP_DigestUpdate(&ctx, c+sgnlen, sb.st_size-sgnlen);
+		dgslen = EVP_MAX_MD_SIZE;
+		dgs = (char *)Malloc(sizeof(char) * dgslen);
+		EVP_DigestFinal(&ctx, dgs, &dgslen);
+		if (!RSA_verify(NID_sha1, dgs, dgslen, c, sgnlen, pbkey))
+		{
+			Alerta(FADV, "Ha sido imposible cargar %s (falla verificación de firma)", dll);
+			Free(dgs);
+			Free(e);
+			RSA_free(pbkey);
+			BIO_free(bio);
+			return NULL;
+		}
+		Free(dgs);
+		RSA_free(pbkey);
+		BIO_free(bio);
+		c += sgnlen;
+		len = strlen(PRC);
+		sb.st_size -= sgnlen;
+		for (d = c; d-c < sb.st_size-len; d++)
+		{
+			if (!memcmp(d, PRC, len))
+			{
+				memcpy(d, cpid, strlen(cpid)+1);
+				break;
+			}
+		}
+		lseek(fd, 0, SEEK_SET);
+		write(fd, c, sb.st_size);
+		close(fd);
+		Free(e);
+	}
+	else
+	{
+		Alerta(FADV, "Ha sido imposible cargar %s (falla cabecera)", dll);
 		return NULL;
 	}
 #ifdef _WIN32
