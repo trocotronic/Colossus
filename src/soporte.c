@@ -709,9 +709,9 @@ char *pb = "-----BEGIN PUBLIC KEY-----\n"
 Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 {
 	Recurso hmod;
-	unsigned char *c, *e, *PRC = "QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR", *d;
+	char *c, *e, *PRC = "QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR", *d;
 	struct stat sb;
-	int fd, len, fw;
+	int fd, len;
 #ifdef _WIN32
 	char tmppdb[MAX_FNAME], pdb[MAX_FNAME], tmpp[MAX_FNAME];
 #else
@@ -721,7 +721,7 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 	RSA *pvkey = NULL, *pbkey = NULL;
 	BIO *bio = NULL;
 	char *dgs;
-	int sgnlen, dgslen;
+	unsigned int sgnlen, dgslen;
 	EVP_MD_CTX ctx;
 	if (!(c = strrchr(dll, '/')))
 	{
@@ -756,12 +756,12 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 	if ((fd = open(dll, O_RDONLY|O_BINARY)))
 	{
 		fstat(fd, &sb);
-		e = c = (unsigned char *)Malloc(sizeof(char) * sb.st_size);
+		e = c = (char *)Malloc(sizeof(char) * sb.st_size);
 		read(fd, c, sb.st_size);
 		close(fd);
 		if (!memcmp(c, "\x5F\x98\x7D\x9A\x0A\x8F\x14\x8A\x7B\xB8\xC0\xAC\x71\x9B\xDA\xF5", 16))
 		{
-			unsigned char *pk = SQLCogeRegistro(SQL_CONFIG, "PKey", "valor"), *cbuf;
+			char *pk = SQLCogeRegistro(SQL_CONFIG, "PKey", "valor"), *cbuf;
 			int chsize = 256, dlen;
 			BUF_MEM *pBuffer = NULL;
 			if (!pk)
@@ -794,10 +794,10 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 #endif
 			c += 16;
 			len = sb.st_size-16;
-			cbuf = (unsigned char *)Malloc(chsize + 1);
+			cbuf = (char *)Malloc(chsize + 1);
 			while (len > 0)
 			{
-				if ((dlen = RSA_private_decrypt(MIN(chsize, len), c, cbuf, pvkey, RSA_PKCS1_PADDING)) == -1)
+				if ((dlen = RSA_private_decrypt(MIN(chsize, len), (unsigned char *)c, (unsigned char *)cbuf, pvkey, RSA_PKCS1_PADDING)) == -1)
 				{
 					Alerta(FADV, "Ha sido imposible cargar %s (no tiene autorización)", dll);
 					Free(e);
@@ -871,16 +871,16 @@ return (Recurso)ExecutableBaseAddress;
 		}
 		fd = open(tmppath, O_RDWR|O_BINARY);
 		fstat(fd, &sb);
-		e = c = (unsigned char *)Malloc(sizeof(unsigned char) * sb.st_size);
+		e = c = (char *)Malloc(sizeof(unsigned char) * sb.st_size);
 		read(fd, c, sb.st_size);
 		sgnlen = RSA_size(pbkey);
 		OpenSSL_add_all_digests();
 		EVP_DigestInit(&ctx, EVP_get_digestbyname("SHA1"));
 		EVP_DigestUpdate(&ctx, c+sgnlen, sb.st_size-sgnlen);
 		dgslen = EVP_MAX_MD_SIZE;
-		dgs = (unsigned char *)Malloc(sizeof(unsigned char) * dgslen);
-		EVP_DigestFinal(&ctx, dgs, &dgslen);
-		if (!RSA_verify(NID_sha1, dgs, dgslen, c, sgnlen, pbkey))
+		dgs = (char *)Malloc(sizeof(unsigned char) * dgslen);
+		EVP_DigestFinal(&ctx, (unsigned char *)dgs, &dgslen);
+		if (!RSA_verify(NID_sha1, (unsigned char *)dgs, dgslen, c, sgnlen, pbkey))
 		{
 			Alerta(FADV, "Ha sido imposible cargar %s (falla verificación de firma)", dll);
 			Free(dgs);
