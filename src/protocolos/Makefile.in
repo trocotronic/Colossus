@@ -10,13 +10,15 @@ MODULEFLAGS=@MODULEFLAGS@
 all: build
 build: $(MODULES)
 custommodule: $(MODULEFILE).c
-	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(MODULEFILE).so $(MODULEFILE).c 
+	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o $(MODULEFILE).so $(MODULEFILE).c
 unreal.so: unreal.c $(INCLUDES) unreal.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o unreal.so unreal.c
+	../../sign unreal.so
 unreal.o: unreal.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c unreal.c
 p10.so: p10.c $(INCLUDES) p10.o
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -DENLACE_DINAMICO -o p10.so p10.c
+	../../sign p10.so
 p10.o: p10.c $(INCLUDES)
 	$(CC) $(CFLAGS) $(MODULEFLAGS)  -c p10.c
 redhispana.so: redhispana.c $(INCLUDES) redhispana.o

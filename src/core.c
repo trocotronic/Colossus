@@ -250,6 +250,8 @@ void BorraTemporales()
 {
 	Modulo *mod = modulos, *prev = NULL;
 	Extension *ext, *sig;
+	if (!protocolo)
+		return;
 	for (ext = protocolo->extensiones; ext; ext = sig)
 	{
 		sig = ext->sig;

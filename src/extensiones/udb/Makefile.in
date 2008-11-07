@@ -7,6 +7,7 @@ OBJS=bdd.o chanserv.o ipserv.o nickserv.o operserv.o udb.o
 MODULEFLAGS=@MODULEFLAGS@
 build: $(OBJS)
 	$(CC) $(CFLAGS) $(MODULEFLAGS) -o udb.so $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB)
+	../../../sign udb.so
 bdd.o: bdd.c $(INCLUDES)
 	$(CC) $(CFLAGS) -DENLACE_DINAMICO -c bdd.c
 chanserv.o: chanserv.c $(INCLUDES)
