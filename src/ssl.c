@@ -226,7 +226,6 @@ void SSLKeysInit()
 		BIO *bio;
 		char *bptr;
 		long blen;
-		FILE *fp;
 		char tmp[BUFSIZE];
 		pvkey = RSA_generate_key(2048, 0x10001, NULL, NULL);
 		bio = BIO_new(BIO_s_mem());
