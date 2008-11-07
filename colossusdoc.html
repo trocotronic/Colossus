@@ -295,6 +295,7 @@ caracter&iacute;sticas que requieren una especial atenci&oacute;n. </p>
 		intervalo n&ordm;-intervalo;
 	};
 	debug &quot;#canal&quot;; //opcional
+	userid id; //opcional
 	niveles {
 		nombre [flags];
 		...
@@ -312,6 +313,7 @@ configuraci&oacute;n, adquirir&aacute; autom&aacute;ticamente el estado de super
 <p><b>reconectar { }</b><br>Indica si debe procederse a reconectar los servicios en caso de una desconexi&oacute;n involuntaria, indicando el n&uacute;mero de <b>intentos</b> y la frecuencia o el <b>intervalo</b>
 con que debe hacerlo. Ambos valores deben ser n&uacute;meros positivos. </p>
 <p><b>debug</b><br>Indica el canal en el que se hace debug de toda la red si est&aacute; presente. </p>
+<p><b>userid</b><br>Especifica el id de usuario de la web www.redyc.com. Este id puedes obtenerlo desde el panel de opciones. Es opcional pero si se desea utilizar los servicios personalizados, es obligatorio.</p>
 <p><b>niveles</b><br>Establece una lista de niveles de acceso a las distintas funciones de los m&oacute;dulos. Estos niveles son los que se usan en todo el programa. Deben escribirse en orden de menor a mayor rango.
 El par&aacute;metro flags es opcional. Si est&aacute; presente, indica que para adquirir ese nivel necesita poseer este flag. Si no, adquirir&aacute; ese nivel a partir de una rutina propia de alg&uacute;n m&oacute;dulo.<br>
 Como caso especial, la rutina para ROOT se establece autom&aacute;ticamente a partir de la directriz root.</p>
