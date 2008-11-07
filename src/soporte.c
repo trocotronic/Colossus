@@ -763,7 +763,6 @@ Recurso CopiaDll(char *dll, char *archivo, char *tmppath)
 		{
 			char *pk = SQLCogeRegistro(SQL_CONFIG, "PKey", "valor"), *cbuf;
 			int chsize = 256, dlen;
-			BUF_MEM *pBuffer = NULL;
 			if (!pk)
 			{
 				Alerta(FADV, "Ha sido imposible cargar %s (no puede cargar pkey)", dll);
@@ -880,7 +879,7 @@ return (Recurso)ExecutableBaseAddress;
 		dgslen = EVP_MAX_MD_SIZE;
 		dgs = (char *)Malloc(sizeof(unsigned char) * dgslen);
 		EVP_DigestFinal(&ctx, (unsigned char *)dgs, &dgslen);
-		if (!RSA_verify(NID_sha1, (unsigned char *)dgs, dgslen, c, sgnlen, pbkey))
+		if (!RSA_verify(NID_sha1, (unsigned char *)dgs, dgslen, (unsigned char *)c, sgnlen, pbkey))
 		{
 			Alerta(FADV, "Ha sido imposible cargar %s (falla verificación de firma)", dll);
 			Free(dgs);
