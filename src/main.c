@@ -46,6 +46,7 @@ void SetSignal(int, void (*)(int));
 #endif
 extern int ProcCache();
 extern int IniciaIPLoc();
+extern void SSLKeysInit();
 
 /*!
  * @desc: Indica si se está refrescando el programa: 1 si lo está haciendo; 0, si no.
@@ -277,7 +278,7 @@ int main(int argc, char *argv[])
 				exit(0);
 				break;
 			case 'c':
-				(void)printf("cpuid %s\n", sgn.cpuid);
+				(void)printf("cpuid %s\n", cpid);
 				exit(0);
 			case 'v':
 				(void)printf("%s (rv%i)\n", COLOSSUS_VERNUM, rev);
