@@ -86,7 +86,7 @@ Rss *rss[MAX_RSS];
 
 ModInfo MOD_INFO(NewsServ) = {
 	"NewsServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

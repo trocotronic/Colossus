@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.12
+AppVerName=Colossus 1.14
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.redyc.com/
 AppSupportURL=http://www.redyc.com/

@@ -59,7 +59,7 @@ int LSTest(Conf *, int *);
 
 ModInfo MOD_INFO(LogServ) = {
 	"LogServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

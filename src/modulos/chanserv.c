@@ -130,7 +130,7 @@ DLLFUNC mTab cFlags[] = {
 
 ModInfo MOD_INFO(ChanServ) = {
 	"ChanServ" ,
-	0.11 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

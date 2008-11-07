@@ -53,7 +53,7 @@ int ISTest(Conf *, int *);
 
 ModInfo MOD_INFO(IpServ) = {
 	"IpServ" ,
-	0.10 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

@@ -57,7 +57,7 @@ int MSTest(Conf *, int *);
 
 ModInfo MOD_INFO(MemoServ) = {
 	"MemoServ" ,
-	0.8 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

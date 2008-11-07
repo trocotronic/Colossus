@@ -92,7 +92,7 @@ int OSTest(Conf *, int *);
 
 ModInfo MOD_INFO(OperServ) = {
 	"OperServ" ,
-	0.10 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

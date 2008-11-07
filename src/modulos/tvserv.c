@@ -57,7 +57,7 @@ int TSSigQuit(Cliente *, char *);
 
 ModInfo MOD_INFO(TvServ) = {
 	"TvServ" ,
-	0.3 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

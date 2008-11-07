@@ -53,7 +53,7 @@ int PSTest(Conf *, int *);
 
 ModInfo MOD_INFO(ProxyServ) = {
 	"ProxyServ" ,
-	0.11 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

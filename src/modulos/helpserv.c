@@ -31,7 +31,7 @@ int HSSigCDestroy(Canal *);
 
 ModInfo MOD_INFO(HelpServ) = {
 	"HelpServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

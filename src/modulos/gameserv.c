@@ -31,7 +31,7 @@ int GSSigSockClose();
 
 ModInfo MOD_INFO(LogServ) = {
 	"GameServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

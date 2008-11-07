@@ -85,7 +85,7 @@ int BorraCola(Sock *sck)
 
 ModInfo MOD_INFO(SmsServ) = {
 	"SmsServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

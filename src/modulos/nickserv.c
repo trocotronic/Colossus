@@ -100,7 +100,7 @@ static bCom nickserv_coms[] = {
 };
 ModInfo MOD_INFO(NickServ) = {
 	"NickServ" ,
-	0.10 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

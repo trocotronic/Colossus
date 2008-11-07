@@ -332,7 +332,7 @@ int SSTemplates(Proc *);
 
 ModInfo MOD_INFO(StatServ) = {
 	"StatServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"

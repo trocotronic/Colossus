@@ -420,7 +420,7 @@ Opts horos[] = {
 
 ModInfo MOD_INFO(NoteServ) = {
 	"NoteServ" ,
-	0.1 ,
+	1.0 ,
 	"Trocotronic" ,
 	"trocotronic@redyc.com" ,
 	"QQQQQPPPPPGGGGGHHHHHWWWWWRRRRR"
