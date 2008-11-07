@@ -12,6 +12,7 @@
 #include <fcntl.h>
 #ifndef _WIN32
 #define O_BINARY 0x0
+#include <unistd.h>
 #endif
 
 char *pk = "-----BEGIN RSA PRIVATE KEY-----\n"
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
 	BIO *bio = NULL;
 	char *c, *sgn, *dgs;
 	struct stat sb;
-	int sgnlen, len, dgslen;
+	unsigned int sgnlen, len, dgslen;
 	EVP_MD_CTX ctx;
 	if (argc < 2)
 	{

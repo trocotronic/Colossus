@@ -52,7 +52,7 @@ act111: src/utils/actualiza_111.c
 	$(CC) -o utils/actualiza_111 src/utils/actualiza_111.c
 
 sign: src/utils/sign.c
-	$(CC) $(CFLAGS) $(CRYPTOLIB) -o sign $(CRYPTOLIB)
+	$(CC) $(CFLAGS) $(CRYPTOLIB) -o sign $(CRYPTOLIB) src/utils/sign.c
 
 clean:
 	$(RM) -f *~ \#* core *.orig include/*.orig
