@@ -26,6 +26,7 @@ IPLocRec *BuscaIPLocRec(Sock *sck)
 }
 int IniciaIPLoc()
 {
+	return 0;
 	InsertaSenyal(SIGN_QUIT, IPLocSignQuit);
 	InsertaSenyal(SIGN_POST_NICK, IPLocSignPostNick);
 	return 0;
