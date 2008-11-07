@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <errno.h>
+#include <dlfcn.h>
 #endif
 
 char cpid[64];
