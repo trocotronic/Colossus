@@ -605,4 +605,5 @@
 021108661 - Se añade un sistema de encriptación asimétrico para módulos. Así se evita la comprobación online.
 021108662 - Se elimina la directriz modulo::serial puesto que ya no es necesaria.
 041108663 - Arreglado un fallo con las marcas al cambiar de fundador.
-071108664 - *** Vigésima release pública: 1.14 ***
+092208664 - Arreglado un cuelgue al cargar con MySQL interno.
+071108665 - *** Vigésima release pública: 1.14 ***
