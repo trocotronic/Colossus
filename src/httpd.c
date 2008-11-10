@@ -339,7 +339,7 @@ void ProcesaHHead(HHead *hh, Sock *sck)
 					EnviaError(hh, 404, "La página que solicita no existe.");
 					break;
 				}
-				if (conf_httpd->php && !strncasecmp(hh->ext, "php", 3))
+				if (conf_httpd->php && hh->ext && !strncasecmp(hh->ext, "php", 3))
 				{
 					ircsprintf(servars, "REMOTE_ADDR=%s", sck->host);
 					ircsprintf(buf, "-f \"%s\" \"%s\" \"%s\" \"%s\"", f, hh->param_get ? hh->param_get : "NULL", hh->param_post ? hh->param_post : "NULL", servars);
@@ -488,11 +488,11 @@ SOCKFUNC(LeeHTTPD)
 				}
 				ircstrdup(hh->ruta, c);
 			}
-			else if (!strncmp(c, "Host:", 5))
+			else if (!strncasecmp(c, "Host:", 5))
 				ircstrdup(hh->host, c+6);
-			else if (!strncmp(c, "Referer:", 8))
+			else if (!strncasecmp(c, "Referer:", 8))
 				ircstrdup(hh->referer, c+9);
-			else if (!strncmp(c, "If-Modified-Since:", 18))
+			else if (!strncasecmp(c, "If-Modified-Since:", 18))
 			{
 				u_int dia, anyo, hora, min, seg;
 				char mes[4], wdia[4];

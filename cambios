@@ -606,4 +606,5 @@
 021108662 - Se elimina la directriz modulo::serial puesto que ya no es necesaria.
 041108663 - Arreglado un fallo con las marcas al cambiar de fundador.
 092208664 - Arreglado un cuelgue al cargar con MySQL interno.
-071108665 - *** Vigésima release pública: 1.14 ***
+101108665 - Arreglado un cuelgue con el httpd.
+101108666 - *** Vigésima release pública: 1.14 ***
