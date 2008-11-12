@@ -608,3 +608,5 @@
 092208664 - Arreglado un cuelgue al cargar con MySQL interno.
 101108665 - Arreglado un cuelgue con el httpd.
 101108666 - *** Vigésima release pública: 1.14 ***
+111108667 - Arreglado un fallo con la ayuda de VHOST, aviso de JimeMC (#0000317).
+121108668 - Arreglado un cuelgue con el comando SETIPV.

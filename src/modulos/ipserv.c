@@ -40,7 +40,7 @@ char *ISIpValida	(char *);
 
 static bCom ipserv_coms[] = {
 	{ "help" , ISHelp , N2 , "Muestra esta ayuda." , NULL } ,
-	{ "vhost" , ISVHost , N2 , "Te cambia tu ip virtual." , ISHSetipv } ,
+	{ "vhost" , ISVHost , N2 , "Te cambia tu ip virtual." , ISHVHost } ,
 	{ "setipv" , ISSetipv , N2 , "Agrega o elimina una ip virtual." , ISHSetipv } ,
 	{ "setipv2" , ISSetipv , N2 , "Agrega o elimina una ip virtual de tipo 2." , ISHSetipv2 } ,
 	{ "temphost" , ISTemphost , N2 , "Cambia el host de un usuario." , ISHTemphost } ,
@@ -258,14 +258,14 @@ BOTFUNC(ISSetipv)
 		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
-	if (strlen(param[2]) > 30)
-	{
-		Responde(cl, CLI(ipserv), IS_ERR_EMPT, "La ip virtual no puede tener más de 30 caracteres.");
-		return 1;
-	}
 	if (params >= 3)
 	{
 		Cliente *al;
+		if (strlen(param[2]) > 30)
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "La ip virtual no puede tener más de 30 caracteres.");
+			return 1;
+		}
 		if (ipserv->sufijo && !strcasecmp(param[0], "SETIPV2"))
 		{
 			ircsprintf(buf, "%s.%s", param[2], ipserv->sufijo);
