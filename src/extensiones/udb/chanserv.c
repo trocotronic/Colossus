@@ -179,7 +179,10 @@ EXTFUNC(CSOpts_U)
 				strlcat(buf, " ", sizeof(buf));
 				strlcat(buf, str, sizeof(buf));
 			}
-			PropagaRegistro("C::%s::M %s", param[1], buf);
+			if (buf[0] != ' ')
+				PropagaRegistro("C::%s::M %s", param[1], buf);
+			else //no hay modos positivos
+				PropagaRegistro("C::%s::M", param[1]);
 		}
 		else
 			PropagaRegistro("C::%s::M", param[1]);
