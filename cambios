@@ -611,3 +611,4 @@
 111108667 - Arreglado un fallo con la ayuda de VHOST, aviso de JimeMC (#0000317).
 121108668 - Arreglado un cuelgue con el comando SETIPV.
 191108669 - Arreglado un fallo con ChanServ que puede provocar desincronización con UDB.
+191108670 - Añadida comprobación para evitar enviar espacios en UDB.

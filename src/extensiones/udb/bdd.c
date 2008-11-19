@@ -765,7 +765,7 @@ char *CifraIpTEA_U(char *ipreal)
 void PropagaRegistro(char *item, ...)
 {
 	va_list vl;
-	char r, buf[1024];
+	char r, buf[1024], *c;
 	UDBloq *bloq;
 	u_long pos;
 	va_start(vl, item);
@@ -778,8 +778,13 @@ void PropagaRegistro(char *item, ...)
 	pos = bloq->lof;
 	if (!ParseaLinea(bloq, &buf[3], 1))
 	{
-		if (strchr(buf, ' '))
-			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, buf);
+		if ((c = strchr(buf, ' ')))
+		{
+			*c++ = 0;
+			while (*c == ' ')
+				c++;
+			EnviaAServidor(":%s DB * INS %lu %s %s", me.nombre, pos, buf, c);
+		}
 		else
 			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
 	}
