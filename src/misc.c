@@ -14,6 +14,7 @@ WIN32_FIND_DATA FindFileData;
 #endif
 #include <sys/stat.h>
 extern pthread_mutex_t mutex;
+extern int pdeb;
 
 typedef struct _ecmd
 {
