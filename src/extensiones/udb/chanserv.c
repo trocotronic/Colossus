@@ -138,7 +138,8 @@ void CSPropagaCanal(char *canal)
 	if ((c = strchr(modos, '-')))
 		*c = 0;
 	PropagaRegistro("C::%s::F %s", canal, row[0]);
-	PropagaRegistro("C::%s::M %s", canal, modos);
+	if (!BadPtr(modos))
+		PropagaRegistro("C::%s::M %s", canal, modos);
 	PropagaRegistro("C::%s::T %s", canal, row[2]);
 	PropagaRegistro("C::%s::P %s", canal, row[3]);
 	SQLFreeRes(res);

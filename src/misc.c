@@ -433,6 +433,8 @@ void Debug(char *formato, ...)
 	static HANDLE conh = NULL;
 	DWORD len = 0;
 #endif
+	if (!pdeb)
+		return;
 	va_start(vl, formato);
 	vsnprintf(debugbuf, sizeof(debugbuf)-3, formato, vl);
 	va_end(vl);

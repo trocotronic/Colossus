@@ -55,6 +55,7 @@ extern void SSLKeysInit();
 int refrescando = 0;
 
 int mainversion = COLOSSUS_VERINT;
+int pdeb = 0;
 
 #ifdef _WIN32
 LPCSTR cmdLine;
@@ -264,6 +265,9 @@ int main(int argc, char *argv[])
 		}
 		switch (flag)
 		{
+			case 'd':
+				pdeb = 1;
+				break;
 #ifndef _WIN32
 			case 'F':
 				nofork = 1;
