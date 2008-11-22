@@ -783,7 +783,10 @@ void PropagaRegistro(char *item, ...)
 			*c++ = 0;
 			while (*c == ' ')
 				c++;
-			EnviaAServidor(":%s DB * INS %lu %s %s", me.nombre, pos, buf, c);
+			if (!BadPtr(c))
+				EnviaAServidor(":%s DB * INS %lu %s %s", me.nombre, pos, buf, c);
+			else
+				EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
 		}
 		else
 			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
