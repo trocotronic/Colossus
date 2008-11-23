@@ -612,3 +612,4 @@
 121108668 - Arreglado un cuelgue con el comando SETIPV.
 191108669 - Arreglado un fallo con ChanServ que puede provocar desincronización con UDB.
 191108670 - Añadida comprobación para evitar enviar espacios en UDB.
+231108671 - Arreglado un fallo con el poner a ChanServ de fundador cuando se dropa un nick.

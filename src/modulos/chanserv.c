@@ -2675,7 +2675,7 @@ int CSDropanick(char *nick)
 	char *n_c;
 	n_c = SQLEscapa(strtolower(nick));
 	SQLQuery("DELETE FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, n_c);
-	SQLQuery("UPDATE %s%s SET founder='%s' WHERE LOWER(nick)='%s'", PREFIJO, CS_SQL, chanserv->hmod->nick, n_c);
+	SQLQuery("UPDATE %s%s SET founder='%s' WHERE LOWER(founder)='%s'", PREFIJO, CS_SQL, chanserv->hmod->nick, n_c);
 	Free(n_c);
 	return 0;
 }
