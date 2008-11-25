@@ -111,6 +111,8 @@ int DesconectaMCL(char *cuenta)
 		for (lc = mcl->cl->canal; lc; lc = lc->sig)
 			EnviaMsgCanal(mcl->cl, lc->cn, buf);
 		DesconectaBot(mcl->cl, "Offline del MSN");
+		if (mcl->cl->datos)
+			Free(mcl->cl->datos);
 		mcl->cl = NULL;
 	}
 	return 1;
@@ -535,8 +537,11 @@ SOCKFUNC(MSNNSClose)
 	for (mcl = msncls; mcl; mcl = lsig)
 	{
 		lsig = mcl->sig;
+		DesconectaMCL(mcl->cuenta);
+		BorraClienteDeHash((Cliente *)mcl, mcl->cuenta, MSNuTab);
 		Free(mcl->cuenta);
 		Free(mcl->nombre);
+		Free(mcl->alias);
 		Free(mcl);
 	}
 	msncls = NULL;
@@ -548,6 +553,7 @@ SOCKFUNC(MSNNSClose)
 		Free(sb);
 	}
 	msnsbs = NULL;
+	CargaMSN();
 	return 0;
 }
 int CargaMSN()

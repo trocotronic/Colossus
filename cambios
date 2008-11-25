@@ -613,3 +613,6 @@
 191108669 - Arreglado un fallo con ChanServ que puede provocar desincronización con UDB.
 191108670 - Añadida comprobación para evitar enviar espacios en UDB.
 231108671 - Arreglado un fallo con el poner a ChanServ de fundador cuando se dropa un nick.
+241108672 - Limpiadas varias alocates del MSN.
+241108673 - El MSN reconecta si es desconectado.
+251108674 - Los bloques se optimizan cuando se cargan.
