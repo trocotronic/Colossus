@@ -25,6 +25,7 @@ MSNFUNC(MSNJoin);
 MSNFUNC(MSNPart);
 MSNFUNC(MSNLogin);
 MSNFUNC(MSNLogout);
+int CargaMSN();
 Cliente *msnserv = NULL;
 int MSNSynch();
 int MSNSockClose();

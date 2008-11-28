@@ -268,7 +268,7 @@ EXTFUNC(ISVHost_U)
 {
 	if (mod != ipserv->hmod || !IsNickUDB(cl->nombre))
 		return 1;
-	if (params >= 2)
+	if (params >= 1)
 	{
 		char *c;
 		if ((c = SQLCogeRegistro(IS_SQL, cl->nombre, "ip")))

@@ -39,8 +39,8 @@ int ISProcIps	(Proc *);
 char *ISIpValida	(char *);
 
 static bCom ipserv_coms[] = {
-	{ "help" , ISHelp , N2 , "Muestra esta ayuda." , NULL } ,
-	{ "vhost" , ISVHost , N2 , "Te cambia tu ip virtual." , ISHVHost } ,
+	{ "help" , ISHelp , N1 , "Muestra esta ayuda." , NULL } ,
+	{ "vhost" , ISVHost , N1 , "Te cambia tu ip virtual." , ISHVHost } ,
 	{ "setipv" , ISSetipv , N2 , "Agrega o elimina una ip virtual." , ISHSetipv } ,
 	{ "setipv2" , ISSetipv , N2 , "Agrega o elimina una ip virtual de tipo 2." , ISHSetipv2 } ,
 	{ "temphost" , ISTemphost , N2 , "Cambia el host de un usuario." , ISHTemphost } ,
@@ -356,7 +356,7 @@ BOTFUNC(ISVHost)
 		}
 		if (CogeCache(IS_CACHE_VHOST, cl->nombre, ipserv->hmod->id))
 		{
-			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "No puedes efectuar un cambio de vhost hasta que no transcurran 24h desde el últiom cambio.");
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "No puedes efectuar un cambio de vhost hasta que no transcurran 24h desde el último cambio.");
 			return 1;
 		}
 		if (ipserv->pvhost && ipserv->sufijo)
@@ -365,7 +365,7 @@ BOTFUNC(ISVHost)
 			ipv = buf;
 		}
 		else
-			ipv = param[2];
+			ipv = param[1];
 		SQLInserta(IS_SQL, cl->nombre, "ip", ipv);
 		InsertaCache(IS_CACHE_VHOST, cl->nombre, 86400, ipserv->hmod->id, ipv);
 		Responde(cl, CLI(ipserv), "Vhost cambiado a \00312%s", ipv);

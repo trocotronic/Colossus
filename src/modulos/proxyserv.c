@@ -160,7 +160,7 @@ int PSTest(Conf *config, int *errores)
 		FILE *fp;
 		if (!(fp = fopen(eval->data, "r")))
 		{
-			Error("[%s:%s] No se puede abrir el archivo %s]\n", config->archivo, config->item, eval->data);
+			Error("[%s:%s] No se puede abrir el archivo %s]", config->archivo, config->item, eval->data);
 			error_parcial++;
 		}
 		else
