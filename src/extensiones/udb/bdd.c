@@ -453,7 +453,7 @@ int CargaBloque(u_int tipo)
 	}
 	if (i)
 		TruncaBloque(bloq, bytes);
-	OptimizaBloque(bloq);
+	//OptimizaBloque(bloq);
 	return 1;
 }
 void DescargaBloque(u_int tipo)

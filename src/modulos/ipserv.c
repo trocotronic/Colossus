@@ -224,6 +224,9 @@ BOTFUNCHELP(ISHVHost)
 {
 	Responde(cl, CLI(ipserv), "Personaliza tu host virtual.");
 	Responde(cl, CLI(ipserv), "Si no especificas ningún parámetro, tu host vitual se eliminará.");
+	Responde(cl, CLI(ipserv), "Estas ips personalizadas no pueden acabar con menos de 3 letras después del último punto (.)");
+	Responde(cl, CLI(ipserv), "Sólo puedes usar este comando una vez cada 24 horas.");
+	Responde(cl, CLI(ipserv), "Las ips personalizadas pueden contener colores, negrita y subrayado");
 	Responde(cl, CLI(ipserv), " ");
 	Responde(cl, CLI(ipserv), "Sintaxis: \00312VHOST [vhost]");
 	return 0;
