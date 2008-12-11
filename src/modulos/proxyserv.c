@@ -6,6 +6,7 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 #endif
+#include <pthread.h>
 #include "struct.h"
 #include "ircd.h"
 #include "modulos.h"
@@ -380,6 +381,51 @@ int PSCmdNick(Cliente *cl, int nuevo)
 	}
 	return 0;
 }
+int DNSBLAsynch(char *host)
+{
+	char tmp[64];
+	u_int tmp1, tmp2, tmp3, tmp4;
+	struct hostent *he;
+	sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
+	ircsprintf(tmp, "%u.%u.%u.%u.dnsbl.dronebl.org", tmp4, tmp3, tmp2, tmp1);
+	if ((he = gethostbyname(tmp)))
+	{
+		char motivo[256];
+		if (he && proxyserv->detalles)
+		{
+			char *tmpm;
+			int res = ntohl((*(struct in_addr *)he->h_addr).s_addr)&0xFF;
+			if (res == 2)
+				tmpm = "SAMPLE";
+			else if (res == 3)
+				tmpm = "IRC DRONE";
+			else if (res == 5)
+				tmpm = "BOTTLER";
+			else if (res == 6)
+				tmpm = "SPAMBOT";
+			else if (res == 7)
+				tmpm = "DDOS DRONE";
+			else if (res == 8)
+				tmpm = "SOCKSx";
+			else if (res == 9)
+				tmpm = "HTTP";
+			else if (res == 10)
+				tmpm = "CHAIN";
+			else if (res == 12)
+				tmpm = "TROLLS";
+			else if (res == 13)
+				tmpm = "BRUTEFORCE";
+			else
+				tmpm = "UNKNOWN";
+			ircsprintf(motivo, "Posible proxy %s ilegal", tmpm);
+		}
+		else
+			strcpy(motivo, "Posible proxy ilegal");
+		ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
+	}
+	Free(host);
+	return 1;
+}
 void PSEscanea(char *host)
 {
 	Proxy *px;
@@ -387,46 +433,12 @@ void PSEscanea(char *host)
 		return;
 	if (proxyserv->opm && EsIp(host))
 	{
-		u_int tmp1, tmp2, tmp3, tmp4;
-		struct hostent *he;
-		sscanf(host, "%u.%u.%u.%u", &tmp1, &tmp2, &tmp3, &tmp4);
-		ircsprintf(buf, "%u.%u.%u.%u.dnsbl.dronebl.org", tmp4, tmp3, tmp2, tmp1);
-		if ((he = gethostbyname(buf)))
-		{
-			char motivo[256];
-			if (he && proxyserv->detalles)
-			{
-				char *tmp;
-				int res = ntohl((*(struct in_addr *)he->h_addr).s_addr)&0xFF;
-				if (res == 2)
-					tmp = "SAMPLE";
-				else if (res == 3)
-					tmp = "IRC DRONE";
-				else if (res == 5)
-					tmp = "BOTTLER";
-				else if (res == 6)
-					tmp = "SPAMBOT";
-				else if (res == 7)
-					tmp = "DDOS DRONE";
-				else if (res == 8)
-					tmp = "SOCKSx";
-				else if (res == 9)
-					tmp = "HTTP";
-				else if (res == 10)
-					tmp = "CHAIN";
-				else if (res == 12)
-					tmp = "TROLLS";
-				else if (res == 13)
-					tmp = "BRUTEFORCE";
-				else
-					tmp = "UNKNOWN";
-				ircsprintf(motivo, "Posible proxy %s ilegal", tmp);
-			}
-			else
-				strcpy(motivo, "Posible proxy ilegal");
-			ProtFunc(P_GLINE)(CLI(proxyserv), ADD, "*", host, proxyserv->tiempo, motivo);
-			return;
-		}
+		pthread_t id;
+		int val;
+		do {
+			val = pthread_create(&id, NULL, (void *)DNSBLAsynch, (void *)strdup(host));
+		}while (val == EAGAIN);
+
 	}
 	for (px = proxys; px; px = px->sig)
 	{

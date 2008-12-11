@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-#NOCORE=1
+NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -106,7 +106,7 @@ MODLFLAGS=/link /def:src/modulos/modulos.def colossus.lib ws2_32.lib $(ZLIB_LIB)
 PROTCFLAGS=$(MODDBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fesrc/protocolos/ /Fosrc/protocolos/ /D ENLACE_DINAMICO /D MODULE_COMPILE
 PROTLFLAGS=/link /def:src/protocolos/protocolos.def colossus.lib $(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) ws2_32.lib
 
-ALL: SETUP CONFVER Colossus.exe MODULOS
+ALL: SIGN SETUP CONFVER Colossus.exe MODULOS
 
 AUTOCONF: src/win32/autoconf.c
 	$(CC) src/win32/autoconf.c
@@ -122,11 +122,13 @@ ACT111: src/utils/actualiza_111.c
 	-@copy actualiza_111.exe utils/actualiza_111.exe
 	-@erase actualiza_111.exe
 
-SIGN: src/utils/sign.c
-	$(CC) $(OPENSSL_INC) src/utils/sign.c /c
+SIGN: src/utils/sign.obj
 	$(LINK) $(OPENSSL_LIB) $(SSLLIBS) /nologo $(DBGLFLAG) /out:sign.exe sign.obj
 #	-@copy sign.exe utils/sign.exe
 #	-@erase sign.exe
+
+src/utils/sign.obj: src/utils/sign.c
+	$(CC) $(OPENSSL_INC) src/utils/sign.c /c
 
 CLEAN:
 	-@erase src\*.obj >NUL
@@ -137,6 +139,7 @@ CLEAN:
 	-@erase .\*.exp >NUL
 	-@erase .\*.dll >NUL
 	-@erase .\*.map >NUL
+	-@erase .\*.obj >NUL
 	-@erase colossus.lib >NUL
 	-@erase modulos\*.dll >NUL
 	-@erase modulos\*.pdb >NUL
@@ -165,6 +168,7 @@ CLEAN:
 	-@erase src\extensiones\udb\*.manifest >NUL
 	-@erase src\win32\colossus.res >NUL
 	-@erase include\setup.h >NUL
+
 
 SETUP:
 	-@copy src\win32\setup.h include\setup.h >NUL
@@ -315,7 +319,7 @@ src/modulos/ipserv.dll: src/modulos/ipserv.c ./include/struct.h ./include/ircd.h
 	-@sign modulos\ipserv.dll
 
 src/modulos/proxyserv.dll: src/modulos/proxyserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/proxyserv.h
-	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS)
+	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib
 	-@copy src\modulos\proxyserv.dll modulos\proxyserv.dll >NUL
 	-@copy src\modulos\proxyserv.pdb modulos\proxyserv.pdb >NUL
 	-@sign modulos\proxyserv.dll
