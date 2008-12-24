@@ -284,15 +284,6 @@ int BorraKillUser(Cliente *cl, int apaga)
 	}
 	return 0;
 }
-/* establece una nueva clave para el nick en cuestión */
-char *NSRegeneraClave(char *nick)
-{
-	char *pass, *passmd5;
-	pass = AleatorioEx(nickserv->securepass);
-	passmd5 = MDString(pass, 0);
-	SQLInserta(NS_SQL, nick, "pass", passmd5);
-	return pass;
-}
 void NSCambiaInv(Cliente *cl)
 {
 	char buf[BUFSIZE];
@@ -681,6 +672,8 @@ BOTFUNC(NSRegister)
 	m_c = SQLEscapa(cl->info);
 	ll = SQLEscapa(cl->nombre);
 	hh = SQLEscapa(cl->ident);
+	if (!pass)
+		pass = AleatorioEx(nickserv->securepass);
 	SQLQuery("INSERT INTO %s%s (item,pass,email,gecos,host,opts,id,reg,last) VALUES ('%s','%s','%s','%s','%s@%s',%lu,%lu,%lu,%lu)",
 			PREFIJO, NS_SQL,
 			ll, pass ? MDString(pass, 0) : "null",
@@ -689,6 +682,8 @@ BOTFUNC(NSRegister)
 			opts, nickserv->opts & NS_SMAIL ? 0 : time(0),
 			time(0), time(0));
 	Free(m_c);
+	Free(ll);
+	Free(hh);
 	if (sql->_errno)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible insertar tu nick en la base de datos. Vuelve a probarlo.");
@@ -696,7 +691,7 @@ BOTFUNC(NSRegister)
 	}
 	if (nickserv->opts & NS_SMAIL)
 		Email(mail, "Nueva contraseña", "Debido al registro del nick %s, se ha generado una contraseña totalmente segura.\r\n"
-		"A partir de ahora, la clave de %s es:\r\n\r\n%s\r\n\r\nPuede cambiarla mediante el comando /msg %s SET pass.\r\n\r\nGracias por utilizar los servicios de %s.", cl->nombre, cl->nombre, NSRegeneraClave(cl->nombre), nickserv->hmod->nick, conf_set->red);
+		"A partir de ahora, la clave de %s es:\r\n\r\n%s\r\n\r\nPuede cambiarla mediante el comando /msg %s SET pass.\r\n\r\nGracias por utilizar los servicios de %s.", cl->nombre, cl->nombre, pass, nickserv->hmod->nick, conf_set->red);
 	else if (umodreg)
 		ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), "+%c", umodreg->flag);
 	if (!IsOper(cl))
@@ -808,6 +803,7 @@ int NSBaja(char *nick, int opt)
 }
 BOTFUNC(NSSendpass)
 {
+	char *pass;
 	if (params < 2)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
@@ -818,8 +814,10 @@ BOTFUNC(NSSendpass)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
+	pass = AleatorioEx(nickserv->securepass);
+	SQLInserta(NS_SQL, param[1], "pass", MDString(pass, 0));
 	Email(SQLCogeRegistro(NS_SQL, param[1], "email"), "Reenvío de la contraseña", "Debido a la pérdida de tu contraseña, se te ha generado otra clave totalmente segura.\r\n"
-		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", NSRegeneraClave(param[1]), nickserv->hmod->nick, conf_set->red);
+		"A partir de ahora, la clave de tu nick es:\r\n\r\n%s\r\n\r\nPuedes cambiarla mediante el comando SET de %s.\r\n\r\nGracias por utilizar los servicios de %s.", pass, nickserv->hmod->nick, conf_set->red);
 	Responde(cl, CLI(nickserv), "Se ha generado y enviado otra contraseña al email de \00312%s\003.", param[1]);
 	EOI(nickserv, 5);
 	return 0;
