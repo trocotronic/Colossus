@@ -124,6 +124,7 @@ struct Conf_msn
 	char *master;
 	unsigned solomaster:1;
 	char *servidor;
+	char *nick;
 };
 
 #define LOG_ERROR 0x1

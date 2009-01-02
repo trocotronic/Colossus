@@ -226,6 +226,7 @@ void LiberaMemoriaMSN()
 	ircfree(conf_msn->pass);
 	ircfree(conf_msn->master);
 	ircfree(conf_msn->servidor);
+	ircfree(conf_msn->nick);
 	bzero(conf_msn, sizeof(struct Conf_msn));
 #ifdef _WIN32
 	EnableWindow(GetDlgItem(hwMain, BT_MSN), FALSE);
@@ -1554,6 +1555,8 @@ void ConfMSN(Conf *config)
 			ircstrdup(conf_msn->servidor, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "solomaster"))
 			conf_msn->solomaster = 1;
+		else if (!strcmp(config->seccion[i]->item, "nick"))
+			ircstrdup(conf_msn->nick, config->seccion[i]->data);
 	}
 	CargaMSN();
 #ifdef _WIN32

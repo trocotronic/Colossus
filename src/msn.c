@@ -497,7 +497,11 @@ SOCKFUNC(MSNNSRead)
 	}
 	else if (!strncmp(data, "CHG", 3))
 	{
-		char *coded = URLEncode(COLOSSUS_VERSION);
+		char *coded;
+		if (conf_msn->nick)
+			coded = URLEncode(conf_msn->nick);
+		else
+			coded = URLEncode(COLOSSUS_VERSION);
 		SockWrite(sck, "REA %i %s %s", ++trid, conf_msn->cuenta, coded);
 		Free(coded);
 	}
