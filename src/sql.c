@@ -364,7 +364,7 @@ char *SQLCogeRegistro(char *tabla, char *registro, char *campo)
 	reg_corr = SQLEscapa(registro);
 	if (campo)
 		cam_corr = SQLEscapa(campo);
-	res = SQLQuery("SELECT %s from %s%s where LOWER(item)='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, strtolower(reg_corr));
+	res = SQLQuery("SELECT %s from %s%s where item='%s'", cam_corr ? cam_corr : "*", PREFIJO, tabla, reg_corr);
 	SetSQLErrno();
 	ircfree(reg_corr);
 	if (campo)
@@ -420,7 +420,7 @@ void SQLInserta(char *tabla, char *registro, char *campo, char *valor, ...)
 		val_c = SQLEscapa(buf);
 	if (!SQLCogeRegistro(tabla, registro, NULL))
 		SQLQuery("INSERT INTO %s%s (item) values ('%s')", PREFIJO, tabla, reg_c);
-	SQLQuery("UPDATE %s%s SET %s='%s' where LOWER(item)='%s'", PREFIJO, tabla, cam_c, val_c ? val_c : "", strtolower(reg_c));
+	SQLQuery("UPDATE %s%s SET %s='%s' where item='%s'", PREFIJO, tabla, cam_c, val_c ? val_c : "", reg_c);
 	ircfree(reg_c);
 	ircfree(cam_c);
 	ircfree(val_c);
@@ -441,7 +441,7 @@ void SQLBorra(char *tabla, char *registro)
 		char *reg_c;
 		reg_c = SQLEscapa(registro);
 		if (SQLCogeRegistro(tabla, registro, NULL))
-			SQLQuery("DELETE from %s%s where LOWER(item)='%s'", PREFIJO, tabla, strtolower(reg_c));
+			SQLQuery("DELETE from %s%s where item='%s'", PREFIJO, tabla, reg_c);
 		ircfree(reg_c);
 	}
 	else

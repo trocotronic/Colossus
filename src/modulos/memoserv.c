@@ -290,12 +290,12 @@ BOTFUNC(MSRead)
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		para = SQLEscapa(strtolower(param[1]));
+		para = SQLEscapa(param[1]);
 		no = param[2];
 	}
 	else
 	{
-		para = SQLEscapa(strtolower(cl->nombre));
+		para = SQLEscapa(cl->nombre);
 		no = param[1];
 	}
 	if (!atoi(no) && strcasecmp(no, "LAST") && strcasecmp(no, "NEW"))
@@ -305,7 +305,7 @@ BOTFUNC(MSRead)
 	}
 	if (!strcasecmp(no, "NEW"))
 	{
-		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s' AND leido='0'", PREFIJO, MS_SQL, para)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s' AND leido='0'", PREFIJO, MS_SQL, para)))
 		{
 			char *c1, *c2;
 			while ((row = SQLFetchRow(res)))
@@ -315,7 +315,7 @@ BOTFUNC(MSRead)
 				Responde(cl, CLI(memoserv), "%s", row[1]);
 				c1 = SQLEscapa(row[1]);
 				c2 = SQLEscapa(row[0]);
-				SQLQuery("UPDATE %s%s SET leido=1 where LOWER(para)='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, c2, row[2]);
+				SQLQuery("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, c2, row[2]);
 				Free(c1);
 				Free(c2);
 			}
@@ -331,7 +331,7 @@ BOTFUNC(MSRead)
 	else if (!strcasecmp(no, "LAST"))
 	{
 		char *fech = NULL;
-		if ((res = SQLQuery("SELECT MAX(fecha) FROM %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, para)))
+		if ((res = SQLQuery("SELECT MAX(fecha) FROM %s%s where para='%s'", PREFIJO, MS_SQL, para)))
 		{
 			row = SQLFetchRow(res);
 			if (BadPtr(row[0]))
@@ -339,7 +339,7 @@ BOTFUNC(MSRead)
 			fech = strdup(row[0]);
 			SQLFreeRes(res);
 		}
-		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s' AND fecha=%s", PREFIJO, MS_SQL, para, fech)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s' AND fecha=%s", PREFIJO, MS_SQL, para, fech)))
 		{
 			char *c1, *c2;
 			row = SQLFetchRow(res);
@@ -348,7 +348,7 @@ BOTFUNC(MSRead)
 			Responde(cl, CLI(memoserv), "%s", row[1]);
 			c1 = SQLEscapa(row[1]);
 			c2 = SQLEscapa(row[0]);
-			SQLQuery("UPDATE %s%s SET leido=1 where LOWER(para)='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, c2, row[2]);
+			SQLQuery("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, c2, row[2]);
 			SQLFreeRes(res);
 			Free(fech);
 			Free(c1);
@@ -365,7 +365,7 @@ BOTFUNC(MSRead)
 	else
 	{
 		int max = atoi(no);
-		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, para)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s'", PREFIJO, MS_SQL, para)))
 		{
 			for (i = 0; (row = SQLFetchRow(res)); i++)
 			{
@@ -377,7 +377,7 @@ BOTFUNC(MSRead)
 					Responde(cl, CLI(memoserv), "%s", row[1]);
 					c1 = SQLEscapa(row[1]);
 					c2 = SQLEscapa(row[0]);
-					SQLQuery("UPDATE %s%s SET leido=1 where LOWER(para)='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, c2, row[2]);
+					SQLQuery("UPDATE %s%s SET leido=1 where para='%s' AND mensaje='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, c2, row[2]);
 					SQLFreeRes(res);
 					Free(c1);
 					Free(c2);
@@ -430,8 +430,8 @@ BOTFUNC(MSMemo)
 	}
 	if (!IsOper(cl))
 	{
-		char *ll = SQLEscapa(strtolower(cl->nombre));
-		res = SQLQuery("SELECT MAX(fecha) from %s%s where LOWER(de)='%s'", PREFIJO, MS_SQL, ll);
+		char *ll = SQLEscapa(cl->nombre);
+		res = SQLQuery("SELECT MAX(fecha) from %s%s where de='%s'", PREFIJO, MS_SQL, ll);
 		Free(ll);
 		if (res)
 		{
@@ -444,8 +444,8 @@ BOTFUNC(MSMemo)
 			}
 			SQLFreeRes(res);
 		}
-		ll = SQLEscapa(strtolower(param[1]));
-		res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(para)='%s'", PREFIJO, MS_SQL, ll);
+		ll = SQLEscapa(param[1]);
+		res = SQLQuery("SELECT * FROM %s%s WHERE para='%s'", PREFIJO, MS_SQL, ll);
 		Free(ll);
 		if (res)
 		{
@@ -494,12 +494,12 @@ BOTFUNC(MSDel)
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		para = SQLEscapa(strtolower(param[1]));
+		para = SQLEscapa(param[1]);
 		no = param[2];
 	}
 	else
 	{
-		para = SQLEscapa(strtolower(cl->nombre));
+		para = SQLEscapa(cl->nombre);
 		no = param[1];
 	}
 	if (!atoi(no) && strcasecmp(no, "ALL"))
@@ -510,14 +510,14 @@ BOTFUNC(MSDel)
 	}
 	if (!strcasecmp(no, "ALL"))
 	{
-		SQLQuery("DELETE from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, para);
+		SQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_SQL, para);
 		Responde(cl, CLI(memoserv), "Todos los mensajes han sido borrados.");
 	}
 	else
 	{
 		int max = atoi(no);
 		char *m_m, *c1;
-		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, para)))
+		if ((res = SQLQuery("SELECT de,mensaje,fecha from %s%s where para='%s'", PREFIJO, MS_SQL, para)))
 		{
 			for(i = 0; (row = SQLFetchRow(res)); i++)
 			{
@@ -525,7 +525,7 @@ BOTFUNC(MSDel)
 				{
 					m_m = SQLEscapa(row[1]);
 					c1 = SQLEscapa(row[0]);
-					SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, m_m, row[2]);
+					SQLQuery("DELETE from %s%s where para='%s' AND de='%s' AND mensaje='%s' AND fecha=%s", PREFIJO, MS_SQL, para, c1, m_m, row[2]);
 					Responde(cl, CLI(memoserv), "El mensaje \00312%s\003 ha sido borrado.", no);
 					SQLFreeRes(res);
 					Free(m_m);
@@ -562,11 +562,11 @@ BOTFUNC(MSList)
 			Responde(cl, CLI(memoserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		tar = SQLEscapa(strtolower(param[1]));
+		tar = SQLEscapa(param[1]);
 	}
 	else
-		tar = SQLEscapa(strtolower(cl->nombre));
-	if ((res = SQLQuery("SELECT de,fecha,leido from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, tar)))
+		tar = SQLEscapa(cl->nombre);
+	if ((res = SQLQuery("SELECT de,fecha,leido from %s%s where para='%s'", PREFIJO, MS_SQL, tar)))
 	{
 		for (i = 0; (row = SQLFetchRow(res)); i++)
 		{
@@ -714,8 +714,8 @@ BOTFUNC(MSInfo)
 			Responde(cl, CLI(memoserv), MS_ERR_NOTR, "");
 			return 1;
 		}
-		ll = SQLEscapa(strtolower(param[1]));
-		if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, ll)))
+		ll = SQLEscapa(param[1]);
+		if ((res = SQLQuery("SELECT * from %s%s where para='%s'", PREFIJO, MS_SQL, ll)))
 		{
 			memos = (int)SQLNumRows(res);
 			SQLFreeRes(res);
@@ -734,13 +734,13 @@ BOTFUNC(MSInfo)
 	else
 	{
 		int noleid = 0;
-		ll = SQLEscapa(strtolower(cl->nombre));
-		if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, ll)))
+		ll = SQLEscapa(cl->nombre);
+		if ((res = SQLQuery("SELECT * from %s%s where para='%s'", PREFIJO, MS_SQL, ll)))
 		{
 			memos = (int)SQLNumRows(res);
 			SQLFreeRes(res);
 		}
-		if ((res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s' AND leido='0'", PREFIJO, MS_SQL, ll)))
+		if ((res = SQLQuery("SELECT * from %s%s where para='%s' AND leido='0'", PREFIJO, MS_SQL, ll)))
 		{
 			noleid = (int)SQLNumRows(res);
 			SQLFreeRes(res);
@@ -784,14 +784,14 @@ BOTFUNC(MSCancelar)
 		Responde(cl, CLI(memoserv), MS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
-	de = SQLEscapa(strtolower(cl->nombre));
-	ll = SQLEscapa(strtolower(param[1]));
-	if ((res = SQLQuery("SELECT MAX(fecha) from %s%s where LOWER(de)='%s' AND LOWER(para)='%s'", PREFIJO, MS_SQL, de, ll)))
+	de = SQLEscapa(cl->nombre);
+	ll = SQLEscapa(param[1]);
+	if ((res = SQLQuery("SELECT MAX(fecha) from %s%s where de='%s' AND para='%s'", PREFIJO, MS_SQL, de, ll)))
 	{
 		row = SQLFetchRow(res);
 		if (BadPtr(row[0]))
 			goto non;
-		SQLQuery("DELETE from %s%s where LOWER(para)='%s' AND LOWER(de)='%s' AND fecha=%s", PREFIJO, MS_SQL, ll, de, row[0]);
+		SQLQuery("DELETE from %s%s where para='%s' AND de='%s' AND fecha=%s", PREFIJO, MS_SQL, ll, de, row[0]);
 		SQLFreeRes(res);
 		Responde(cl, CLI(memoserv), "El último mensaje de \00312%s\003 ha sido eliminado.", param[1]);
 	}
@@ -832,8 +832,8 @@ int MSCmdJoin(Cliente *cl, Canal *cn)
 	char *regopts, *cc;
 	if (!IsChanReg(cn->nombre))
 		return 1;
-	cc = SQLEscapa(strtolower(cn->nombre));
-	res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s'", PREFIJO, MS_SQL, cc);
+	cc = SQLEscapa(cn->nombre);
+	res = SQLQuery("SELECT * from %s%s where para='%s'", PREFIJO, MS_SQL, cc);
 	Free(cc);
 	if (!res)
 		return 1;
@@ -936,8 +936,8 @@ int MSSigSQL()
 void MSNotifica(Cliente *al)
 {
 	SQLRes res;
-	char *ll = SQLEscapa(strtolower(al->nombre));
-	res = SQLQuery("SELECT * from %s%s where LOWER(para)='%s' AND leido='0'", PREFIJO, MS_SQL, ll);
+	char *ll = SQLEscapa(al->nombre);
+	res = SQLQuery("SELECT * from %s%s where para='%s' AND leido='0'", PREFIJO, MS_SQL, ll);
 	Free(ll);
 	if (res)
 	{

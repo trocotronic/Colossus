@@ -504,7 +504,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				}
 				if (BadPtr(user))
 					user = cl->nombre;
-				if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(user))))
+				if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, user)))
 				{
 					Responde(cl, bl, GS_ERR_EMPT, "Este nick no está dado de alta.");
 					return 1;
@@ -615,8 +615,8 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_PARA, "CLAN", "CREAR nombre_clan");
 						return 1;
 					}
-					clan = SQLEscapa(strtolower(opt));
-					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s'", PREFIJO, GS_BIDLE, clan)))
+					clan = SQLEscapa(opt);
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s'", PREFIJO, GS_BIDLE, clan)))
 					{
 						SQLFreeRes(res);
 						Free(clan);
@@ -647,8 +647,8 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_EMPT, "Ya has ingresado o estás solicitando la entrada en un clan. Si quieres salir de este clan, ejecuta el comando CLAN SALIR nombre_clan");
 						return 1;
 					}
-					clan = SQLEscapa(strtolower(opt));
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s'", PREFIJO, GS_BIDLE, clan)))
+					clan = SQLEscapa(opt);
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s'", PREFIJO, GS_BIDLE, clan)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "Este clan no existe. Si quieres crearlo, ejecuta el comando CLAN CREAR nombre_clan.");
@@ -661,7 +661,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 					SQLInserta(GS_BIDLE, cl->nombre, "clan", clan);
 					SQLInserta(GS_BIDLE, cl->nombre, "claner", "%i", B_PEND);
 					Responde(cl, bl, "Tu solicitud para ingresar al clan \00312%s\003 está pendiente de aprobación.", clan);
-					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i", PREFIJO, GS_BIDLE, strtolower(clan), B_RECV)))
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i", PREFIJO, GS_BIDLE, clan, B_RECV)))
 					{
 						Cliente *al;
 						row = SQLFetchRow(res);
@@ -692,7 +692,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para ACEPTAR.");
 						return 1;
 					}
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, strtolower(opt), clan, B_PEND)))
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, opt, clan, B_PEND)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no ha solicitado la entrada al clan.");
@@ -727,7 +727,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_EMPT, "No tienes nivel para RECHAZAR.");
 						return 1;
 					}
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, strtolower(opt), clan, B_PEND)))
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, opt, clan, B_PEND)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "Este usuario no ha solicitado la entrada al clan.");
@@ -750,7 +750,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						return 1;
 					}
 					clan = strdup(clan);
-					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner=%i", PREFIJO, GS_BIDLE, strtolower(clan), B_PEND)))
+					if (!(res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner=%i", PREFIJO, GS_BIDLE, clan, B_PEND)))
 					{
 						Free(clan);
 						Responde(cl, bl, GS_ERR_EMPT, "No existen solicitudes pendientes.");
@@ -891,7 +891,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				{
 					SQLRes res;
 					SQLRow row;
-					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(cl->nombre))))
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, cl->nombre)))
 					{
 						row = SQLFetchRow(res);
 						Responde(cl, bl, "Puedes vender los siguientes objetos al siguiente precio:");
@@ -944,7 +944,7 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 				{
 					SQLRes res;
 					SQLRow mirow;
-					if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(cl->nombre))) && (mirow = SQLFetchRow(res)))
+					if ((res = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, cl->nombre)) && (mirow = SQLFetchRow(res)))
 					{
 						BidleReta(mirow, NULL, 1);
 						SQLFreeRes(res);
@@ -959,9 +959,9 @@ int BidlePMsg(Cliente *cl, Cliente *bl, char *msg, int resp)
 						Responde(cl, bl, GS_ERR_EMPT, "No puedes combatir contra ti mismo");
 						return 1;
 					}
-					if ((res1 = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(cl->nombre))) && (mirow = SQLFetchRow(res1)))
+					if ((res1 = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, cl->nombre)) && (mirow = SQLFetchRow(res1)))
 					{
-						if ((res2 = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(opt))) && (oprow = SQLFetchRow(res2)))
+						if ((res2 = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, opt)) && (oprow = SQLFetchRow(res2)))
 						{
 							if (atoi(oprow[6]) == 1)
 								BidleReta(mirow, oprow, 1);
@@ -1302,7 +1302,7 @@ int BidleSum(char *user, int batalla)
 		}
 		return sum+1;
 	}
-	else if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s'", PREFIJO, GS_BIDLE, strtolower(user))))
+	else if ((res = SQLQuery("SELECT * FROM %s%s WHERE item='%s'", PREFIJO, GS_BIDLE, user)))
 	{
 		char c;
 		row = SQLFetchRow(res);
@@ -1842,8 +1842,8 @@ int BidleClan(char *clan, char *exc, int segs)
 {
 	SQLRes res;
 	SQLRow row;
-	char *clw = strdup(strtolower(clan));
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(clan)='%s' AND claner >= %i AND LOWER(item)!='%s' AND online=1", PREFIJO, GS_BIDLE, clw, B_ISIN, strtolower(exc))))
+	char *clw = strdup(clan);
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE clan='%s' AND claner >= %i AND item!='%s' AND online=1", PREFIJO, GS_BIDLE, clw, B_ISIN, exc)))
 	{
 		while ((row = SQLFetchRow(res)))
 			SQLInserta(GS_BIDLE, row[0], "sig", "%li", atol(row[8])+segs);
@@ -1878,7 +1878,7 @@ int BidleReta(SQLRow mirow, SQLRow op, int combate)
 			opuser = bidle->nick;
 		else
 		{
-			if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND LOWER(item)!='%s' ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE, strtolower(mirow[0]))))
+			if ((res = SQLQuery("SELECT * FROM %s%s WHERE online=1 AND item!='%s' ORDER BY RAND() LIMIT 1", PREFIJO, GS_BIDLE, mirow[0])))
 			{
 				oprow = SQLFetchRow(res);
 				opuser = oprow[0];

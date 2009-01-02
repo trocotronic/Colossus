@@ -638,15 +638,15 @@ BOTFUNC(ESSalida)
 	if (ano < 100)
 		ano += 2000;
 	tt = CreaTime(dia, mes, ano, hora, min);
-	ll = SQLEscapa(strtolower(cl->nombre));
+	ll = SQLEscapa(cl->nombre);
 	if (params == 2)
 	{
-		SQLQuery("DELETE FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND LOWER(item)='%s'", PREFIJO, ES_SQL, tt, tt+86400, ll);
+		SQLQuery("DELETE FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND item='%s'", PREFIJO, ES_SQL, tt, tt+86400, ll);
 		Responde(cl, CLI(noteserv), "Todas las entradas para el día \00312%s\003 han sido eliminadas.", param[1]);
 	}
 	else if (params == 3)
 	{
-		SQLQuery("DELETE FROM %s%s WHERE fecha = %lu AND LOWER(item)='%s'", PREFIJO, ES_SQL, tt, ll);
+		SQLQuery("DELETE FROM %s%s WHERE fecha = %lu AND item='%s'", PREFIJO, ES_SQL, tt, ll);
 		Responde(cl, CLI(noteserv), "Todas las entradas para el día \00312%s\003 a las \00312%s\003 han sido eliminadas.", param[1], param[2]);
 	}
 	Free(ll);
@@ -680,8 +680,8 @@ BOTFUNC(ESVer)
 		Responde(cl, CLI(noteserv), ES_ERR_SNTX, "Formato de fecha incorrecto: día/mes/año|HOY|MAÑANA");
 		return 1;
 	}
-	ll = SQLEscapa(strtolower(cl->nombre));
-	if (!(res = SQLQuery("SELECT * FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND LOWER(item)='%s'", PREFIJO, ES_SQL, tt, tt+86400, ll)))
+	ll = SQLEscapa(cl->nombre);
+	if (!(res = SQLQuery("SELECT * FROM %s%s WHERE fecha >= %lu AND fecha < %lu AND item='%s'", PREFIJO, ES_SQL, tt, tt+86400, ll)))
 	{
 		Free(ll);
 		Responde(cl, CLI(noteserv), ES_ERR_EMPT, "No existen entradas para este día.");

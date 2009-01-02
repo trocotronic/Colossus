@@ -905,7 +905,7 @@ BOTFUNC(CSInfo)
 		return 1;
 	}
 	cc = SQLEscapa(param[1]);
-	res = SQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(cc));
+	res = SQLQuery("SELECT opts,founder,descripcion,registro,entry,url,email,modos,topic,ntopic,ultimo from %s%s where item='%s'", PREFIJO, CS_SQL, cc);
 	Free(cc);
 	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
@@ -1159,8 +1159,8 @@ BOTFUNC(CSClear)
 			Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 			return 1;
 		}
-		c_c = SQLEscapa(strtolower(param[1]));
-		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, c_c);
+		c_c = SQLEscapa(param[1]);
+		SQLQuery("DELETE FROM %s%s WHERE canal='%s'", PREFIJO, CS_ACCESS, c_c);
 		Responde(cl, CLI(chanserv), "Lista de accesos eliminada.");
 		Free(c_c);
 	}
@@ -1510,8 +1510,8 @@ BOTFUNC(CSAkick)
 		SQLRes res;
 		SQLRow row;
 		char *c_c;
-		c_c = SQLEscapa(strtolower(param[1]));
-		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, c_c)))
+		c_c = SQLEscapa(param[1]);
+		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE canal='%s'", PREFIJO, CS_AKICKS, c_c)))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún akick.");
 			Free(c_c);
@@ -1525,16 +1525,16 @@ BOTFUNC(CSAkick)
 	else if (params == 3)
 	{
 		char *m_c, *c_c;
-		c_c = SQLEscapa(strtolower(param[1]));
-		m_c = SQLEscapa(strtolower(param[2]));
-		if (!SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(mascara)='%s'", PREFIJO, CS_AKICKS, c_c, m_c))
+		c_c = SQLEscapa(param[1]);
+		m_c = SQLEscapa(param[2]);
+		if (!SQLQuery("SELECT * FROM %s%s WHERE canal='%s' AND mascara='%s'", PREFIJO, CS_AKICKS, c_c, m_c))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Esta entrada no existe");
 			Free(c_c);
 			Free(m_c);
 			return 1;
 		}
-		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(mascara)='%s'", PREFIJO, CS_AKICKS, c_c, m_c);
+		SQLQuery("DELETE FROM %s%s WHERE canal='%s' AND mascara='%s'", PREFIJO, CS_AKICKS, c_c, m_c);
 		Responde(cl, CLI(chanserv), "Entrada \00312%s\003 eliminada.", param[2]);
 		Free(c_c);
 		Free(m_c);
@@ -1587,8 +1587,8 @@ BOTFUNC(CSAccess)
 			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 			return 1;
 		}
-		c_c = SQLEscapa(strtolower(param[1]));
-		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, c_c)))
+		c_c = SQLEscapa(param[1]);
+		if (!(res = SQLQuery("SELECT * FROM %s%s WHERE canal='%s'", PREFIJO, CS_ACCESS, c_c)))
 		{
 			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún acceso.");
 			Free(c_c);
@@ -1610,9 +1610,9 @@ BOTFUNC(CSAccess)
 	else if (params == 3)
 	{
 		char *n_c, *c_c;
-		c_c = SQLEscapa(strtolower(param[1]));
-		n_c = SQLEscapa(strtolower(param[2]));
-		SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
+		c_c = SQLEscapa(param[1]);
+		n_c = SQLEscapa(param[2]);
+		SQLQuery("DELETE FROM %s%s WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
 		Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 		CSDebug(param[1], "Acceso de \00312%s\003 eliminado", param[2]);
 		Free(c_c);
@@ -1676,13 +1676,13 @@ BOTFUNC(CSAccess)
 			if ((c = strchr(autof, ']')))
 				*c = '\0';
 		}
-		c_c = SQLEscapa(strtolower(param[1]));
-		n_c = SQLEscapa(strtolower(param[2]));
+		c_c = SQLEscapa(param[1]);
+		n_c = SQLEscapa(param[2]);
 		if (!res)
 			SQLQuery("INSERT INTO %s%s (canal,nick) values ('%s','%s')", PREFIJO, CS_ACCESS, c_c, n_c);
-		SQLQuery("UPDATE %s%s SET nivel=%lu WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, prev, c_c, n_c);
+		SQLQuery("UPDATE %s%s SET nivel=%lu WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, prev, c_c, n_c);
 		if (autof[0] != '\0')
-			SQLQuery("UPDATE %s%s SET automodos='%s' WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, autof, c_c, n_c);
+			SQLQuery("UPDATE %s%s SET automodos='%s' WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, autof, c_c, n_c);
 		if (prev || autof[0] != '\0')
 		{
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 cambiado a \00312%s\003", param[2], param[3]);
@@ -1690,7 +1690,7 @@ BOTFUNC(CSAccess)
 		}
 		else
 		{
-			SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
+			SQLQuery("DELETE FROM %s%s WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
 			Responde(cl, CLI(chanserv), "Acceso de \00312%s\003 eliminado.", param[2]);
 			CSDebug(param[1], "Acceso de \00312%s\003 eliminado.", param[2]);
 		}
@@ -1726,7 +1726,7 @@ BOTFUNC(CSList)
 			{
 				case 'r':
 					rep = SQLEscapa(str_replace(param[2], '*', '%'));
-					res = SQLQuery("SELECT item,descripcion from %s%s where LOWER(item) LIKE '%s' AND registro='0'", PREFIJO, CS_SQL, strtolower(rep));
+					res = SQLQuery("SELECT item,descripcion from %s%s where item LIKE '%s' AND registro='0'", PREFIJO, CS_SQL, rep);
 					Free(rep);
 					if (!res)
 					{
@@ -1753,7 +1753,7 @@ BOTFUNC(CSList)
 			return 1;
 		}
 		rep = SQLEscapa(str_replace(param[1], '*', '%'));
-		res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s' AND registro!='0'", PREFIJO, CS_SQL, strtolower(rep));
+		res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND registro!='0'", PREFIJO, CS_SQL, rep);
 		Free(rep);
 		if (!res)
 		{
@@ -2017,8 +2017,8 @@ BOTFUNC(CSRegister)
 				Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 				return 1;
 			}
-			n_c = SQLEscapa(strtolower(parv[0]));
-			if ((res = SQLQuery("SELECT nick from %s%s where LOWER(nick)='%s'", PREFIJO, CS_TOK, n_c)))
+			n_c = SQLEscapa(parv[0]);
+			if ((res = SQLQuery("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, n_c)))
 			{
 				char buf[512];
 				SQLFreeRes(res);
@@ -2047,7 +2047,7 @@ BOTFUNC(CSRegister)
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 					return 1;
 				}
-				if (!(res = SQLQuery("SELECT item,nick,hora from %s%s where LOWER(item)='%s'", PREFIJO, CS_TOK, strtolower(tok))))
+				if (!(res = SQLQuery("SELECT item,nick,hora from %s%s where item='%s'", PREFIJO, CS_TOK, tok)))
 				{
 					ircsprintf(buf, "El token %s no es válido o ha caducado.", tok);
 					Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
@@ -2117,8 +2117,8 @@ BOTFUNC(CSToken)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, buf);
 		return 1;
 	}
-	n_c = SQLEscapa(strtolower(parv[0]));
-	if ((res = SQLQuery("SELECT nick from %s%s where LOWER(nick)='%s'", PREFIJO, CS_TOK, n_c)))
+	n_c = SQLEscapa(parv[0]);
+	if ((res = SQLQuery("SELECT nick from %s%s where nick='%s'", PREFIJO, CS_TOK, n_c)))
 	{
 		char buf[512];
 		SQLFreeRes(res);
@@ -2354,7 +2354,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		return 0;
 	}
 	cc = SQLEscapa(cn->nombre);
-	if ((res = SQLQuery("SELECT opts,entry,modos,topic,registro from %s%s where LOWER(item)='%s'", PREFIJO, CS_SQL, strtolower(cc))))
+	if ((res = SQLQuery("SELECT opts,entry,modos,topic,registro from %s%s where item='%s'", PREFIJO, CS_SQL, cc)))
 	{
 		row = SQLFetchRow(res);
 		Free(cc);
@@ -2629,9 +2629,9 @@ int CSBaja(char *canal, int opt)
 		if (RedOverride)
 			SacaBot(CLI(chanserv), canal, NULL);
 	}
-	c_c = SQLEscapa(strtolower(canal));
-	SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_ACCESS, c_c);
-	SQLQuery("DELETE FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, c_c);
+	c_c = SQLEscapa(canal);
+	SQLQuery("DELETE FROM %s%s WHERE canal='%s'", PREFIJO, CS_ACCESS, c_c);
+	SQLQuery("DELETE FROM %s%s WHERE canal='%s'", PREFIJO, CS_AKICKS, c_c);
 	LlamaSenyal(CS_SIGN_DROP, 1, canal);
 	SQLBorra(CS_SQL, canal);
 	Free(c_c);
@@ -2642,8 +2642,8 @@ SQLRow CSEsAkick(char *canal, char *mascara)
 	char *c_c;
 	SQLRes res;
 	SQLRow row;
-	c_c = SQLEscapa(strtolower(canal));
-	if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s'", PREFIJO, CS_AKICKS, c_c)))
+	c_c = SQLEscapa(canal);
+	if ((res = SQLQuery("SELECT * FROM %s%s WHERE canal='%s'", PREFIJO, CS_AKICKS, c_c)))
 	{
 		while ((row = SQLFetchRow(res)))
 		{
@@ -2663,9 +2663,9 @@ SQLRes CSEsAccess(char *canal, char *nick)
 {
 	char *c_c, *n_c;
 	SQLRes res;
-	c_c = SQLEscapa(strtolower(canal));
-	n_c = SQLEscapa(strtolower(nick));
-	res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
+	c_c = SQLEscapa(canal);
+	n_c = SQLEscapa(nick);
+	res = SQLQuery("SELECT * FROM %s%s WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, c_c, n_c);
 	Free(c_c);
 	Free(n_c);
 	return res;
@@ -2673,9 +2673,9 @@ SQLRes CSEsAccess(char *canal, char *nick)
 int CSDropanick(char *nick)
 {
 	char *n_c;
-	n_c = SQLEscapa(strtolower(nick));
-	SQLQuery("DELETE FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, n_c);
-	SQLQuery("UPDATE %s%s SET founder='%s' WHERE LOWER(founder)='%s'", PREFIJO, CS_SQL, chanserv->hmod->nick, n_c);
+	n_c = SQLEscapa(nick);
+	SQLQuery("DELETE FROM %s%s WHERE nick='%s'", PREFIJO, CS_ACCESS, n_c);
+	SQLQuery("UPDATE %s%s SET founder='%s' WHERE founder='%s'", PREFIJO, CS_SQL, chanserv->hmod->nick, n_c);
 	Free(n_c);
 	return 0;
 }
@@ -2735,7 +2735,7 @@ ProcFunc(CSDropachans)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item,ultimo from %s%s where (ultimo < %i AND ultimo !='0') OR LOWER(founder)='%s' LIMIT 30 OFFSET %i ", PREFIJO, CS_SQL, time(0) - 86400 * chanserv->autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? strtolower(CLI(chanserv)->nombre) : "", proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item,ultimo from %s%s where (ultimo < %i AND ultimo !='0') OR founder='%s' LIMIT 30 OFFSET %i ", PREFIJO, CS_SQL, time(0) - 86400 * chanserv->autodrop, CLI(chanserv) && CLI(chanserv)->nombre && SockIrcd ? CLI(chanserv)->nombre : "", proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);

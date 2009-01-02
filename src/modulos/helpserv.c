@@ -272,10 +272,10 @@ int HSCmdJoin(Cliente *cl, Canal *cn)
 		char *c_c, *n_c;
 		if (!helpchan)
 			helpchan = BuscaCanal(helpserv->canal);
-		c_c = SQLEscapa(strtolower(cn->nombre));
-		n_c = SQLEscapa(strtolower(cl->nombre));
-		if (!SQLQuery("SELECT * FROM %s%s WHERE LOWER(canal)='%s' AND LOWER(nick)='%s'", PREFIJO, CS_ACCESS, c_c, n_c) &&
-			!SQLQuery("SELECT * FROM %s%s WHERE LOWER(item)='%s' AND LOWER(founder)='%s'", PREFIJO, CS_SQL, c_c, n_c))
+		c_c = SQLEscapa(cn->nombre);
+		n_c = SQLEscapa(cl->nombre);
+		if (!SQLQuery("SELECT * FROM %s%s WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, c_c, n_c) &&
+			!SQLQuery("SELECT * FROM %s%s WHERE item='%s' AND founder='%s'", PREFIJO, CS_SQL, c_c, n_c))
 		{
 			Responde(cl, CLI(helpserv), "Para poder hablar en este canal deberás hacer un test y responderlo correctamente.");
 			Responde(cl, CLI(helpserv), "Si lo superas tendrás +v en este canal automáticamente.");

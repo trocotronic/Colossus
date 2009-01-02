@@ -559,7 +559,7 @@ BOTFUNC(TSTv)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Esta cadena no existe");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_TV, tsf, strtolower(cadenas[cdn].nombre))))
+	if (!(res = SQLQuery("SELECT programacion from %s%s where fecha='%s' AND item='%s'", PREFIJO, TS_TV, tsf, cadenas[cdn].nombre)))
 	{
 		DataSock *dts;
 		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_TV);
@@ -597,7 +597,7 @@ BOTFUNC(TSHoroscopo)
 		Responde(cl, CLI(tvserv), TS_ERR_EMPT, "Este horóscopo no existe");
 		return 1;
 	}
-	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND LOWER(item)='%s'", PREFIJO, TS_HO, tsf, strtolower(param[1]))))
+	if (!(res = SQLQuery("SELECT prediccion from %s%s where fecha='%s' AND item='%s'", PREFIJO, TS_HO, tsf, param[1])))
 	{
 		DataSock *dts;
 		SQLQuery("TRUNCATE TABLE %s%s", PREFIJO, TS_HO);

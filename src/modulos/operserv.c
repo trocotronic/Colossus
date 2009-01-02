@@ -306,10 +306,10 @@ int OSInsertaNoticia(char *botname, char *noticia, time_t fecha, int id)
 	not->cl = cl ? cl : NULL;
 	if (!id)
 	{
-		bot = strdup(strtolower(botname));
+		bot = strdup(botname);
 		m_c = SQLEscapa(noticia);
 		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, botname, m_c, aux);
-		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(m_c), bot);
+		res = SQLQuery("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, m_c, bot);
 		Free(m_c);
 		row = SQLFetchRow(res);
 		not->id = atoi(row[0]);
@@ -359,8 +359,9 @@ BOTFUNCHELP(OSHGline)
 {
 	Responde(cl, CLI(operserv), "Administra los bloqueos de la red.");
 	Responde(cl, CLI(operserv), " ");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|user@host} [tiempo motivo]");
-	Responde(cl, CLI(operserv), "Para añadir una gline se antepone '+' antes de la gline. Para quitarla, '-'.");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|user@host} [[tiempo] motivo]");
+	Responde(cl, CLI(operserv), "Para añadir una gline basta con especificar un motivo.");
+	Responde(cl, CLI(operserv), "Si no se especifica ningún motivo, se quitará esa gline.");
 	Responde(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
 	return 0;
 }
@@ -403,7 +404,7 @@ BOTFUNCHELP(OSHGlobal)
 	Responde(cl, CLI(operserv), "\00312m\003 Vía memo.");
 	Responde(cl, CLI(operserv), "\00312n\003 Vía notice.");
 	Responde(cl, CLI(operserv), " ");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312GLOBAL [-parámetros [[bot]] mensaje");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312GLOBAL [-parámetros [bot] mensaje");
 	Responde(cl, CLI(operserv), "Si no se especifican modos, se envía a todos los usuarios vía privmsg.");
 	return 0;
 }
@@ -603,13 +604,21 @@ BOTFUNC(OSGline)
 	}
 	else if (params < 4)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "GLINE {nick|user@host} tiempo motivo");
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "GLINE {nick|user@host} [tiempo] motivo");
 		return 1;
 	}
 	else
 	{
-		ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
-		Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
+		if (IsDigit(*param[2]))
+		{
+			ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
+			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
+		}
+		else
+		{
+			ProtFunc(P_GLINE)(cl, ADD, user, host, 0, Unifica(param, params, 2, -1));
+			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 permanentemente.", user, host);
+		}
 	}
 	EOI(operserv, 4);
 	return 0;
@@ -862,10 +871,10 @@ BOTFUNC(OSNoticias)
 			return 1;
 		}
 		noticia = Unifica(param, params, 3, -1);
-		bot = strdup(strtolower(param[2]));
+		bot = strdup(param[2]);
 		m_c = SQLEscapa(noticia);
 		SQLQuery("INSERT into %s%s (bot,noticia,fecha) values ('%s','%s','%lu')", PREFIJO, OS_NOTICIAS, param[2], m_c, time(0));
-		res = SQLQuery("SELECT n from %s%s where LOWER(noticia)='%s' AND LOWER(bot)='%s'", PREFIJO, OS_NOTICIAS, strtolower(m_c), bot);
+		res = SQLQuery("SELECT n from %s%s where noticia='%s' AND bot='%s'", PREFIJO, OS_NOTICIAS, m_c, bot);
 		Free(m_c);
 		row = SQLFetchRow(res);
 		OSCargaNoticia(atoi(row[0]));
@@ -974,7 +983,7 @@ BOTFUNC(OSAkill)
 		u_int i;
 		char *rep;
 		rep = str_replace(param[1], '*', '%');
-		if (!(res = SQLQuery("SELECT item,motivo from %s%s where LOWER(item) LIKE '%s'", PREFIJO, OS_AKILL, strtolower(rep))))
+		if (!(res = SQLQuery("SELECT item,motivo from %s%s where item LIKE '%s'", PREFIJO, OS_AKILL, rep)))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;

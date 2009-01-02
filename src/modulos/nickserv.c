@@ -587,7 +587,7 @@ BOTFUNC(NSRegister)
 			return 1;
 		}
 	}
-	if (nickserv->nicks && ((res = SQLQuery("SELECT * from %s%s where LOWER(email)='%s'", PREFIJO, NS_SQL, strtolower(mail))) && SQLNumRows(res) == nickserv->nicks))
+	if (nickserv->nicks && ((res = SQLQuery("SELECT * from %s%s where email='%s'", PREFIJO, NS_SQL, mail)) && SQLNumRows(res) == nickserv->nicks))
 	{
 		SQLFreeRes(res);
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No puedes registrar más nicks en esta cuenta.");
@@ -840,8 +840,8 @@ BOTFUNC(NSInfo)
 	if (IsReg(param[1]))
 	{
 		comp = strcasecmp(param[1], cl->nombre);
-		ll = SQLEscapa(strtolower(param[1]));
-		res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where LOWER(item)='%s'", PREFIJO, NS_SQL, ll);
+		ll = SQLEscapa(param[1]);
+		res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where item='%s'", PREFIJO, NS_SQL, ll);
 		row = SQLFetchRow(res);
 		opts = atoi(row[0]);
 		Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
@@ -881,7 +881,7 @@ BOTFUNC(NSInfo)
 		if ((!strcasecmp(cl->nombre, param[1]) && IsId(cl)) || IsOper(cl))
 		{
 			Responde(cl, CLI(nickserv), "*** Niveles de acceso ***");
-			if ((res = SQLQuery("SELECT * FROM %s%s WHERE LOWER(nick)='%s'", PREFIJO, CS_ACCESS, ll)))
+			if ((res = SQLQuery("SELECT * FROM %s%s WHERE nick='%s'", PREFIJO, CS_ACCESS, ll)))
 			{
 				while ((row = SQLFetchRow(res)))
 				{
@@ -894,7 +894,7 @@ BOTFUNC(NSInfo)
 				}
 				SQLFreeRes(res);
 			}
-			if ((res = SQLQuery("SELECT item from %s%s where LOWER(founder)='%s'", PREFIJO, CS_SQL, ll)))
+			if ((res = SQLQuery("SELECT item from %s%s where founder='%s'", PREFIJO, CS_SQL, ll)))
 			{
 				while ((row = SQLFetchRow(res)))
 				{
@@ -934,7 +934,7 @@ BOTFUNC(NSList)
 		return 1;
 	}
 	rep = SQLEscapa(str_replace(param[1], '*', '%'));
-	if (!(res = SQLQuery("SELECT item from %s%s where LOWER(item) LIKE '%s'", PREFIJO, NS_SQL, strtolower(rep))))
+	if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, NS_SQL, rep)))
 	{
 		Free(rep);
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");

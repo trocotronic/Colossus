@@ -620,3 +620,4 @@
 281108676 - Arreglado un fallo al mostrar la ipv en el comando VHOST.
 241208677 - Cambio en el registro de nicks.
 241208678 - Arreglado un fallo al pasar a minúsculas con caracteres extraños.
+271208679 - Modificado el comando GLINE.
