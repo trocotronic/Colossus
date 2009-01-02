@@ -554,7 +554,8 @@ SOCKFUNC(MSNNSClose)
 		Free(sb);
 	}
 	msnsbs = NULL;
-	CargaMSN();
+	if (!data)
+		CargaMSN();
 	return 0;
 }
 int CargaMSN()
@@ -571,7 +572,7 @@ int CargaMSN()
 		MSNuTab[i].item = NULL;
 		MSNuTab[i].items = 0;
 	}
-	if (!(sckMSNNS = SockOpen("messenger.hotmail.com", 1863, MSNNSOpen, MSNNSRead, NULL, MSNNSClose)))
+	if (!(sckMSNNS = SockOpen("messenger.hotmail.com", 1863, MSNNSOpen, MSNNSRead, NULL, NULL)))
 		return 1;
 	InsertaSenyal(SIGN_SYNCH, MSNSynch);
 	InsertaSenyal(SIGN_SOCKCLOSE, MSNSockClose);
