@@ -624,3 +624,4 @@
 020109680 - Se elimina la búsqueda de registros por lowercase para evitar incompatibilidades en charsets.
 020109681 - Arreglado un fallo de reconexión en el MSN.
 020109682 - Añadida la directriz msn::nick para especificar el nick en el MSN.
+170109683 - Sólo los admins pueden estar en debug.

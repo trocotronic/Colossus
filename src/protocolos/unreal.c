@@ -1906,18 +1906,16 @@ void ProcesaModos(Canal *cn, char *modos)
 void EntraCliente(Cliente *cl, char *canal)
 {
 	Canal *cn = NULL;
+	if (conf_set->debug && !strcmp(canal, conf_set->debug) && !IsAdmin(cl))
+	{
+		EnviaAServidor(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
+		return;
+	}
 	cn = CreaCanal(canal);
 	if (!cn->miembros)
 	{
 		if (conf_set->debug && !strcmp(canal, conf_set->debug))
-		{
-			if (!IsAdmin(cl))
-			{
-				EnviaAServidor(":%s SVSPART %s %s", me.nombre, cl->nombre, canal);
-				return;
-			}
 			ProtFunc(P_MODO_CANAL)(&me, cn, "+sAm");
-		}
 		else if (protocolo->modcanales)
 			ProtFunc(P_MODO_CANAL)(&me, cn, protocolo->modcanales);
 	}
