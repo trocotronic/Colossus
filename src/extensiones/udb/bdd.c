@@ -769,6 +769,7 @@ void PropagaRegistro(char *item, ...)
 	char r, buf[1024], tmp[512], *c;
 	UDBloq *bloq;
 	u_long pos;
+	int ins = 0;
 	va_start(vl, item);
 	ircvsprintf(buf, item, vl);
 	va_end(vl);
@@ -779,22 +780,18 @@ void PropagaRegistro(char *item, ...)
 	pos = bloq->lof;
 	if ((c = strchr(buf, ' ')))
 	{
-		*c = 0;
+		*c++ = 0;
 		while (*c == ' ' || *c == ':')
 			c++;
 		strlcpy(tmp, buf, sizeof(tmp));
 		strlcat(tmp, " ", sizeof(tmp));
 		strlcat(tmp, c, sizeof(tmp));
+		ins = 1;
 	}
 	else
 		strlcpy(tmp, buf, sizeof(tmp));
 	if (!ParseaLinea(bloq, &tmp[3], 1))
-	{
-		if ((c = strchr(buf, ' ')))
-			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, tmp);
-		else
-			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, tmp);
-	}
+		EnviaAServidor(":%s DB * %s %lu %s", me.nombre, ins ? "INS" : "DEL", pos, tmp);
 }
 int ActualizaDataVer2()
 {
