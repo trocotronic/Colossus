@@ -784,9 +784,12 @@ void PropagaRegistro(char *item, ...)
 		while (*c == ' ' || *c == ':')
 			c++;
 		strlcpy(tmp, buf, sizeof(tmp));
-		strlcat(tmp, " ", sizeof(tmp));
-		strlcat(tmp, c, sizeof(tmp));
-		ins = 1;
+		if (!BadPtr(c))
+		{
+			strlcat(tmp, " ", sizeof(tmp));
+			strlcat(tmp, c, sizeof(tmp));
+			ins = 1;
+		}
 	}
 	else
 		strlcpy(tmp, buf, sizeof(tmp));
