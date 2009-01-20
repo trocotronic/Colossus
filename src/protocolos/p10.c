@@ -926,7 +926,7 @@ IRCFUNC(m_msg)
 	else if (!strcasecmp(param[0], "CREDITOS"))
 	{
 		int i;
-		Responde(cl, bl, COLOSSUS_VERSION " (rv%i) - Trocotronic @2004-2008", rev);
+		Responde(cl, bl, COLOSSUS_VERSION " (rv%i) - Trocotronic @2004-2009", rev);
 		Responde(cl, bl, " ");
 		for (i = 0; creditos[i]; i++)
 			Responde(cl, bl, creditos[i]);

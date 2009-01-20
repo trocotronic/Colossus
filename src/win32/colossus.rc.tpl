@@ -95,7 +95,7 @@ BEGIN
             VALUE "FileDescription", "Colossus - Servicios de red\0"
             VALUE "FileVersion", "1.9b\0"
             VALUE "InternalName", "Colossus\0"
-            VALUE "LegalCopyright", "Copyright © 2004-2008\0"
+            VALUE "LegalCopyright", "Copyright © 2004-2009\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "\0"
             VALUE "PrivateBuild", "\0"
@@ -160,7 +160,7 @@ CAPTION "Acerca de Colossus..."
 FONT 8, "Tahoma"
 BEGIN
     LTEXT           "Autor: Trocotronic",IDC_STATIC,10,10,76,8	
-    LTEXT           "©2004-2008",IDC_VER,10,20,76,8
+    LTEXT           "©2004-2009",IDC_VER,10,20,76,8
     CONTROL         "http://www.redyc.com/",IDC_WEB,"Button",BS_OWNERDRAW,10,30,76,8
     CONTROL         BMP_LOGO,IDC_STATIC,"Static",SS_BITMAP,111,3,64,64
     GROUPBOX        "Dependencias",IDC_STATIC,5,47,150,60,BS_LEFT
