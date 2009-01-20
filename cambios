@@ -626,3 +626,4 @@
 020109682 - Añadida la directriz msn::nick para especificar el nick en el MSN.
 170109683 - Sólo los admins pueden estar en debug.
 200109684 - Arreglado un fallo al propagar líneas udb que empiecen por dos puntos.
+200109685 - Arreglado un fallo al arrancar el programa.

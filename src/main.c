@@ -426,9 +426,11 @@ int main(int argc, char *argv[])
 #endif
 	//CargaSignatura();
 	SockOpen("colossus.redyc.com", 80, MotdAbre, MotdLee, NULL, NULL);
-	SiguienteTAsync(1);
 #ifdef _WIN32
 	EscuchaIrcd();
+#endif
+	SiguienteTAsync(1);
+#ifdef _WIN32
 	return 0;
 }
 void LoopPrincipal(void *args)

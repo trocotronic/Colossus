@@ -134,6 +134,11 @@ VOIDSIG AbreSockIrcd()
 {
 	if (SockIrcd)
 		return;
+	if (IrcdEscucha)
+	{
+		SockClose(IrcdEscucha);
+		IrcdEscucha = NULL;
+	}
 #ifdef USA_SSL
 	if (!(SockIrcd = SockOpenEx(conf_server->addr, conf_server->puerto, IniciaIrcd, ProcesaIrcd, NULL, CierraIrcd, 30, 0, conf_server->usa_ssl ? OPT_SSL : 0)))
 #else
@@ -143,11 +148,6 @@ VOIDSIG AbreSockIrcd()
 		Info("No puede conectar");
 		CierraIrcd(NULL, NULL, 0);
 		return;
-	}
-	if (IrcdEscucha)
-	{
-		SockClose(IrcdEscucha);
-		IrcdEscucha = NULL;
 	}
 	tping = 0;
 	if (timerircd)
