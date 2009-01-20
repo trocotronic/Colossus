@@ -766,7 +766,7 @@ char *CifraIpTEA_U(char *ipreal)
 void PropagaRegistro(char *item, ...)
 {
 	va_list vl;
-	char r, buf[1024], *c;
+	char r, buf[1024], tmp[512], *c;
 	UDBloq *bloq;
 	u_long pos;
 	va_start(vl, item);
@@ -777,20 +777,23 @@ void PropagaRegistro(char *item, ...)
 	if (!(bloq = CogeDeId(r)))
 		return;
 	pos = bloq->lof;
-	if (!ParseaLinea(bloq, &buf[3], 1))
+	if ((c = strchr(buf, ' ')))
+	{
+		*c = 0;
+		while (*c == ' ' || *c == ':')
+			c++;
+		strlcpy(tmp, buf, sizeof(tmp));
+		strlcat(tmp, " ", sizeof(tmp));
+		strlcat(tmp, c, sizeof(tmp));
+	}
+	else
+		strlcpy(tmp, buf, sizeof(tmp));
+	if (!ParseaLinea(bloq, &tmp[3], 1))
 	{
 		if ((c = strchr(buf, ' ')))
-		{
-			*c++ = 0;
-			while (*c == ' ')
-				c++;
-			if (!BadPtr(c))
-				EnviaAServidor(":%s DB * INS %lu %s %s", me.nombre, pos, buf, c);
-			else
-				EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
-		}
+			EnviaAServidor(":%s DB * INS %lu %s", me.nombre, pos, tmp);
 		else
-			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, buf);
+			EnviaAServidor(":%s DB * DEL %lu %s", me.nombre, pos, tmp);
 	}
 }
 int ActualizaDataVer2()
