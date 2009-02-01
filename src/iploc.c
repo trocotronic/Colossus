@@ -26,10 +26,13 @@ IPLocRec *BuscaIPLocRec(Sock *sck)
 }
 int IniciaIPLoc()
 {
+#ifndef IPLOC
 	return 0;
+#else
 	InsertaSenyal(SIGN_QUIT, IPLocSignQuit);
 	InsertaSenyal(SIGN_POST_NICK, IPLocSignPostNick);
 	return 0;
+#endif
 }
 int DetieneIPLoc()
 {
