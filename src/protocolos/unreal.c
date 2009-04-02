@@ -16,7 +16,7 @@
 #endif
 
 /* stuff de tklines. todas son globales */
-#define TKL_GLINE 0
+//#define TKL_GLINE 0 DEFINIDO EN protocolos.h
 #define TKL_ZLINE 1
 #define TKL_SHUN 2
 #define TKL_SPAMF 3

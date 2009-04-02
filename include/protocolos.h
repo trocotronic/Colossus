@@ -137,3 +137,5 @@ extern void LlamaSenyalExt(Modulo *, int, Cliente *, char **, int, char **, int)
 mTab *InsertaModoProtocolo(char, u_long *, mTab *);
 mTab *BuscaModoProtocolo(u_long, mTab *);
 extern MODVAR u_long UMODE_REGNICK, UMODE_HIDE, CHMODE_RGSTR;
+
+#define TKL_GLINE 0

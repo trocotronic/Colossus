@@ -599,6 +599,13 @@ BOTFUNC(OSGline)
 	}
 	if (params < 3)
 	{
+		Tkl *tkl = NULL;
+		ircsprintf(tokbuf, "%s@%s", user, host);
+		if (!(tkl = BuscaTKL(tokbuf, tklines[TKL_GLINE])))
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Esta gline no existe.");
+			return 1;
+		}
 		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);
 		Responde(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
 	}
