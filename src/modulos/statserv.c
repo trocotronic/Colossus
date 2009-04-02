@@ -760,36 +760,47 @@ int SSRefresca(int val)
 	}
 	if ((res = SQLQuery("SELECT * FROM %s%s WHERE dia='%s'", PREFIJO, SS_SQL, buf)))
 	{
-		int ok = 0;
+		int ok = 0, i;
+		char *dts[9], tmp[BUFSIZE];
 		row = SQLFetchRow(res);
+		for (i = 0; i < 9; i++)
+			dts[i] = strdup(row[i]);
 		if ((val & USERS) && stats.users > atoi(row[1]))
 		{
-			ircsprintf(row[1], "%u", stats.users);
-			ircsprintf(row[2], "%lu", t);
+			ircsprintf(tmp, "%u", stats.users);
+			ircstrdup(dts[1], tmp);
+			ircsprintf(tmp, "%lu", t);
+			ircstrdup(dts[2], tmp);
 			ok = 1;
 		}
 		if ((val & CHANS) && stats.chans > atoi(row[3]))
 		{
-			ircsprintf(row[3], "%u", stats.chans);
-			ircsprintf(row[4], "%lu", t);
+			ircsprintf(tmp, "%u", stats.chans);
+			ircstrdup(dts[3], tmp);
+			ircsprintf(tmp, "%lu", t);
+			ircstrdup(dts[4], tmp);
 			ok = 1;
 		}
 		if ((val & SERVS) && stats.servs > atoi(row[5]))
 		{
-			ircsprintf(row[5], "%u", stats.servs);
-			ircsprintf(row[6], "%lu", t);
+			ircsprintf(tmp, "%u", stats.servs);
+			ircstrdup(dts[5], tmp);
+			ircsprintf(tmp, "%lu", t);
+			ircstrdup(dts[6], tmp);
 			ok = 1;
 		}
 		if ((val & OPERS) && stats.opers > atoi(row[7]))
 		{
-			ircsprintf(row[7], "%u", stats.opers);
-			ircsprintf(row[8], "%lu", t);
+			ircsprintf(tmp, "%u", stats.opers);
+			ircstrdup(dts[7], tmp);
+			ircsprintf(tmp, "%lu", t);
+			ircstrdup(dts[8], tmp);
 			ok = 1;
 		}
 		if (ok)
 			SQLQuery("UPDATE %s%s SET users=%s, users_time=%s, canales=%s, canales_time=%s, servers=%s, servers_time=%s, opers=%s, opers_time=%s WHERE dia='%s'",
-				PREFIJO, SS_SQL, row[1], row[2], row[3], row[4],
-				row[5], row[6], row[7], row[8], row[0]);
+				PREFIJO, SS_SQL, dts[1], dts[2], dts[3], dts[4],
+				dts[5], dts[6], dts[7], dts[8], dts[0]);
 	}
 	else
 	{
