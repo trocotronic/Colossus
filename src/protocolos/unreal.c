@@ -1163,11 +1163,11 @@ IRCFUNC(m_topic)
 IRCFUNC(m_quit)
 {
 	LinkCanal *lk;
-	if (BuscaModulo(cl->nombre, modulos))
+	/*if (BuscaModulo(cl->nombre, modulos))
 	{
 		ReconectaBot(cl->nombre);
 		return 1;
-	}
+	}*/
 	LlamaSenyal(SIGN_QUIT, 2, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
 	{
