@@ -1002,6 +1002,11 @@ IRCFUNC(m_nick)
 	if (parc > 3)
 	{
 		Cliente *al = NULL;
+		if (BuscaModulo(parv[1], modulos))
+		{
+			EnviaAServidor(":%s %s %s :%s", me.nombre, TOK_KILL, parv[1], "Nick reservado.");
+			return 1;
+		}
 		if (parc > 8)
 		{
 			struct in_addr tmp;
@@ -1019,12 +1024,6 @@ IRCFUNC(m_nick)
 						ProtFunc(P_MODO_USUARIO_REMOTO)(cl, &me, "-r");
 				}
 			}
-		}
-		if (BuscaModulo(parv[1], modulos))
-		{
-			p_kill(al, &me, "Nick protegido.");
-			ReconectaBot(parv[1]);
-			return 1;
 		}
 		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
 		if (parc > 9)

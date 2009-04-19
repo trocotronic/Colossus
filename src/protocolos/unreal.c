@@ -1104,6 +1104,11 @@ IRCFUNC(m_nick)
 	{
 		Cliente *cl = NULL, *al = NULL;
 		char *serv = parv[6];
+		if (BuscaModulo(parv[1], modulos))
+		{
+			EnviaAServidor(":%s %s %s :%s", me.nombre, TOK_KILL, parv[1], "Nick reservado.");
+			return 1;
+		}
 		if (IsDigit(*parv[6]) && (al = BuscaNumerico(atoi(parv[6]))))
 			serv = al->nombre;
 		if (parc == 8) /* NICKv1 */
@@ -1128,12 +1133,6 @@ IRCFUNC(m_nick)
 		{
 			if (autoopers && (strchr(parv[8], 'h') || strchr(parv[8], 'o')))
 				EnviaAServidor(":%s %s %s %s", me.nombre, TOK_SVSJOIN, parv[1], autoopers);
-		}
-		if (BuscaModulo(parv[1], modulos))
-		{
-			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, &me, "Nick protegido.");
-			ReconectaBot(parv[1]);
-			return 1;
 		}
 		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
 		if (parc > 10)
