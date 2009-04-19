@@ -898,8 +898,11 @@ void ReconectaBot(char *nick)
 {
 	Modulo *ex;
 	char *canal;
-	if (!EsOk(SockIrcd) || BuscaCliente(nick) || !(ex = BuscaModulo(nick, modulos)))
+	Cliente *bl;
+	if (!EsOk(SockIrcd) || !(ex = BuscaModulo(nick, modulos)))
 		return;
+	if ((bl = BuscaCliente(nick)) && EsBot(bl))
+		DesconectaBot(bl, "Reconnect");
 	ex->cl = CreaBot(ex->nick, ex->ident, ex->host, ex->modos, ex->realname);
 	if (ex->residente)
 	{
