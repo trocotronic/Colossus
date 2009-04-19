@@ -1132,7 +1132,6 @@ IRCFUNC(m_nick)
 		if (BuscaModulo(parv[1], modulos))
 		{
 			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, &me, "Nick protegido.");
-			ReconectaBot(parv[1]);
 			return 1;
 		}
 		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
@@ -1164,6 +1163,11 @@ IRCFUNC(m_topic)
 IRCFUNC(m_quit)
 {
 	LinkCanal *lk;
+	if (BuscaModulo(cl->nombre, modulos))
+	{
+		ReconectaBot(cl->nombre);
+		return 1;
+	}
 	LlamaSenyal(SIGN_QUIT, 2, cl, parv[1]);
 	for (lk = cl->canal; lk; lk = lk->sig)
 	{
