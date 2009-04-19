@@ -628,3 +628,4 @@
 200109684 - Arreglado un fallo al propagar líneas udb que empiecen por dos puntos.
 200109685 - Arreglado un fallo al arrancar el programa.
 200309686 - Cuando se elimina una gline, si no existe lo dice.
+190409687 - Arreglado un cuelgue en un nick collision.

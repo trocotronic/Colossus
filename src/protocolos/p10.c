@@ -1024,6 +1024,7 @@ IRCFUNC(m_nick)
 		{
 			p_kill(al, &me, "Nick protegido.");
 			ReconectaBot(parv[1]);
+			return 1;
 		}
 		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
 		if (parc > 9)

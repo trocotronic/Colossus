@@ -1133,6 +1133,7 @@ IRCFUNC(m_nick)
 		{
 			ProtFunc(P_QUIT_USUARIO_REMOTO)(cl, &me, "Nick protegido.");
 			ReconectaBot(parv[1]);
+			return 1;
 		}
 		LlamaSenyal(SIGN_POST_NICK, 2, cl, 0);
 		if (parc > 10)
