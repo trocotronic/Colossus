@@ -1610,6 +1610,16 @@ BOTFUNC(CSAccess)
 	else if (params == 3)
 	{
 		char *n_c, *c_c;
+		if (!CSTieneNivel(cl, param[1], CS_LEV_EDT))
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
+			return 1;
+		}
+		if (!CSEsAccess(param[1], param[2]))
+		{
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no tiene acceso.");
+			return 1;
+		}
 		c_c = SQLEscapa(param[1]);
 		n_c = SQLEscapa(param[2]);
 		SQLQuery("DELETE FROM %s%s WHERE canal='%s' AND nick='%s'", PREFIJO, CS_ACCESS, c_c, n_c);

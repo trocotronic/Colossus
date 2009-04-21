@@ -630,3 +630,4 @@
 200309686 - Cuando se elimina una gline, si no existe lo dice.
 190409687 - Arreglado un cuelgue en un nick collision.
 210409688 - Arreglado un fallo al quitar una gline.
+210409689 - Arreglado un fallo crítico en el ACCESS de ChanServ.
