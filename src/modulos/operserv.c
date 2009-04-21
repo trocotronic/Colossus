@@ -600,8 +600,8 @@ BOTFUNC(OSGline)
 	if (params < 3)
 	{
 		Tkl *tkl = NULL;
-		ircsprintf(tokbuf, "%s@%s", user, host);
-		if (!(tkl = BuscaTKL(tokbuf, tklines[TKL_GLINE])))
+		ircsprintf(buf, "%s@%s", user, host);
+		if (!(tkl = BuscaTKL(buf, tklines[TKL_GLINE])))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Esta gline no existe.");
 			return 1;
