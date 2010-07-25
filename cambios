@@ -631,3 +631,4 @@
 190409687 - Arreglado un cuelgue en un nick collision.
 210409688 - Arreglado un fallo al quitar una gline.
 210409689 - Arreglado un fallo crítico en el ACCESS de ChanServ.
+250710690 - *** Vigésima primera release pública: 1.15 ***
