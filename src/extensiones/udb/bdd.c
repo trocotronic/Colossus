@@ -156,7 +156,7 @@ u_long ObtieneHash(UDBloq *bloq)
 	if (fstat(bloq->fd, &inode) < 0)
 		return 0L;
 	t = inode.st_size - INI_DATA;
-	if (t <= 0)
+	if ((int)t <= 0)
 		return 0L;
 	par = Malloc(t);
 	lseek(bloq->fd, INI_DATA, SEEK_SET);
