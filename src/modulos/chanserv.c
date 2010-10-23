@@ -215,6 +215,7 @@ void CSSet(Conf *config, Modulo *mod)
 	ircstrdup(chanserv->tokform, "##########");
 	chanserv->vigencia = 24;
 	chanserv->necesarios = 10;
+	chanserv->antig = 15;
 	if (config)
 	{
 		for (i = 0; i < config->secciones; i++)
@@ -241,6 +242,8 @@ void CSSet(Conf *config, Modulo *mod)
 						chanserv->vigencia = atoi(config->seccion[i]->seccion[p]->data);
 					else if (!strcmp(config->seccion[i]->seccion[p]->item, "necesarios"))
 						chanserv->necesarios = atoi(config->seccion[i]->seccion[p]->data);
+					else if (!strcmp(config->seccion[i]->seccion[p]->item, "antig"))
+                                                chanserv->antig = atoi(config->seccion[i]->seccion[p]->data);
 				}
 			}
 			else if (!strcmp(config->seccion[i]->item, "alias"))
@@ -2120,6 +2123,11 @@ BOTFUNC(CSToken)
 	SQLRow row;
 	char *n_c;
 	int libres = 25, i; /* siempre tendremos 25 tokens libres */
+	if (!IsReg(parv[0])) /* Comprobamos si el nick esta registrado*/
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
+		return 1;
+	}
 	if ((atol(SQLCogeRegistro(NS_SQL, parv[0], "reg")) + 86400 * chanserv->antig) > time(0))
 	{
 		char buf[512];
