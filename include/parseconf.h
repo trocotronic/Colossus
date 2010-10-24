@@ -3,7 +3,6 @@
  */
 
 #define MAXSECS 128
-#define AUTOBOP 0x1
 #define REKILL 0x2
 #define RESP_PRIVMSG 0x4
 #define RESP_NOTICE 0x8
@@ -79,6 +78,7 @@ struct Conf_smtp
 struct Conf_set
 {
 	int opts;
+	char *autobmode;
 	char *root;
 	char clave_cifrado[33];
 	char *admin;

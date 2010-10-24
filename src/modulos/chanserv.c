@@ -1878,6 +1878,7 @@ BOTFUNC(CSSuspender)
 	SQLInserta(CS_SQL, param[1], "suspend", motivo);
 	ircsprintf(buf, "Suspendido: %s", motivo);
 	CSMarca(cl, param[1], buf);
+	ProtFunc(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1]), "El canal ha sido suspendido.");
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido suspendido.", param[1]);
 	EOI(chanserv, 15);
 	return 0;
@@ -1901,6 +1902,7 @@ BOTFUNC(CSLiberar)
 	}
 	SQLInserta(CS_SQL, param[1], "suspend", "");
 	CSMarca(cl, param[1], "Suspenso levantado.");
+	ProtFunc(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1]), SQLCogeRegistro(CS_SQL, param[1], "topic"));
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su suspenso.", param[1]);
 	EOI(chanserv, 16);
 	return 0;
@@ -1982,6 +1984,11 @@ BOTFUNC(CSBlock)
 }
 BOTFUNC(CSRegister)
 {
+	if (!IsReg(parv[0])) /* Comprobamos si el nick esta registrado*/
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no estÃ¡ registrado.");
+		return 1;
+	}
 	if (params == 2) /* registro de una petición de canal */
 	{
 		if (!IsOper(cl))
@@ -2102,6 +2109,7 @@ BOTFUNC(CSRegister)
 				if (cmodreg)
 					ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+%c", cmodreg->flag);
 				ProtFunc(P_TOPIC)(CLI(chanserv), cn, "El canal ha sido registrado.");
+				SQLInserta(CS_SQL, param[1], "ntopic", chanserv->hmod->nick);
 			}
 			LlamaSenyal(CS_SIGN_REG, 1, param[1]);
 			Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido registrado.", param[1]);

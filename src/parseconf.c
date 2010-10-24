@@ -176,6 +176,7 @@ void LiberaMemoriaSet()
 	ircfree(conf_set->admin);
 	if (conf_set->red)
 		tmp = strdup(conf_set->red);
+	ircfree(conf_set->autobmode);
 	ircfree(conf_set->red);
 	ircfree(conf_set->debug);
 	ircfree(conf_set->userid);
@@ -1126,8 +1127,8 @@ void ConfSet(Conf *config)
 		conf_set = BMalloc(struct Conf_set);
 	for (i = 0; i < config->secciones; i++)
 	{
-		if (!strcmp(config->seccion[i]->item, "autobop"))
-			conf_set->opts |= AUTOBOP;
+		if (!strcmp(config->seccion[i]->item, "autobmode"))
+			ircstrdup(conf_set->autobmode, config->seccion[i]->data);
 		else if (!strcmp(config->seccion[i]->item, "rekill"))
 			conf_set->opts |= REKILL;
 		else if (!strcmp(config->seccion[i]->item, "rejoin"))

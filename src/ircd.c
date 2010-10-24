@@ -188,8 +188,8 @@ SOCKFUNC(ProcesaIrcd)
 	strlcpy(backupbuf, data, sizeof(backupbuf));
 	if (!canal_debug)
 		canal_debug = BuscaCanal(conf_set->debug);
-	if (conf_set->debug && canal_debug && canal_debug->miembros)
-		ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
+	//if (conf_set->debug && canal_debug && canal_debug->miembros)
+	//	ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
 	return protocolo->parsea(sck, data, len);
 }
 SOCKFUNC(CierraIrcd)
@@ -654,8 +654,8 @@ Canal *EntraBot(Cliente *bl, char *canal)
 		InsertaCanalEnCliente(bl, cn);
 		InsertaClienteEnCanal(cn, bl);
 		ProtFunc(P_JOIN_USUARIO_LOCAL)(bl, cn);
-		if (EsBot(bl) && conf_set->opts & AUTOBOP)
-			ProtFunc(P_MODO_CANAL)(&me, cn, "+o %s", TRIO(bl));
+		if (EsBot(bl) && conf_set->autobmode != NULL)
+			ProtFunc(P_MODO_CANAL)(&me, cn, "%s %s", conf_set->autobmode, TRIO(bl));
 	}
 	return cn;
 }
