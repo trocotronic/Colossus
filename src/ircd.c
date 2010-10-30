@@ -188,8 +188,8 @@ SOCKFUNC(ProcesaIrcd)
 	strlcpy(backupbuf, data, sizeof(backupbuf));
 	if (!canal_debug)
 		canal_debug = BuscaCanal(conf_set->debug);
-	//if (conf_set->debug && canal_debug && canal_debug->miembros)
-	//	ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
+	if (conf_set->debug && canal_debug && canal_debug->miembros)
+		ProtFunc(P_MSG_VL)((Cliente *)canal_debug, &me, 1, data, NULL);
 	return protocolo->parsea(sck, data, len);
 }
 SOCKFUNC(CierraIrcd)

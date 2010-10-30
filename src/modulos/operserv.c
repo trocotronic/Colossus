@@ -559,7 +559,7 @@ BOTFUNC(OSRestart)
 {
 	Responde(cl, CLI(operserv), "Los servicios van a reiniciarse.");
 	IniciaCrono(1, 1, OSReinicia, NULL);
-	EOI(operserv, 2);
+	//EOI(operserv, 2);
 	return 0;
 }
 BOTFUNC(OSRehash)
@@ -941,7 +941,7 @@ BOTFUNC(OSAkill)
 	}
 	if (*param[1] == '+')
 	{
-		char *c, *motivo;
+		char *user, *host, *motivo;
 		if (params < 3)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "+mascara motivo");
@@ -959,14 +959,15 @@ BOTFUNC(OSAkill)
 			ircsprintf(buf, "*@%s", param[1]);
 		motivo = Unifica(param, params, 2, -1);
 		SQLInserta(OS_AKILL, buf, "motivo", motivo);
-		c = strchr(buf, '@');
-		*c++ = '\0';
-		ProtFunc(P_GLINE)(CLI(operserv), ADD, buf, c, 0, motivo);
+		strlcpy(tokbuf, buf, sizeof(tokbuf));
+		user = strtok(tokbuf, "@");
+		host = strtok(NULL, "@");
+		ProtFunc(P_GLINE)(CLI(operserv), ADD, user, host, 0, motivo);
 		Responde(cl, CLI(operserv), "Se ha insertado un AKILL para \00312%s\003 indefinido.", param[1]);
 	}
 	else if (*param[1] == '-')
 	{
-		char *c;
+		char *user, *host;
 		param[1]++;
 		if (strchr(param[1], '@'))
 			strlcpy(buf, param[1], sizeof(buf));
@@ -978,9 +979,10 @@ BOTFUNC(OSAkill)
 			return 1;
 		}
 		SQLBorra(OS_AKILL, buf);
-		c = strchr(buf, '@');
-		*c++ = '\0';
-		ProtFunc(P_GLINE)(CLI(operserv), DEL, buf, c, 0, NULL);
+		strlcpy(tokbuf, buf, sizeof(tokbuf));
+                user = strtok(tokbuf, "@");
+                host = strtok(NULL, "@");
+		ProtFunc(P_GLINE)(CLI(operserv), DEL, user, host, 0, NULL);
 		Responde(cl, CLI(operserv), "Se ha retirado el AKILL a \00312%s", param[1]);
 	}
 	else
