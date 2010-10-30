@@ -95,8 +95,8 @@ static bCom nickserv_coms[] = {
 	{ "liberar" , NSLiberar , N3 , "Libera un nick de su suspenso." , NSHLiberar } ,
 	{ "swhois" , NSSwhois , N2 , "Añade o borra un whois especial al nick especificado." , NSHSwhois } ,
 	{ "rename" , NSRename , N3 , "Cambia el nick a un usuario." , NSHRename } ,
-	{ "forbid" , NSForbid , N4 , "Prohibe o permite un determinado nick." , NSHForbid } ,
-	{ "unforbid" , NSUnForbid , N4 , "Prohibe o permite un determinado nick." , NSHUnForbid } ,
+	{ "forbid" , NSForbid , N4 , "Prohibe un determinado nick." , NSHForbid } ,
+	{ "unforbid" , NSUnForbid , N4 , "Permite un determinado nick prohibido." , NSHUnForbid } ,
 	{ "marca" , NSMarcas , N3 , "Lista o inserta una entrada en el historial de un nick." , NSHMarcas } ,
 	{ "setnick" , NSOptsNick , N3 , "Cambia las opciones de un nick." , NSHOptsNick } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
