@@ -855,11 +855,15 @@ BOTFUNC(NSInfo)
 		row = SQLFetchRow(res);
 		opts = atoi(row[0]);
 		Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
+		if (BadPtr(row[3]))
+			Responde(cl, CLI(nickserv), "Estado: \00312ACTIVO");
+		else {
+			Responde(cl, CLI(nickserv), "Estado: \00312SUSPENDIDO");
+			Responde(cl, CLI(nickserv), "Motivo del suspenso: \00312%s", row[3]);
+		}
 		Responde(cl, CLI(nickserv), "Realname: \00312%s", row[1]);
 		reg = (time_t)atol(row[2]);
 		Responde(cl, CLI(nickserv), "Registrado el \00312%s", Fecha(&reg));
-		if (!BadPtr(row[3]))
-			Responde(cl, CLI(nickserv), "Está suspendido: \00312%s", row[3]);
 		if (!(opts & NS_OPT_MASK) || (!comp && IsId(cl)) || IsOper(cl))
 			Responde(cl, CLI(nickserv), "Último mask: \00312%s", row[4]);
 		if (!(opts & NS_OPT_TIME) || (!comp && IsId(cl)) || IsOper(cl))
@@ -920,10 +924,17 @@ BOTFUNC(NSInfo)
 	else if (al && IsOper(cl))
 	{
 		Responde(cl, CLI(nickserv), "Información de \00312%s", al->nombre);
-		Responde(cl, CLI(nickserv), "Nick \2NO REGISTRADO");
+		Responde(cl, CLI(nickserv), "Estado: \2NO REGISTRADO");
 		Responde(cl, CLI(nickserv), "Realname: \00312%s", al->info);
 		if (al->loc)
 			Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
+	}
+	else if (IsForbid(param[1]))
+	{
+		Responde(cl, CLI(nickserv), "Información de \00312%s", param[1]);
+		Responde(cl, CLI(nickserv), "Estado: \0034PROHIBIDO");
+		Responde(cl, CLI(nickserv), "Motivo: \00312%s", SQLCogeRegistro(NS_FORBIDS, param[1], "motivo"));
+		return 1;	
 	}
 	else
 	{
@@ -1129,7 +1140,7 @@ BOTFUNC(NSForbid)
 		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
 		return 1;	
 	}
-	else {	//(params >= 3)
+	else {
 		char *motivo;
 		motivo = Unifica(param, params, 2, -1);
 		SQLInserta(NS_FORBIDS, param[1], "motivo", motivo);
