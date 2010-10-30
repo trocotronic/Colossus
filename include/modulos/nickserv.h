@@ -35,6 +35,8 @@ extern NickServ *nickserv;
 #define NS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define NS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define NS_ERR_NURG "\00304ERROR: Este nick no está registrado."
+#define NS_ERR_NFORB "\00304ERROR: Este nick está prohibido."
+#define NS_ERR_NUFORB "\00304ERROR: Este nick no está prohibido."
 #define NS_ERR_EMPT "\00304ERROR: %s"
 #define NS_ERR_FORB ERR_FORB
 

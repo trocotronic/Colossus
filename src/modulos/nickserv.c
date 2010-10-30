@@ -44,6 +44,8 @@ BOTFUNC(NSRename);
 BOTFUNCHELP(NSHRename);
 BOTFUNC(NSForbid);
 BOTFUNCHELP(NSHForbid);
+BOTFUNC(NSUnForbid);
+BOTFUNCHELP(NSHUnForbid);
 BOTFUNC(NSMarcas);
 BOTFUNCHELP(NSHMarcas);
 BOTFUNC(NSOptsNick);
@@ -94,6 +96,7 @@ static bCom nickserv_coms[] = {
 	{ "swhois" , NSSwhois , N2 , "Añade o borra un whois especial al nick especificado." , NSHSwhois } ,
 	{ "rename" , NSRename , N3 , "Cambia el nick a un usuario." , NSHRename } ,
 	{ "forbid" , NSForbid , N4 , "Prohibe o permite un determinado nick." , NSHForbid } ,
+	{ "unforbid" , NSUnForbid , N4 , "Prohibe o permite un determinado nick." , NSHUnForbid } ,
 	{ "marca" , NSMarcas , N3 , "Lista o inserta una entrada en el historial de un nick." , NSHMarcas } ,
 	{ "setnick" , NSOptsNick , N3 , "Cambia las opciones de un nick." , NSHOptsNick } ,
 	{ 0x0 , 0x0 , 0x0 , 0x0 , 0x0 }
@@ -469,10 +472,17 @@ BOTFUNCHELP(NSHRename)
 }
 BOTFUNCHELP(NSHForbid)
 {
-	Responde(cl, CLI(nickserv), "Prohibe o permite el uso de un nick o apodo.");
+	Responde(cl, CLI(nickserv), "Prohibe el uso de un nick o apodo.");
 	Responde(cl, CLI(nickserv), " ");
 	Responde(cl, CLI(nickserv), "Sintaxis: \00312FORBID nick [motivo]");
 	Responde(cl, CLI(nickserv), "Si no se especifica swhois, se borrará el que pudiera haber.");
+	return 0;
+}
+BOTFUNCHELP(NSHUnForbid)
+{
+	Responde(cl, CLI(nickserv), "Permite el uso de un nick o apodo prohibido.");
+	Responde(cl, CLI(nickserv), " ");
+	Responde(cl, CLI(nickserv), "Sintaxis: \00312UNFORBID nick");
 	return 0;
 }
 BOTFUNCHELP(NSHDrop)
@@ -1109,13 +1119,17 @@ BOTFUNC(NSRename)
 }
 BOTFUNC(NSForbid)
 {
-	if (params < 2)
+	if (params < 3)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [motivo]");
 		return 1;
 	}
-	if (params >= 3)
+	if (IsForbid(param[1]))
 	{
+		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
+		return 1;	
+	}
+	else {	//(params >= 3)
 		char *motivo;
 		motivo = Unifica(param, params, 2, -1);
 		SQLInserta(NS_FORBIDS, param[1], "motivo", motivo);
@@ -1125,15 +1139,33 @@ BOTFUNC(NSForbid)
 		NSMarca(cl, param[1], buf);
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1]);
 	}
-	else
+
+	EOI(nickserv, 13);
+	return 0;
+}
+BOTFUNC(NSUnForbid)
+{
+	if (params < 2)
 	{
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
+		return 1;
+	}
+
+	if (!IsForbid(param[1]))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_NUFORB);
+		return 1;	
+	}
+	else {
 		SQLBorra(NS_FORBIDS, param[1]);
 		if (ProtFunc(P_FORB_NICK))
 			ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
 		NSMarca(cl, param[1], "Prohibición levantada.");
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
 	}
-	EOI(nickserv, 13);
+
+		
+	EOI(nickserv, 14);
 	return 0;
 }
 BOTFUNC(NSMarcas)
@@ -1169,7 +1201,7 @@ BOTFUNC(NSMarcas)
 		NSMarca(cl, param[1], Unifica(param, params, 2, -1));
 		Responde(cl, CLI(nickserv), "Marca añadida al historial de \00312%s", param[1]);
 	}
-	EOI(nickserv, 14);
+	EOI(nickserv, 15);
 	return 0;
 }
 BOTFUNC(NSOptsNick)
@@ -1186,7 +1218,7 @@ BOTFUNC(NSOptsNick)
 		return 1;
 	}
 	ret = NickOpts(cl, param[1], &param[1], params-1, fc);
-	EOI(nickserv, 15);
+	EOI(nickserv, 16);
 	return ret;
 }
 int NSCmdUmode(Cliente *cl, char *modos)

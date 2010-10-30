@@ -233,6 +233,15 @@ extern MODVAR Cliente me;
  !*/
 #define IsReg(x) (x && SQLCogeRegistro(NS_SQL, x, NULL))
 /*!
+ * @desc: Consulta si un usuario está prohibido.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsForbid(char *nick)
+
+ * @ret: Devuelve 1 si está prohibido; 0, si no.
+ * @cat: IRCd
+ !*/
+#define IsForbid(x) (x && SQLCogeRegistro(NS_FORBIDS, x, NULL))
+/*!
  * @desc: Consulta si un usuario está identificado
  * @params: $cl [in] Cliente
  * @sntx: int IsId(Cliente *cl)

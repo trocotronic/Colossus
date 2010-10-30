@@ -26,6 +26,7 @@ EXTFUNC(NSSuspend);
 EXTFUNC(NSLiberar_U);
 EXTFUNC(NSSwhois_U);
 EXTFUNC(NSForbid_U);
+EXTFUNC(NSUnForbid_U);
 EXTFUNC(NSSendpass_U);
 EXTFUNC(NSOptsNick_U);
 
@@ -75,7 +76,8 @@ void CargaNickServ(Extension *ext)
 	InsertaSenyalExt(10, NSLiberar_U, ext);
 	InsertaSenyalExt(11, NSSwhois_U, ext);
 	InsertaSenyalExt(13, NSForbid_U, ext);
-	InsertaSenyalExt(15, NSOptsNick_U, ext);
+	InsertaSenyalExt(14, NSUnForbid_U, ext);
+	InsertaSenyalExt(16, NSOptsNick_U, ext);
 }
 void DescargaNickServ(Extension *ext)
 {
@@ -89,6 +91,7 @@ void DescargaNickServ(Extension *ext)
 	BorraSenyalExt(10, NSLiberar_U, ext);
 	BorraSenyalExt(11, NSSwhois_U, ext);
 	BorraSenyalExt(13, NSForbid_U, ext);
+	BorraSenyalExt(14, NSUnForbid_U, ext);
 }
 BOTFUNCHELP(NSHMigrar)
 {
@@ -289,8 +292,15 @@ EXTFUNC(NSForbid_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
-	if (params >= 3)
+	else
 		PropagaRegistro("N::%s::B %s", param[1], Unifica(param, params, 1, -1));
+	return 0;
+}
+
+EXTFUNC(NSUnForbid_U)
+{
+	if (mod != nickserv->hmod)
+		return 1;
 	else
 		PropagaRegistro("N::%s::B", param[1]);
 	return 0;
