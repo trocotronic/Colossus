@@ -847,7 +847,7 @@ BOTFUNC(NSInfo)
 		return 1;
 	}
 	al = BuscaCliente(param[1]);
-	if (IsReg(param[1]))
+	if (IsReg(param[1]) && !IsForbid(param[1]))
 	{
 		comp = strcasecmp(param[1], cl->nombre);
 		ll = SQLEscapa(param[1]);
@@ -1257,16 +1257,15 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 }
 int NSCmdPostNick(Cliente *cl, int nuevo)
 {
-	char *motivo = NULL;
-	if ((motivo = SQLCogeRegistro(NS_FORBIDS, cl->nombre, "motivo")))
+	if (IsForbid(cl->nombre))
 	{
-		Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", motivo);
+		Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", SQLCogeRegistro(NS_FORBIDS, cl->nombre, "motivo"));
 		NSCambiaInv(cl);
 		return 0;
 	}
 	if (IsReg(cl->nombre))
 	{
-		if (!IsId(cl))
+		if (!IsId(cl) && !IsSusp(cl->nombre))
 		{
 			char *kill;
 			if (nickserv->opts & NS_SID)

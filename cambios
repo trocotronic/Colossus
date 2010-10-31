@@ -635,3 +635,4 @@
 301010691 - Arreglado fallo que permite registrar un canal sin tener el nick registrado.
 301010692 - Arreglado fallo en AKILL insertaba/eliminaba en la gline user@host@host en lugar de user@host.
 301010693 - Se añade comando UNFORBID en NickServ.
+311010694 - Arreglado eliminacion incorrecta del registro N::nick::B cuando el nick no estaba registrado.
