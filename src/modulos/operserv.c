@@ -606,8 +606,11 @@ BOTFUNC(OSGline)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Esta gline no existe.");
 			return 1;
 		}
-		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);
+		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);		
 		Responde(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
+		char *userhost = MascaraTKL(user,host);	
+		if (SQLCogeRegistro(OS_AKILL, userhost, "motivo")) //Si es un akill
+			SQLBorra(OS_AKILL, userhost);
 	}
 	else if (params < 4)
 	{
@@ -616,15 +619,23 @@ BOTFUNC(OSGline)
 	}
 	else
 	{
-		if (IsDigit(*param[2]))
+		if (IsDigit(*param[2]) &&  *param[2] > 48)
 		{
 			ProtFunc(P_GLINE)(cl, ADD, user, host, atoi(param[2]), Unifica(param, params, 3, -1));
 			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 durante \00312%s\003 segundos.", user, host, param[2]);
 		}
 		else
-		{
-			ProtFunc(P_GLINE)(cl, ADD, user, host, 0, Unifica(param, params, 2, -1));
-			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s@%s\003 permanentemente.", user, host);
+		{	
+			int motivo = 0;
+			if (*param[2] == 48) //Controlamos si los segundo son 0 para coger todo el motivo o saltarnos el 0
+				motivo = 3;
+			else
+				motivo = 2;
+				
+			ProtFunc(P_GLINE)(cl, ADD, user, host, 0, Unifica(param, params, motivo, -1));
+			char *userhost = MascaraTKL(user,host); 			
+			SQLInserta(OS_AKILL, userhost, "motivo",Unifica(param, params, motivo, -1));
+			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s\003 permanentemente.", userhost);
 		}
 	}
 	EOI(operserv, 4);
@@ -1033,6 +1044,7 @@ BOTFUNC(OSVaciar)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "La confirmación no se corresponde con la dada. Ejecut el comando nuevamente sin parámetros.");
 			return 1;
+
 		}
 		confirm = NULL;
 		for (i = 0; i < sql->tablas; i++)

@@ -1679,7 +1679,16 @@ IRCFUNC(m_tkl)
 			tkl = InsertaTKL(*parv[2], parv[4], NULL, parv[5], parv[8], atoul(parv[7]), atoul(parv[6]));
 		else
 			tkl = InsertaTKL(*parv[2], parv[3], parv[4], parv[5], parv[8], atoul(parv[7]), atoul(parv[6]));
+		
 		AddItem(tkl, tklines[TipoTKL(*parv[2])]);
+		//Guardamos las TKL G permanentes en la base de datos
+		//InsertaTKL('G', ident, host, emisor, motivo, ini, fin);
+		if (*parv[2] == 'G' && atoul(parv[6]) == 0 ) {
+			char *userhost;
+			userhost = MascaraTKL(parv[3],parv[4]);
+			SQLInserta("akill", userhost, "motivo",parv[8]);
+		}		
+		
 	}
 	else if (*parv[1] == '-')
 	{
@@ -1691,6 +1700,12 @@ IRCFUNC(m_tkl)
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[4], NULL);
 		else
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[3], parv[4]);
+		
+		char *userhost;
+		userhost = MascaraTKL(parv[3],parv[4]);	
+		if (*parv[2] == 'G' && SQLCogeRegistro("akill", userhost, "motivo")) {  //Comprobar si es Gline y si es akill
+			SQLBorra("akill", userhost);
+		}		
 	}
 	return 0;
 }

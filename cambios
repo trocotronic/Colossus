@@ -636,3 +636,5 @@
 301010692 - Arreglado fallo en AKILL insertaba/eliminaba en la gline user@host@host en lugar de user@host.
 301010693 - Se añade comando UNFORBID en NickServ.
 311010694 - Arreglado eliminacion incorrecta del registro N::nick::B cuando el nick no estaba registrado.
+311010694 - Arreglado mensaje de "Este nick está protegido...." en NickServ, cuando el nick esta suspendido, ahora no se envia.
+011110695 - Añadido soporte a Glines permanentes en la base de datos, cuando envia o recibe una gline permanente se trata como un AKILL.
