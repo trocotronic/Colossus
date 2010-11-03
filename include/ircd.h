@@ -284,6 +284,7 @@ extern MODVAR Cliente me;
 extern void ProcesaModosCliente(Cliente *, char *);
 extern char *MascaraIrcd(char *);
 extern Canal *EntraBot(Cliente *, char *);
+extern char *MascaraTKL(char *, char *);
 extern char *TipoMascara(char *, int);
 #define SIGN_SQL 0
 #define SIGN_UMODE 1

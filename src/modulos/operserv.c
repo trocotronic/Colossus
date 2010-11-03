@@ -570,7 +570,7 @@ BOTFUNC(OSRehash)
 }
 BOTFUNC(OSGline)
 {
-	char *user, *host;
+	char *user, *host, *userhost; 
 	if (params < 2)
 	{
 		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "{nick|user@host} [tiempo motivo]");
@@ -608,7 +608,7 @@ BOTFUNC(OSGline)
 		}
 		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);		
 		Responde(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
-		char *userhost = MascaraTKL(user,host);	
+		userhost = MascaraTKL(user,host);	
 		if (SQLCogeRegistro(OS_AKILL, userhost, "motivo")) //Si es un akill
 			SQLBorra(OS_AKILL, userhost);
 	}
@@ -633,7 +633,7 @@ BOTFUNC(OSGline)
 				motivo = 2;
 				
 			ProtFunc(P_GLINE)(cl, ADD, user, host, 0, Unifica(param, params, motivo, -1));
-			char *userhost = MascaraTKL(user,host); 			
+			userhost = MascaraTKL(user,host); 			
 			SQLInserta(OS_AKILL, userhost, "motivo",Unifica(param, params, motivo, -1));
 			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s\003 permanentemente.", userhost);
 		}

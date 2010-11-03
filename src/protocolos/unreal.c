@@ -1661,8 +1661,11 @@ int TipoTKL(char tipo)
 }
 IRCFUNC(m_tkl)
 {
+	char *userhost = NULL;
+	
 	if (parc < 2)
 		return 1;
+	
 	if (*parv[1] == '+')
 	{
 		Tkl *tkl;
@@ -1684,7 +1687,6 @@ IRCFUNC(m_tkl)
 		//Guardamos las TKL G permanentes en la base de datos
 		//InsertaTKL('G', ident, host, emisor, motivo, ini, fin);
 		if (*parv[2] == 'G' && atoul(parv[6]) == 0 ) {
-			char *userhost;
 			userhost = MascaraTKL(parv[3],parv[4]);
 			SQLInserta("akill", userhost, "motivo",parv[8]);
 		}		
@@ -1700,8 +1702,7 @@ IRCFUNC(m_tkl)
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[4], NULL);
 		else
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[3], parv[4]);
-		
-		char *userhost;
+
 		userhost = MascaraTKL(parv[3],parv[4]);	
 		if (*parv[2] == 'G' && SQLCogeRegistro("akill", userhost, "motivo")) {  //Comprobar si es Gline y si es akill
 			SQLBorra("akill", userhost);
