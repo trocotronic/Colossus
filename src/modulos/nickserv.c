@@ -328,8 +328,16 @@ BOTFUNCHELP(NSHList)
 	Responde(cl, CLI(nickserv), "Lista todos los nicks registrados que coincidan con un patrón especificado.");
 	Responde(cl, CLI(nickserv), "Para evitar abusos de flood, este comando emite como máximo \00312%i\003 entradas.", nickserv->maxlist);
 	Responde(cl, CLI(nickserv), "El patrón puede ser exacto, o puede contener comodines (*) para cerrar el campo de búsqueda.");
+	Responde(cl, CLI(nickserv), "Además, puedes especificar el filtro para listar los nicks.");
 	Responde(cl, CLI(nickserv), " ");
-	Responde(cl, CLI(nickserv), "Sintaxis: \00312LIST patron");
+	Responde(cl, CLI(nickserv), "Nicks activos: \00312LIST -a patrón");
+	Responde(cl, CLI(nickserv), "Nicks suspendidos (Solo Opers): \00312LIST -s patrón");
+	Responde(cl, CLI(nickserv), "Nicks prohibidos (Solo Opers): \00312LIST -f patrón");
+	Responde(cl, CLI(nickserv), "Email (Solo Opers): \00312LIST -e patrón");
+	Responde(cl, CLI(nickserv), "Ipvirtual (Solo Opers): \00312LIST -v patrón");
+	Responde(cl, CLI(nickserv), "Host (Solo Opers): \00312LIST -h patrón");
+	Responde(cl, CLI(nickserv), " ");
+	Responde(cl, CLI(nickserv), "Sintaxis: \00312LIST [-filtro] patrón");
 	return 0;
 }
 BOTFUNCHELP(NSHGhost)
@@ -787,6 +795,11 @@ BOTFUNC(NSDrop)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
+	if (IsForbid(param[1]))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
+		return 1;
+	}
 	if (!IsAdmin(cl) && (atoi(SQLCogeRegistro(NS_SQL, param[1], "opts")) & NS_OPT_NODROP))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no se puede dropear.");
@@ -847,18 +860,25 @@ BOTFUNC(NSInfo)
 		return 1;
 	}
 	al = BuscaCliente(param[1]);
-	if (IsReg(param[1]) && !IsForbid(param[1]))
+	if (IsReg(param[1]))
 	{
+ 		if (IsForbid(param[1])) //Si esta prohibido, damos la informacion corta
+        	{
+		        Responde(cl, CLI(nickserv), "Información de \00312%s", param[1]);
+		        Responde(cl, CLI(nickserv), "Estado: \0034PROHIBIDO");
+		        Responde(cl, CLI(nickserv), "Motivo: \00312%s", SQLCogeRegistro(NS_SQL, param[1], "motivo"));
+		        return 1;      
+        	}
 		comp = strcasecmp(param[1], cl->nombre);
 		ll = SQLEscapa(param[1]);
-		res = SQLQuery("SELECT opts,gecos,reg,suspend,host,quit,last,email,url,killtime,item from %s%s where item='%s'", PREFIJO, NS_SQL, ll);
+		res = SQLQuery("SELECT opts,gecos,reg,motivo,host,quit,last,email,url,killtime,item from %s%s where item='%s'", PREFIJO, NS_SQL, ll);
 		row = SQLFetchRow(res);
 		opts = atoi(row[0]);
 		Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
-		if (BadPtr(row[3]))
+		if (IsActivo(param[1]))
 			Responde(cl, CLI(nickserv), "Estado: \00312ACTIVO");
-		else {
-			Responde(cl, CLI(nickserv), "Estado: \00312SUSPENDIDO");
+		if (IsSusp(param[1])) {
+			Responde(cl, CLI(nickserv), "Estado: \0038SUSPENDIDO");
 			Responde(cl, CLI(nickserv), "Motivo del suspenso: \00312%s", row[3]);
 		}
 		Responde(cl, CLI(nickserv), "Realname: \00312%s", row[1]);
@@ -929,13 +949,6 @@ BOTFUNC(NSInfo)
 		if (al->loc)
 			Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
 	}
-	else if (IsForbid(param[1]))
-	{
-		Responde(cl, CLI(nickserv), "Información de \00312%s", param[1]);
-		Responde(cl, CLI(nickserv), "Estado: \0034PROHIBIDO");
-		Responde(cl, CLI(nickserv), "Motivo: \00312%s", SQLCogeRegistro(NS_FORBIDS, param[1], "motivo"));
-		return 1;	
-	}
 	else
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
@@ -951,28 +964,197 @@ BOTFUNC(NSList)
 	int i;
 	if (params < 2)
 	{
-		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "patrón");
+		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "[-filtro] patrón");
 		return 1;
 	}
-	rep = SQLEscapa(str_replace(param[1], '*', '%'));
-	if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, NS_SQL, rep)))
+
+	if (params == 3)
 	{
-		Free(rep);
-		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
-		return 1;
-	}
-	Free(rep);
-	Responde(cl, CLI(nickserv), "*** Nicks que coinciden con el patrón \00312%s\003 ***", param[1]);
-	for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
-	{
-		if (IsOper(cl) || !(atoi(SQLCogeRegistro(NS_SQL, row[0], "opts")) & NS_OPT_LIST))
+		if (*param[1] == '-')
 		{
-			Responde(cl, CLI(nickserv), "\00312%s", row[0]);
-			i++;
+			if (params < 3)
+			{
+				Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "[-filtro] patrón");
+				return 1;
+			}
+			switch(*(param[1] + 1))
+			{
+				case 'a':
+					rep = SQLEscapa(str_replace(param[2], '*', '%'));
+					if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND estado='A'", PREFIJO, NS_SQL, rep)))
+					{
+						Free(rep);
+						Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+						return 1;
+					}
+					Free(rep);
+					Responde(cl, CLI(nickserv), "*** Nicks \00312activos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+					for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+					{
+						if (IsOper(cl) || !(atoi(SQLCogeRegistro(NS_SQL, row[0], "opts")) & NS_OPT_LIST))
+						{
+							Responde(cl, CLI(nickserv), "%s (\00312ACTIVO\003)", row[0]);
+							i++;
+						}
+					}
+					Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+					SQLFreeRes(res);
+					break;
+				case 's':
+					if (IsOper(cl))
+					{
+						rep = SQLEscapa(str_replace(param[2], '*', '%'));
+						if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND estado='S'", PREFIJO, NS_SQL, rep)))
+						{
+							Free(rep);
+							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+							return 1;
+						}
+						Free(rep);
+						Responde(cl, CLI(nickserv), "*** Nicks \00312suspendidos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+						{
+							if (IsOper(cl))
+							{
+								Responde(cl, CLI(nickserv), "%s (\0038SUSPENDIDO\003)", row[0]);
+								i++;
+							}
+						}
+						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+						SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 'f':
+					if (IsOper(cl))
+					{
+						rep = SQLEscapa(str_replace(param[2], '*', '%'));
+						if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND estado='F'", PREFIJO, NS_SQL, rep)))
+						{
+							Free(rep);
+							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+							return 1;
+						}
+						Free(rep);
+						Responde(cl, CLI(nickserv), "*** Nicks \00312prohibidos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+						{
+							Responde(cl, CLI(nickserv), "%s (\0034PROHIBIDO\003)", row[0]);
+							i++;
+						}
+						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+						SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 'e':
+					if (IsOper(cl))
+					{
+						rep = SQLEscapa(str_replace(param[2], '*', '%'));
+						if (!(res = SQLQuery("SELECT item from %s%s where email LIKE '%s'", PREFIJO, NS_SQL, rep)))
+						{
+							Free(rep);
+							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+							return 1;
+						}
+						Free(rep);
+						Responde(cl, CLI(nickserv), "*** Nicks con \00312email\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+						{
+							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Email: \00312%s\003", row[0],SQLCogeRegistro(NS_SQL, row[0], "email"));
+							i++;
+						}
+						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+						SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 'v':
+					if (IsOper(cl))
+					{
+						rep = SQLEscapa(str_replace(param[2], '*', '%'));
+						if (!(res = SQLQuery("SELECT item from %s%s where ip LIKE '%s'", PREFIJO, "ips", rep)))
+						{
+							Free(rep);
+							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+							return 1;
+						}
+						Free(rep);
+						Responde(cl, CLI(nickserv), "*** Nicks con \00312ipvirtual\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+						{
+							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Ipvirtual: \00312%s\003", row[0],SQLCogeRegistro("ips", row[0], "ip"));
+							i++;
+						}
+						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+						SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 'h':
+					if (IsOper(cl))
+					{
+						rep = SQLEscapa(str_replace(param[2], '*', '%'));
+						if (!(res = SQLQuery("SELECT item from %s%s where host LIKE '%s'", PREFIJO, NS_SQL, rep)))
+						{
+							Free(rep);
+							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+							return 1;
+						}
+						Free(rep);
+						Responde(cl, CLI(nickserv), "*** Nicks con \00312host\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+						{
+							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Host: \00312%s\003", row[0],SQLCogeRegistro(NS_SQL, row[0], "host"));
+							i++;
+						}
+						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+						SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				default:
+					Responde(cl, CLI(nickserv), NS_ERR_SNTX, "Parámetro no válido.");
+					return 1;
+			}
 		}
 	}
-	Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
-	SQLFreeRes(res);
+	else
+	{
+		rep = SQLEscapa(str_replace(param[1], '*', '%'));
+		if (!(res = SQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, NS_SQL, rep)))
+		{
+			Free(rep);
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+
+		Free(rep);
+		Responde(cl, CLI(nickserv), "*** Nicks que coinciden con el patrón \00312%s\003 ***", param[1]);
+
+		for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
+		{
+			if (IsOper(cl) || !(atoi(SQLCogeRegistro(NS_SQL, row[0], "opts")) & NS_OPT_LIST))
+			{
+				char *estado = "\00312ACTIVO\003";
+				if (IsSusp(row[0]))
+					estado = "\0038SUSPENDIDO\003";
+				if (IsForbid(row[0]))
+					estado = "\0034PROHIBIDO\003";
+
+				Responde(cl, CLI(nickserv), "%s (%s)", row[0], estado);
+				i++;
+			}
+		}
+
+		Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
+	}
 	EOI(nickserv, 7);
 	return 0;
 }
@@ -1027,7 +1209,8 @@ BOTFUNC(NSSuspender)
 		return 1;
 	}
 	motivo = Unifica(param, params, 2, -1);
-	SQLInserta(NS_SQL, param[1], "suspend", motivo);
+	SQLInserta(NS_SQL, param[1], "motivo", motivo);
+	SQLInserta(NS_SQL, param[1], "estado", "S");
 	ircsprintf(buf, "Suspendido: %s", motivo);
 	NSMarca(cl, param[1], buf);
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido suspendido.", param[1]);
@@ -1052,12 +1235,13 @@ BOTFUNC(NSLiberar)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
-	if (!SQLCogeRegistro(NS_SQL, param[1], "suspend"))
+	if (!IsSusp(param[1]))	
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está suspendido.");
 		return 1;
 	}
-	SQLInserta(NS_SQL, param[1], "suspend", "");
+	SQLInserta(NS_SQL, param[1], "motivo", "");
+	SQLInserta(NS_SQL, param[1], "estado", "A");
 	NSMarca(cl, param[1], "Suspenso levantado.");
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido liberado de su suspenso.", param[1]);
 	if ((al = BuscaCliente(param[1])))
@@ -1135,20 +1319,33 @@ BOTFUNC(NSForbid)
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [motivo]");
 		return 1;
 	}
-	if (IsForbid(param[1]))
+	if (IsReg(param[1]))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
 		return 1;	
 	}
 	else {
+		SQLQuery("INSERT INTO %s%s (item,opts) VALUES ('%s',%s)",
+			PREFIJO, NS_SQL,
+			param[1], "200"); //Hacemos el nick no dropable
+
+		if (sql->_errno)
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible prohibir el nick. Vuelve a probarlo.");
+			return 1;
+		}
+
 		char *motivo;
 		motivo = Unifica(param, params, 2, -1);
-		SQLInserta(NS_FORBIDS, param[1], "motivo", motivo);
+		SQLInserta(NS_SQL, param[1], "estado", "F");
+		SQLInserta(NS_SQL, param[1], "motivo", motivo);
 		if (ProtFunc(P_FORB_NICK))
 			ProtFunc(P_FORB_NICK)(param[1], ADD,  motivo);
 		ircsprintf(buf, "Prohibido: %s", motivo);
 		NSMarca(cl, param[1], buf);
 		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1]);
+
+
 	}
 
 	EOI(nickserv, 13);
@@ -1162,17 +1359,21 @@ BOTFUNC(NSUnForbid)
 		return 1;
 	}
 
-	if (!IsForbid(param[1]))
+	if (!IsReg(param[1]))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_NUFORB);
 		return 1;	
 	}
 	else {
-		SQLBorra(NS_FORBIDS, param[1]);
-		if (ProtFunc(P_FORB_NICK))
-			ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
-		NSMarca(cl, param[1], "Prohibición levantada.");
-		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
+
+		if (!NSBaja(param[1], 1)) {
+			if (ProtFunc(P_FORB_NICK))
+				ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
+			NSMarca(cl, param[1], "Prohibición levantada.");
+			Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
+		}
+		else 
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se ha podido levantar la prohibición dropear. Comuníquelo a la administración.");		
 	}
 
 		
@@ -1232,12 +1433,12 @@ BOTFUNC(NSOptsNick)
 	EOI(nickserv, 16);
 	return ret;
 }
-int NSCmdUmode(Cliente *cl, char *modos)
+int NSCmdUmode(Cliente *cl, char *modos) //Hacia que los nicks que se encontraban en la UDB se identificase dos veces - posible funcion obsoleta
 {
 	//if (conf_set->modos && conf_set->modos->usuarios)
 	//	ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(nickserv), conf_set->modos->usuarios);
-	if (umodreg && strchr(modos, umodreg->flag) && (cl->modos & UMODE_REGNICK))
-		LlamaSenyal(NS_SIGN_IDOK, 1, cl);
+	//if (umodreg && strchr(modos, umodreg->flag) && (cl->modos & UMODE_REGNICK))
+	//	LlamaSenyal(NS_SIGN_IDOK, 1, cl);
 	return 0;
 }
 /* si nuevo es NULL, es un cliente nuevo. si no, es un cambio de nick */
@@ -1256,16 +1457,16 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 	return 0;
 }
 int NSCmdPostNick(Cliente *cl, int nuevo)
-{
-	if (IsForbid(cl->nombre))
-	{
-		Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", SQLCogeRegistro(NS_FORBIDS, cl->nombre, "motivo"));
-		NSCambiaInv(cl);
-		return 0;
-	}
+{	
 	if (IsReg(cl->nombre))
 	{
-		if (!IsId(cl) && !IsSusp(cl->nombre))
+		if (IsForbid(cl->nombre))
+		{
+			Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", SQLCogeRegistro(NS_SQL, cl->nombre, "motivo"));
+			NSCambiaInv(cl);
+			return 0;
+		}
+		if (!IsId(cl) && IsActivo(cl->nombre))
 		{
 			char *kill;
 			if (nickserv->opts & NS_SID)
@@ -1290,6 +1491,7 @@ int NSSigSQL()
 	SQLNuevaTabla(NS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
 		"n SERIAL, "
 		"item varchar(255), "
+		"estado enum('A','S','F') default 'A', " 
 		"pass varchar(255), "
 		"email varchar(255), "
 		"url varchar(255), "
@@ -1300,7 +1502,7 @@ int NSSigSQL()
 		"reg int4 default '0', "
 		"last int4 default '0', "
 		"quit text, "
-		"suspend text, "
+		"motivo text, "
 		"killtime int2 default '0', "
 		"swhois text, "
 		"marcas text, "
@@ -1324,11 +1526,11 @@ int NSSigSQL()
 	//SQLQuery("ALTER TABLE %s%s ADD PRIMARY KEY(n)", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s DROP INDEX item", PREFIJO, NS_SQL);
 	SQLQuery("ALTER TABLE %s%s ADD INDEX ( item ) ", PREFIJO, NS_SQL);*/
-	SQLNuevaTabla(NS_FORBIDS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+	/*SQLNuevaTabla(NS_FORBIDS, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"motivo varchar(255) default NULL, "
   		"KEY item (item) "
-		");", PREFIJO, NS_FORBIDS);
+		");", PREFIJO, NS_FORBIDS);*/
 	umodreg = BuscaModoProtocolo(UMODE_REGNICK, protocolo->umodos);
 	return 0;
 }
@@ -1545,6 +1747,7 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 				opts &= ~NS_OPT_LOC;
 		}
 		else
+
 		{
 			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Opción incorrecta.");
 			return 1;

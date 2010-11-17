@@ -51,12 +51,9 @@ extern NickServ *nickserv;
 #define NS_OPT_LOC 0x100
 
 #define NS_SQL "nicks"
-#define NS_FORBIDS "nforbids"
 #define NS_SIGN_IDOK 42
 #define NS_SIGN_DROP 43
 #define NS_SIGN_REG 44
-
-#define IsSusp(x) (SQLCogeRegistro(NS_SQL, x, "suspend"))
 
 #define CACHE_INTENTOS_ID "intentos_id"
 #define CACHE_ULTIMO_REG "ultimo_reg"

@@ -72,6 +72,39 @@ Versión 1.12:
 [X] Comando VHOST en IpServ
 
 
+Versión 1.15:
+
+[X] Guardar glines permanentes 
+
+[ ] Terminar de implementar las glines permanentes añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla de akill.
+
+[ ] Comando OPERS; Ahora mismo no existe forma de listar los operadores y me parece mas apropiado usar el add, del, list.
+
+[ ]  Crear tabla SQL (nombre spam o spamfilter), para gestionar las TKL tipo F de la red.
+
+[ ]  Crear modulo antispam
+
+En Nickserv en el comando list;
+
+[X] Mostrar el estado del nick: Nick (ACTIVO), Nick2 (SUSPENDIDO) o Nick3 (PROHIBIDO).
+
+[X] Filtros comando LIST en NickServ:
+
+         list -h 127.*  --> Nos daría todos los usuarios con el host que coincida con el patrón.
+
+         list -v *asdj2ma.virtual  --> Nos daría todos los usuarios con el host virtual que coincida con el patrón.
+
+         list -e mail@ejemplo.com --> Todos los nicks que coincidan con ese correo.
+
+         list -a * --> Todos los nicks activos que coincidan con ese patrón.
+
+         list -s * --> Todos los nicks suspendidos que coincidan con ese patrón.
+
+         list -f * --> Todos los nicks prohibidos que coincidan con ese patrón.
+
+
+[ ] En ChanServ modificaciones del comando list.
+
 
 Pendiente:
 
@@ -87,4 +120,4 @@ Pendiente:
 
 [ ] Clearaccess by time, Sucesor, Apoyos, en ChanServ
 
-[ ] Guardar glines permanentes
+

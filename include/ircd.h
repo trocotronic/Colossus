@@ -233,6 +233,23 @@ extern MODVAR Cliente me;
  !*/
 #define IsReg(x) (x && SQLCogeRegistro(NS_SQL, x, NULL))
 /*!
+ * @desc: Consulta si un usuario está registrado.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsActivo(char *nick)
+ * @ret: Devuelve 1 si está activo; 0, si no.
+ * @cat: IRCd
+ !*/
+#define IsActivo(x) (x && !strcmp("A",SQLCogeRegistro(NS_SQL, x, "estado")))
+/*!
+ * @desc: Consulta si un usuario está suspendido.
+ * @params: $nick [in] Nick del usuario.
+ * @sntx: int IsSusp(char *nick)
+
+ * @ret: Devuelve 1 si está suspendido; 0, si no.
+ * @cat: IRCd
+ !*/
+#define IsSusp(x) (x && !strcmp("S",SQLCogeRegistro(NS_SQL, x, "estado")))
+/*!
  * @desc: Consulta si un usuario está prohibido.
  * @params: $nick [in] Nick del usuario.
  * @sntx: int IsForbid(char *nick)
@@ -240,7 +257,7 @@ extern MODVAR Cliente me;
  * @ret: Devuelve 1 si está prohibido; 0, si no.
  * @cat: IRCd
  !*/
-#define IsForbid(x) (x && SQLCogeRegistro(NS_FORBIDS, x, NULL))
+#define IsForbid(x) (x && !strcmp("F",SQLCogeRegistro(NS_SQL, x, "estado")))
 /*!
  * @desc: Consulta si un usuario está identificado
  * @params: $cl [in] Cliente

@@ -292,8 +292,8 @@ EXTFUNC(NSForbid_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
-	if (IsForbid(param[1]))
-		PropagaRegistro("N::%s::B %s", param[1], SQLCogeRegistro(NS_FORBIDS, param[1], "motivo"));	
+	if (IsNickUDB(param[1]))
+		PropagaRegistro("N::%s::B %s", param[1], SQLCogeRegistro(NS_SQL, param[1], "motivo"));	
 	return 0;
 }
 
@@ -301,7 +301,7 @@ EXTFUNC(NSUnForbid_U)
 {
 	if (mod != nickserv->hmod)
 		return 1;
-	if (!IsForbid(param[1]))
+	if (!IsNickUDB(param[1]))
 		PropagaRegistro("N::%s::B", param[1]);
 	return 0;
 }
@@ -330,8 +330,7 @@ int NSSigDrop(char *nick)
 {
 	if (IsNickUDB(nick))
 		PropagaRegistro("N::%s", nick);
-	if (IsForbid(nick)) //Mantenemos la prohibicion aunque se borre el registro
-		PropagaRegistro("N::%s::B %s", nick, SQLCogeRegistro(NS_FORBIDS, nick, "motivo"));	
+	
 	return 0;
 }
 int NSSigEOS()
@@ -344,7 +343,6 @@ int NSSigEOS()
 		{
 			sig = reg->mid;
 			if (!IsReg(reg->item) || !IsNickUDB(reg->item))
-				if (!IsForbid(reg->item)) //Evitamos que se eliminen los registros de prohibidos
 					PropagaRegistro("N::%s", reg->item);
 		}
 	}
