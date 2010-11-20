@@ -76,7 +76,7 @@ Versión 1.16:
 
 [X] Guardar glines permanentes 
 
-En Nickserv en el comando list;
+[X] En Nickserv en el comando list;
 
 [X] Mostrar el estado del nick: Nick (ACTIVO), Nick2 (SUSPENDIDO) o Nick3 (PROHIBIDO).
 
@@ -97,9 +97,9 @@ En Nickserv en el comando list;
 
 [X] En ChanServ modificaciones del comando list.
 
-[ ] Terminar de implementar las glines permanentes añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla de akill.
+[X] Comando OPERS; Ahora mismo no existe forma de listar los operadores.
 
-[ ] Comando OPERS; Ahora mismo no existe forma de listar los operadores y me parece mas apropiado usar el add, del, list.
+[ ] Terminar de implementar las glines permanentes añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla de akill.
 
 Pendiente:
 

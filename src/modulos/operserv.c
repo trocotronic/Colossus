@@ -454,7 +454,6 @@ BOTFUNCHELP(OSHOpers)
 	Responde(cl, CLI(operserv), "Rangos:");
 	Responde(cl, CLI(operserv), "\00312PREO");
 	Responde(cl, CLI(operserv), "\00312OPER (+h)");
-	Responde(cl, CLI(operserv), "\00312DEVEL");
 	Responde(cl, CLI(operserv), "\00312ADMIN (+N)");
 	Responde(cl, CLI(operserv), "\00312ROOT");
 	Responde(cl, CLI(operserv), " ");
@@ -645,9 +644,28 @@ BOTFUNC(OSOpers)
 {
 	Nivel *niv = NULL;
 	Cliente *al = NULL;
+	SQLRes res;
+	SQLRow row;
+	int i;
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [nivel]");
+		if (!(res = SQLQuery("SELECT item,nivel from %s%s where 1", PREFIJO, OS_SQL)))
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+		Responde(cl, CLI(operserv), "*** Listado de representantes de la RED ***");
+
+		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res));)
+		{		
+				Responde(cl, CLI(operserv), "%s (%s)", row[0], row[1]);
+				i++;
+		}
+
+		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
+
+		//Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [nivel]");
 		return 1;
 	}
 	if (params >= 3)
