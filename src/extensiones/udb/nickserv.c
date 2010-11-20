@@ -265,7 +265,7 @@ EXTFUNC(NSSuspend)
 	if (mod != nickserv->hmod)
 		return 1;
 	if (IsNickUDB(param[1]))
-		PropagaRegistro("N::%s::S %s", param[1], SQLCogeRegistro(NS_SQL, param[1], "suspend"));
+		PropagaRegistro("N::%s::S %s", param[1], SQLCogeRegistro(NS_SQL, param[1], "motivo"));
 	return 0;
 }
 EXTFUNC(NSLiberar_U)

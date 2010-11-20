@@ -276,18 +276,20 @@ BOTFUNC(ISSetipv)
 		}
 		else
 			ipv = param[2];
-		SQLInserta(IS_SQL, param[1], "ip", ipv);
+		SQLInserta(IS_SQL, param[1], "ipvirtual", ipv);
 		if (params == 4)
-			SQLInserta(IS_SQL, param[1], "caduca", "%lu", time(0) + atol(param[3]) * 8600);
-		Responde(cl, CLI(ipserv), "Se ha añadido la ip virtual a \00312%s\003.", ipv);
+			SQLInserta(IS_SQL, param[1], "ipcaduca", "%lu", time(0) + atol(param[3]) * 8600);
+		Responde(cl, CLI(ipserv), "Se ha añadido la ip virtual \00312%s\003 a \00312%s\003.", ipv, param[1]);
 		if (params == 4)
 			Responde(cl, CLI(ipserv), "Esta ip caducará dentro de \00312%i\003 días.", atoi(param[3]));
 		if (ProtFunc(P_CAMBIO_HOST_REMOTO) && (al = BuscaCliente(param[1])))
 			ProtFunc(P_CAMBIO_HOST_REMOTO)(al, ipv);
+		if ((al = BuscaCliente(param[1])))		
+			ProtFunc(P_NOTICE)(al, CLI(ipserv), "*** Protección IP: tu dirección virtual es %s", ipv);
 	}
 	else
-	{
-		SQLBorra(IS_SQL, param[1]);
+	{	
+		SQLInserta(IS_SQL, param[1], "ipvirtual", NULL);
 		Responde(cl, CLI(ipserv), "La ip virtual de \00312%s\003 ha sido eliminada.", param[1]);
 	}
 	EOI(ipserv, 1);
@@ -313,6 +315,7 @@ BOTFUNC(ISTemphost)
 	}
 	ProtFunc(P_CAMBIO_HOST_REMOTO)(al, param[2]);
 	Responde(cl, CLI(ipserv), "El host de \00312%s\003 se ha cambiado por \00312%s\003.", param[1], param[2]);
+	ProtFunc(P_NOTICE)(al, CLI(ipserv), "*** Protección IP: tu dirección virtual es %s", param[2]);
 	EOI(ipserv, 2);
 	return 0;
 }
@@ -346,7 +349,7 @@ BOTFUNC(ISVHost)
 	char *ipv;
 	if (params < 2)
 	{
-		SQLInserta(IS_SQL, cl->nombre, "ip", NULL);
+		SQLInserta(IS_SQL, cl->nombre, "ipvirtual", NULL);
 		Responde(cl, CLI(ipserv), "Vhost eliminado");
 	}
 	else
@@ -369,8 +372,9 @@ BOTFUNC(ISVHost)
 		}
 		else
 			ipv = param[1];
-		SQLInserta(IS_SQL, cl->nombre, "ip", ipv);
+		SQLInserta(IS_SQL, cl->nombre, "ipvirtual", ipv);
 		InsertaCache(IS_CACHE_VHOST, cl->nombre, 86400, ipserv->hmod->id, ipv);
+		ProtFunc(P_NOTICE)(cl, CLI(ipserv), "*** Protección IP: tu dirección virtual es %s", ipv);
 		Responde(cl, CLI(ipserv), "Vhost cambiado a \00312%s", ipv);
 	}
 	EOI(ipserv, 4);
@@ -411,12 +415,12 @@ int ISSigIdOk(Cliente *al)
 }
 int ISSigSQL()
 {
-	SQLNuevaTabla(IS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+	/*SQLNuevaTabla(IS_SQL, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"ip varchar(255) default NULL, "
   		"caduca int4 default '0', "
   		"KEY item (item) "
-		");", PREFIJO, IS_SQL);
+		");", PREFIJO, IS_SQL);*/
 	SQLNuevaTabla(IS_CLONS, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"clones varchar(255) default NULL, "
@@ -479,7 +483,7 @@ char *ISMakeVirtualhost(Cliente *al, int mostrar)
 		return NULL;
 	cifrada = CifraIpTEA(al->host);
 	sufix = ipserv->sufijo ? ipserv->sufijo : "virtual";
-	if (IsId(al) && (vip = SQLCogeRegistro(IS_SQL, al->nombre, "ip")))
+	if (IsId(al) && (vip = SQLCogeRegistro(IS_SQL, al->nombre, "ipvirtual")))
 		cifrada = vip;
 	else
 	{
@@ -504,7 +508,7 @@ int ISProcIps(Proc *proc)
 	SQLRow row;
 	if (proc->time + 1800 < time(0)) /* lo hacemos cada 30 mins */
 	{
-		if (!(res = SQLQuery("SELECT item from %s%s where (caduca != '0' AND caduca < %i) LIMIT 30 OFFSET %i", PREFIJO, IS_SQL, time(0), proc->proc)) || !SQLNumRows(res))
+		if (!(res = SQLQuery("SELECT item from %s%s where (ipcaduca != '0' AND ipcaduca < %i) LIMIT 30 OFFSET %i", PREFIJO, IS_SQL, time(0), proc->proc)) || !SQLNumRows(res))
 		{
 			proc->proc = 0;
 			proc->time = time(0);
@@ -512,7 +516,7 @@ int ISProcIps(Proc *proc)
 		}
 		while ((row = SQLFetchRow(res)))
 		{
-			SQLBorra(IS_SQL, row[0]);
+			SQLInserta(IS_SQL, row[0], "ipvirtual", NULL);
 			LlamaSenyal(IS_SIGN_DROP, 1, row[0]);
 		}
 		proc->proc += 30;

@@ -72,17 +72,9 @@ Versión 1.12:
 [X] Comando VHOST en IpServ
 
 
-Versión 1.15:
+Versión 1.16:
 
 [X] Guardar glines permanentes 
-
-[ ] Terminar de implementar las glines permanentes añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla de akill.
-
-[ ] Comando OPERS; Ahora mismo no existe forma de listar los operadores y me parece mas apropiado usar el add, del, list.
-
-[ ]  Crear tabla SQL (nombre spam o spamfilter), para gestionar las TKL tipo F de la red.
-
-[ ]  Crear modulo antispam
 
 En Nickserv en el comando list;
 
@@ -103,10 +95,17 @@ En Nickserv en el comando list;
          list -f * --> Todos los nicks prohibidos que coincidan con ese patrón.
 
 
-[ ] En ChanServ modificaciones del comando list.
+[X] En ChanServ modificaciones del comando list.
 
+[ ] Terminar de implementar las glines permanentes añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla de akill.
+
+[ ] Comando OPERS; Ahora mismo no existe forma de listar los operadores y me parece mas apropiado usar el add, del, list.
 
 Pendiente:
+
+[ ]  Crear tabla SQL (nombre spam o spamfilter), para gestionar las TKL tipo F de la red.
+
+[ ]  Crear modulo antispam
 
 [ ] Remover GLines por código
 

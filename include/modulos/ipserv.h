@@ -16,7 +16,7 @@ struct _is
 #define IS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define IS_ERR_EMPT "\00304ERROR: %s"
 
-#define IS_SQL "ips"
+#define IS_SQL "nicks"
 #define IS_CLONS "clons"
 
 extern IpServ *ipserv;

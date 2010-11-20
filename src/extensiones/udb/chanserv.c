@@ -108,14 +108,14 @@ int CSSigEOS_U()
 		for (reg = C->arbol->down; reg; reg = sig)
 		{
 			sig = reg->mid;
-			if ((bloq = BuscaBloque(C_FOR, reg)) && !SQLCogeRegistro(CS_FORBIDS, reg->item, "motivo"))
-				SQLInserta(CS_FORBIDS, reg->item, "motivo", bloq->data_char);
+			if ((bloq = BuscaBloque(C_FOR, reg)) && !SQLCogeRegistro(CS_SQL, reg->item, "motivo"))
+				SQLInserta(CS_SQL, reg->item, "motivo", bloq->data_char);
 			if (!IsChanReg(reg->item) || !IsChanUDB(reg->item))
 				PropagaRegistro("C::%s", reg->item);
 			else
 			{
-				if ((bloq = BuscaBloque(C_SUS, reg)) && !SQLCogeRegistro(CS_SQL, reg->item, "suspend"))
-					SQLInserta(CS_SQL, reg->item, "suspend", bloq->data_char);
+				if ((bloq = BuscaBloque(C_SUS, reg)) && !SQLCogeRegistro(CS_SQL, reg->item, "motivo"))
+					SQLInserta(CS_SQL, reg->item, "motivo", bloq->data_char);
 			}
 		}
 	}

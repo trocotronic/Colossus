@@ -639,3 +639,4 @@
 311010694 - Arreglado mensaje de "Este nick está protegido...." en NickServ, cuando el nick esta suspendido, ahora no se envia.
 011110695 - Añadido soporte a Glines permanentes en la base de datos, cuando envia o recibe una gline permanente se trata como un AKILL.
 141110696 - Arreglado un fallo que mostraba dos veces el aviso de los memos nuevos.
+201110697 - Añadido soporte filtros en comandos LIST de NickServ y ChanServ, eliminadas tablas obsoletas cforbids y nforbids.

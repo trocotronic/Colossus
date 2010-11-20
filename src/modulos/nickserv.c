@@ -328,7 +328,7 @@ BOTFUNCHELP(NSHList)
 	Responde(cl, CLI(nickserv), "Lista todos los nicks registrados que coincidan con un patrón especificado.");
 	Responde(cl, CLI(nickserv), "Para evitar abusos de flood, este comando emite como máximo \00312%i\003 entradas.", nickserv->maxlist);
 	Responde(cl, CLI(nickserv), "El patrón puede ser exacto, o puede contener comodines (*) para cerrar el campo de búsqueda.");
-	Responde(cl, CLI(nickserv), "Además, puedes especificar el filtro para listar los nicks.");
+	Responde(cl, CLI(nickserv), "Además, puedes especificar un filtro para listar los nicks.");
 	Responde(cl, CLI(nickserv), " ");
 	Responde(cl, CLI(nickserv), "Nicks activos: \00312LIST -a patrón");
 	Responde(cl, CLI(nickserv), "Nicks suspendidos (Solo Opers): \00312LIST -s patrón");
@@ -871,7 +871,7 @@ BOTFUNC(NSInfo)
         	}
 		comp = strcasecmp(param[1], cl->nombre);
 		ll = SQLEscapa(param[1]);
-		res = SQLQuery("SELECT opts,gecos,reg,motivo,host,quit,last,email,url,killtime,item from %s%s where item='%s'", PREFIJO, NS_SQL, ll);
+		res = SQLQuery("SELECT opts,gecos,reg,motivo,host,quit,last,email,url,killtime,item,ipvirtual,ipcaduca,swhois from %s%s where item='%s'", PREFIJO, NS_SQL, ll);
 		row = SQLFetchRow(res);
 		opts = atoi(row[0]);
 		Responde(cl, CLI(nickserv), "Información de \00312%s", row[10]);
@@ -890,7 +890,7 @@ BOTFUNC(NSInfo)
 		{
 			if (al && IsId(al))
 			{
-				Responde(cl, CLI(nickserv), "Este usuario está conectado. Utiliza /WHOIS %s para más información.", param[1]);
+				Responde(cl, CLI(nickserv), "Usuario conectado. Utiliza /WHOIS %s para más información.", param[1]);
 				if (al->loc && (!(opts & NS_OPT_LOC) || (!comp && IsId(cl)) || IsOper(cl)))
 					Responde(cl, CLI(nickserv), "Conectado desde: \00312%s, %s, %s", al->loc->city, al->loc->state, al->loc->country);
 			}
@@ -905,7 +905,16 @@ BOTFUNC(NSInfo)
 		if (!(opts & NS_OPT_MAIL) || (!comp && IsId(cl)) || IsOper(cl))
 			Responde(cl, CLI(nickserv), "Email: \00312%s", row[7]);
 		if (!BadPtr(row[8]) && (!(opts & NS_OPT_WEB) || (!comp && IsId(cl)) || IsOper(cl)))
-			Responde(cl, CLI(nickserv), "Url: \00312%s", row[8]);
+			Responde(cl, CLI(nickserv), "Url: \00312%s", row[8]);		
+		if (!BadPtr(row[11]))
+			Responde(cl, CLI(nickserv), "IP Virtual: \00312%s", row[11]);
+		if (!BadPtr(row[11]) && !BadPtr(row[12]) && ((!comp && IsId(cl)) || IsOper(cl))) 
+		{
+			reg = (time_t)atol(row[12]);
+			Responde(cl, CLI(nickserv), "Caducidad IP Virtual: \00312%s", Fecha(&reg));
+		}
+		if (!BadPtr(row[13]))
+			Responde(cl, CLI(nickserv), "Swhois: \00312%s", row[13]);
 		if (atoi(row[9]))
 			Responde(cl, CLI(nickserv), "Protección kill a \00312%i\003 segundos.", atoi(row[9]));
 		if (opts & NS_OPT_NODROP)
@@ -993,7 +1002,7 @@ BOTFUNC(NSList)
 					{
 						if (IsOper(cl) || !(atoi(SQLCogeRegistro(NS_SQL, row[0], "opts")) & NS_OPT_LIST))
 						{
-							Responde(cl, CLI(nickserv), "%s (\00312ACTIVO\003)", row[0]);
+							Responde(cl, CLI(nickserv), "%s", row[0]);
 							i++;
 						}
 					}
@@ -1016,7 +1025,7 @@ BOTFUNC(NSList)
 						{
 							if (IsOper(cl))
 							{
-								Responde(cl, CLI(nickserv), "%s (\0038SUSPENDIDO\003)", row[0]);
+								Responde(cl, CLI(nickserv), "%s", row[0]);
 								i++;
 							}
 						}
@@ -1040,7 +1049,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks \00312prohibidos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "%s (\0034PROHIBIDO\003)", row[0]);
+							Responde(cl, CLI(nickserv), "%s", row[0]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
@@ -1053,7 +1062,7 @@ BOTFUNC(NSList)
 					if (IsOper(cl))
 					{
 						rep = SQLEscapa(str_replace(param[2], '*', '%'));
-						if (!(res = SQLQuery("SELECT item from %s%s where email LIKE '%s'", PREFIJO, NS_SQL, rep)))
+						if (!(res = SQLQuery("SELECT item,email from %s%s where email LIKE '%s'", PREFIJO, NS_SQL, rep)))
 						{
 							Free(rep);
 							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
@@ -1063,7 +1072,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks con \00312email\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Email: \00312%s\003", row[0],SQLCogeRegistro(NS_SQL, row[0], "email"));
+							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Email: \00312%s\003", row[0],row[1]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
@@ -1076,7 +1085,7 @@ BOTFUNC(NSList)
 					if (IsOper(cl))
 					{
 						rep = SQLEscapa(str_replace(param[2], '*', '%'));
-						if (!(res = SQLQuery("SELECT item from %s%s where ip LIKE '%s'", PREFIJO, "ips", rep)))
+						if (!(res = SQLQuery("SELECT item,ipvirtual from %s%s where ipvirtual LIKE '%s' AND ipvirtual!=''", PREFIJO, NS_SQL, rep)))
 						{
 							Free(rep);
 							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
@@ -1086,7 +1095,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks con \00312ipvirtual\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Ipvirtual: \00312%s\003", row[0],SQLCogeRegistro("ips", row[0], "ip"));
+							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Ipvirtual: \00312%s\003", row[0],row[1]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
@@ -1099,7 +1108,7 @@ BOTFUNC(NSList)
 					if (IsOper(cl))
 					{
 						rep = SQLEscapa(str_replace(param[2], '*', '%'));
-						if (!(res = SQLQuery("SELECT item from %s%s where host LIKE '%s'", PREFIJO, NS_SQL, rep)))
+						if (!(res = SQLQuery("SELECT item,host from %s%s where host LIKE '%s'", PREFIJO, NS_SQL, rep)))
 						{
 							Free(rep);
 							Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se han encontrado coincidencias.");
@@ -1109,7 +1118,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks con \00312host\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Host: \00312%s\003", row[0],SQLCogeRegistro(NS_SQL, row[0], "host"));
+							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Host: \00312%s\003", row[0],row[1]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));

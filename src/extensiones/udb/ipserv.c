@@ -271,7 +271,7 @@ EXTFUNC(ISVHost_U)
 	if (params >= 2)
 	{
 		char *c;
-		if ((c = SQLCogeRegistro(IS_SQL, cl->nombre, "ip")))
+		if ((c = SQLCogeRegistro(IS_SQL, cl->nombre, "ipvirtual")))
 			PropagaRegistro("N::%s::V %s", cl->nombre, c);
 	}
 	else

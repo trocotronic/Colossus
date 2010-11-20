@@ -367,9 +367,14 @@ BOTFUNCHELP(CSHList)
 {
 	Responde(cl, CLI(chanserv), "Lista los canales registrados que concuerdan con un patrón.");
 	Responde(cl, CLI(chanserv), "Puedes utilizar comodines (*) para ajustar la búsqueda.");
-	Responde(cl, CLI(chanserv), "Además, puedes especificar el parámetro -r para listar los canales en petición.");
+	Responde(cl, CLI(chanserv), "Además, puedes especificar un filtro para listar los canales.");
 	Responde(cl, CLI(chanserv), " ");
-	Responde(cl, CLI(chanserv), "Sintaxis: \00312LIST [-r] patrón");
+	Responde(cl, CLI(chanserv), "Canales activos: \00312LIST -a patrón");
+	Responde(cl, CLI(chanserv), "Canales suspendidos (Solo Opers): \00312LIST -s patrón");
+	Responde(cl, CLI(chanserv), "Canales prohibidos (Solo Opers): \00312LIST -f patrón");
+	Responde(cl, CLI(chanserv), "Fundador del canal (Solo Opers): \00312LIST -o patrón");
+	Responde(cl, CLI(chanserv), " ");
+	Responde(cl, CLI(chanserv), "Sintaxis: \00312LIST [-filtro] patrón");
 	return 0;
 }
 BOTFUNCHELP(CSHIdentify)
@@ -801,9 +806,9 @@ BOTFUNC(CSIdentify)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal pass");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -855,9 +860,9 @@ BOTFUNC(CSDeauth)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (CSEsFundador(cl, param[1]))
@@ -891,15 +896,26 @@ BOTFUNC(CSInfo)
 	SQLRow row;
 	time_t reg;
 	int opts;
-	char *forb, *susp, *modos, *cc;
+	char *forb, *susp, *modos, *cc, *founder;
 	if (params < 2)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
 		return 1;
 	}
-	if ((forb = IsChanForbid(param[1])))
+	if (IsChanForbid(param[1]))
 	{
-		Responde(cl, CLI(chanserv), "Este canal está \2PROHIBIDO\2: %s", forb);
+		forb = SQLCogeRegistro(CS_SQL, param[1], "motivo");
+		Responde(cl, CLI(chanserv), "Información del canal \00312%s\003", param[1]);
+		Responde(cl, CLI(chanserv), "Estado: \0034PROHIBIDO");
+		Responde(cl, CLI(chanserv), "Motivo: \00312%s", forb);
+		return 1;
+	}
+	if (IsChanPReg(param[1]))
+	{
+		founder = SQLCogeRegistro(CS_SQL, param[1], "founder");
+		Responde(cl, CLI(chanserv), "Información del canal \00312%s\003", param[1]);
+		Responde(cl, CLI(chanserv), "Estado: \0033PENDIENTE");
+		Responde(cl, CLI(chanserv), "Solicitante: \00312%s", founder);
 		return 1;
 	}
 	if (!IsChanReg(param[1]))
@@ -912,9 +928,12 @@ BOTFUNC(CSInfo)
 	Free(cc);
 	row = SQLFetchRow(res);
 	opts = atoi(row[0]);
-	Responde(cl, CLI(chanserv), "*** Información del canal \00312%s\003 ***", param[1]);
-	if ((susp = IsChanSuspend(param[1])))
-		Responde(cl, CLI(chanserv), "Estado: \00312SUSPENDIDO: %s", susp);
+	Responde(cl, CLI(chanserv), "Información del canal \00312%s\003", param[1]);
+	if (IsChanSuspend(param[1])) {
+		susp = SQLCogeRegistro(CS_SQL, param[1], "motivo");	
+		Responde(cl, CLI(chanserv), "Estado: \0038SUSPENDIDO");
+		Responde(cl, CLI(chanserv), "Motivo: \00312%s", susp);
+	}	
 	else
 		Responde(cl, CLI(chanserv), "Estado: \00312ACTIVO");
 	Responde(cl, CLI(chanserv), "Fundador: \00312%s", row[1]);
@@ -954,9 +973,9 @@ BOTFUNC(CSInvite)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick]");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -994,9 +1013,9 @@ BOTFUNC(CSKick)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal nick motivo");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1034,9 +1053,9 @@ BOTFUNC(CSModos)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal {+|-}flag [params]");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1101,9 +1120,9 @@ BOTFUNC(CSClear)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal opcion");
 		return 1;
 	}
-	if (!IsChanReg(param[1]) && !IsPreo(cl))
+	if (!IsPreo(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1254,9 +1273,9 @@ BOTFUNC(CSOpts)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal parámetros");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1488,9 +1507,9 @@ BOTFUNC(CSAkick)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick|mascara [motivo]]");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1570,9 +1589,9 @@ BOTFUNC(CSAccess)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick [+-flags] [automodos]]");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1723,7 +1742,7 @@ BOTFUNC(CSList)
 	int i;
 	if (params < 2)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-r] patrón");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-filtro] patrón");
 		return 1;
 	}
 	if (params == 3)
@@ -1732,25 +1751,106 @@ BOTFUNC(CSList)
 		{
 			if (params < 3)
 			{
-				Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-r] patrón");
+				Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-filtro] patrón");
 				return 1;
 			}
 			switch(*(param[1] + 1))
 			{
-				case 'r':
+				case 'a':
 					rep = SQLEscapa(str_replace(param[2], '*', '%'));
-					res = SQLQuery("SELECT item,descripcion from %s%s where item LIKE '%s' AND registro='0'", PREFIJO, CS_SQL, rep);
+					res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND estado='A'", PREFIJO, CS_SQL, rep);
 					Free(rep);
 					if (!res)
 					{
 						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
 						return 1;
 					}
-					Responde(cl, CLI(chanserv), "*** Canales en petición que coinciden con el patrón \00312%s\003 ***", param[1]);
+					Responde(cl, CLI(chanserv), "*** Canales \00312activos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 					for (i = 0; i < chanserv->maxlist && (row = SQLFetchRow(res)); i++)
-						Responde(cl, CLI(chanserv), "\00312%s\003 Desc:\00312%s", row[0], row[1]);
+					if (IsOper(cl) || !(atoi(SQLCogeRegistro(CS_SQL, row[0], "opts")) & CS_OPT_HIDE))
+						Responde(cl, CLI(chanserv), "\00312%s\003", row[0]);
 					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 					SQLFreeRes(res);
+					break;
+				case 'p':
+					if (IsOper(cl))
+					{
+					rep = SQLEscapa(str_replace(param[2], '*', '%'));
+					res = SQLQuery("SELECT item,descripcion from %s%s where item LIKE '%s' AND estado='P'", PREFIJO, CS_SQL, rep);
+					Free(rep);
+					if (!res)
+					{
+						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
+						return 1;
+					}
+					Responde(cl, CLI(chanserv), "*** Canales \00312pendientes\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+					for (i = 0; i < chanserv->maxlist && (row = SQLFetchRow(res)); i++)
+						Responde(cl, CLI(chanserv), "\00312%s\003 Descripción: \00312%s\003", row[0], row[1]);
+					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+					SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 's':
+					if (IsOper(cl))
+					{
+					rep = SQLEscapa(str_replace(param[2], '*', '%'));
+					res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND estado='S'", PREFIJO, CS_SQL, rep);
+					Free(rep);
+					if (!res)
+					{
+						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
+						return 1;
+					}
+					Responde(cl, CLI(chanserv), "*** Canales \00312suspendidos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+					for (i = 0; i < chanserv->maxlist && (row = SQLFetchRow(res)); i++)
+						Responde(cl, CLI(chanserv), "\00312%s\003", row[0]);
+					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+					SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 'f':
+					if (IsOper(cl))
+					{
+					rep = SQLEscapa(str_replace(param[2], '*', '%'));
+					res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND estado='F'", PREFIJO, CS_SQL, rep);
+					Free(rep);
+					if (!res)
+					{
+						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
+						return 1;
+					}
+					Responde(cl, CLI(chanserv), "*** Canales \00312prohibidos\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+					for (i = 0; i < chanserv->maxlist && (row = SQLFetchRow(res)); i++)
+						Responde(cl, CLI(chanserv), "\00312%s\003", row[0]);
+					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+					SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No esta autorizado a ver este listado.");
+					break;
+				case 'o':
+					if (IsOper(cl))
+					{
+					rep = SQLEscapa(str_replace(param[2], '*', '%'));
+					res = SQLQuery("SELECT item,founder from %s%s where founder LIKE '%s'", PREFIJO, CS_SQL, rep);
+					Free(rep);
+					if (!res)
+					{
+						Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay canales para listar.");
+						return 1;
+					}
+					Responde(cl, CLI(chanserv), "*** Canales con \00312fundador\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
+					for (i = 0; i < chanserv->maxlist && (row = SQLFetchRow(res)); i++)
+						Responde(cl, CLI(chanserv), "\00312%s\003 Fundador: \00312%s\003", row[0], row[1]);
+					Responde(cl, CLI(chanserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+					SQLFreeRes(res);
+					}
+					else
+					Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No esta autorizado a ver este listado.");
 					break;
 				default:
 					Responde(cl, CLI(chanserv), CS_ERR_SNTX, "Parámetro no válido.");
@@ -1766,7 +1866,7 @@ BOTFUNC(CSList)
 			return 1;
 		}
 		rep = SQLEscapa(str_replace(param[1], '*', '%'));
-		res = SQLQuery("SELECT item from %s%s where item LIKE '%s' AND registro!='0'", PREFIJO, CS_SQL, rep);
+		res = SQLQuery("SELECT item from %s%s where item LIKE '%s'", PREFIJO, CS_SQL, rep);
 		Free(rep);
 		if (!res)
 		{
@@ -1776,8 +1876,16 @@ BOTFUNC(CSList)
 		Responde(cl, CLI(chanserv), "*** Canales que coinciden con el patrón \00312%s\003 ***", param[1]);
 		for (i = 0; i < chanserv->maxlist && (row = SQLFetchRow(res)); i++)
 		{
-			if (IsOper(cl) || !(atoi(SQLCogeRegistro(CS_SQL, row[0], "opts")) & CS_OPT_HIDE))
-				Responde(cl, CLI(chanserv), "\00312%s", row[0]);
+			if (IsOper(cl) || !(atoi(SQLCogeRegistro(CS_SQL, row[0], "opts")) & CS_OPT_HIDE)) {
+				char *estado = "\00312ACTIVO\003";
+				if (IsChanPReg(row[0]))
+					estado = "\0033PENDIENTE\003";				
+				if (IsChanSuspend(row[0]))
+					estado = "\0038SUSPENDIDO\003";
+				if (IsChanForbid(row[0]))
+					estado = "\0034PROHIBIDO\003";			
+				Responde(cl, CLI(chanserv), "%s (%s)", row[0], estado);
+			}
 			else
 				i--;
 		}
@@ -1797,9 +1905,9 @@ BOTFUNC(CSJb)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [servicios]");
 		return 1;
 	}
-	if (!IsChanReg(param[1]) && !IsOper(cl))
+	if (!IsOper(cl) && !IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	if (!IsOper(cl) && IsChanSuspend(param[1]))
@@ -1846,9 +1954,9 @@ BOTFUNC(CSSendpass)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	pass = AleatorioEx("******-******");
@@ -1869,13 +1977,14 @@ BOTFUNC(CSSuspender)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal motivo");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
+	if (!IsChanAct(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NACT, "");
 		return 1;
 	}
 	motivo = Unifica(param, params, 2, -1);
-	SQLInserta(CS_SQL, param[1], "suspend", motivo);
+	SQLInserta(CS_SQL, param[1], "estado", "S");
+	SQLInserta(CS_SQL, param[1], "motivo", motivo);
 	ircsprintf(buf, "Suspendido: %s", motivo);
 	CSMarca(cl, param[1], buf);
 	ProtFunc(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1]), "El canal ha sido suspendido.");
@@ -1890,17 +1999,13 @@ BOTFUNC(CSLiberar)
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
 		return 1;
 	}
-	if (!IsChanReg(param[1]))
-	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
-		return 1;
-	}
 	if (!IsChanSuspend(param[1]))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está suspendido.");
 		return 1;
 	}
-	SQLInserta(CS_SQL, param[1], "suspend", "");
+	SQLInserta(CS_SQL, param[1], "estado", "A");
+	SQLInserta(CS_SQL, param[1], "motivo", "");
 	CSMarca(cl, param[1], "Suspenso levantado.");
 	ProtFunc(P_TOPIC)(CLI(chanserv), BuscaCanal(param[1]), SQLCogeRegistro(CS_SQL, param[1], "topic"));
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su suspenso.", param[1]);
@@ -1926,7 +2031,22 @@ BOTFUNC(CSForbid)
 			ProtFunc(P_KICK)(al[i], CLI(chanserv), cn, "Canal \2PROHIBIDO\2: %s", motivo);
 		ircfree(al);
 	}
-	SQLInserta(CS_FORBIDS, param[1], "motivo", motivo);
+
+	if (!IsChanReg(param[1])) //Controlamos que el canal no este en la base de datos, si esta solamente lo marcamos como prohibido
+	{
+	SQLQuery("INSERT INTO %s%s (item,opts) VALUES ('%s',%s)",
+			PREFIJO, CS_SQL,
+			param[1], "5000"); //Hacemos el canal no dropable
+
+		if (sql->_errno)
+			{
+				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ha sido imposible prohibir el canal. Vuelve a probarlo.");
+				return 1;
+			}
+	}
+		
+	SQLInserta(CS_SQL, param[1], "estado", "F");
+	SQLInserta(CS_SQL, param[1], "motivo", motivo);
 	ircsprintf(buf, "Prohibido: %s", motivo);
 	CSMarca(cl, param[1], buf);
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido prohibido.", param[1]);
@@ -1945,7 +2065,15 @@ BOTFUNC(CSUnforbid)
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no está prohibido.");
 		return 1;
 	}
-	SQLBorra(CS_FORBIDS, param[1]);
+
+	if (!IsChanReg(param[1])) //Controlamos que el canal no este en la base de datos, si esta solamente lo marcamos como prohibido
+	{
+		SQLInserta(CS_SQL, param[1], "estado", "A");
+		SQLInserta(CS_SQL, param[1], "motivo", "");
+	}	
+	else
+		SQLBorra(CS_SQL, param[1]);
+
 	CSMarca(cl, param[1], "Prohibición levantada.");
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su prohibición.", param[1]);
 	EOI(chanserv, 18);
@@ -1986,7 +2114,7 @@ BOTFUNC(CSRegister)
 {
 	if (!IsReg(parv[0])) /* Comprobamos si el nick esta registrado*/
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no estÃ¡ registrado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
 	if (params == 2) /* registro de una petición de canal */
@@ -2097,11 +2225,13 @@ BOTFUNC(CSRegister)
 		SQLInserta(CS_SQL, param[1], "founder", parv[0]);
 		SQLInserta(CS_SQL, param[1], "pass", MDString(param[2], 0));
 		SQLInserta(CS_SQL, param[1], "descripcion", desc);
+		SQLInserta(CS_SQL, param[1], "estado", "P");
 		if (IsOper(cl))
 		{
 			Canal *cn;
 			registrar:
 			SQLInserta(CS_SQL, param[1], "registro", "%i", time(0));
+			SQLInserta(CS_SQL, param[1], "estado", "A");
 			if ((cn = BuscaCanal(param[1])))
 			{
 				if (RedOverride)
@@ -2133,7 +2263,7 @@ BOTFUNC(CSToken)
 	int libres = 25, i; /* siempre tendremos 25 tokens libres */
 	if (!IsReg(parv[0])) /* Comprobamos si el nick esta registrado*/
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no estÃ¡ registrado.");
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este nick no está registrado.");
 		return 1;
 	}
 	if ((atol(SQLCogeRegistro(NS_SQL, parv[0], "reg")) + 86400 * chanserv->antig) > time(0))
@@ -2370,13 +2500,19 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 	char *entry, *modos, *topic, *susp, *forb, *cc;
 	if (!cl || !cn)
 		return 1;
-	if (!IsOper(cl) && (forb = IsChanForbid(cn->nombre)))
+	if (!IsOper(cl) && (IsChanForbid(cn->nombre)))
 	{
 		if (ProtFunc(P_PART_USUARIO_REMOTO))
 		{
+			forb = SQLCogeRegistro(CS_SQL, cn->nombre, "motivo");
 			ProtFunc(P_PART_USUARIO_REMOTO)(cl, cn, "Este canal está \2PROHIBIDO\2: %s", forb);
 			ProtFunc(P_NOTICE)(cl, CLI(chanserv), "Este canal está \2PROHIBIDO\2: %s", forb);
 		}
+		return 0;
+	}
+	if (IsChanPReg(cn->nombre))
+	{
+		ProtFunc(P_NOTICE)(cl, CLI(chanserv), "Este canal está pendiente de registro.");
 		return 0;
 	}
 	cc = SQLEscapa(cn->nombre);
@@ -2393,9 +2529,10 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 		entry = strdup(row[1]);
 		modos = strdup(row[2]);
 		topic = strdup(row[3]);
-		SQLFreeRes(res);
-		if ((susp = IsChanSuspend(cn->nombre)))
+		SQLFreeRes(res);		
+		if (IsChanSuspend(cn->nombre))
 		{
+			susp = SQLCogeRegistro(CS_SQL, cn->nombre, "motivo");
 			ProtFunc(P_NOTICE)(cl, CLI(chanserv), "Este canal está suspendido: %s", susp);
 			if (!IsOper(cl))
 				return 0;
@@ -2419,6 +2556,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 				strlcpy(buf, protocolo->modcl, sizeof(buf));
 			else
 			{
+
 				if ((res = CSEsAccess(cn->nombre, cl->nombre)))
 				{
 					row = SQLFetchRow(res);
@@ -2511,11 +2649,11 @@ int CSSigSQL()
 		"hora int4 default '0', "
 		"KEY item (item) "
 		");", PREFIJO, CS_TOK);
-	SQLNuevaTabla(CS_FORBIDS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+	/*SQLNuevaTabla(CS_FORBIDS, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"motivo varchar(255) default NULL, "
   		"KEY item (item) "
-		");", PREFIJO, CS_FORBIDS);
+		");", PREFIJO, CS_FORBIDS);*/
 	SQLNuevaTabla(CS_ACCESS, "CREATE TABLE IF NOT EXISTS %s%s ( "
 		"canal varchar(255) default NULL, "
 		"nick varchar(255) default NULL, "
@@ -2783,32 +2921,20 @@ int ChanReg(char *canal)
 	char *res;
 	if (!canal)
 		return 0;
-	if ((res = SQLCogeRegistro(CS_SQL, canal, "registro")))
-	{
-		if (strcmp(res, "0"))
-			return 1; /* registrado */
-		else
-			return 2; /* peticion */
-	}
-	return 0;
-}
-char *IsChanSuspend(char *canal)
-{
-	char *motivo;
-	if (!canal)
-		return NULL;
-	if ((motivo = SQLCogeRegistro(CS_SQL, canal, "suspend")))
-		return motivo;
-	return NULL;
-}
-char *IsChanForbid(char *canal)
-{
-	char *motivo;
-	if (!canal)
-		return NULL;
-	if ((motivo = SQLCogeRegistro(CS_FORBIDS, canal, "motivo")))
-		return motivo;
-	return NULL;
+	res = SQLCogeRegistro(CS_SQL, canal, "estado");
+	
+	if (res == NULL)
+		return 0;
+	if (!strcmp("P",res))
+		return 2;
+	if (!strcmp("A",res))
+		return 1;
+	if (!strcmp("S",res))
+		return 3;
+	if (!strcmp("F",res))
+		return 4;
+
+	return 0; //Nunca deberia pasar
 }
 int CSSigSynch()
 {

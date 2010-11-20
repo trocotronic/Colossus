@@ -51,7 +51,6 @@ struct _cs
 
 #define CS_SQL "canales"
 #define CS_TOK "ctokens"
-#define CS_FORBIDS "cforbids"
 #define CS_ACCESS "accesos"
 #define CS_AKICKS "akicks"
 #define CACHE_FUNDADORES "fundadores"
@@ -59,14 +58,16 @@ struct _cs
 #define CS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
 #define CS_ERR_SNTX "\00304ERROR: Sintaxis incorrecta: %s"
 #define CS_ERR_NCHR "\00304ERROR: Este canal no está registrado."
+#define CS_ERR_NACT "\00304ERROR: Este canal no está activo."
 #define CS_ERR_EMPT "\00304ERROR: %s"
 #define CS_ERR_SUSP "\00304ERROR: No puedes aplicar este comando sobre un canal suspendido."
 #define CS_ERR_FORB ERR_FORB
 
 DLLFUNC extern u_long CSTieneNivel(Cliente *, char *, u_long);
 DLLFUNC extern int ChanReg(char *);
-DLLFUNC extern char *IsChanSuspend(char *);
-DLLFUNC extern char *IsChanForbid(char *);
-#define IsChanReg(x) (ChanReg(x) == 1)
+#define IsChanReg(x) (ChanReg(x) != 0)
+#define IsChanAct(x) (ChanReg(x) == 1)
 #define IsChanPReg(x) (ChanReg(x) == 2)
+#define IsChanSuspend(x) (ChanReg(x) == 3)
+#define IsChanForbid(x) (ChanReg(x) == 4)
 DLLFUNC extern int CSEsFundador(Cliente *, char *);
