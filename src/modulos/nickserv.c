@@ -1072,7 +1072,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks con \00312email\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Email: \00312%s\003", row[0],row[1]);
+							Responde(cl, CLI(nickserv), "Nick: \00312%s\003 Email: \00312%s\003", row[0],row[1]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
@@ -1095,7 +1095,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks con \00312ipvirtual\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Ipvirtual: \00312%s\003", row[0],row[1]);
+							Responde(cl, CLI(nickserv), "Nick: \00312%s\003 Ipvirtual: \00312%s\003", row[0],row[1]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
@@ -1118,7 +1118,7 @@ BOTFUNC(NSList)
 						Responde(cl, CLI(nickserv), "*** Nicks con \00312host\003 que coinciden con el patrón \00312%s\003 ***", param[2]);
 						for (i = 0; i < nickserv->maxlist && (row = SQLFetchRow(res));)
 						{
-							Responde(cl, CLI(nickserv), "Nick: \00312\%s\003 Host: \00312%s\003", row[0],row[1]);
+							Responde(cl, CLI(nickserv), "Nick: \00312%s\003 Host: \00312%s\003", row[0],row[1]);
 							i++;
 						}
 						Responde(cl, CLI(nickserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
@@ -1323,6 +1323,7 @@ BOTFUNC(NSRename)
 }
 BOTFUNC(NSForbid)
 {
+	char *motivo;
 	if (params < 3)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [motivo]");
@@ -1344,7 +1345,6 @@ BOTFUNC(NSForbid)
 			return 1;
 		}
 
-		char *motivo;
 		motivo = Unifica(param, params, 2, -1);
 		SQLInserta(NS_SQL, param[1], "estado", "F");
 		SQLInserta(NS_SQL, param[1], "motivo", motivo);
@@ -1515,6 +1515,8 @@ int NSSigSQL()
 		"killtime int2 default '0', "
 		"swhois text, "
 		"marcas text, "
+		"ipvirtual varchar(255), "
+		"ipcaduca int4 default '0', "
 		"KEY item (item) "
 		");", PREFIJO, NS_SQL);
 	/*else
