@@ -1329,34 +1329,33 @@ BOTFUNC(NSForbid)
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick [motivo]");
 		return 1;
 	}
-	if (IsReg(param[1]))
-	{
+
+	if (IsForbid(param[1])) {
 		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
 		return 1;	
 	}
-	else {
-		SQLQuery("INSERT INTO %s%s (item,opts) VALUES ('%s',%s)",
-			PREFIJO, NS_SQL,
-			param[1], "200"); //Hacemos el nick no dropable
+		
+	if (IsReg(param[1]))
+		NSBaja(param[1], 1);
 
-		if (sql->_errno)
-		{
-			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible prohibir el nick. Vuelve a probarlo.");
-			return 1;
-		}
+	SQLQuery("INSERT INTO %s%s (item,opts) VALUES ('%s',%s)",
+		PREFIJO, NS_SQL,
+		param[1], "200"); //Hacemos el nick no dropable
 
-		motivo = Unifica(param, params, 2, -1);
-		SQLInserta(NS_SQL, param[1], "estado", "F");
-		SQLInserta(NS_SQL, param[1], "motivo", motivo);
-		if (ProtFunc(P_FORB_NICK))
-			ProtFunc(P_FORB_NICK)(param[1], ADD,  motivo);
-		ircsprintf(buf, "Prohibido: %s", motivo);
-		NSMarca(cl, param[1], buf);
-		Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1]);
-
-
+	if (sql->_errno)
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Ha sido imposible prohibir el nick. Vuelve a probarlo.");
+		return 1;
 	}
 
+	motivo = Unifica(param, params, 2, -1);
+	SQLInserta(NS_SQL, param[1], "estado", "F");
+	SQLInserta(NS_SQL, param[1], "motivo", motivo);
+	if (ProtFunc(P_FORB_NICK))
+		ProtFunc(P_FORB_NICK)(param[1], ADD,  motivo);
+	ircsprintf(buf, "Prohibido: %s", motivo);
+	NSMarca(cl, param[1], buf);
+	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido prohibido.", param[1]);
 	EOI(nickserv, 13);
 	return 0;
 }
@@ -1368,24 +1367,17 @@ BOTFUNC(NSUnForbid)
 		return 1;
 	}
 
-	if (!IsReg(param[1]))
+	if (!IsForbid(param[1]))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_NUFORB);
 		return 1;	
-	}
-	else {
+	}	
 
-		if (!NSBaja(param[1], 1)) {
-			if (ProtFunc(P_FORB_NICK))
-				ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
-			NSMarca(cl, param[1], "Prohibición levantada.");
-			Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
-		}
-		else 
-			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No se ha podido levantar la prohibición dropear. Comuníquelo a la administración.");		
-	}
-
-		
+	SQLBorra(NS_SQL, param[1]);
+	if (ProtFunc(P_FORB_NICK))
+		ProtFunc(P_FORB_NICK)(param[1], DEL, NULL);
+	NSMarca(cl, param[1], "Prohibición levantada.");
+	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha sido permitido.", param[1]);
 	EOI(nickserv, 14);
 	return 0;
 }
@@ -1469,9 +1461,9 @@ int NSCmdPostNick(Cliente *cl, int nuevo)
 {	
 	if (IsForbid(cl->nombre))
 	{
-			Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", SQLCogeRegistro(NS_SQL, cl->nombre, "motivo"));
-			NSCambiaInv(cl);
-			return 0;
+		Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", SQLCogeRegistro(NS_SQL, cl->nombre, "motivo"));
+		NSCambiaInv(cl);
+		return 0;
 	}
 	if (IsReg(cl->nombre))
 	{		

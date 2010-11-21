@@ -786,6 +786,11 @@ BOTFUNC(CSDrop)
 		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
+	if (IsChanForbid(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal está prohibido.");
+		return 1;
+	}
 	if (!IsAdmin(cl) && (atoi(SQLCogeRegistro(CS_SQL, param[1], "opts")) & CS_OPT_NODROP))
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal no se puede dropear.");
@@ -2032,19 +2037,25 @@ BOTFUNC(CSForbid)
 		ircfree(al);
 	}
 
-	if (!IsChanReg(param[1])) //Controlamos que el canal no este en la base de datos, si esta solamente lo marcamos como prohibido
+	if (IsChanForbid(param[1]))
 	{
-	SQLQuery("INSERT INTO %s%s (item,opts) VALUES ('%s',%s)",
-			PREFIJO, CS_SQL,
-			param[1], "5000"); //Hacemos el canal no dropable
-
-		if (sql->_errno)
-			{
-				Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ha sido imposible prohibir el canal. Vuelve a probarlo.");
-				return 1;
-			}
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Este canal está prohibido.");
+		return 1;
 	}
+
+	if (IsChanReg(param[1]))	
+		CSBaja(param[1], 1);	
 		
+	SQLQuery("INSERT INTO %s%s (item,opts) VALUES ('%s',%s)",
+	PREFIJO, CS_SQL,
+	param[1], "5000"); //Hacemos el canal no dropable
+
+	if (sql->_errno)
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Ha sido imposible prohibir el canal. Vuelve a probarlo.");
+		return 1;
+	}
+			
 	SQLInserta(CS_SQL, param[1], "estado", "F");
 	SQLInserta(CS_SQL, param[1], "motivo", motivo);
 	ircsprintf(buf, "Prohibido: %s", motivo);
@@ -2066,14 +2077,7 @@ BOTFUNC(CSUnforbid)
 		return 1;
 	}
 
-	if (!IsChanReg(param[1])) //Controlamos que el canal no este en la base de datos, si esta solamente lo marcamos como prohibido
-	{
-		SQLInserta(CS_SQL, param[1], "estado", "A");
-		SQLInserta(CS_SQL, param[1], "motivo", "");
-	}	
-	else
-		SQLBorra(CS_SQL, param[1]);
-
+	SQLBorra(CS_SQL, param[1]);
 	CSMarca(cl, param[1], "Prohibición levantada.");
 	Responde(cl, CLI(chanserv), "El canal \00312%s\003 ha sido liberado de su prohibición.", param[1]);
 	EOI(chanserv, 18);
