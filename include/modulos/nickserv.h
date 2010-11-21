@@ -58,4 +58,3 @@ extern NickServ *nickserv;
 #define CACHE_INTENTOS_ID "intentos_id"
 #define CACHE_ULTIMO_REG "ultimo_reg"
 #define CACHE_REGCODE "regcode"
-

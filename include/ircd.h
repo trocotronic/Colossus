@@ -224,6 +224,7 @@ extern void GeneraMascara(Cliente *);
 extern void DistribuyeMe(Cliente *);
 extern MODVAR Cliente me;
 
+int NickReg(char *);
 /*!
  * @desc: Consulta si un usuario está registrado.
  * @params: $nick [in] Nick del usuario.
@@ -231,7 +232,7 @@ extern MODVAR Cliente me;
  * @ret: Devuelve 1 si está registrado; 0, si no.
  * @cat: IRCd
  !*/
-#define IsReg(x) (x && SQLCogeRegistro(NS_SQL, x, NULL))
+#define IsReg(x) (NickReg(x) != 0)
 /*!
  * @desc: Consulta si un usuario está registrado.
  * @params: $nick [in] Nick del usuario.
@@ -239,7 +240,7 @@ extern MODVAR Cliente me;
  * @ret: Devuelve 1 si está activo; 0, si no.
  * @cat: IRCd
  !*/
-#define IsActivo(x) (x && !strcmp("A",SQLCogeRegistro(NS_SQL, x, "estado")))
+#define IsActivo(x)(NickReg(x) == 1)
 /*!
  * @desc: Consulta si un usuario está suspendido.
  * @params: $nick [in] Nick del usuario.
@@ -248,7 +249,7 @@ extern MODVAR Cliente me;
  * @ret: Devuelve 1 si está suspendido; 0, si no.
  * @cat: IRCd
  !*/
-#define IsSusp(x) (x && !strcmp("S",SQLCogeRegistro(NS_SQL, x, "estado")))
+#define IsSusp(x) (NickReg(x) == 2)
 /*!
  * @desc: Consulta si un usuario está prohibido.
  * @params: $nick [in] Nick del usuario.
@@ -257,7 +258,7 @@ extern MODVAR Cliente me;
  * @ret: Devuelve 1 si está prohibido; 0, si no.
  * @cat: IRCd
  !*/
-#define IsForbid(x) (x && !strcmp("F",SQLCogeRegistro(NS_SQL, x, "estado")))
+#define IsForbid(x) (NickReg(x) == 3)
 /*!
  * @desc: Consulta si un usuario está identificado
  * @params: $cl [in] Cliente

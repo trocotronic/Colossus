@@ -1153,3 +1153,21 @@ Tkl *BuscaTKL(char *mask, Tkl *lugar)
 	}
 	return NULL;
 }
+int NickReg(char *nick)
+{
+	char *res;
+	if (!nick)
+		return 0;
+	res = SQLCogeRegistro("nicks", nick, "estado");
+	
+	if (res == NULL)
+		return 0;
+	if (!strcmp("A",res))
+		return 1;
+	if (!strcmp("S",res))
+		return 2;
+	if (!strcmp("F",res))
+		return 3;
+
+	return 0; //Nunca deberia pasar
+}

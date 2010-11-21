@@ -168,6 +168,7 @@ VOIDSIG Refresca()
 }
 VOIDSIG Reinicia()
 {
+	Info("Reiniciando servicios...");
 	CierraTodo();
 #ifdef _WIN32
 	CleanUp();

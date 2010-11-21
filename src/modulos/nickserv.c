@@ -860,15 +860,15 @@ BOTFUNC(NSInfo)
 		return 1;
 	}
 	al = BuscaCliente(param[1]);
+	if (IsForbid(param[1])) //Si esta prohibido, damos la informacion corta
+        {
+		Responde(cl, CLI(nickserv), "Información de \00312%s", param[1]);
+	        Responde(cl, CLI(nickserv), "Estado: \0034PROHIBIDO");
+	        Responde(cl, CLI(nickserv), "Motivo: \00312%s", SQLCogeRegistro(NS_SQL, param[1], "motivo"));
+	        return 1;      
+        }
 	if (IsReg(param[1]))
 	{
- 		if (IsForbid(param[1])) //Si esta prohibido, damos la informacion corta
-        	{
-		        Responde(cl, CLI(nickserv), "Información de \00312%s", param[1]);
-		        Responde(cl, CLI(nickserv), "Estado: \0034PROHIBIDO");
-		        Responde(cl, CLI(nickserv), "Motivo: \00312%s", SQLCogeRegistro(NS_SQL, param[1], "motivo"));
-		        return 1;      
-        	}
 		comp = strcasecmp(param[1], cl->nombre);
 		ll = SQLEscapa(param[1]);
 		res = SQLQuery("SELECT opts,gecos,reg,motivo,host,quit,last,email,url,killtime,item,ipvirtual,ipcaduca,swhois from %s%s where item='%s'", PREFIJO, NS_SQL, ll);
@@ -1467,14 +1467,14 @@ int NSCmdPreNick(Cliente *cl, char *nuevo)
 }
 int NSCmdPostNick(Cliente *cl, int nuevo)
 {	
-	if (IsReg(cl->nombre))
+	if (IsForbid(cl->nombre))
 	{
-		if (IsForbid(cl->nombre))
-		{
 			Responde(cl, CLI(nickserv), "Este nick está prohibido: %s", SQLCogeRegistro(NS_SQL, cl->nombre, "motivo"));
 			NSCambiaInv(cl);
 			return 0;
-		}
+	}
+	if (IsReg(cl->nombre))
+	{		
 		if (!IsId(cl) && IsActivo(cl->nombre))
 		{
 			char *kill;
