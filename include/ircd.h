@@ -224,7 +224,7 @@ extern void GeneraMascara(Cliente *);
 extern void DistribuyeMe(Cliente *);
 extern MODVAR Cliente me;
 
-int NickReg(char *);
+DLLFUNC extern int NickReg(char *);
 /*!
  * @desc: Consulta si un usuario está registrado.
  * @params: $nick [in] Nick del usuario.
