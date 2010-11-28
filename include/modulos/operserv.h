@@ -21,7 +21,7 @@ extern OperServ *operserv;
 
 #define OS_SQL "opers"
 #define OS_NOTICIAS "noticias"
-#define OS_AKILL "akill"
+#define OS_LINES "lines"
 typedef struct _not Noticia;
 struct _not
 {

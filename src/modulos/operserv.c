@@ -28,6 +28,8 @@ BOTFUNC(OSRehash);
 BOTFUNCHELP(OSHRehash);
 BOTFUNC(OSGline);
 BOTFUNCHELP(OSHGline);
+BOTFUNC(OSSpam);
+BOTFUNCHELP(OSHSpam);
 BOTFUNC(OSOpers);
 BOTFUNCHELP(OSHOpers);
 BOTFUNC(OSSajoin);
@@ -62,6 +64,7 @@ static bCom operserv_coms[] = {
 	{ "rehash" , OSRehash , N5 , "Refresca los servicios." , OSHRehash} ,
 	{ "close" , OSClose , N5 , "Cierra el programa." , OSHClose } ,
 	{ "gline" , OSGline , N3 , "Gestiona las glines de la red." , OSHGline } ,
+	{ "spam" , OSSpam , N3 , "Gestiona las palabras o expresiones consideradas Spam." , OSHSpam} ,
 	{ "opers" , OSOpers , N4 , "Administra los operadores de la red." , OSHOpers } ,
 	{ "sajoin" , OSSajoin , N2 , "Ejecuta SAJOIN sobre un usuario." , OSHSajoin } ,
 	{ "sapart" , OSSapart , N2 , "Ejecuta SAPART sobre un usuario." , OSHSapart } ,
@@ -365,6 +368,20 @@ BOTFUNCHELP(OSHGline)
 	Responde(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
 	return 0;
 }
+BOTFUNCHELP(OSHSpam)
+{
+	Responde(cl, CLI(operserv), "Gestiona aqui tu lista de palabras o expresiones considerada SPAM.");
+	Responde(cl, CLI(operserv), "Para añadir una palabra deberas usar el simbolo +, para eliminar -");
+	Responde(cl, CLI(operserv), "Podras listar las palabras o expresiones usando un patrón.");
+	Responde(cl, CLI(operserv), " ");
+	Responde(cl, CLI(operserv), "Añadir SPAM:");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SPAM +spam [flags] [accion] [motivo]");
+	Responde(cl, CLI(operserv), "Eliminar SPAM:");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SPAM -spam");
+	Responde(cl, CLI(operserv), "Listar SPAM:");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SPAM spam patrón");
+	return 0;
+}
 BOTFUNCHELP(OSHSajoin)
 {
 	Responde(cl, CLI(operserv), "Fuerza a un usuario a entrar en un canal.");
@@ -608,8 +625,8 @@ BOTFUNC(OSGline)
 		ProtFunc(P_GLINE)(cl, DEL, user, host, 0, NULL);		
 		Responde(cl, CLI(operserv), "Se ha quitado la GLine a \00312%s@%s\003.", user, host);
 		userhost = MascaraTKL(user,host);	
-		if (SQLCogeRegistro(OS_AKILL, userhost, "motivo")) //Si es un akill
-			SQLBorra(OS_AKILL, userhost);
+		if (SQLCogeRegistro(OS_LINES, userhost, "motivo")) //Si es un akill
+			SQLBorra(OS_LINES, userhost);
 	}
 	else if (params < 4)
 	{
@@ -633,43 +650,106 @@ BOTFUNC(OSGline)
 				
 			ProtFunc(P_GLINE)(cl, ADD, user, host, 0, Unifica(param, params, motivo, -1));
 			userhost = MascaraTKL(user,host); 			
-			SQLInserta(OS_AKILL, userhost, "motivo",Unifica(param, params, motivo, -1));
+			SQLInserta(OS_LINES, userhost, "motivo",Unifica(param, params, motivo, -1));
 			Responde(cl, CLI(operserv), "Se ha añadido una GLine a \00312%s\003 permanentemente.", userhost);
 		}
 	}
 	EOI(operserv, 4);
 	return 0;
 }
-BOTFUNC(OSOpers)
+BOTFUNC(OSSpam)
 {
-	Nivel *niv = NULL;
-	Cliente *al = NULL;
-	SQLRes res;
-	SQLRow row;
-	int i;
 	if (params < 2)
 	{
-		if (!(res = SQLQuery("SELECT item,nivel from %s%s where 1", PREFIJO, OS_SQL)))
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{palabra|patrón} [flags] [accion] [motivo]");
+		return 1;
+	}
+	if (*param[1] == '+')
+	{
+		char *motivo, *c;
+		if (params < 5)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "+palabra [flags] [accion] [motivo]");
+			return 1;
+		}
+		param[1]++;
+		if (SQLCogeRegistro(OS_LINES, param[1], "motivo"))
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "La palabra ya se encuentra en la lista de SPAM");
+			return 1;
+		}
+		for (c = param[2]; !BadPtr(c); c++)
+		{
+			if (!strchr("cpnNPqduat", *c))
+			{
+				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Sólo se aceptan las flags c|p|n|N|P|q|d|u|a|t");
+				return 1;
+			}
+		}
+		for (c = param[3]; !BadPtr(c); c++)
+		{
+			if (!strchr("bdgkKsSvzZ", *c))
+			{
+				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Sólo se aceptan las acciones b|d|g|k|K|s|S|v|z|Z");
+				return 1;
+			}
+		}
+		motivo = Unifica(param, params, 4, -1);		
+		SQLQuery("INSERT INTO %s%s (item,tipo,flags,accion,motivo) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, OS_LINES,
+				param[1], "F", param[2], param[3], motivo);
+		motivo = str_replace(motivo, ' ', '_'); //Normalizamos para que lo muestre bien
+		ProtFunc(P_SPAM)(CLI(operserv), ADD, param[1], param[2], param[3], motivo);
+		Responde(cl, CLI(operserv), "Se ha añadido la palabra \00312%s\003 a la lista de spam.", param[1]);
+	}
+	else if (*param[1] == '-')
+	{
+		SQLRes res;
+		SQLRow row;
+		param[1]++;
+		if (!SQLCogeRegistro(OS_LINES, param[1], "motivo"))
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "La palabra no se encuentra en la lista de SPAM");
+			return 1;
+		}		
+		res = SQLQuery("SELECT flags,accion from %s%s where item LIKE '%s'", PREFIJO, OS_LINES, param[1]);
+		row = SQLFetchRow(res);
+		Responde(cl, CLI(operserv), "Se ha eliminado la palabra \00312%s\003 a la lista de spam.", param[1]);
+		ProtFunc(P_SPAM)(CLI(operserv), DEL, param[1], row[0], row[1], NULL);
+		SQLBorra(OS_LINES, param[1]);
+		SQLFreeRes(res);
+	}
+	else
+	{
+		SQLRes res;
+		SQLRow row;
+		u_int i;
+		char *rep;
+		rep = str_replace(param[1], '*', '%');
+		if (!(res = SQLQuery("SELECT item,tipo,flags,accion,motivo from %s%s where item LIKE '%s' and tipo='F'", PREFIJO, OS_LINES, rep)))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;
 		}
-		Responde(cl, CLI(operserv), "*** Listado de representantes de la RED ***");
-
-		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res));)
-		{		
-				Responde(cl, CLI(operserv), "%s (%s)", row[0], row[1]);
-				i++;
-		}
-
+		Responde(cl, CLI(operserv), "*** SPAM que coinciden con \00312%s\003 ***", param[1]);
+		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res)); i++)
+			Responde(cl, CLI(operserv), "Spam: \00312%s\003 Flags: \00312%s\003 Accion: \00312%s\003 Motivo: \00312%s\003", row[0], row[2], row[3], row[4]);
 		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 		SQLFreeRes(res);
-
-		//Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "nick [nivel]");
+	}	
+	return 0;
+}
+BOTFUNC(OSOpers)
+{
+	Nivel *niv = NULL;
+	Cliente *al = NULL;
+	if (params < 2)
+	{
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{nick|patrón} [nivel]");
 		return 1;
 	}
-	if (params >= 3)
+	if (*param[1] == '+')
 	{
+		param[1]++;
 		if (!IsReg(param[1]))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está registrado.");
@@ -684,12 +764,14 @@ BOTFUNC(OSOpers)
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1], param[2]);
 		if ((al = BuscaCliente(param[1])))
 			al->nivel |= niv->nivel;
+		
 	}
-	else
+	else if (*param[1] == '-')
 	{
+		param[1]++;
 		if (!SQLCogeRegistro(OS_SQL, param[1], "nivel"))
 		{
-			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es oper.");
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es representante de la red.");
 			return 1;
 		}
 		SQLBorra(OS_SQL, param[1]);
@@ -701,7 +783,32 @@ BOTFUNC(OSOpers)
 			else
 				al->nivel = 0;
 		}
+
 	}
+	else
+	{	
+		SQLRes res;
+		SQLRow row;
+		u_int i;
+		char *rep;
+		rep = str_replace(param[1], '*', '%');
+		if (!(res = SQLQuery("SELECT item,nivel from %s%s where item LIKE '%s'", PREFIJO, OS_SQL, rep)))
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+		Responde(cl, CLI(operserv), "*** Listado de representantes de la RED ***");
+
+		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res));)
+		{		
+				Responde(cl, CLI(operserv), "%s (%s)", row[0], row[1]);
+				i++;
+		}
+
+		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
+		return 1;
+	}			
 	EOI(operserv, 5);
 	return 0;
 }
@@ -839,7 +946,7 @@ BOTFUNC(OSGlobal)
 	{
 		SQLRes res;
 		SQLRow row;
-		if ((res = SQLQuery("SELECT item from %s%s", PREFIJO, NS_SQL)))
+		if ((res = SQLQuery("SELECT item from %s%s where estado!='F'", PREFIJO, NS_SQL)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
@@ -906,6 +1013,7 @@ BOTFUNC(OSNoticias)
 			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "ADD botname noticia");
 			return 1;
 		}
+
 		noticia = Unifica(param, params, 3, -1);
 		bot = strdup(param[2]);
 		m_c = SQLEscapa(noticia);
@@ -965,7 +1073,7 @@ BOTFUNC(OSAkill)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{mascara|patron} [motivo]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{mascara|patrón} [motivo]");
 		return 1;
 	}
 	if (*param[1] == '+')
@@ -987,7 +1095,7 @@ BOTFUNC(OSAkill)
 		else
 			ircsprintf(buf, "*@%s", param[1]);
 		motivo = Unifica(param, params, 2, -1);
-		SQLInserta(OS_AKILL, buf, "motivo", motivo);
+		SQLInserta(OS_LINES, buf, "motivo", motivo);
 		strlcpy(tokbuf, buf, sizeof(tokbuf));
 		user = strtok(tokbuf, "@");
 		host = strtok(NULL, "@");
@@ -1002,12 +1110,12 @@ BOTFUNC(OSAkill)
 			strlcpy(buf, param[1], sizeof(buf));
 		else
 			ircsprintf(buf, "*@%s", param[1]);
-		if (!SQLCogeRegistro(OS_AKILL, buf, "motivo"))
+		if (!SQLCogeRegistro(OS_LINES, buf, "motivo"))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Esta máscara no tiene akill.");
 			return 1;
 		}
-		SQLBorra(OS_AKILL, buf);
+		SQLBorra(OS_LINES, buf);
 		strlcpy(tokbuf, buf, sizeof(tokbuf));
                 user = strtok(tokbuf, "@");
                 host = strtok(NULL, "@");
@@ -1021,14 +1129,14 @@ BOTFUNC(OSAkill)
 		u_int i;
 		char *rep;
 		rep = str_replace(param[1], '*', '%');
-		if (!(res = SQLQuery("SELECT item,motivo from %s%s where item LIKE '%s'", PREFIJO, OS_AKILL, rep)))
+		if (!(res = SQLQuery("SELECT item,tipo,motivo from %s%s where item LIKE '%s' and tipo='G'", PREFIJO, OS_LINES, rep)))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "No se han encontrado coincidencias.");
 			return 1;
 		}
 		Responde(cl, CLI(operserv), "*** AKILLS que coinciden con \00312%s\003 ***", param[1]);
 		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res)); i++)
-			Responde(cl, CLI(operserv), "\00312%s\003: %s", row[0], row[1]);
+			Responde(cl, CLI(operserv), "\00312%s\003: %s", row[0], row[2]);
 		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 		SQLFreeRes(res);
 	}
@@ -1199,11 +1307,14 @@ int OSSigSQL()
 		"nivel varchar(255) default NULL, "
 		"KEY item (item) "
 		");", PREFIJO, OS_SQL);
-	SQLNuevaTabla(OS_AKILL, "CREATE TABLE IF NOT EXISTS %s%s ( "
+	SQLNuevaTabla(OS_LINES, "CREATE TABLE IF NOT EXISTS %s%s ( "
 		"item varchar(255) default NULL, "
+		"tipo ENUM( 'G', 'S', 'F' ) default 'G', "
+		"flags varchar(255) default NULL, "
 		"motivo varchar(255) default NULL, "
+		"accion varchar(255) default NULL, "
 		"KEY item (item) "
-		");", PREFIJO, OS_AKILL);
+		");", PREFIJO, OS_LINES);
 	OSCargaNoticias();
 	return 0;
 }
@@ -1233,13 +1344,19 @@ int OSSigEOS()
 	SQLRes res;
 	SQLRow row;
 	char *c;
-	if ((res = SQLQuery("SELECT item,motivo from %s%s ", PREFIJO, OS_AKILL)))
+	if ((res = SQLQuery("SELECT item,tipo,motivo,flags,accion from %s%s ", PREFIJO, OS_LINES)))
 	{
 		while ((row = SQLFetchRow(res)))
 		{
-			if ((c = strchr(row[0], '@')))
-				*c++ = '\0';
-			ProtFunc(P_GLINE)(CLI(operserv), ADD, row[0], c, 0, row[1]);
+			if (strchr(row[1], 'G')) { //Es Gline
+				if ((c = strchr(row[0], '@')))
+					*c++ = '\0';
+				ProtFunc(P_GLINE)(CLI(operserv), ADD, row[0], c, 0, row[2]);
+			}
+
+			if (strchr(row[1], 'F')) //Es Spamfilter
+				ProtFunc(P_SPAM)(CLI(operserv), ADD, row[0], row[3], row[4], row[2]);
+
 		}
 		SQLFreeRes(res);
 	}

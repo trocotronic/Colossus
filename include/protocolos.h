@@ -98,6 +98,7 @@ extern void LiberaMemoriaProtocolo(Protocolo *);
 #define P_MSG_VL 24
 #define P_PING 25
 #define P_SERVER 26
+#define P_SPAM 27
 
 #define ProtUmodo(x) (protocolo->umodos + x)->mode
 #define ProtCmodo(x) (protocolo->cmodos + x)->mode

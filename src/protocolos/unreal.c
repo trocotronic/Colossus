@@ -479,6 +479,27 @@ int p_tkl(Cliente *bl, char modo, char *ident, char *host, int tiempo, char *mot
 	}
 	return 0;
 }
+int p_spam(Cliente *bl, char modo, char *objetivo, char *flags, char *accion, char *motivo)
+{
+	//Tkl *tkl = NULL; //BuscaTKL no funciona!!!!
+	char *emisor = (bl ? bl->mask : me.nombre);
+	//if ((tkl = BuscaTKL(objetivo, tklines[TKL_SPAMF])) && (!tkl->fin || (motivo && !strcmp(motivo, tkl->motivo))))
+	//	return 1;
+	if (modo == ADD)
+	{
+		time_t ini;
+		ini = time(0);
+		EnviaAServidor(":%s BD + F %s %s %s 0 %lu 0 %s :%s", me.nombre, flags, accion, emisor, ini, motivo, objetivo);
+		//InsertaTKL('F', parv[10], NULL, parv[5], parv[9], atoul(parv[7]), atoul(parv[6]));
+		//InsertaTKL('F', ident, host, emisor, motivo, ini, fin);
+	}
+	else if (modo == DEL)
+	{
+		EnviaAServidor(":%s BD - F %s %s %s 0 0 :%s", me.nombre, flags, accion, emisor, objetivo);
+		//BorraTKL(&tklines[TKL_SPAMF], ident, host);
+	}
+	return 0;
+}
 int p_kick(Cliente *cl, Cliente *bl, Canal *cn, char *motivo, ...)
 {
 	if (!cl || !cn)
@@ -743,6 +764,7 @@ int PROT_CARGA(Unreal)(Conf *config)
 	protocolo->comandos[P_LAG] = (int(*)())p_lag;
 	protocolo->comandos[P_WHOIS_ESPECIAL] = (int(*)())p_swhois;
 	protocolo->comandos[P_GLINE] = (int(*)())p_tkl;
+	protocolo->comandos[P_SPAM] = (int(*)())p_spam;
 	protocolo->comandos[P_KICK] = (int(*)())p_kick;
 	protocolo->comandos[P_TOPIC] = (int(*)())p_topic;
 	protocolo->comandos[P_NOTICE] = (int(*)())p_notice;
@@ -804,6 +826,7 @@ int PROT_CARGA(Unreal)(Conf *config)
 	InsertaModoProtocolo('z', &UMODE_SECURE, protocolo->umodos);
 	InsertaModoProtocolo('v', &UMODE_VICTIM, protocolo->umodos);
 	InsertaModoProtocolo('d', &UMODE_DEAF, protocolo->umodos);
+
 	InsertaModoProtocolo('H', &UMODE_HIDEOPER, protocolo->umodos);
 	InsertaModoProtocolo('t', &UMODE_SETHOST, protocolo->umodos);
 	InsertaModoProtocolo('G', &UMODE_STRIPBADWORDS, protocolo->umodos);
@@ -1673,10 +1696,17 @@ IRCFUNC(m_tkl)
 			return 1;
 		if (*parv[2] == 'F')
 		{
-			if (parc > 9)
+			if (parc > 9) {
 				tkl = InsertaTKL(*parv[2], parv[10], NULL, parv[5], parv[9], atoul(parv[7]), atoul(parv[6]));
-			else
+				//Guardamos spamfilters en la tabla SPAM si no existe
+				if (!SQLCogeRegistro("lines", parv[10], "motivo"))
+					SQLQuery("INSERT INTO %s%s (item,tipo,flags,motivo,accion) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, "lines", parv[10], "F", parv[3], parv[9], parv[4]);
+			}
+			else {
 				tkl = InsertaTKL(*parv[2], parv[8], NULL, parv[5], NULL, atoul(parv[7]), atoul(parv[6]));
+				if (!SQLCogeRegistro("lines", parv[8], "motivo"))
+					SQLQuery("INSERT INTO %s%s (item,tipo,flags,motivo,accion) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, "lines", parv[8], "F", parv[3], parv[9], parv[4]);
+			}		
 		}
 		else if (*parv[2] == 'Q')
 			tkl = InsertaTKL(*parv[2], parv[4], NULL, parv[5], parv[8], atoul(parv[7]), atoul(parv[6]));
@@ -1686,9 +1716,11 @@ IRCFUNC(m_tkl)
 		AddItem(tkl, tklines[TipoTKL(*parv[2])]);
 		//Guardamos las TKL G permanentes en la base de datos
 		//InsertaTKL('G', ident, host, emisor, motivo, ini, fin);
-		if (*parv[2] == 'G' && atoul(parv[6]) == 0 ) {
+		if (*parv[2] == 'G' && atoul(parv[6]) == 0) {
 			userhost = MascaraTKL(parv[3],parv[4]);
-			SQLInserta("akill", userhost, "motivo",parv[8]);
+			if (!SQLCogeRegistro("lines", userhost, "motivo"))
+			SQLQuery("INSERT INTO %s%s (item,tipo,motivo) VALUES ('%s','%s','%s')",PREFIJO, "lines",
+				userhost, "G", parv[8]);
 		}		
 		
 	}
@@ -1696,16 +1728,26 @@ IRCFUNC(m_tkl)
 	{
 		if (parc < 6)
 			return 1;
-		if (*parv[2] == 'F')
-			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[8], NULL);
+		if (*parv[2] == 'F') {
+			if (parc > 9) {
+				if (*parv[2] == 'F' && SQLCogeRegistro("lines", parv[8], "flags"))//Spamfilter y guardada
+					SQLBorra("lines", parv[10]);
+				BorraTKL(&tklines[TipoTKL(*parv[2])], parv[10], NULL);
+			}
+			else { 	
+				if (*parv[2] == 'F' && SQLCogeRegistro("lines", parv[8], "flags"))//Spamfilter y guardada
+					SQLBorra("lines", parv[8]);
+				BorraTKL(&tklines[TipoTKL(*parv[2])], parv[8], NULL);
+			}
+		}
 		else if (*parv[2] == 'Q')
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[4], NULL);
 		else
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[3], parv[4]);
 
 		userhost = MascaraTKL(parv[3],parv[4]);	
-		if (*parv[2] == 'G' && SQLCogeRegistro("akill", userhost, "motivo")) {  //Comprobar si es Gline y si es akill
-			SQLBorra("akill", userhost);
+		if (*parv[2] == 'G' && SQLCogeRegistro("lines", userhost, "motivo")) {  //Comprobar si es Gline y guardada
+			SQLBorra("lines", userhost);
 		}		
 	}
 	return 0;

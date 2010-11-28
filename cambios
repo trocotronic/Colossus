@@ -641,3 +641,8 @@
 141110696 - Arreglado un fallo que mostraba dos veces el aviso de los memos nuevos.
 201110697 - Añadido soporte filtros en comandos LIST de NickServ y ChanServ, eliminadas tablas obsoletas cforbids y nforbids.
 201110697 - Añadido soporte para listar a los operadores, comando OPERS sin parametros, listara todos los representantes de la red.
+281110698 - Añadido comando SPAM en OperServ para controlar las spamfilters.
+281110699 - Se ha cambiado la longitud del campo topic en la base de datos de 255 a 310 para soportar el TOPICLEN=307 aviso de The_Ki||er.
+281110700 - Añadida tabla OS_LINES para guardar las spamfilters y glines permanentes, eliminando asi tabla OS_AKILL.
+281110701 - Añadido soporte a spamfilters igual que akill, cuando se produce el link, los services propagan todos los registros de la tabla OS_LINES.
+281110702 - Modificado comando OPERS con la misma estructura que otros comandos: opers +nick nivel, opers -nick, opers <patrón>.

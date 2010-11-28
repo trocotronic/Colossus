@@ -2624,7 +2624,7 @@ int CSSigSQL()
   		"descripcion text, "
   		"modos varchar(255) default '+nt', "
   		"opts int4 default '0', "
-  		"topic varchar(255) default 'El canal ha sido registrado.', "
+  		"topic varchar(310) default 'El canal ha sido registrado.', "
   		"entry varchar(255) default 'El canal ha sido registrado.', "
   		"registro int4 default '0', "
   		"ultimo int4 default '0', "

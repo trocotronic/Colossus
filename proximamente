@@ -99,13 +99,13 @@ Versión 1.16:
 
 [X] Comando OPERS; Ahora mismo no existe forma de listar los operadores.
 
-[ ] Terminar de implementar las glines permanentes añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla de akill.
+[X]  Cambiada tabla AKILL, para gestionar las TKL (F y G de momento) de la red.
+
+[X]  Crear comando SPAM en OperServ
+
+[ ] Terminar de implementar las glines permanentes y spamfilter añadiéndolas al bloque K, ahora mismo solo se guardan en la tabla lines.
 
 Pendiente:
-
-[ ]  Crear tabla SQL (nombre spam o spamfilter), para gestionar las TKL tipo F de la red.
-
-[ ]  Crear modulo antispam
 
 [ ] Remover GLines por código
 
