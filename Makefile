@@ -8,7 +8,7 @@ DEBUG=1
 
 ### DEBUG POR CORE ###
 #Esto debe comentarse cuando es una release
-NOCORE=1
+#NOCORE=1
 #endif
 
 #### SOPORTE ZLIB ####
@@ -43,7 +43,7 @@ MYSQL_INC="C:\dev\mysql-5.1.24-rc-win32\include"
 MYSQL_LIB="C:\dev\mysql-5.1.24-rc-win32\Embedded\DLL\release"
 ###### FIN MYSQL ######
 
-EXPAT_LIB="C:\dev\expat\lib\Release_static" libexpatMD.lib
+EXPAT_LIB="C:\dev\expat\Bin" libexpatMD.lib
 
 !IFDEF DEBUG
 DBGCFLAG=/MD /Zi /W1
@@ -85,7 +85,7 @@ INC_FILES = /I ./INCLUDE $(ZLIB_INC) $(OPENSSL_INC) /I $(PTHREAD_INC)
 CFLAGS=/J /D _WIN32 /D _CRT_NONSTDC_NO_DEPRECATE /D _CRT_SECURE_NO_DEPRECATE /D _USE_32BIT_TIME_T /nologo
 EXECFLAGS=$(DBGCFLAG) $(CFLAGS) $(INC_FILES) $(ZLIBCFLAGS) $(SSLCFLAGS) /Fosrc/ /c
 LFLAGS=advapi32.lib kernel32.lib user32.lib ws2_32.lib oldnames.lib shell32.lib comctl32.lib gdi32.lib iphlpapi.lib \
-	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) /LIBPATH:$(EXPAT_LIB) pthreadVC2.lib dbghelp.lib \
+	$(ZLIB_LIB) $(OPENSSL_LIB) $(SSLLIBS) /LIBPATH:$(PTHREAD_LIB) /LIBPATH:$(EXPAT_LIB) pthreadVC1.lib dbghelp.lib \
 	/nologo $(DBGLFLAG) /out:Colossus.exe /def:Colossus.def /implib:Colossus.lib \
 	/LIBPATH:$(ICONV_LIB) iconv.lib /LIBPATH:$(MYSQL_LIB) libmysqld.lib \
 	/NODEFAULTLIB:libcmt
@@ -172,7 +172,7 @@ CLEAN:
 
 SETUP:
 	-@copy src\win32\setup.h include\setup.h >NUL
-	-@copy $(PTHREAD_LIB)\pthreadVC2.dll pthreadVC2.dll >NUL
+	-@copy $(PTHREAD_LIB)\pthreadVC1.dll pthreadVC1.dll >NUL
       -@copy $(ZLIB_LIB_DIR)\zlibwapi.dll zlibwapi.dll >NUL
       -@copy $(ICONV_LIB)\iconv.dll iconv.dll >NUL
       -@copy $(MYSQL_LIB)\libmysqld.dll libmysqld.dll >NUL
@@ -319,7 +319,7 @@ src/modulos/ipserv.dll: src/modulos/ipserv.c ./include/struct.h ./include/ircd.h
 	-@sign modulos\ipserv.dll
 
 src/modulos/proxyserv.dll: src/modulos/proxyserv.c ./include/struct.h ./include/ircd.h ./include/modulos.h ./include/protocolos.h ./include/modulos/proxyserv.h
-	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS) /LIBPATH:$(PTHREAD_LIB) pthreadVC2.lib
+	$(CC) $(MODCFLAGS) src/modulos/proxyserv.c $(MODLFLAGS) /LIBPATH:$(PTHREAD_LIB) pthreadVC1.lib
 	-@copy src\modulos\proxyserv.dll modulos\proxyserv.dll >NUL
 	-@copy src\modulos\proxyserv.pdb modulos\proxyserv.pdb >NUL
 	-@sign modulos\proxyserv.dll

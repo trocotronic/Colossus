@@ -9,7 +9,7 @@
 
 [Setup]
 AppName=Colossus
-AppVerName=Colossus 1.15
+AppVerName=Colossus 1.16
 AppPublisher=Trocotronic
 AppPublisherURL=http://www.redyc.com/
 AppSupportURL=http://www.redyc.com/
@@ -36,8 +36,8 @@ Source: ..\..\Colossus.pdb; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\cambios; DestDir: {app}; DestName: cambios.txt; Flags: ignoreversion
 Source: ..\..\ejemplo.conf; DestDir: {app}; DestName: ejemplo.conf; Flags: ignoreversion
 Source: ..\..\proximamente; DestDir: {app}; DestName: proximamente.txt; Flags: ignoreversion
-Source: ..\..\pthreadVC2.dll; DestDir: {app}; Flags: ignoreversion
-Source: ..\..\iconv.dll; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\pthreadVC1.dll; DestDir: {app}; Flags: ignoreversion
+Source: ..\..\libiconv2.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\libmysqld.dll; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\colossusdoc.html; DestDir: {app}; Flags: ignoreversion
 Source: ..\..\database\mysql\errmsg.sys; DestDir: {app}\database\mysql; Flags: ignoreversion
