@@ -946,14 +946,16 @@ BOTFUNC(OSGlobal)
 	{
 		SQLRes res;
 		SQLRow row;
+		Cliente *al; 
 		if ((res = SQLQuery("SELECT item from %s%s where estado!='F'", PREFIJO, NS_SQL)))
 		{
 			while ((row = SQLFetchRow(res)))
 			{
-//				if ((opts & 0x1) && !(level & BDD_OPER))
-//					continue;
-//				if ((opts & 0x2) && !(level & BDD_PREO))
-//					continue;
+				al = BuscaCliente(row[0]);
+				if ((opts & 0x1) && !IsOper(al))
+					continue;
+				if ((opts & 0x2) && !IsPreo(al))
+					continue;
 				if (opts & 0x4)
 					MSSend(row[0], param[2], Unifica(param, params, 3, -1));
 				else
@@ -988,10 +990,15 @@ BOTFUNC(OSGlobal)
 				continue;
 			if (!t)
 				Responde(al, bl, msg);
+			else
+				ProtFunc(P_NOTICE)(al, bl, msg);
 		}
 		if (opts & 0x4)
 			ProtFunc(P_QUIT_USUARIO_LOCAL)(bl, conf_set->red);
-		Responde(cl, CLI(operserv), "Mensaje global enviado.");
+		if (!t)
+			Responde(cl, CLI(operserv), "Mensaje global enviado.");
+		else
+			Responde(cl, CLI(operserv), "Notice global enviado.");
 	}
 	EOI(operserv, 10);
 	return 0;

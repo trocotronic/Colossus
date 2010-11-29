@@ -634,7 +634,7 @@
 250710690 - *** Vigésima primera release pública: 1.15 ***
 301010691 - Arreglado fallo que permite registrar un canal sin tener el nick registrado.
 301010692 - Arreglado fallo en AKILL insertaba/eliminaba en la gline user@host@host en lugar de user@host.
-301010693 - Se añade comando UNFORBID en NickServ.
+301010693 - Añadido comando UNFORBID en NickServ.
 311010694 - Arreglado eliminacion incorrecta del registro N::nick::B cuando el nick no estaba registrado.
 311010694 - Arreglado mensaje de "Este nick está protegido...." en NickServ, cuando el nick esta suspendido, ahora no se envia.
 011110695 - Añadido soporte a Glines permanentes en la base de datos, cuando envia o recibe una gline permanente se trata como un AKILL.
@@ -642,7 +642,8 @@
 201110697 - Añadido soporte filtros en comandos LIST de NickServ y ChanServ, eliminadas tablas obsoletas cforbids y nforbids.
 201110697 - Añadido soporte para listar a los operadores, comando OPERS sin parametros, listara todos los representantes de la red.
 281110698 - Añadido comando SPAM en OperServ para controlar las spamfilters.
-281110699 - Se ha cambiado la longitud del campo topic en la base de datos de 255 a 310 para soportar el TOPICLEN=307 aviso de The_Ki||er.
+281110699 - Modificada la longitud del campo topic en la base de datos de 255 a 310 para soportar el TOPICLEN=307 aviso de The_Ki||er.
 281110700 - Añadida tabla OS_LINES para guardar las spamfilters y glines permanentes, eliminando asi tabla OS_AKILL.
 281110701 - Añadido soporte a spamfilters igual que akill, cuando se produce el link, los services propagan todos los registros de la tabla OS_LINES.
 281110702 - Modificado comando OPERS con la misma estructura que otros comandos: opers +nick nivel, opers -nick, opers <patrón>.
+291110703 - Arreglado comando GLOBAL en OperServ, no enviaba notices, ni filtraba memos para opers o preopers.
