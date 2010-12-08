@@ -1482,9 +1482,8 @@ int NSCmdPostNick(Cliente *cl, int nuevo)
 				InsertaKillUser(cl, atoi(kill));
 			}
 		}
-		else {	
+		else
 			LlamaSenyal(NS_SIGN_IDOK, 1, cl);
-		}
 	}
 	else //Eliminamos el nivel si no esta registrado
 		cl->nivel = 0;
