@@ -647,3 +647,4 @@
 281110701 - Añadido soporte a spamfilters igual que akill, cuando se produce el link, los services propagan todos los registros de la tabla OS_LINES.
 281110702 - Modificado comando OPERS con la misma estructura que otros comandos: opers +nick nivel, opers -nick, opers <patrón>.
 291110703 - Arreglado comando GLOBAL en OperServ, no enviaba notices, ni filtraba memos para opers o preopers.
+081210704 - Arreglado un fallo con los niveles, aviso de zenit (#0000326).
