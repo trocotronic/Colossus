@@ -13,6 +13,7 @@
 #include "md5.h"
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
+#include "modulos/memoserv.h"
 
 NickServ *nickserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, nickserv->hmod, NULL)
@@ -821,6 +822,8 @@ int NSBaja(char *nick, int opt)
 	LlamaSenyal(NS_SIGN_DROP, 1, nick);
 	if ((al = BuscaCliente(nick)))
 		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
+	//Borramos memos
+	SQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_SQL, nick);
 	SQLBorra(NS_SQL, nick);
 	return 0;
 }
