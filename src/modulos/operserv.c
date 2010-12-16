@@ -1297,10 +1297,10 @@ int OSSigIdOk(Cliente *cl)
 					ProtFunc(P_MODO_USUARIO_REMOTO)(cl, CLI(operserv), niveles[i]->flags, 1);
 			}
 		}
-		cl->nivel = nivel;
+		cl->nivel = nivel+1; //Para identificarlo, aparte del nivel le añadimos 1
 	}
 	else //Si no tiene nivel es que esta identificado
-		cl->nivel = 1;	
+		cl->nivel = 1;
 	return 0;
 }
 int OSSigSQL()
