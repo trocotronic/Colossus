@@ -566,7 +566,7 @@ BOTFUNC(NSRegister)
 			Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tupass tu@email");
 		return 1;
 	}
-	if (CogeCache(CACHE_ULTIMO_REG, usermask, nickserv->hmod->id))
+	if (CogeCache(CACHE_ULTIMO_REG, usermask, nickserv->hmod->id) && nickserv->min_reg > 0 ) /* Horas = 0 nos saltamos restricciones*/
 	{
 		char buf[512];
 		ircsprintf(buf, "No puedes efectuar otro registro hasta que no pasen %i horas.", nickserv->min_reg);
@@ -647,6 +647,7 @@ BOTFUNC(NSRegister)
 					strcat(buf, tmp);
 					chrcat(buf, *d++);
 				}
+
 			}
 			if (*r)
 			{
@@ -1701,6 +1702,7 @@ int NickOpts(Cliente *cl, char *nick, char **param, int params, Funcion *fc)
 			Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "HIDE valor on|off");
 			return 1;
 		}
+
 		if (strcasecmp(param[3], "ON") && strcasecmp(param[3], "OFF"))
 		{
 			Responde(cl, CLI(nickserv), NS_ERR_SNTX, "HIDE valor on|off");
