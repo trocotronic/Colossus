@@ -650,3 +650,4 @@
 081210704 - Arreglado un fallo con los niveles, aviso de zenit (#0000326).
 151210705 - Cuando se dropa un nick, se borraran todos los memos que fuesen para el.
 110211706 - Arreglado un fallo cuando se establece min_reg a 0 en nickserv.inc.
+270711707 - Modificamos la liberacion del canal para tener en cuenta la persistencia del canal registrado, aviso de zenit (#0000333).
