@@ -207,6 +207,7 @@ BOTFUNC(NSDemigrar)
 	Responde(cl, CLI(nickserv), "Demigración realizada.");
 	opts &= ~NS_OPT_UDB;
 	SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
+	NSCambiaInv(cl);
 	return 0;
 }
 BOTFUNC(NSAcceso)
