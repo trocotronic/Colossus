@@ -286,7 +286,7 @@ int CargaCache()
 		"owner int4 default '0', "
 		"tipo text default NULL, "
 		"KEY item (item) "
-		");", PREFIJO, SQL_CACHE);
+		")ENGINE=MyISAM;", PREFIJO, SQL_CACHE);
 	/*else
 	{
 		if (!SQLEsCampo(SQL_CACHE, "owner"))

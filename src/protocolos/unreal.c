@@ -10,6 +10,7 @@
 #include "ircd.h"
 #include "modulos.h"
 #include "protocolos.h"
+#include "modulos/operserv.h"
 #include "md5.h"
 #ifdef USA_ZLIB
 #include "zip.h"
@@ -1699,13 +1700,13 @@ IRCFUNC(m_tkl)
 			if (parc > 9) {
 				tkl = InsertaTKL(*parv[2], parv[10], NULL, parv[5], parv[9], atoul(parv[7]), atoul(parv[6]));
 				//Guardamos spamfilters en la tabla SPAM si no existe
-				if (!SQLCogeRegistro("lines", parv[10], "motivo"))
-					SQLQuery("INSERT INTO %s%s (item,tipo,flags,motivo,accion) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, "lines", parv[10], "F", parv[3], parv[9], parv[4]);
+				if (!SQLCogeRegistro(OS_LINES, parv[10], "motivo"))
+					SQLQuery("INSERT INTO %s%s (item,tipo,flags,motivo,accion) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, OS_LINES, parv[10], "F", parv[3], parv[9], parv[4]);
 			}
 			else {
 				tkl = InsertaTKL(*parv[2], parv[8], NULL, parv[5], NULL, atoul(parv[7]), atoul(parv[6]));
-				if (!SQLCogeRegistro("lines", parv[8], "motivo"))
-					SQLQuery("INSERT INTO %s%s (item,tipo,flags,motivo,accion) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, "lines", parv[8], "F", parv[3], parv[9], parv[4]);
+				if (!SQLCogeRegistro(OS_LINES, parv[8], "motivo"))
+					SQLQuery("INSERT INTO %s%s (item,tipo,flags,motivo,accion) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, OS_LINES, parv[8], "F", parv[3], parv[9], parv[4]);
 			}		
 		}
 		else if (*parv[2] == 'Q')
@@ -1718,8 +1719,8 @@ IRCFUNC(m_tkl)
 		//InsertaTKL('G', ident, host, emisor, motivo, ini, fin);
 		if (*parv[2] == 'G' && atoul(parv[6]) == 0) {
 			userhost = MascaraTKL(parv[3],parv[4]);
-			if (!SQLCogeRegistro("lines", userhost, "motivo"))
-			SQLQuery("INSERT INTO %s%s (item,tipo,motivo) VALUES ('%s','%s','%s')",PREFIJO, "lines",
+			if (!SQLCogeRegistro(OS_LINES, userhost, "motivo"))
+			SQLQuery("INSERT INTO %s%s (item,tipo,motivo) VALUES ('%s','%s','%s')",PREFIJO, OS_LINES,
 				userhost, "G", parv[8]);
 		}		
 		
@@ -1730,13 +1731,13 @@ IRCFUNC(m_tkl)
 			return 1;
 		if (*parv[2] == 'F') {
 			if (parc > 9) {
-				if (*parv[2] == 'F' && SQLCogeRegistro("lines", parv[8], "flags"))//Spamfilter y guardada
-					SQLBorra("lines", parv[10]);
+				if (*parv[2] == 'F' && SQLCogeRegistro(OS_LINES, parv[8], "flags"))//Spamfilter y guardada
+					SQLBorra(OS_LINES, parv[10]);
 				BorraTKL(&tklines[TipoTKL(*parv[2])], parv[10], NULL);
 			}
 			else { 	
-				if (*parv[2] == 'F' && SQLCogeRegistro("lines", parv[8], "flags"))//Spamfilter y guardada
-					SQLBorra("lines", parv[8]);
+				if (*parv[2] == 'F' && SQLCogeRegistro(OS_LINES, parv[8], "flags"))//Spamfilter y guardada
+					SQLBorra(OS_LINES, parv[8]);
 				BorraTKL(&tklines[TipoTKL(*parv[2])], parv[8], NULL);
 			}
 		}
@@ -1746,8 +1747,8 @@ IRCFUNC(m_tkl)
 			BorraTKL(&tklines[TipoTKL(*parv[2])], parv[3], parv[4]);
 
 		userhost = MascaraTKL(parv[3],parv[4]);	
-		if (*parv[2] == 'G' && SQLCogeRegistro("lines", userhost, "motivo")) {  //Comprobar si es Gline y guardada
-			SQLBorra("lines", userhost);
+		if (*parv[2] == 'G' && SQLCogeRegistro(OS_LINES, userhost, "motivo")) {  //Comprobar si es Gline y guardada
+			SQLBorra(OS_LINES, userhost);
 		}		
 	}
 	return 0;

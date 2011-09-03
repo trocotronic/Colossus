@@ -11,8 +11,10 @@ ChanServ *chanserv = NULL;
 #else
 extern ChanServ *chanserv;
 #endif
+/* Atencion cambiado a chanserv.h
 #define CS_OPT_UDB 0x1000
 #define CS_AUTOMIGRAR 0x1000
+*/
 int CSSigDrop(char *);
 int CSSigEOS_U();
 

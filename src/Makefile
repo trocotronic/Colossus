@@ -19,7 +19,8 @@ modall:
 	cd modulos; ${MAKE} 'EXLIBS=${EXLIBS}' modall
 build: servicios mods prots exts
 servicios: $(OBJS)
-	$(CC) $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB) `mysql_config --libmysqld-libs`
+	#$(CC)
+	g++ $(CFLAGS) $(CRYPTOLIB) -o colossus $(OBJS) $(IRCDLIBS) $(LDFLAGS) $(CRYPTOLIB) -lm -lexpat `mysql_config --libmysqld-libs` 
 	ar -r colossus.a $(OBJS)
 mods:
 	@if [ ! -r include ] ; then \

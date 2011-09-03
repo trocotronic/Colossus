@@ -379,7 +379,7 @@ BOTFUNCHELP(OSHSpam)
 	Responde(cl, CLI(operserv), "Eliminar SPAM:");
 	Responde(cl, CLI(operserv), "Sintaxis: \00312SPAM -spam");
 	Responde(cl, CLI(operserv), "Listar SPAM:");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312SPAM spam patrón");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312SPAM patrón");
 	return 0;
 }
 BOTFUNCHELP(OSHSajoin)

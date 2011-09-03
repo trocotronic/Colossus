@@ -498,7 +498,7 @@ int BorraClienteDeCanal(Canal *cn, Cliente *cl)
 	}
 	for (maux = cn->mallacl; maux; maux = maux->sig)
 		BorraModoCliente(&maux->malla, cl);
-	if (!cn->miembros && !(cn->modos & CHMODE_RGSTR)) // Tenemos en cuenta si el canal se encuentra registrado
+	if (!cn->miembros && !(cn->modos & CHMODE_RGSTR))
 		LiberaMemoriaCanal(cn);
 	return 0;
 }

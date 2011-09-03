@@ -651,3 +651,5 @@
 151210705 - Cuando se dropa un nick, se borraran todos los memos que fuesen para el.
 110211706 - Arreglado un fallo cuando se establece min_reg a 0 en nickserv.inc.
 270711707 - Modificamos la liberacion del canal para tener en cuenta la persistencia del canal registrado, aviso de zenit (#0000333).
+030911708 - Añadido directrices en el archivo my.ini para que el embedido ignore el InnoDB y por defcto use MyISAM.
+030911709 - Arreglado un fallo que provocaba eliminar el modo +r de un canal cuando se usaba DROP.

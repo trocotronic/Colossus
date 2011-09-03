@@ -79,6 +79,7 @@ int CSCmdJoin(Cliente *, Canal *);
 int CSCmdKick(Cliente *, Cliente *, Canal *, char *);
 int CSCmdTopic(Cliente *, Canal *, char *);
 
+int IsChanUDB(char *canal);
 int CSTest(Conf *, int *);
 void CSSet(Conf *, Modulo *);
 SQLRow CSEsAkick(char *, char *);
@@ -2794,7 +2795,8 @@ int CSBaja(char *canal, int opt)
 		return 1;
 	if ((an = BuscaCanal(canal)))
 	{
-		ProtFunc(P_MODO_CANAL)(CLI(chanserv), an, "-r");
+		if (!IsChanUDB(canal)) //Si el canal es UDB no es necesario eliminar el +r
+			ProtFunc(P_MODO_CANAL)(CLI(chanserv), an, "-r");
 		if (RedOverride)
 			SacaBot(CLI(chanserv), canal, NULL);
 	}
@@ -2960,5 +2962,12 @@ int CSSigSynch()
 int CSSigSockClose()
 {
 	DetieneProceso(CSDropachans);
+	return 0;
+}
+int IsChanUDB(char *canal)
+{
+	char *opts;
+	if ((opts = SQLCogeRegistro(CS_SQL, canal, "opts")))
+		return (atoi(opts) & CS_OPT_UDB);
 	return 0;
 }

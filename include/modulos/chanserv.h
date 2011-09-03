@@ -29,6 +29,8 @@ struct _cs
 #define CS_OPT_DEBUG 0x40 /* canal en debug +d */
 #define CS_OPT_NODROP 0x80 /* canal no dropable +n */
 /* ATENCION: CS_OPT_UDB 0x1000 */
+#define CS_OPT_UDB 0x1000
+#define CS_AUTOMIGRAR 0x1000
 
 /* Niveles */
 
