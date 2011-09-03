@@ -6,6 +6,8 @@
 #include "bdd.h"
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
+#include "modulos/operserv.h"
+#include "modulos/ipserv.h"
 
 #ifdef _WIN32
 NickServ *nickserv = NULL;
@@ -134,7 +136,8 @@ BOTFUNCHELP(NSHAcceso)
 }
 BOTFUNC(NSMigrar)
 {
-	int opts;
+	int opts, nivel;
+	char *swhois, *ipvirtual;
 	if (params < 2)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "tupass");
@@ -157,6 +160,19 @@ BOTFUNC(NSMigrar)
 		return 1;
 	}
 	PropagaRegistro("N::%s::P %s", cl->nombre, MDString(param[1], 0));
+	//Migramos SWHOIS
+	if ((swhois = SQLCogeRegistro(NS_SQL, cl->nombre, "swhois")))
+		PropagaRegistro("N::%s::W %s", cl->nombre, swhois);
+	//Migramos Representante - Cuidado con el valor real del nivel
+	if ((nivel = atoi(SQLCogeRegistro(OS_SQL, cl->nombre, "nivel")))) {
+	nivel = nivel/4; //Obtenmos el valor real		
+	if (nivel > 0) //Comprobamos que sea mayor que cero (mayor que preoper)
+		PropagaRegistro("N::%s::O %c%i", cl->nombre, CHAR_NUM, nivel);
+	}
+	//Migramos Ipvirtual
+	if ((ipvirtual = SQLCogeRegistro(IS_SQL, cl->nombre, "ipvirtual")))
+		PropagaRegistro("N::%s::V %s", cl->nombre, ipvirtual);
+	//Pendiente modos y snomasks
 	Responde(cl, CLI(nickserv), "Migración realizada.");
 	opts |= NS_OPT_UDB;
 	SQLInserta(NS_SQL, cl->nombre, "opts", "%i", opts);
@@ -195,6 +211,7 @@ BOTFUNC(NSDemigrar)
 }
 BOTFUNC(NSAcceso)
 {
+	int opts;
 	if (params < 2)
 	{
 		PropagaRegistro("N::%s::A", cl->nombre);
@@ -209,6 +226,12 @@ BOTFUNC(NSAcceso)
 		if (!EsIp(tokbuf) && !IsOper(cl))
 		{
 			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No parece ser una ip válida.");
+			return 1;
+		}
+		opts = atoi(SQLCogeRegistro(NS_SQL, cl->nombre, "opts"));
+		if (!(opts & NS_OPT_UDB))
+		{
+			Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Debes tener el nick migrado para usar este servicio.");
 			return 1;
 		}
 		if (EsIp(tokbuf))

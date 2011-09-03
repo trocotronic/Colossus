@@ -197,7 +197,7 @@ BOTFUNCHELP(MSHDel)
 	Responde(cl, CLI(memoserv), "Adicionalmente, puedes especificar ALL para borrarlos todos a la vez.");
 	Responde(cl, CLI(memoserv), "Recuerda que una vez borrado, no lo podrás recuperar.");
 	Responde(cl, CLI(memoserv), " ");
-	Responde(cl, CLI(memoserv), "Sintxis: \00312DEL [#canal] nº|ALL");
+	Responde(cl, CLI(memoserv), "Sintaxis: \00312DEL [#canal] nº|ALL");
 	return 0;
 }
 BOTFUNCHELP(MSHList)

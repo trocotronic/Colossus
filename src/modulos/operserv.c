@@ -755,6 +755,11 @@ BOTFUNC(OSOpers)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nick no está registrado.");
 			return 1;
 		}
+		if (params < 3)
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Debes definir un nivel para el operador.");
+			return 1;
+		}
 		if (!(niv = BuscaNivel(param[2])))
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nivel no existe.");

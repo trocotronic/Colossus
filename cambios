@@ -653,3 +653,6 @@
 270711707 - Modificamos la liberacion del canal para tener en cuenta la persistencia del canal registrado, aviso de zenit (#0000333).
 030911708 - Añadido directrices en el archivo my.ini para que el embedido ignore el InnoDB y por defcto use MyISAM.
 030911709 - Arreglado un fallo que provocaba eliminar el modo +r de un canal cuando se usaba DROP.
+030911710 - Arreglado al dropar un nick se elimina su estado de operador.
+030911711 - Arreglado fallo al añdir un operador sin nivel.
+030911712 - Añadido migracion de nivel, ipvirtual, swhois al ejecutar el comando migrar.
