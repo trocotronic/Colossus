@@ -385,7 +385,7 @@ int main(int argc, char *argv[])
   		"item varchar(255) default NULL, "
   		"version int default NULL, "
   		"KEY item (item) "
-		")", PREFIJO, SQL_VERSIONES))
+		");", PREFIJO, SQL_VERSIONES))
 	{
 		for (i = 0; i < sql->tablas; i++)
 			SQLInserta(SQL_VERSIONES, sql->tabla[i].tabla, "version", "1");
@@ -394,7 +394,7 @@ int main(int argc, char *argv[])
   		"item varchar(255) default NULL, "
   		"valor text default NULL, "
   		"KEY item (item) "
-		")", PREFIJO, SQL_CONFIG);
+		");", PREFIJO, SQL_CONFIG);
 	CargaCache();
 	LlamaSenyal(SIGN_STARTUP, 0);
 	LlamaSenyal(SIGN_SQL, 0);
