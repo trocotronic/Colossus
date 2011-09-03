@@ -14,6 +14,7 @@
 #include "modulos/nickserv.h"
 #include "modulos/chanserv.h"
 #include "modulos/memoserv.h"
+#include "modulos/operserv.h"
 
 NickServ *nickserv = NULL;
 #define ExFunc(x) TieneNivel(cl, x, nickserv->hmod, NULL)
@@ -820,12 +821,16 @@ int NSBaja(char *nick, int opt)
 	int opts = atoi(SQLCogeRegistro(NS_SQL, nick, "opts"));
 	if (!opt && (opts & NS_OPT_NODROP))
 		return 1;
-	LlamaSenyal(NS_SIGN_DROP, 1, nick);
-	if ((al = BuscaCliente(nick)))
-		ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
+	if ((al = BuscaCliente(nick))) 
+		NSCambiaInv(al); //Cambiamos el nick del usuario si es dropado.		
+		//ProtFunc(P_MODO_USUARIO_REMOTO)(al, CLI(nickserv), "-r");
 	//Borramos memos
-	SQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_SQL, nick);
+	SQLQuery("DELETE from %s%s where para='%s'", PREFIJO, MS_SQL, nick);	
+	//Borramos status
+	SQLBorra(OS_SQL, nick);	
+	//Borramos usuario de la tabla nicks
 	SQLBorra(NS_SQL, nick);
+	LlamaSenyal(NS_SIGN_DROP, 1, nick);
 	return 0;
 }
 BOTFUNC(NSSendpass)

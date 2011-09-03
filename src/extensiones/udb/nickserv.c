@@ -92,6 +92,7 @@ void DescargaNickServ(Extension *ext)
 	BorraSenyalExt(11, NSSwhois_U, ext);
 	BorraSenyalExt(13, NSForbid_U, ext);
 	BorraSenyalExt(14, NSUnForbid_U, ext);
+	BorraSenyalExt(16, NSOptsNick_U, ext);
 }
 BOTFUNCHELP(NSHMigrar)
 {
@@ -328,7 +329,7 @@ EXTFUNC(NSOptsNick_U)
 }
 int NSSigDrop(char *nick)
 {
-	if (IsNickUDB(nick))
+	if (!IsNickUDB(nick))
 		PropagaRegistro("N::%s", nick);
 	
 	return 0;
