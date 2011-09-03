@@ -724,7 +724,7 @@ int KyrhosSQL()
 		"item varchar(255), "
 		"pos int, "
 		"KEY item (item) "
-		")ENGINE=MyISAM;", PREFIJO, GS_KYRHOS);
+		");", PREFIJO, GS_KYRHOS);
 	return 0;
 }
 int KyrhosDescarga()

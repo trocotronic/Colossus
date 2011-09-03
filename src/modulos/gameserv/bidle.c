@@ -214,7 +214,7 @@ int BidleSQL()
 		"combates int default '0', "
 		"sig_combate int default '0', "
 		"PRIMARY KEY item (item) "
-		")ENGINE=MyISAM;", PREFIJO, GS_BIDLE);
+		");", PREFIJO, GS_BIDLE);
 	SQLQuery("UPDATE %s%s SET online=0", PREFIJO, GS_BIDLE);
 	if (SQLVersionTabla(GS_BIDLE) < 2)
 	{
