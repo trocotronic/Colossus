@@ -494,6 +494,7 @@ extern void BorraCache(char *, char *, int);
 #define CACHE_MX "mx" /* cache para registros mx */
 
 #ifndef _WIN32
+#include <limits.h>
 #define PMAX PATH_MAX
 #else
 #define PMAX MAX_PATH

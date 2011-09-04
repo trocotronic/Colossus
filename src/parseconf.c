@@ -522,29 +522,24 @@ void Printea(Conf *conf, int escapes)
  */
 void DistribuyeConfiguracion(Conf *config)
 {
-	int i, errores = 0, cont = 0;
+	int i, errores = 0;
 	cComConf *com;
 	Conf *prot = NULL;
 	for (i = 0; i < config->secciones; i++)
 	{
+		if (!strcasecmp(config->seccion[i]->item, "protocolo"))
+		{
+			prot = config->seccion[i];
+			continue;
+		}
+		else if (!strcasecmp(config->seccion[i]->item, "modulo"))
+			continue;
 		com = &cComs[0];
 		while (com->nombre != 0x0)
 		{
-
-			if (!strcasecmp(config->seccion[i]->item, "protocolo"))
-			{
-				prot = config->seccion[i];
-				cont = 1;
-				break;
-			}
-			else if (!strcasecmp(config->seccion[i]->item, com->nombre))
+			if (!strcasecmp(config->seccion[i]->item, com->nombre))
 				break;
 			com++;
-		}
-		if (cont)
-		{
-			cont = 0;
-			continue;
 		}
 		if (com->testfunc != 0x0)
 		{
@@ -570,6 +565,16 @@ void DistribuyeConfiguracion(Conf *config)
 			}
 		}
 		com++;
+	}
+	if (!sql && CargaSQL())
+		errores++;
+	for (i = 0; i < config->secciones; i++)
+	{
+		if (!strcasecmp(config->seccion[i]->item, "modulo"))
+		{
+			if (!TestModulos(config->seccion[i], &errores))
+				ConfModulos(config->seccion[i]);
+		}
 	}
 	if (prot)
 		TestProtocolo(prot, &errores);

@@ -335,7 +335,6 @@ int main(int argc, char *argv[])
 	DistribuyeMe(&me);
 #ifdef USA_SSL
 	SSLInit();
-	SSLKeysInit();
 #endif
 #ifndef _WIN32
 	if (sql && sql->clientinfo)
@@ -396,6 +395,9 @@ int main(int argc, char *argv[])
   		"KEY item (item) "
 		");", PREFIJO, SQL_CONFIG);
 	CargaCache();
+#ifdef USA_SSL
+	SSLKeysInit();
+#endif
 	LlamaSenyal(SIGN_STARTUP, 0);
 	LlamaSenyal(SIGN_SQL, 0);
 	for (i = 0; i < sql->tablas; i++)
