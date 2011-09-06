@@ -371,6 +371,7 @@ BOTFUNCHELP(CSHList)
 	Responde(cl, CLI(chanserv), "Además, puedes especificar un filtro para listar los canales.");
 	Responde(cl, CLI(chanserv), " ");
 	Responde(cl, CLI(chanserv), "Canales activos: \00312LIST -a patrón");
+	Responde(cl, CLI(chanserv), "Canales pendientes (Solo Opers): \00312LIST -p patrón");
 	Responde(cl, CLI(chanserv), "Canales suspendidos (Solo Opers): \00312LIST -s patrón");
 	Responde(cl, CLI(chanserv), "Canales prohibidos (Solo Opers): \00312LIST -f patrón");
 	Responde(cl, CLI(chanserv), "Fundador del canal (Solo Opers): \00312LIST -o patrón");
@@ -1868,7 +1869,7 @@ BOTFUNC(CSList)
 	{
 		if (*param[1] == '-')
 		{
-			Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-r] patrón");
+			Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "[-filtro] patrón");
 			return 1;
 		}
 		rep = SQLEscapa(str_replace(param[1], '*', '%'));
