@@ -719,10 +719,8 @@ BOTFUNC(OSSpam)
 				return 1;
 			}
 		}
-		motivo = Unifica(param, params, 4, -1);		
-		SQLQuery("INSERT INTO %s%s (item,tipo,flags,accion,motivo) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, OS_LINES,
-				param[1], "F", param[2], param[3], motivo);
-		motivo = str_replace(motivo, ' ', '_'); //Normalizamos para que lo muestre bien
+		motivo = str_replace(Unifica(param, params, 4, -1), ' ', '_'); //Normalizamos para que lo muestre bien	
+		SQLQuery("INSERT INTO %s%s (item,tipo,flags,accion,motivo) VALUES ('%s','%s','%s','%s','%s')",PREFIJO, OS_LINES, param[1], "F", param[2], param[3], motivo);	
 		ProtFunc(P_SPAM)(CLI(operserv), ADD, param[1], param[2], param[3], motivo);
 		Responde(cl, CLI(operserv), "Se ha añadido la palabra \00312%s\003 a la lista de spam.", param[1]);
 	}
