@@ -576,8 +576,7 @@ BOTFUNCHELP(CSHAkick)
 {
 	Responde(cl, CLI(chanserv), "Gestiona la lista de auto-kick del canal.");
 	Responde(cl, CLI(chanserv), "Esta lista contiene las máscaras prohibidas.");
-	Responde(cl, CLI(chanserv), "Si un usuario entra al canal y su máscara coincide con una de ellas, immediatamente es expulsado "
-					"y se le pone un ban para que no pueda entrar.");
+	Responde(cl, CLI(chanserv), "Si un usuario entra al canal y su máscara coincide con una de ellas, immediatamente es expulsado y baneado para que no pueda entrar.");
 	Responde(cl, CLI(chanserv), "Para poder realizar este comando necesitas tener el acceso \00312+k\003.");
 	Responde(cl, CLI(chanserv), " ");
 	Responde(cl, CLI(chanserv), "Sintaxis: \00312AKICK #canal nick|máscara motivo");
@@ -785,7 +784,7 @@ BOTFUNC(CSDrop)
 	}
 	if (!ChanReg(param[1]))
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, ""); //Mensaje de error de Canal no registrado
 		return 1;
 	}
 	if (IsChanForbid(param[1]))
@@ -811,6 +810,11 @@ BOTFUNC(CSIdentify)
 	if (params < 3)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal pass");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && !IsChanAct(param[1]))
@@ -865,6 +869,11 @@ BOTFUNC(CSDeauth)
 	if (params < 2)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsChanAct(param[1]))
@@ -1040,7 +1049,7 @@ BOTFUNC(CSKick)
 		Responde(cl, CLI(chanserv), CS_ERR_FORB, "");
 		return 1;
 	}
-	if (!(al = BuscaCliente(param[2])))
+	if (!(al = BuscaCliente(param[2])) || IsOper(al))
 			return 1;
 	ProtFunc(P_KICK)(al, CLI(chanserv), cn, Unifica(param, params, 3, -1));
 	CSDebug(param[1], "%s hace KICK a %s", parv[0], Unifica(param, params, 2, -1));
@@ -1125,6 +1134,11 @@ BOTFUNC(CSClear)
 	if (params < 3)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal opcion");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsPreo(cl) && !IsChanAct(param[1]))
@@ -1278,6 +1292,11 @@ BOTFUNC(CSOpts)
 	if (params < 3)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal parámetros");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && !IsChanAct(param[1]))
@@ -1511,7 +1530,12 @@ BOTFUNC(CSAkick)
 	Canal *cn;
 	if (params < 2)
 	{
-		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick|mascara [motivo]]");
+		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick|máscara] [motivo]");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && !IsChanAct(param[1]))
@@ -1547,24 +1571,29 @@ BOTFUNC(CSAkick)
 			return 1;
 		}
 		Free(c_c);
+		Responde(cl, CLI(chanserv), "*** Akicks de \00312%s\003 ***", param[1]);
 		while ((row = SQLFetchRow(res)))
-			Responde(cl, CLI(chanserv), "\00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", row[1], row[2], row[3]);
+			Responde(cl, CLI(chanserv), "Máscara: \00312%s\003 Motivo: \00312%s\003 (por \00312%s\003)", row[1], row[2], row[3]);
 		SQLFreeRes(res);
 	}
 	else if (params == 3)
 	{
 		char *m_c, *c_c;
+		
+		if (!strpbrk(param[2],"!@")) //Verificamos si de verdad es un host o un nick (añadimos !*@*)	
+			strcat(param[2],"!*@*");
+
 		c_c = SQLEscapa(param[1]);
 		m_c = SQLEscapa(param[2]);
 		if (!SQLQuery("SELECT * FROM %s%s WHERE canal='%s' AND mascara='%s'", PREFIJO, CS_AKICKS, c_c, m_c))
 		{
-			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "Esta entrada no existe");
+			Responde(cl, CLI(chanserv), CS_ERR_EMPT, "No hay ningún akick que concuerde.");
 			Free(c_c);
 			Free(m_c);
 			return 1;
 		}
 		SQLQuery("DELETE FROM %s%s WHERE canal='%s' AND mascara='%s'", PREFIJO, CS_AKICKS, c_c, m_c);
-		Responde(cl, CLI(chanserv), "Entrada \00312%s\003 eliminada.", param[2]);
+		Responde(cl, CLI(chanserv), "Akick de \00312%s\003 eliminado.", param[2]);
 		Free(c_c);
 		Free(m_c);
 	}
@@ -1572,6 +1601,13 @@ BOTFUNC(CSAkick)
 	{
 		Cliente *al;
 		char *motivo = Unifica(param, params, 3, -1), *m_c, *cc, *ll, *mm;
+
+		if ((al = BuscaCliente(param[2])) && !IsOper(al))
+			ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
+
+		if (!strpbrk(param[2],"!@")) //Verificamos si de verdad es un host o un nick (añadimos !*@*)	
+			strcat(param[2],"!*@*");
+
 		m_c = SQLEscapa(motivo);
 		cc = SQLEscapa(param[1]);
 		ll = SQLEscapa(cl->nombre);
@@ -1582,9 +1618,8 @@ BOTFUNC(CSAkick)
 		Free(mm);
 		Free(cc);
 		Free(ll);
-		if ((al = BuscaCliente(param[2])))
-			ProtFunc(P_KICK)(al, CLI(chanserv), cn, motivo);
-		Responde(cl, CLI(chanserv), "Akick a \00312%s\003 añadido.", param[2]);
+		
+		Responde(cl, CLI(chanserv), "Akick de \00312%s\003 añadido.", param[2]);
 	}
 	EOI(chanserv, 10);
 	return 0;
@@ -1594,6 +1629,11 @@ BOTFUNC(CSAccess)
 	if (params < 2)
 	{
 		Responde(cl, CLI(chanserv), CS_ERR_PARA, fc->com, "#canal [nick [+-flags] [automodos]]");
+		return 1;
+	}
+	if (!IsChanReg(param[1]))
+	{
+		Responde(cl, CLI(chanserv), CS_ERR_NCHR, "");
 		return 1;
 	}
 	if (!IsOper(cl) && !IsChanAct(param[1]))
@@ -2491,7 +2531,7 @@ int CSCmdKick(Cliente *cl, Cliente *al, Canal *cn, char *motivo)
 {
 	if (!cl || !cn || !al)
 		return 1;
-	if (IsChanReg(cn->nombre))
+	if (IsChanReg(cn->nombre) && !IsOper(cl))
 	{
 		if (CSTieneNivel(al, cn->nombre, CS_LEV_REV) && strcasecmp(cl->nombre, SQLCogeRegistro(CS_SQL, cn->nombre, "founder")))
 			ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "KICK revenge!");
@@ -2549,7 +2589,7 @@ int CSCmdJoin(Cliente *cl, Canal *cn)
 				ProtFunc(P_PART_USUARIO_REMOTO)(cl, cn, NULL);
 			return 0;
 		}
-		if ((row = CSEsAkick(cn->nombre, cl->mask)))
+		if ((row = CSEsAkick(cn->nombre, cl->mask)) && !IsOper(cl))
 		{
 			ProtFunc(P_MODO_CANAL)(CLI(chanserv), cn, "+b %s", TipoMascara(cl->mask, chanserv->bantype));
 			ProtFunc(P_KICK)(cl, CLI(chanserv), cn, "%s (%s)", row[2], row[3]);

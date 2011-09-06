@@ -686,7 +686,7 @@ BOTFUNC(OSSpam)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{palabra|patrón} [flags] [accion] [motivo]");
+		Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "[+|-]{palabra|patrón} [tipo] [acción] [motivo]");
 		return 1;
 	}
 	if (*param[1] == '+')
@@ -694,7 +694,7 @@ BOTFUNC(OSSpam)
 		char *motivo, *c;
 		if (params < 5)
 		{
-			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "+palabra [flags] [accion] [motivo]");
+			Responde(cl, CLI(operserv), OS_ERR_PARA, fc->com, "+palabra [tipo] [acción] [motivo]");
 			return 1;
 		}
 		param[1]++;
@@ -707,7 +707,7 @@ BOTFUNC(OSSpam)
 		{
 			if (!strchr("cpnNPqduat", *c))
 			{
-				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Sólo se aceptan las flags c|p|n|N|P|q|d|u|a|t");
+				Responde(cl, CLI(operserv), OS_ERR_EMPT, "Sólo se aceptan los tipos c|p|n|N|P|q|d|u|a|t");
 				return 1;
 			}
 		}
@@ -755,7 +755,7 @@ BOTFUNC(OSSpam)
 		}
 		Responde(cl, CLI(operserv), "*** SPAM que coinciden con \00312%s\003 ***", param[1]);
 		for (i = 0; i < operserv->maxlist && (row = SQLFetchRow(res)); i++)
-			Responde(cl, CLI(operserv), "Spam: \00312%s\003 Flags: \00312%s\003 Accion: \00312%s\003 Motivo: \00312%s\003", row[0], row[2], row[3], row[4]);
+			Responde(cl, CLI(operserv), "Spam: \00312%s\003 Tipo: \00312%s\003 Acción: \00312%s\003 Motivo: \00312%s\003", row[0], row[2], row[3], row[4]);
 		Responde(cl, CLI(operserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
 		SQLFreeRes(res);
 	}	

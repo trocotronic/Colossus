@@ -656,3 +656,6 @@
 030911710 - Arreglado al dropar un nick se elimina su estado de operador.
 030911711 - Arreglado fallo al añdir un operador sin nivel.
 030911712 - Añadido migracion de nivel, ipvirtual, swhois al ejecutar el comando migrar.
+060911713 - Arreglado varios fallos cuando un representante de la red intentaba cambiar parametros de un canal no registrado.
+060911713 - Arreglado AKICK en Chanserv, ahora al añadir/eliminar un akick aun nick, obtiene una mascara generica.
+060911713 - Añadida protección de operadores contra akicks, kicks y kicks revenge.
