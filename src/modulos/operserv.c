@@ -362,7 +362,7 @@ BOTFUNCHELP(OSHGline)
 {
 	Responde(cl, CLI(operserv), "Administra los bloqueos de la red.");
 	Responde(cl, CLI(operserv), " ");
-	Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|	user@host} [[tiempo] motivo]");
+	Responde(cl, CLI(operserv), "Sintaxis: \00312GLINE {nick|user@host} [[tiempo] motivo]");
 	Responde(cl, CLI(operserv), "Para añadir una gline basta con especificar un motivo.");
 	Responde(cl, CLI(operserv), "Si no se especifica ningún motivo, se quitará esa gline.");
 	Responde(cl, CLI(operserv), "Se puede especificar un nick o un user@host indistintamente. Si se especifica un nick, se usará su user@host sin necesidad de buscarlo previamente.");
