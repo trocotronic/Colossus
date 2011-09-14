@@ -151,6 +151,8 @@ void ISSet(Conf *config, Modulo *mod)
 				ipserv->cambio = atoi(config->seccion[i]->data) * 3600;
 			else if (!strcmp(config->seccion[i]->item, "pref_vhost"))
 				ipserv->pvhost = 1;
+			else if (!strcmp(config->seccion[i]->item, "maxlist"))
+				ipserv->maxlist = atoi(config->seccion[i]->data);
 			else if (!strcmp(config->seccion[i]->item, "prohibir"))
 			{
 				for (p = 0; p < config->seccion[i]->secciones; p++)
@@ -323,23 +325,59 @@ BOTFUNC(ISClones)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "{ip|host} [nº]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|host|patrón} [nº] [Nota]");
 		return 1;
 	}
-	if (params >= 3)
+	if (*param[1] == '+')
 	{
+		char *nota = NULL;
+		time_t fecha = time(NULL);
+		param[1]++;
 		if (atoi(param[2]) < 1)
 		{
 			Responde(cl, CLI(ipserv), IS_ERR_SNTX, "El número de clones debe ser un número entero");
 			return 1;
 		}
+
 		SQLInserta(IS_CLONS, param[1], "clones", param[2]);
+		
+		if (params > 3) { //Comprobamos nota o creamos una.
+		  	nota = Unifica(param, params, 3, -1);
+			SQLInserta(IS_CLONS, param[1], "nota", "%s por %s a las %s\t", nota, cl->nombre, Fecha(&fecha));		  			
+		}
+		else
+		 	SQLInserta(IS_CLONS, param[1], "nota", "Añadido por %s a las %s\t", cl->nombre, Fecha(&fecha));		
+		
 		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 se ha añadido con \00312%s\003 clones.", param[1], param[2]);
+	}
+	else if (*param[1] == '-')
+	{
+		param[1]++;
+		if (!SQLCogeRegistro(IS_CLONS, param[1], "clones"))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "La ip/host no tiene asignado clones.");
+			return 1;
+		}
+		SQLBorra(IS_CLONS, param[1]);
+		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
 	}
 	else
 	{
-		SQLBorra(IS_CLONS, param[1]);
-		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
+		SQLRes res;
+		SQLRow row;
+		u_int i;
+		char *rep;
+		rep = str_replace(param[1], '*', '%');
+		if (!(res = SQLQuery("SELECT item,clones,nota from %s%s where item LIKE '%s'", PREFIJO, IS_CLONS, rep)))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+		Responde(cl, CLI(ipserv), "*** Ip/Host que coinciden con \00312%s\003 ***", param[1]);
+		for (i = 0; i < ipserv->maxlist && (row = SQLFetchRow(res)); i++)
+			Responde(cl, CLI(ipserv), "Ip/Host: \00312%s\003 Clones: \00312%s\003 Nota: \00312%s\003", row[0], row[1], row[2]);
+		Responde(cl, CLI(ipserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	EOI(ipserv, 3);
 	return 0;
@@ -424,6 +462,7 @@ int ISSigSQL()
 	SQLNuevaTabla(IS_CLONS, "CREATE TABLE IF NOT EXISTS %s%s ( "
   		"item varchar(255) default NULL, "
   		"clones varchar(255) default NULL, "
+		"nota text,"
   		"KEY item (item) "
 		");", PREFIJO, IS_CLONS);
 	return 0;

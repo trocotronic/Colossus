@@ -651,7 +651,7 @@
 151210705 - Cuando se dropa un nick, se borraran todos los memos que fuesen para el.
 110211706 - Arreglado un fallo cuando se establece min_reg a 0 en nickserv.inc.
 270711707 - Modificamos la liberacion del canal para tener en cuenta la persistencia del canal registrado, aviso de zenit (#0000333).
-030911708 - Añadido directrices en el archivo my.ini para que el embedido ignore el InnoDB y por defcto use MyISAM.
+030911708 - Añadido directrices en el archivo my.ini para que el embedido ignore el InnoDB y por defecto use MyISAM.
 030911709 - Arreglado un fallo que provocaba eliminar el modo +r de un canal cuando se usaba DROP.
 030911710 - Arreglado al dropar un nick se elimina su estado de operador.
 030911711 - Arreglado fallo al añdir un operador sin nivel.
@@ -659,5 +659,7 @@
 060911713 - Arreglado varios fallos cuando un representante de la red intentaba cambiar parametros de un canal no registrado.
 060911714 - Arreglado AKICK en Chanserv, ahora al añadir/eliminar un akick aun nick, obtiene una mascara generica.
 060911715 - Añadida protección de operadores contra akicks, kicks y kicks revenge.
-140911716 - *** Vigésima segunda release pública: 1.16 ***
-140911717 - Añadido error 1194 de MySQL (tabla marcada como crash) para reparar.
+140911716 - Añadido error 1194 de MySQL (tabla marcada como crash) para reparar.
+140911717 - Modificado comando clones de IpServ, añadido soporte para listar y normalización del comando.
+140911718 - Modificada tabla IS_CLONS para soportar notas al asignar clones a una ip/host.
+//1010117XX - *** Vigésima segunda release pública: 1.16 ***

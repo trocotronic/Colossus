@@ -10,6 +10,7 @@ struct _is
 	int cambio;
 	unsigned pvhost:1;
 	Modulo *hmod;
+	u_int maxlist;
 };
 
 #define IS_ERR_PARA "\00304ERROR: Faltan parámetros: %s %s "
