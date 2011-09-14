@@ -660,3 +660,4 @@
 060911714 - Arreglado AKICK en Chanserv, ahora al añadir/eliminar un akick aun nick, obtiene una mascara generica.
 060911715 - Añadida protección de operadores contra akicks, kicks y kicks revenge.
 140911716 - *** Vigésima segunda release pública: 1.16 ***
+140911717 - Añadido error 1194 de MySQL (tabla marcada como crash) para reparar.

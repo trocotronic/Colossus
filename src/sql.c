@@ -559,7 +559,7 @@ void SQLRefrescaTabla(char *tabla)
 	ircsprintf(buf, "SELECT * FROM %s%s", PREFIJO, tabla);
 	if (mysql_query(mysql, buf) || !(cp = mysql_store_result(mysql)))
 	{
-		if (mysql_errno(mysql) == 1035 && !c)
+		if ((mysql_errno(mysql) == 1194 || mysql_errno(mysql) == 1035) && !c)
 		{
 			c = 1;
 			ircsprintf(buf, "REPAIR TABLE %s", tabla);
