@@ -194,13 +194,13 @@ BOTFUNC(ISDns)
 	
 	if (*param[1] == '+')
 	{
+		char *nota = NULL;
+		time_t fecha = time(NULL);
 		if (params < 3)
 		{
 		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|patrón} [host] [nota]");
 		return 1;
-		}
-		char *nota = NULL;
-		time_t fecha = time(NULL);
+		}		
 		param[1]++;
 		if (!EsIp(param[1]))
 		{
@@ -261,13 +261,13 @@ BOTFUNC(ISNolines)
 	}
 	if (*param[1] == '+')
 	{
+		char *nota = NULL, *c;
+		time_t fecha = time(NULL);
 		if (params < 3)
 		{
 		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|host|patrón} [G|Z|Q|S|T] [nota]");
 		return 1;
-		}
-		char *nota = NULL, *c;
-		time_t fecha = time(NULL);
+		}		
 		param[1]++;
 		for (c = param[2]; !BadPtr(c); c++)
 		{
