@@ -19,9 +19,12 @@ struct _is
 
 #define IS_SQL "nicks"
 #define IS_CLONS "clons"
+#define IS_NOLINE "nolines"
+#define IS_DNS "dns"
 
 extern IpServ *ipserv;
 
 #define IS_SIGN_DROP 52
+#define SIGN_SQL2 53
 
 #define IS_CACHE_VHOST "vhosts"

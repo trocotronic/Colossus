@@ -359,7 +359,7 @@ BOTFUNC(ISClones)
 			return 1;
 		}
 		SQLBorra(IS_CLONS, param[1]);
-		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 ha sido eliminada.", param[1]);
+		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 le han sido eliminados todos los clones.", param[1]);
 	}
 	else
 	{
@@ -465,6 +465,7 @@ int ISSigSQL()
 		"nota text,"
   		"KEY item (item) "
 		");", PREFIJO, IS_CLONS);
+	LlamaSenyal(SIGN_SQL2, 1);
 	return 0;
 }
 int ISSigDrop(char *nick)

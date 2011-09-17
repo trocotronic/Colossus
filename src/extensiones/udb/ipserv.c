@@ -33,6 +33,7 @@ EXTFUNC(ISVHost_U);
 
 int ISSigEOS_U	();
 int ISSigVDrop	(char *);
+int ISSigSQL2 ();
 int ISCompruebaCifrado_U();
 int ISSigSynch_U();
 int ISSigSockClose_U();
@@ -80,6 +81,7 @@ void CargaIpServ(Extension *ext)
 	BorraSenyal(NS_SIGN_IDOK, issigidok);
 	InsertaSenyal(SIGN_EOS, ISSigEOS_U);
 	InsertaSenyal(IS_SIGN_DROP, ISSigVDrop);
+	InsertaSenyal(SIGN_SQL2, ISSigSQL2);
 	InsertaSenyalExt(1, ISSetipv_U, ext);
 	InsertaSenyalExt(3, ISClones_U, ext);
 	InsertaSenyalExt(4, ISVHost_U, ext);
@@ -97,6 +99,7 @@ void DescargaIpServ(Extension *ext)
 	InsertaSenyal(NS_SIGN_IDOK, issigidok);
 	BorraSenyal(SIGN_EOS, ISSigEOS_U);
 	BorraSenyal(IS_SIGN_DROP, ISSigVDrop);
+	BorraSenyal(SIGN_SQL2, ISSigSQL2);
 	BorraSenyalExt(1, ISSetipv_U, ext);
 	BorraSenyalExt(3, ISClones_U, ext);
 	BorraSenyalExt(4, ISVHost_U, ext);
@@ -185,23 +188,67 @@ BOTFUNC(ISDns)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "ip [host]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|patrón} [host] [nota]");
 		return 1;
 	}
-	if (!EsIp(param[1]))
+	
+	if (*param[1] == '+')
 	{
+		if (params < 3)
+		{
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|patrón} [host] [nota]");
+		return 1;
+		}
+		char *nota = NULL;
+		time_t fecha = time(NULL);
+		param[1]++;
+		if (!EsIp(param[1]))
+		{
 		Responde(cl, CLI(ipserv), IS_ERR_SNTX, "No parece ser una ip");
 		return 1;
+		}
+
+		SQLInserta(IS_DNS, param[1], "dns", param[2]);
+		
+		if (params > 3) { //Comprobamos nota o creamos una.
+		  	nota = Unifica(param, params, 3, -1);
+			SQLInserta(IS_DNS, param[1], "nota", "%s por %s a las %s\t", nota, cl->nombre, Fecha(&fecha));		  			
+		}
+		else
+		 	SQLInserta(IS_DNS, param[1], "nota", "Añadido por %s a las %s\t", cl->nombre, Fecha(&fecha));
+		
+		PropagaRegistro("I::%s::H %s", param[1], param[2]); //Añadimos a UDB
+		Responde(cl, CLI(ipserv), "Modificada la resolución de la ip \00312%s\003 a \00312%s", param[1], param[2]);
 	}
-	if (params == 3)
+	else if (*param[1] == '-')
 	{
-		PropagaRegistro("I::%s::H %s", param[1], param[2]);
-		Responde(cl, CLI(ipserv), "Se ha cambiado la resolución de la ip \00312%s\003 a \00312%s", param[1], param[2]);
+		param[1]++;
+		if (!SQLCogeRegistro(IS_DNS, param[1], "dns"))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "La ip no tiene asignada ninguna resolución personalizada.");
+			return 1;
+		}
+		SQLBorra(IS_DNS, param[1]);
+		PropagaRegistro("I::%s::H", param[1]);
+		Responde(cl, CLI(ipserv), "La ip \00312%s\003 le ha sido eliminada su resolución personalizada.", param[1]);
 	}
 	else
 	{
-		PropagaRegistro("I::%s::H", param[1]);
-		Responde(cl, CLI(ipserv), "Se ha eliminado al resolución de la ip \00312%s", param[1]);
+		SQLRes res;
+		SQLRow row;
+		u_int i;
+		char *rep;
+		rep = str_replace(param[1], '*', '%');
+		if (!(res = SQLQuery("SELECT item,dns,nota from %s%s where item LIKE '%s'", PREFIJO, IS_DNS, rep)))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+		Responde(cl, CLI(ipserv), "*** Ip que coinciden con \00312%s\003 ***", param[1]);
+		for (i = 0; i < ipserv->maxlist && (row = SQLFetchRow(res)); i++)
+			Responde(cl, CLI(ipserv), "Ip/Host: \00312%s\003 DNS: \00312%s\003 Nota: \00312%s\003", row[0], row[1], row[2]);
+		Responde(cl, CLI(ipserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -209,27 +256,70 @@ BOTFUNC(ISNolines)
 {
 	if (params < 2)
 	{
-		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "ip [G|Z|Q|S|T]");
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|host|patrón} [G|Z|Q|S|T] [nota]");
 		return 1;
 	}
-	if (params == 3)
+	if (*param[1] == '+')
 	{
-		char *c;
+		if (params < 3)
+		{
+		Responde(cl, CLI(ipserv), IS_ERR_PARA, fc->com, "[+|-]{ip|host|patrón} [G|Z|Q|S|T] [nota]");
+		return 1;
+		}
+		char *nota = NULL, *c;
+		time_t fecha = time(NULL);
+		param[1]++;
 		for (c = param[2]; !BadPtr(c); c++)
 		{
 			if (!strchr("GZQST", *c))
 			{
 				Responde(cl, CLI(ipserv), IS_ERR_EMPT, "Sólo se aceptan las nolines G|Z|Q|S|T");
 				return 1;
+
 			}
 		}
-		PropagaRegistro("I::%s::E %s", param[1], param[2]);
-		Responde(cl, CLI(ipserv), "Se han cambiado las excepciones para la ip \00312%s\003 a \00312%s", param[1], param[2]);
+
+		SQLInserta(IS_NOLINE, param[1], "nolines", param[2]);
+		
+		if (params > 3) { //Comprobamos nota o creamos una.
+		  	nota = Unifica(param, params, 3, -1);
+			SQLInserta(IS_NOLINE, param[1], "nota", "%s por %s a las %s\t", nota, cl->nombre, Fecha(&fecha));		  			
+		}
+		else
+		 	SQLInserta(IS_NOLINE, param[1], "nota", "Añadido por %s a las %s\t", cl->nombre, Fecha(&fecha));
+		
+		PropagaRegistro("I::%s::E %s", param[1], param[2]); //Añadimos a UDB
+		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 se le han agisnado las nolines: \00312%s", param[1], param[2]);
+	}
+	else if (*param[1] == '-')
+	{
+		param[1]++;
+		if (!SQLCogeRegistro(IS_NOLINE, param[1], "nolines"))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "La ip/host no tiene asignada ninguna excepción.");
+			return 1;
+		}
+		SQLBorra(IS_NOLINE, param[1]);
+		PropagaRegistro("I::%s::E", param[1]);
+		Responde(cl, CLI(ipserv), "La ip/host \00312%s\003 le han sido eliminados todas las excepciones.", param[1]);
 	}
 	else
 	{
-		PropagaRegistro("I::%s::E", param[1]);
-		Responde(cl, CLI(ipserv), "Se han eliminado las excepciones para la ip \00312%s", param[1]);
+		SQLRes res;
+		SQLRow row;
+		u_int i;
+		char *rep;
+		rep = str_replace(param[1], '*', '%');
+		if (!(res = SQLQuery("SELECT item,nolines,nota from %s%s where item LIKE '%s'", PREFIJO, IS_NOLINE, rep)))
+		{
+			Responde(cl, CLI(ipserv), IS_ERR_EMPT, "No se han encontrado coincidencias.");
+			return 1;
+		}
+		Responde(cl, CLI(ipserv), "*** Ip/Host que coinciden con \00312%s\003 ***", param[1]);
+		for (i = 0; i < ipserv->maxlist && (row = SQLFetchRow(res)); i++)
+			Responde(cl, CLI(ipserv), "Ip/Host: \00312%s\003 Nolines: \00312%s\003 Nota: \00312%s\003", row[0], row[1], row[2]);
+		Responde(cl, CLI(ipserv), "Resultado: \00312%i\003/\00312%i", i, SQLNumRows(res));
+		SQLFreeRes(res);
 	}
 	return 0;
 }
@@ -295,6 +385,22 @@ int ISCompruebaCifrado_U()
 int ISSigVDrop (char *nick)
 {
 	PropagaRegistro("N::%s::V", nick);
+	return 0;
+}
+int ISSigSQL2()
+{
+	SQLNuevaTabla(IS_NOLINE, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"nolines varchar(5) default NULL, "
+		"nota text,"
+  		"KEY item (item) "
+		");", PREFIJO, IS_NOLINE);
+	SQLNuevaTabla(IS_DNS, "CREATE TABLE IF NOT EXISTS %s%s ( "
+  		"item varchar(255) default NULL, "
+  		"dns varchar(255) default NULL, "
+		"nota text,"
+  		"KEY item (item) "
+		");", PREFIJO, IS_DNS);
 	return 0;
 }
 int ISSigSynch_U()

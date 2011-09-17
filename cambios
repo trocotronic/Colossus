@@ -662,4 +662,8 @@
 140911716 - Añadido error 1194 de MySQL (tabla marcada como crash) para reparar.
 140911717 - Modificado comando clones de IpServ, añadido soporte para listar y normalización del comando.
 140911718 - Modificada tabla IS_CLONS para soportar notas al asignar clones a una ip/host.
+170911719 - Modificado comando noline de IpServ, añadido soporte para listar y normalización del comando.
+170911720 - Nueva tabla IS_NOLINE para soportar las excepciones a una ip/host, soporta notas.
+170911721 - Modificado comando dns de IpServ, añadido soporte para listar y normalización del comando.
+170911722 - Nueva tabla IS_DNS para soportar las excepciones a una ip/host, soporta notas.
 //1010117XX - *** Vigésima segunda release pública: 1.16 ***
