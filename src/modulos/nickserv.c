@@ -688,8 +688,8 @@ BOTFUNC(NSRegister)
 		}
 	}
 	opts = NS_OPT_MASK;
-	if (nickserv->opts & NS_HIDEFMAIL)
-		opts |= NS_OPT_MAIL;
+	opts |= NS_OPT_MAIL; //Ocultamos el correo
+
 	m_c = SQLEscapa(cl->info);
 	ll = SQLEscapa(cl->nombre);
 	hh = SQLEscapa(cl->ident);

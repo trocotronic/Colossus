@@ -1,6 +1,7 @@
 #include "struct.h"
 #include "ircd.h"
 #define XML_STATIC
+#define IPLOC
 #include <expat.h>
 
 int IPLocSignQuit(Cliente *, char *);
