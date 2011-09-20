@@ -667,4 +667,5 @@
 170911721 - Modificado comando dns de IpServ, añadido soporte para listar y normalización del comando.
 170911721 - Modificada visibilida del email al registrarse un nick (#0000328).
 170911722 - Nueva tabla IS_DNS para soportar las excepciones a una ip/host, soporta notas.
+200911723 - Añadido comprobacion de niveles de usuario, arreglamos varias incidencias (#0000330).
 //1010117XX - *** Vigésima segunda release pública: 1.16 ***

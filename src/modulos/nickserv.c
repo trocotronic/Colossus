@@ -289,6 +289,20 @@ int BorraKillUser(Cliente *cl, int apaga)
 	}
 	return 0;
 }
+int IsSuper(Cliente *cl, char *objetivo)
+{
+	char *res;
+	int nivelb;
+	if ((res = SQLCogeRegistro(OS_SQL, objetivo, "nivel")))
+		nivelb = atoi(res)+1;//Si el nick esta identificado el cl->nivel aumenta en +1.
+	else
+		nivelb = 0;
+
+	if (cl->nivel > nivelb)
+		return 1;
+	else
+		return 0;
+}
 void NSCambiaInv(Cliente *cl)
 {
 	char buf[BUFSIZE];
@@ -333,11 +347,14 @@ BOTFUNCHELP(NSHList)
 	Responde(cl, CLI(nickserv), "Además, puedes especificar un filtro para listar los nicks.");
 	Responde(cl, CLI(nickserv), " ");
 	Responde(cl, CLI(nickserv), "Nicks activos: \00312LIST -a patrón");
+	if (IsOper(cl))
+	{
 	Responde(cl, CLI(nickserv), "Nicks suspendidos (Solo Opers): \00312LIST -s patrón");
 	Responde(cl, CLI(nickserv), "Nicks prohibidos (Solo Opers): \00312LIST -f patrón");
 	Responde(cl, CLI(nickserv), "Email (Solo Opers): \00312LIST -e patrón");
 	Responde(cl, CLI(nickserv), "Ipvirtual (Solo Opers): \00312LIST -v patrón");
 	Responde(cl, CLI(nickserv), "Host (Solo Opers): \00312LIST -h patrón");
+	}
 	Responde(cl, CLI(nickserv), " ");
 	Responde(cl, CLI(nickserv), "Sintaxis: \00312LIST [-filtro] patrón");
 	return 0;
@@ -803,6 +820,11 @@ BOTFUNC(NSDrop)
 		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
 		return 1;
 	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para dropear este nick.");
+		return 1;	
+	}
 	if (!IsAdmin(cl) && (atoi(SQLCogeRegistro(NS_SQL, param[1], "opts")) & NS_OPT_NODROP))
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no se puede dropear.");
@@ -840,6 +862,11 @@ BOTFUNC(NSSendpass)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_PARA, fc->com, "nick");
 		return 1;
+	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para resetear la password de este nick.");
+		return 1;	
 	}
 	if (!IsReg(param[1]))
 	{
@@ -1226,6 +1253,11 @@ BOTFUNC(NSSuspender)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para suspender este nick.");
+		return 1;	
+	}
 	motivo = Unifica(param, params, 2, -1);
 	SQLInserta(NS_SQL, param[1], "motivo", motivo);
 	SQLInserta(NS_SQL, param[1], "estado", "S");
@@ -1284,6 +1316,11 @@ BOTFUNC(NSSwhois)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para cambiar el swhois este nick.");
+		return 1;	
+	}
 	if (params >= 3)
 	{
 		char *swhois;
@@ -1325,6 +1362,11 @@ BOTFUNC(NSRename)
 		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "Este nick no está conectado.");
 		return 1;
 	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para renombrar este nick.");
+		return 1;	
+	}
 	ProtFunc(P_CAMBIO_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(nickserv), "El nick \00312%s\003 ha cambiado su nick a \00312%s\003.", param[1], param[2]);
 	EOI(nickserv, 12);
@@ -1341,6 +1383,12 @@ BOTFUNC(NSForbid)
 
 	if (IsForbid(param[1])) {
 		Responde(cl, CLI(nickserv), NS_ERR_NFORB);
+		return 1;	
+	}
+
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para prohibir este nick.");
 		return 1;	
 	}
 		
@@ -1403,6 +1451,11 @@ BOTFUNC(NSMarcas)
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
 	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para marcar este nick.");
+		return 1;	
+	}
 	if (params < 3)
 	{
 		if ((marcas = SQLCogeRegistro(NS_SQL, param[1], "marcas")))
@@ -1438,6 +1491,11 @@ BOTFUNC(NSOptsNick)
 	{
 		Responde(cl, CLI(nickserv), NS_ERR_NURG);
 		return 1;
+	}
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
+	{
+		Responde(cl, CLI(nickserv), NS_ERR_EMPT, "No tienes permiso para cambiar las opciones de este nick.");
+		return 1;	
 	}
 	ret = NickOpts(cl, param[1], &param[1], params-1, fc);
 	EOI(nickserv, 16);

@@ -345,6 +345,20 @@ int OSReinicia()
 	Reinicia();
 	return 0;
 }
+int IsSuper(Cliente *cl, char *objetivo)
+{
+	char *res;
+	int nivelb;
+	if ((res = SQLCogeRegistro(OS_SQL, objetivo, "nivel")))
+		nivelb = atoi(res)+1;//Si el nick esta identificado el cl->nivel aumenta en +1.
+	else
+		nivelb = 0;
+
+	if (cl->nivel > nivelb)
+		return 1;
+	else
+		return 0;
+}
 BOTFUNCHELP(OSHRaw)
 {
 	Responde(cl, CLI(operserv), "Manda un raw al servidor.");
@@ -788,6 +802,16 @@ BOTFUNC(OSOpers)
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este nivel no existe.");
 			return 1;
 		}
+		if (!(niv->nivel < atoi(SQLCogeRegistro(OS_SQL, cl->nombre, "nivel"))) && !IsRoot(cl)) //Controlamos que no pueda dar un nivel mayor al suyo.
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+			return 1;
+		}
+		if (!IsSuper(cl, param[1]) && !IsRoot(cl))//Controlamos que no pueda cambiar un nivel superior.
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+			return 1;	
+		}
 		SQLInserta(OS_SQL, param[1], "nivel", "%i", niv->nivel);
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido añadido como \00312%s\003.", param[1], param[2]);
 		if ((al = BuscaCliente(param[1])))
@@ -801,6 +825,11 @@ BOTFUNC(OSOpers)
 		{
 			Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no es representante de la red.");
 			return 1;
+		}
+		if (!IsSuper(cl, param[1]) && !IsRoot(cl)) //Controlamos que no pueda cambiar un nivel superior.
+		{
+			Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+			return 1;	
 		}
 		SQLBorra(OS_SQL, param[1]);
 		Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido borrado.", param[1]);
@@ -858,10 +887,10 @@ BOTFUNC(OSSajoin)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	if (IsOper(al) && !IsAdmin(cl))
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
 	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
-		return 1;
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+		return 1;	
 	}
 	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a entrar en \00312%s\003.", param[1], param[2]);
@@ -886,10 +915,10 @@ BOTFUNC(OSSapart)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	if (IsOper(al) && !IsAdmin(cl))
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
 	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
-		return 1;
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+		return 1;	
 	}
 	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2]), NULL);
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido forzado a salir de \00312%s\003.", param[1], param[2]);
@@ -914,10 +943,10 @@ BOTFUNC(OSRejoin)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	if (IsOper(al) && !IsAdmin(cl))
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
 	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
-		return 1;
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+		return 1;	
 	}
 	ProtFunc(P_PART_USUARIO_REMOTO)(al, BuscaCanal(param[2]), NULL);
 	ProtFunc(P_JOIN_USUARIO_REMOTO)(al, param[2]);
@@ -938,10 +967,10 @@ BOTFUNC(OSKill)
 		Responde(cl, CLI(operserv), OS_ERR_EMPT, "Este usuario no está conectado.");
 		return 1;
 	}
-	if (IsOper(al) && !IsAdmin(cl))
+	if (!IsSuper(cl, param[1]) && !IsRoot(cl))
 	{
-		Responde(cl, CLI(operserv), OS_ERR_EMPT, "No puedes ejecutar este comando sobre Operadores.");
-		return 1;
+		Responde(cl, CLI(operserv), OS_ERR_EMPT, "¡Acceso Denegado!");
+		return 1;	
 	}
 	ProtFunc(P_QUIT_USUARIO_REMOTO)(al, CLI(operserv), Unifica(param, params, 2, -1));
 	Responde(cl, CLI(operserv), "El usuario \00312%s\003 ha sido desconectado.", param[1]);
